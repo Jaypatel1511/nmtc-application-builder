@@ -35,6 +35,17 @@ theme:
   icon:
     repo: fontawesome/brands/github
 
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+
 plugins:
   - search
 

@@ -139,7 +139,7 @@ A template CSV is available at `templates/pipeline_template.csv` in the reposito
 
 **Example CSV structure (abbreviated):**
 
-```
+```csv
 project_id,project_name,qalicb_name,address,city,state,sector,project_type,total_project_cost,qei_request,qlici_amount,expected_jobs_created
 PRJ-001,Southside Health Center,Southside HC QALICB LLC,3400 S Michigan Ave,Chicago,IL,healthcare,real_estate,12500000,8500000,8500000,52
 PRJ-002,East Houston Charter Academy,East Houston Academy QALICB LLC,5200 Lawndale St,Houston,TX,education,real_estate,9800000,7000000,7000000,38
