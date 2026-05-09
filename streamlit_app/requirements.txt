@@ -3,3 +3,4 @@ git+https://github.com/Jaypatel1511/nmtc-application-builder.git@main
 plotly>=5.18.0
 pandas>=1.3
 numpy>=1.21
+matplotlib>=3.5
