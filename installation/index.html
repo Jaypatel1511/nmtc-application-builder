@@ -1411,20 +1411,20 @@
   
 
 
-<h1 id="installation">Installation</h1>
-<h2 id="requirements">Requirements</h2>
+<h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
+<h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Python 3.9 or later (tested on 3.9, 3.10, 3.11, 3.12)</li>
 <li>pip 21+ recommended</li>
 </ul>
 <hr />
-<h2 id="core-install">Core install</h2>
+<h2 id="core-install">Core install<a class="headerlink" href="#core-install" title="Permanent link">&para;</a></h2>
 <p>The core package installs the intelligence engine, pipeline analysis, validation, and Markdown output. No optional output libraries are required to run analysis.</p>
-<pre><code class="language-bash">pip install nmtc-application-builder
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>nmtc-application-builder
+</code></pre></div>
 <p>The core install includes: <code>pandas</code>, <code>numpy</code>, <code>pyyaml</code>, and the five integration libraries (<code>nmtc-mapper</code>, <code>nmtc-calc</code>, <code>hmda-analyzer</code>, <code>cdfidata</code>, <code>impact-ledger</code>).</p>
 <hr />
-<h2 id="optional-extras">Optional extras</h2>
+<h2 id="optional-extras">Optional extras<a class="headerlink" href="#optional-extras" title="Permanent link">&para;</a></h2>
 <p>Most output formats and visualization require additional libraries. Install only what you need.</p>
 <table>
 <thead>
@@ -1462,52 +1462,52 @@
 </tr>
 </tbody>
 </table>
-<h3 id="install-everything">Install everything</h3>
-<pre><code class="language-bash">pip install &quot;nmtc-application-builder[output,viz]&quot;
-</code></pre>
+<h3 id="install-everything">Install everything<a class="headerlink" href="#install-everything" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;nmtc-application-builder[output,viz]&quot;</span>
+</code></pre></div>
 <p>This installs <code>python-docx</code>, <code>openpyxl</code>, <code>reportlab</code>, and <code>matplotlib</code> in addition to the core dependencies.</p>
 <hr />
-<h2 id="development-install">Development install</h2>
+<h2 id="development-install">Development install<a class="headerlink" href="#development-install" title="Permanent link">&para;</a></h2>
 <p>To contribute or run the test suite, install in editable mode with all dev dependencies:</p>
-<pre><code class="language-bash">git clone https://github.com/Jaypatel1511/nmtc-application-builder.git
-cd nmtc-application-builder
-pip install -e &quot;.[dev]&quot;
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/Jaypatel1511/nmtc-application-builder.git
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">cd</span><span class="w"> </span>nmtc-application-builder
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[dev]&quot;</span>
+</code></pre></div>
 <p>The <code>[dev]</code> extra includes <code>pytest</code>, <code>pytest-cov</code>, <code>jupyter</code>, and all output/viz libraries.</p>
 <hr />
-<h2 id="verify-the-install">Verify the install</h2>
-<pre><code class="language-python">import nmtcapp
-print(nmtcapp.__version__)        # &quot;1.0.0&quot;
-
-from nmtcapp.core.pipeline import Pipeline
-print(Pipeline.sample(n=5))       # Pipeline(projects=5, total_qei=$...)
-</code></pre>
+<h2 id="verify-the-install">Verify the install<a class="headerlink" href="#verify-the-install" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">nmtcapp</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">nmtcapp</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>        <span class="c1"># &quot;1.0.0&quot;</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="nb">print</span><span class="p">(</span><span class="n">Pipeline</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">5</span><span class="p">))</span>       <span class="c1"># Pipeline(projects=5, total_qei=$...)</span>
+</code></pre></div>
 <p>If both lines execute without error, the install is complete.</p>
 <hr />
-<h2 id="troubleshooting">Troubleshooting</h2>
-<h3 id="numpy-compatibility">NumPy compatibility</h3>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<h3 id="numpy-compatibility">NumPy compatibility<a class="headerlink" href="#numpy-compatibility" title="Permanent link">&para;</a></h3>
 <p>If you see <code>AttributeError: module 'numpy' has no attribute 'bool'</code> or similar NumPy 1.x / 2.x incompatibilities, pin NumPy explicitly:</p>
-<pre><code class="language-bash">pip install &quot;numpy&gt;=1.21,&lt;2.0&quot; nmtc-application-builder
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;numpy&gt;=1.21,&lt;2.0&quot;</span><span class="w"> </span>nmtc-application-builder
+</code></pre></div>
 <p>The library is tested against NumPy 1.21–1.26. NumPy 2.x support is tracked in <a href="https://github.com/Jaypatel1511/nmtc-application-builder/issues">GitHub issues</a>.</p>
-<h3 id="missing-python-docx-when-generating-word-documents">Missing <code>python-docx</code> when generating Word documents</h3>
+<h3 id="missing-python-docx-when-generating-word-documents">Missing <code>python-docx</code> when generating Word documents<a class="headerlink" href="#missing-python-docx-when-generating-word-documents" title="Permanent link">&para;</a></h3>
 <p><code>app.generate()</code> will skip Word output and log a warning if <code>python-docx</code> is not installed. Install it explicitly:</p>
-<pre><code class="language-bash">pip install &quot;nmtc-application-builder[word]&quot;
-</code></pre>
-<h3 id="missing-reportlab-when-generating-pdfs">Missing <code>reportlab</code> when generating PDFs</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;nmtc-application-builder[word]&quot;</span>
+</code></pre></div>
+<h3 id="missing-reportlab-when-generating-pdfs">Missing <code>reportlab</code> when generating PDFs<a class="headerlink" href="#missing-reportlab-when-generating-pdfs" title="Permanent link">&para;</a></h3>
 <p>Same pattern — install the <code>[pdf]</code> extra:</p>
-<pre><code class="language-bash">pip install &quot;nmtc-application-builder[pdf]&quot;
-</code></pre>
-<h3 id="importerror-matplotlib-is-required-for-visualization"><code>ImportError: matplotlib is required for visualization</code></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;nmtc-application-builder[pdf]&quot;</span>
+</code></pre></div>
+<h3 id="importerror-matplotlib-is-required-for-visualization"><code>ImportError: matplotlib is required for visualization</code><a class="headerlink" href="#importerror-matplotlib-is-required-for-visualization" title="Permanent link">&para;</a></h3>
 <p>All five visualization functions raise a clear <code>ImportError</code> with install instructions if <code>matplotlib</code> is absent. Install the <code>[viz]</code> extra:</p>
-<pre><code class="language-bash">pip install &quot;nmtc-application-builder[viz]&quot;
-</code></pre>
-<h3 id="virtual-environment-recommended">Virtual environment recommended</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;nmtc-application-builder[viz]&quot;</span>
+</code></pre></div>
+<h3 id="virtual-environment-recommended">Virtual environment recommended<a class="headerlink" href="#virtual-environment-recommended" title="Permanent link">&para;</a></h3>
 <p>Always install in a virtual environment to avoid dependency conflicts with other projects:</p>
-<pre><code class="language-bash">python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install &quot;nmtc-application-builder[output,viz]&quot;
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nb">source</span><span class="w"> </span>.venv/bin/activate<span class="w">        </span><span class="c1"># Windows: .venv\Scripts\activate</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;nmtc-application-builder[output,viz]&quot;</span>
+</code></pre></div>
 
 
 

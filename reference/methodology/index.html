@@ -1443,10 +1443,10 @@
   
 
 
-<h1 id="methodology">Methodology</h1>
+<h1 id="methodology">Methodology<a class="headerlink" href="#methodology" title="Permanent link">&para;</a></h1>
 <p>This page provides a complete technical description of the scoring approach used by NMTC Application Builder. It is intended for practitioners who need to understand how scores are computed, what assumptions are embedded, and where the analysis has meaningful limitations.</p>
 <hr />
-<h2 id="executive-summary">Executive summary</h2>
+<h2 id="executive-summary">Executive summary<a class="headerlink" href="#executive-summary" title="Permanent link">&para;</a></h2>
 <p>NMTC Application Builder scores applications by comparing their pipeline metrics against patterns extracted from CDFI Fund NMTC award announcements (CY2020–CY2024). It does not compute a win probability — it computes an alignment score reflecting how closely a pipeline resembles historical winners on five measurable dimensions.</p>
 <p>The five dimensions and their weights mirror the relative importance of scoring criteria in recent CDFI Fund NOFA documents:</p>
 <table>
@@ -1486,7 +1486,7 @@
 </tbody>
 </table>
 <hr />
-<h2 id="why-we-cannot-compute-true-win-probability">Why we cannot compute true win probability</h2>
+<h2 id="why-we-cannot-compute-true-win-probability">Why we cannot compute true win probability<a class="headerlink" href="#why-we-cannot-compute-true-win-probability" title="Permanent link">&para;</a></h2>
 <p>The CDFI Fund does not publish application-level microdata for non-winning applicants. What is publicly available:</p>
 <ul>
 <li><strong>Round-level aggregates:</strong> total applications received, awards made, total dollars allocated</li>
@@ -1502,8 +1502,8 @@
 <p>Without the distribution of non-winner metrics, the standard conditional probability formula (P(win | metrics)) cannot be computed. We do not know whether applicants with 72% distress concentration are funded 40% of the time or 5% of the time — we only know that historical winners averaged 81% distress concentration.</p>
 <p>This means any "win probability" generated from available data would be a classification score based on feature similarity to winners only, not a calibrated probability derived from the full applicant distribution. We report this explicitly as an alignment score to avoid misleading practitioners into treating it as a prediction.</p>
 <hr />
-<h2 id="how-each-dimensional-score-is-computed">How each dimensional score is computed</h2>
-<h3 id="distress-concentration-score-weight-35">Distress concentration score (weight: 35%)</h3>
+<h2 id="how-each-dimensional-score-is-computed">How each dimensional score is computed<a class="headerlink" href="#how-each-dimensional-score-is-computed" title="Permanent link">&para;</a></h2>
+<h3 id="distress-concentration-score-weight-35">Distress concentration score (weight: 35%)<a class="headerlink" href="#distress-concentration-score-weight-35" title="Permanent link">&para;</a></h3>
 <p><strong>Input:</strong> <code>pct_deep_or_severe</code> — the fraction of total portfolio QEI deployed in census tracts classified as deep distress or severe distress by the CDFI Fund's NMTC Mapping Tool.</p>
 <p><strong>Historical winner statistics (CY2020–CY2024):</strong></p>
 <table>
@@ -1549,16 +1549,16 @@
 </tbody>
 </table>
 <p><strong>Scoring formula:</strong></p>
-<p>If <code>pct_deep_or_severe</code> &lt; 50% (the historical floor):</p>
-<pre><code>score = (pct / 0.50) × 30
-</code></pre>
-<p>If <code>pct_deep_or_severe</code> ≥ 50%:</p>
-<pre><code>z = (pct - 0.81) / 0.11
-score = Φ(z) × 100
-</code></pre>
-<p>where Φ is the standard normal CDF, approximated using <code>math.erfc</code>. The score is bounded [0, 100].</p>
+<p>If <code>pct_deep_or_severe</code> &lt; 50% (the historical floor):
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>score = (pct / 0.50) × 30
+</code></pre></div></p>
+<p>If <code>pct_deep_or_severe</code> ≥ 50%:
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>z = (pct - 0.81) / 0.11
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>score = Φ(z) × 100
+</code></pre></div>
+where Φ is the standard normal CDF, approximated using <code>math.erfc</code>. The score is bounded [0, 100].</p>
 <p>This formulation means a pipeline at the winner mean (81%) scores near 50 (50th percentile of the winner distribution), and a pipeline at the winner p75 (91%) scores near 75.</p>
-<h3 id="impact-intensity-score-weight-25">Impact intensity score (weight: 25%)</h3>
+<h3 id="impact-intensity-score-weight-25">Impact intensity score (weight: 25%)<a class="headerlink" href="#impact-intensity-score-weight-25" title="Permanent link">&para;</a></h3>
 <p><strong>Input:</strong> <code>jobs_per_million_qei</code> — total FTE jobs created (from project projections) divided by total QEI in millions.</p>
 <p><strong>Historical winner statistics:</strong></p>
 <table>
@@ -1592,12 +1592,12 @@ score = Φ(z) × 100
 </tbody>
 </table>
 <p><strong>Scoring formula:</strong></p>
-<pre><code>if jpm &lt;= 0: score = 0
-if jpm &gt;= 28 (top decile): score = 100
-else: z = (jpm - 12.0) / 6.0; score = Φ(z) × 100
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>if jpm &lt;= 0: score = 0
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>if jpm &gt;= 28 (top decile): score = 100
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>else: z = (jpm - 12.0) / 6.0; score = Φ(z) × 100
+</code></pre></div>
 <p>Score is bounded [0, 100].</p>
-<h3 id="geographic-diversity-score-weight-20">Geographic diversity score (weight: 20%)</h3>
+<h3 id="geographic-diversity-score-weight-20">Geographic diversity score (weight: 20%)<a class="headerlink" href="#geographic-diversity-score-weight-20" title="Permanent link">&para;</a></h3>
 <p><strong>Input:</strong> <code>states_count</code> (number of distinct states), <code>hhi</code> (Herfindahl-Hirschman Index of QEI concentration by state), <code>rural_pct</code> (fraction of QEI in rural tracts).</p>
 <p><strong>Historical winner statistics:</strong></p>
 <table>
@@ -1639,16 +1639,16 @@ else: z = (jpm - 12.0) / 6.0; score = Φ(z) × 100
 </tbody>
 </table>
 <p><strong>Scoring formula:</strong></p>
-<pre><code>states_score = Φ((states - 7.2) / 3.8) × 100
-
-hhi_score = max(0, (2000 - hhi) / 2000 × 100)
-
-rural_bonus = min(10, (rural_pct / 0.18) × 5)
-
-score = min(100, states_score × 0.5 + hhi_score × 0.4 + rural_bonus)
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>states_score = Φ((states - 7.2) / 3.8) × 100
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>hhi_score = max(0, (2000 - hhi) / 2000 × 100)
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>rural_bonus = min(10, (rural_pct / 0.18) × 5)
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>score = min(100, states_score × 0.5 + hhi_score × 0.4 + rural_bonus)
+</code></pre></div>
 <p>The HHI score rewards lower concentration: an HHI of 0 (perfect equality) scores 100; an HHI ≥ 2000 scores 0. The rural bonus contributes up to 10 points and rewards reaching or exceeding the winner average rural allocation.</p>
-<h3 id="sector-diversity-score-weight-15">Sector diversity score (weight: 15%)</h3>
+<h3 id="sector-diversity-score-weight-15">Sector diversity score (weight: 15%)<a class="headerlink" href="#sector-diversity-score-weight-15" title="Permanent link">&para;</a></h3>
 <p><strong>Input:</strong> <code>sectors_represented</code> (count of distinct sectors), <code>max_single_sector_pct</code> (fraction of QEI in the most concentrated sector).</p>
 <p><strong>Historical winner statistics:</strong></p>
 <table>
@@ -1690,32 +1690,32 @@ score = min(100, states_score × 0.5 + hhi_score × 0.4 + rural_bonus)
 </tbody>
 </table>
 <p><strong>Scoring formula:</strong></p>
-<pre><code>sector_score = min(100, (sectors / 4.8) × 80)
-conc_penalty = max(0, (max_single_pct - 0.35) × 200)
-score = max(0, min(100, sector_score - conc_penalty))
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>sector_score = min(100, (sectors / 4.8) × 80)
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>conc_penalty = max(0, (max_single_pct - 0.35) × 200)
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>score = max(0, min(100, sector_score - conc_penalty))
+</code></pre></div>
 <p>A pipeline with 4.8 sectors (winner mean) and no sector exceeding 35% scores approximately 80. Each percentage point above the 35% ceiling subtracts 2 points from the sector score.</p>
-<h3 id="pipeline-quality-score-weight-5">Pipeline quality score (weight: 5%)</h3>
+<h3 id="pipeline-quality-score-weight-5">Pipeline quality score (weight: 5%)<a class="headerlink" href="#pipeline-quality-score-weight-5" title="Permanent link">&para;</a></h3>
 <p><strong>Input:</strong> <code>eligibility_pct</code> (fraction of projects in eligible tracts), <code>total_projects</code>, <code>requested_allocation</code>.</p>
 <p><strong>Scoring formula:</strong></p>
-<pre><code>eligibility_score = min(100, (pct / 0.96) × 90)
-
-count_score = min(100, (projects / 14.5) × 80)
-
-size_score:
-  $35M–$65M → 90
-  $25M–$35M → 70
-  &gt;$65M     → 75
-  &lt;$25M     → 50
-
-score = eligibility_score × 0.4 + count_score × 0.3 + size_score × 0.3
-</code></pre>
-<h3 id="composite-score">Composite score</h3>
-<pre><code>composite = (distress × 0.35) + (impact × 0.25) + (geographic × 0.20) + (sector × 0.15) + (pipeline × 0.05)
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>eligibility_score = min(100, (pct / 0.96) × 90)
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>count_score = min(100, (projects / 14.5) × 80)
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>size_score:
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>  $35M–$65M → 90
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>  $25M–$35M → 70
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>  &gt;$65M     → 75
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>  &lt;$25M     → 50
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>score = eligibility_score × 0.4 + count_score × 0.3 + size_score × 0.3
+</code></pre></div>
+<h3 id="composite-score">Composite score<a class="headerlink" href="#composite-score" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>composite = (distress × 0.35) + (impact × 0.25) + (geographic × 0.20) + (sector × 0.15) + (pipeline × 0.05)
+</code></pre></div>
 <p>Bounded [0, 100] and rounded to one decimal place.</p>
 <hr />
-<h2 id="how-the-readiness-score-differs-from-the-alignment-score">How the readiness score differs from the alignment score</h2>
+<h2 id="how-the-readiness-score-differs-from-the-alignment-score">How the readiness score differs from the alignment score<a class="headerlink" href="#how-the-readiness-score-differs-from-the-alignment-score" title="Permanent link">&para;</a></h2>
 <p>The <strong>readiness score</strong> (<code>ReadinessScore</code>) measures internal application quality and completeness:</p>
 <ul>
 <li>Is the pipeline NMTC-eligible?</li>
@@ -1731,14 +1731,14 @@ score = eligibility_score × 0.4 + count_score × 0.3 + size_score × 0.3
 </ul>
 <p>An application can have a high readiness score (everything is correctly filled out and eligible) but a low alignment score (distress concentration is only 55%, well below winner patterns). Both scores are necessary for a complete picture.</p>
 <hr />
-<h2 id="the-optimization-objective-function">The optimization objective function</h2>
+<h2 id="the-optimization-objective-function">The optimization objective function<a class="headerlink" href="#the-optimization-objective-function" title="Permanent link">&para;</a></h2>
 <p>The <code>PipelineOptimizer</code> maximizes the composite alignment score subject to constraints. The objective function is the same formula used in the alignment score, applied to the selected subset rather than the full pipeline.</p>
-<pre><code class="language-python">objective(selected) = composite_alignment_score(selected, requested_allocation, weights)
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">objective</span><span class="p">(</span><span class="n">selected</span><span class="p">)</span> <span class="o">=</span> <span class="n">composite_alignment_score</span><span class="p">(</span><span class="n">selected</span><span class="p">,</span> <span class="n">requested_allocation</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
+</code></pre></div>
 <p>where <code>weights = {distress: 0.35, impact: 0.25, geographic: 0.20, sector: 0.15, pipeline: 0.05}</code>.</p>
 <p>The optimizer uses no convexity assumptions — it is a heuristic (greedy + local search) and is not guaranteed to find the globally optimal subset. For pipelines of 15–25 projects with typical constraint sets, the heuristic converges to a near-optimal solution in fewer than 100 swap iterations. The <code>max_iterations</code> parameter (default 500) provides headroom for larger or more constrained problems.</p>
 <hr />
-<h2 id="validation-methodology">Validation methodology</h2>
+<h2 id="validation-methodology">Validation methodology<a class="headerlink" href="#validation-methodology" title="Permanent link">&para;</a></h2>
 <p>Three validation checks run automatically in <code>analyze()</code>:</p>
 <p><strong>Eligibility check:</strong> Each project's <code>is_nmtc_eligible</code> field is verified. Projects with <code>is_nmtc_eligible = False</code> generate errors; projects with <code>is_nmtc_eligible = None</code> (not yet enriched) generate warnings.</p>
 <p><strong>Completeness check:</strong> All required <code>PipelineProject</code> fields (12 fields) and required <code>CDEProfile</code> fields are checked for presence and valid type. Optional fields with None values generate warnings, not errors.</p>
@@ -1747,7 +1747,7 @@ score = eligibility_score × 0.4 + count_score × 0.3 + size_score × 0.3
 - <code>qlici_amount &lt;= qei_request</code> (QLICI is a component of QEI)
 - <code>expected_jobs_created &gt;= 0</code></p>
 <hr />
-<h2 id="validation-limitations">Validation limitations</h2>
+<h2 id="validation-limitations">Validation limitations<a class="headerlink" href="#validation-limitations" title="Permanent link">&para;</a></h2>
 <p>The scoring framework has several important limitations that practitioners should understand:</p>
 <ol>
 <li>
@@ -1767,7 +1767,7 @@ score = eligibility_score × 0.4 + count_score × 0.3 + size_score × 0.3
 </li>
 </ol>
 <hr />
-<h2 id="acknowledgments">Acknowledgments</h2>
+<h2 id="acknowledgments">Acknowledgments<a class="headerlink" href="#acknowledgments" title="Permanent link">&para;</a></h2>
 <p>The scoring methodology was developed by reference to the following primary sources:</p>
 <ul>
 <li>CDFI Fund. <em>New Markets Tax Credit Program: Notice of Funds Availability (NOFA)</em>, various years (2020–2024). U.S. Department of the Treasury.</li>

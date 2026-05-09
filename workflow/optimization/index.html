@@ -1345,36 +1345,38 @@
   
 
 
-<h1 id="pipeline-optimization">Pipeline Optimization</h1>
+<h1 id="pipeline-optimization">Pipeline Optimization<a class="headerlink" href="#pipeline-optimization" title="Permanent link">&para;</a></h1>
 <p>The pipeline optimizer selects a subset of your pipeline that maximizes the composite alignment score subject to constraints you define — QEI budget, project count, minimum state count, required sectors, and more. It is designed to answer the question: "Given these 25 projects, which 12–15 should I put in the application to score as well as possible?"</p>
-<p>!!! warning "Important framing"
-    The optimizer maximizes alignment with historical winner patterns. It does not maximize the probability of winning an award (which cannot be computed from public data alone) and does not guarantee that the selected subset will receive funding. See <a href="../win-alignment/">Win Alignment Scoring</a> for the full methodology disclosure.</p>
+<div class="admonition warning">
+<p class="admonition-title">Important framing</p>
+<p>The optimizer maximizes alignment with historical winner patterns. It does not maximize the probability of winning an award (which cannot be computed from public data alone) and does not guarantee that the selected subset will receive funding. See <a href="../win-alignment/">Win Alignment Scoring</a> for the full methodology disclosure.</p>
+</div>
 <hr />
-<h2 id="algorithm">Algorithm</h2>
+<h2 id="algorithm">Algorithm<a class="headerlink" href="#algorithm" title="Permanent link">&para;</a></h2>
 <p>The optimizer uses two phases of a pure-Python heuristic — no LP or MIP solver is required.</p>
-<h3 id="phase-1-greedy-construction">Phase 1: Greedy construction</h3>
+<h3 id="phase-1-greedy-construction">Phase 1: Greedy construction<a class="headerlink" href="#phase-1-greedy-construction" title="Permanent link">&para;</a></h3>
 <p>Projects are ranked individually by their single-project alignment contribution (the composite score if only that project were selected). The algorithm adds projects in descending score order, skipping any that would push the total QEI above <code>max_total_qei</code> or the project count above <code>max_projects</code>. Required sectors (<code>required_sectors</code> constraint) are appended last using the cheapest available project from each missing sector.</p>
-<h3 id="phase-2-swap-based-local-search">Phase 2: Swap-based local search</h3>
+<h3 id="phase-2-swap-based-local-search">Phase 2: Swap-based local search<a class="headerlink" href="#phase-2-swap-based-local-search" title="Permanent link">&para;</a></h3>
 <p>After greedy construction, the algorithm enters a swap loop: for each selected project, it tests every non-selected project as a replacement. If swapping out a selected project for an unselected one improves the composite alignment score, the swap is accepted. The process repeats until no improving swap can be found or <code>max_iterations</code> is reached.</p>
 <p>A no-regression guarantee prevents the optimizer from returning a result worse than the original full pipeline: if the optimized subset scores lower than the full pipeline and the full pipeline satisfies all constraints, the full pipeline is returned unchanged.</p>
 <hr />
-<h2 id="optimizationconstraints-fields">OptimizationConstraints fields</h2>
-<pre><code class="language-python">from nmtcapp.optimizer.constraints import OptimizationConstraints
-
-constraints = OptimizationConstraints(
-    min_total_qei=40_000_000,      # minimum total QEI in selected set
-    max_total_qei=65_000_000,      # maximum total QEI (typically = requested allocation)
-    min_projects=10,                # minimum number of projects to select
-    max_projects=20,                # maximum number of projects to select
-    required_sectors=[&quot;healthcare&quot;, &quot;education&quot;],  # must include at least one of each
-    excluded_states=[&quot;HI&quot;, &quot;AK&quot;],  # projects in these states are ineligible
-    min_distress_pct=0.70,         # minimum fraction of QEI in deep/severe tracts
-    min_states=5,                   # minimum distinct states in selected set
-    max_single_sector_pct=0.40,    # maximum fraction of QEI in any one sector
-    min_rural_pct=0.10,            # minimum fraction of QEI in rural tracts
-    min_eligibility_pct=0.95,      # minimum fraction of projects that are NMTC-eligible
-)
-</code></pre>
+<h2 id="optimizationconstraints-fields">OptimizationConstraints fields<a class="headerlink" href="#optimizationconstraints-fields" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.optimizer.constraints</span><span class="w"> </span><span class="kn">import</span> <span class="n">OptimizationConstraints</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">constraints</span> <span class="o">=</span> <span class="n">OptimizationConstraints</span><span class="p">(</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">min_total_qei</span><span class="o">=</span><span class="mi">40_000_000</span><span class="p">,</span>      <span class="c1"># minimum total QEI in selected set</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">max_total_qei</span><span class="o">=</span><span class="mi">65_000_000</span><span class="p">,</span>      <span class="c1"># maximum total QEI (typically = requested allocation)</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">min_projects</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>                <span class="c1"># minimum number of projects to select</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">max_projects</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>                <span class="c1"># maximum number of projects to select</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">required_sectors</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;healthcare&quot;</span><span class="p">,</span> <span class="s2">&quot;education&quot;</span><span class="p">],</span>  <span class="c1"># must include at least one of each</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">excluded_states</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;HI&quot;</span><span class="p">,</span> <span class="s2">&quot;AK&quot;</span><span class="p">],</span>  <span class="c1"># projects in these states are ineligible</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">min_distress_pct</span><span class="o">=</span><span class="mf">0.70</span><span class="p">,</span>         <span class="c1"># minimum fraction of QEI in deep/severe tracts</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">min_states</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>                   <span class="c1"># minimum distinct states in selected set</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="n">max_single_sector_pct</span><span class="o">=</span><span class="mf">0.40</span><span class="p">,</span>    <span class="c1"># maximum fraction of QEI in any one sector</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">min_rural_pct</span><span class="o">=</span><span class="mf">0.10</span><span class="p">,</span>            <span class="c1"># minimum fraction of QEI in rural tracts</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="n">min_eligibility_pct</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span>      <span class="c1"># minimum fraction of projects that are NMTC-eligible</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="p">)</span>
+</code></pre></div>
 <table>
 <thead>
 <tr>
@@ -1455,54 +1457,54 @@ constraints = OptimizationConstraints(
 </table>
 <p>All constraints are soft-checked: the optimizer tries its best to satisfy them. If the constraints are collectively infeasible (e.g., <code>min_states=10</code> when the pipeline only covers 6 states), the optimizer returns the best feasible result it can find and sets <code>constraints_satisfied=False</code> with an explanation in <code>infeasibility_reason</code>.</p>
 <hr />
-<h2 id="setting-up-constraints-for-a-real-application">Setting up constraints for a real application</h2>
+<h2 id="setting-up-constraints-for-a-real-application">Setting up constraints for a real application<a class="headerlink" href="#setting-up-constraints-for-a-real-application" title="Permanent link">&para;</a></h2>
 <p>For a typical $55MM application targeting strong alignment:</p>
-<pre><code class="language-python">from nmtcapp.optimizer.constraints import OptimizationConstraints
-
-constraints = OptimizationConstraints(
-    min_total_qei=45_000_000,       # don't underutilize the award
-    max_total_qei=55_000_000,       # match your requested allocation
-    min_projects=10,                 # winner median is 13; 10 is minimum competitive
-    min_states=5,                    # above winner p25 of 4 states
-    min_distress_pct=0.72,          # above the winner p25 floor
-    required_sectors=[&quot;healthcare&quot;], # must have at least one healthcare project
-    max_single_sector_pct=0.40,     # enforce sector diversity ceiling
-)
-
-result = app.optimize_pipeline(constraints, max_iterations=500)
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.optimizer.constraints</span><span class="w"> </span><span class="kn">import</span> <span class="n">OptimizationConstraints</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">constraints</span> <span class="o">=</span> <span class="n">OptimizationConstraints</span><span class="p">(</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">min_total_qei</span><span class="o">=</span><span class="mi">45_000_000</span><span class="p">,</span>       <span class="c1"># don&#39;t underutilize the award</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">max_total_qei</span><span class="o">=</span><span class="mi">55_000_000</span><span class="p">,</span>       <span class="c1"># match your requested allocation</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">min_projects</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>                 <span class="c1"># winner median is 13; 10 is minimum competitive</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">min_states</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>                    <span class="c1"># above winner p25 of 4 states</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">min_distress_pct</span><span class="o">=</span><span class="mf">0.72</span><span class="p">,</span>          <span class="c1"># above the winner p25 floor</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">required_sectors</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;healthcare&quot;</span><span class="p">],</span> <span class="c1"># must have at least one healthcare project</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">max_single_sector_pct</span><span class="o">=</span><span class="mf">0.40</span><span class="p">,</span>     <span class="c1"># enforce sector diversity ceiling</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="p">)</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="n">result</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">optimize_pipeline</span><span class="p">(</span><span class="n">constraints</span><span class="p">,</span> <span class="n">max_iterations</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+</code></pre></div>
 <p><code>max_iterations</code> (default 500) controls how many swap attempts the local search makes. For pipelines under 30 projects, 500 iterations is usually sufficient to converge. For larger pipelines you can increase to 1000+ with modest additional runtime.</p>
 <hr />
-<h2 id="reading-the-optimizationresult">Reading the OptimizationResult</h2>
-<pre><code class="language-python">result = app.optimize_pipeline(constraints)
-
-# Summary to terminal
-print(result.summary())
-
-# Selected project list
-for project in result.selected_projects:
-    print(f&quot;  {project.project_id}: {project.project_name} ({project.state})&quot;)
-
-# Total QEI of selected set
-total_qei = sum(p.qei_request for p in result.selected_projects)
-print(f&quot;Total selected QEI: ${total_qei:,.0f}&quot;)
-
-# Alignment score improvement
-print(f&quot;Score: {result.alignment_score_before*100:.1f} → {result.alignment_score_after*100:.1f}&quot;)
-
-# Per-dimension improvements
-for dim, delta in result.dimensional_improvements.items():
-    print(f&quot;  {dim}: {delta*100:+.1f} pts&quot;)
-
-# Were all constraints satisfied?
-if not result.constraints_satisfied:
-    print(f&quot;Infeasibility: {result.infeasibility_reason}&quot;)
-
-# Serialize to JSON
-import json
-print(json.dumps(result.to_dict(), indent=2))
-</code></pre>
-<h3 id="optimizationresult-fields">OptimizationResult fields</h3>
+<h2 id="reading-the-optimizationresult">Reading the OptimizationResult<a class="headerlink" href="#reading-the-optimizationresult" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">result</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">optimize_pipeline</span><span class="p">(</span><span class="n">constraints</span><span class="p">)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Summary to terminal</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1"># Selected project list</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="k">for</span> <span class="n">project</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">selected_projects</span><span class="p">:</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">project</span><span class="o">.</span><span class="n">project_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">project</span><span class="o">.</span><span class="n">project_name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">project</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1"># Total QEI of selected set</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="n">total_qei</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">qei_request</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">selected_projects</span><span class="p">)</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total selected QEI: $</span><span class="si">{</span><span class="n">total_qei</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="c1"># Alignment score improvement</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Score: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">alignment_score_before</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> → </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">alignment_score_after</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="c1"># Per-dimension improvements</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="k">for</span> <span class="n">dim</span><span class="p">,</span> <span class="n">delta</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">dimensional_improvements</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">delta</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2"> pts&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="c1"># Were all constraints satisfied?</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="o">.</span><span class="n">constraints_satisfied</span><span class="p">:</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Infeasibility: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">infeasibility_reason</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="c1"># Serialize to JSON</span>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+</code></pre></div>
+<h3 id="optimizationresult-fields">OptimizationResult fields<a class="headerlink" href="#optimizationresult-fields" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -1561,50 +1563,50 @@ print(json.dumps(result.to_dict(), indent=2))
 </table>
 <p>Note: <code>objective_score</code>, <code>alignment_score_before</code>, and <code>alignment_score_after</code> are in the range [0.0, 1.0]. Multiply by 100 for the human-readable 0–100 scale shown in <code>summary()</code>.</p>
 <hr />
-<h2 id="full-example-workflow">Full example workflow</h2>
-<pre><code class="language-python">from nmtcapp.core.application import Application
-from nmtcapp.core.cde import CDEProfile
-from nmtcapp.core.pipeline import Pipeline
-from nmtcapp.optimizer.constraints import OptimizationConstraints
-
-# 1. Build application with a large candidate pool
-cde = CDEProfile.from_yaml(&quot;my_cde.yaml&quot;)
-pipeline = Pipeline.from_csv(&quot;candidate_pool.csv&quot;)   # e.g. 30 projects
-
-app = Application(cde=cde, requested_allocation=55_000_000)
-app.add_pipeline(pipeline)
-
-# 2. Score the full pipeline first (optional, for comparison)
-full_score = app.score_win_probability()
-print(f&quot;Full pipeline score: {full_score.composite_score:.1f}/100&quot;)
-
-# 3. Define constraints matching your application parameters
-constraints = OptimizationConstraints(
-    max_total_qei=55_000_000,
-    min_projects=10,
-    min_states=5,
-    min_distress_pct=0.72,
-    max_single_sector_pct=0.40,
-)
-
-# 4. Run optimizer
-result = app.optimize_pipeline(constraints, max_iterations=500)
-print(result.summary())
-
-# 5. Replace pipeline with optimized subset
-from nmtcapp.core.pipeline import Pipeline
-optimized_pipeline = Pipeline(projects=result.selected_projects)
-app.add_pipeline(optimized_pipeline)   # clears cache, ready to re-analyze
-
-# 6. Verify improvement
-new_score = app.score_win_probability()
-print(f&quot;Optimized score: {new_score.composite_score:.1f}/100 [{new_score.competitive_tier}]&quot;)
-
-# 7. Generate final outputs
-paths = app.generate(&quot;./final_drafts/&quot;)
-</code></pre>
+<h2 id="full-example-workflow">Full example workflow<a class="headerlink" href="#full-example-workflow" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.application</span><span class="w"> </span><span class="kn">import</span> <span class="n">Application</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.cde</span><span class="w"> </span><span class="kn">import</span> <span class="n">CDEProfile</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.optimizer.constraints</span><span class="w"> </span><span class="kn">import</span> <span class="n">OptimizationConstraints</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1"># 1. Build application with a large candidate pool</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">cde</span> <span class="o">=</span> <span class="n">CDEProfile</span><span class="o">.</span><span class="n">from_yaml</span><span class="p">(</span><span class="s2">&quot;my_cde.yaml&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="o">.</span><span class="n">from_csv</span><span class="p">(</span><span class="s2">&quot;candidate_pool.csv&quot;</span><span class="p">)</span>   <span class="c1"># e.g. 30 projects</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="n">app</span> <span class="o">=</span> <span class="n">Application</span><span class="p">(</span><span class="n">cde</span><span class="o">=</span><span class="n">cde</span><span class="p">,</span> <span class="n">requested_allocation</span><span class="o">=</span><span class="mi">55_000_000</span><span class="p">)</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="n">app</span><span class="o">.</span><span class="n">add_pipeline</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="c1"># 2. Score the full pipeline first (optional, for comparison)</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="n">full_score</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">score_win_probability</span><span class="p">()</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Full pipeline score: </span><span class="si">{</span><span class="n">full_score</span><span class="o">.</span><span class="n">composite_score</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">/100&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="c1"># 3. Define constraints matching your application parameters</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="n">constraints</span> <span class="o">=</span> <span class="n">OptimizationConstraints</span><span class="p">(</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>    <span class="n">max_total_qei</span><span class="o">=</span><span class="mi">55_000_000</span><span class="p">,</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>    <span class="n">min_projects</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>    <span class="n">min_states</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>    <span class="n">min_distress_pct</span><span class="o">=</span><span class="mf">0.72</span><span class="p">,</span>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>    <span class="n">max_single_sector_pct</span><span class="o">=</span><span class="mf">0.40</span><span class="p">,</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="p">)</span>
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>
+<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="c1"># 4. Run optimizer</span>
+<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="n">result</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">optimize_pipeline</span><span class="p">(</span><span class="n">constraints</span><span class="p">,</span> <span class="n">max_iterations</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+<a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a>
+<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="c1"># 5. Replace pipeline with optimized subset</span>
+<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span>
+<a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span class="n">optimized_pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">projects</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">selected_projects</span><span class="p">)</span>
+<a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a><span class="n">app</span><span class="o">.</span><span class="n">add_pipeline</span><span class="p">(</span><span class="n">optimized_pipeline</span><span class="p">)</span>   <span class="c1"># clears cache, ready to re-analyze</span>
+<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a>
+<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a><span class="c1"># 6. Verify improvement</span>
+<a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a><span class="n">new_score</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">score_win_probability</span><span class="p">()</span>
+<a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Optimized score: </span><span class="si">{</span><span class="n">new_score</span><span class="o">.</span><span class="n">composite_score</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">/100 [</span><span class="si">{</span><span class="n">new_score</span><span class="o">.</span><span class="n">competitive_tier</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a>
+<a id="__codelineno-3-39" name="__codelineno-3-39" href="#__codelineno-3-39"></a><span class="c1"># 7. Generate final outputs</span>
+<a id="__codelineno-3-40" name="__codelineno-3-40" href="#__codelineno-3-40"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">&quot;./final_drafts/&quot;</span><span class="p">)</span>
+</code></pre></div>
 <hr />
-<h2 id="practical-notes">Practical notes</h2>
+<h2 id="practical-notes">Practical notes<a class="headerlink" href="#practical-notes" title="Permanent link">&para;</a></h2>
 <p><strong>Candidate pool size matters.</strong> The more projects you include in the initial pipeline, the more room the optimizer has to find a better subset. A pipeline of 15 projects targeting a $45MM application has limited optimization headroom. A pipeline of 30+ projects covering diverse states and sectors gives the optimizer meaningful choices.</p>
 <p><strong>Constraints that are too tight reduce optimizer effectiveness.</strong> If <code>min_total_qei</code> is close to <code>max_total_qei</code> and the pipeline has projects of varying sizes, the optimizer may be forced into configurations that are suboptimal on alignment metrics. Allow some slack — for example, if your requested allocation is $55MM, set <code>max_total_qei=55_000_000</code> but <code>min_total_qei=45_000_000</code>.</p>
 <p><strong>The optimizer does not perform portfolio construction optimization</strong> — it does not model leverage ratios, tax credit pricing, or investor requirements. These factors should be reviewed separately with your NMTC deal team.</p>

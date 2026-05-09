@@ -1931,18 +1931,18 @@
   
 
 
-<h1 id="api-reference">API Reference</h1>
+<h1 id="api-reference">API Reference<a class="headerlink" href="#api-reference" title="Permanent link">&para;</a></h1>
 <hr />
-<h2 id="application">Application</h2>
+<h2 id="application">Application<a class="headerlink" href="#application" title="Permanent link">&para;</a></h2>
 <p><code>nmtcapp.core.application.Application</code></p>
 <p>Master orchestration class — the single entry point for all NMTC application functionality. Combines a <code>CDEProfile</code> and a project <code>Pipeline</code>, then produces intelligence reports, scores, recommendations, optimizations, and document outputs.</p>
-<h3 id="__init__"><code>__init__</code></h3>
-<pre><code class="language-python">Application(
-    cde: CDEProfile,
-    requested_allocation: float,
-    application_round: str = &quot;CY2025&quot;,
-)
-</code></pre>
+<h3 id="__init__"><code>__init__</code><a class="headerlink" href="#__init__" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">Application</span><span class="p">(</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">cde</span><span class="p">:</span> <span class="n">CDEProfile</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">requested_allocation</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">application_round</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;CY2025&quot;</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span>
+</code></pre></div>
 <p><strong>Parameters:</strong></p>
 <ul>
 <li><code>cde</code> — A <code>CDEProfile</code> instance. Required.</li>
@@ -1951,63 +1951,63 @@
 </ul>
 <p><strong>Raises:</strong> <code>TypeError</code> if <code>cde</code> is not a <code>CDEProfile</code>. <code>ValueError</code> if <code>requested_allocation &lt;= 0</code>.</p>
 <hr />
-<h3 id="add_pipeline"><code>add_pipeline</code></h3>
-<pre><code class="language-python">add_pipeline(pipeline: Pipeline) -&gt; None
-</code></pre>
+<h3 id="add_pipeline"><code>add_pipeline</code><a class="headerlink" href="#add_pipeline" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">add_pipeline</span><span class="p">(</span><span class="n">pipeline</span><span class="p">:</span> <span class="n">Pipeline</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
 <p>Set the project pipeline, replacing any existing pipeline. Clears the analysis cache.</p>
 <p><strong>Parameters:</strong>
 - <code>pipeline</code> — A <code>Pipeline</code> instance.</p>
 <hr />
-<h3 id="add_project"><code>add_project</code></h3>
-<pre><code class="language-python">add_project(project: PipelineProject) -&gt; None
-</code></pre>
+<h3 id="add_project"><code>add_project</code><a class="headerlink" href="#add_project" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">add_project</span><span class="p">(</span><span class="n">project</span><span class="p">:</span> <span class="n">PipelineProject</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
 <p>Add a single project to the pipeline. Creates a new <code>Pipeline</code> if none exists. Clears the analysis cache.</p>
 <hr />
-<h3 id="analyze"><code>analyze</code></h3>
-<pre><code class="language-python">analyze() -&gt; ApplicationAnalysis
-</code></pre>
+<h3 id="analyze"><code>analyze</code><a class="headerlink" href="#analyze" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">analyze</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">ApplicationAnalysis</span>
+</code></pre></div>
 <p>Run comprehensive analysis and return an <code>ApplicationAnalysis</code>. Orchestrates eligibility enrichment, deal economics, distress/geographic/sector/impact analyses, validation, and readiness scoring. Results are cached — calling <code>analyze()</code> multiple times returns the same object unless the pipeline is modified.</p>
 <p><strong>Raises:</strong> <code>ValueError</code> if no pipeline has been added. <code>RuntimeError</code> if any analysis step fails.</p>
 <hr />
-<h3 id="score_win_probability"><code>score_win_probability</code></h3>
-<pre><code class="language-python">score_win_probability() -&gt; WinProbabilityScore
-</code></pre>
+<h3 id="score_win_probability"><code>score_win_probability</code><a class="headerlink" href="#score_win_probability" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">score_win_probability</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">WinProbabilityScore</span>
+</code></pre></div>
 <p>Score this application's alignment with historical NMTC winner patterns (CY2020–CY2024). Returns a composite 0–100 alignment score and per-dimension breakdown. <strong>Not a win probability</strong> — see the methodology disclosure in <code>WinProbabilityScore.methodology_disclosure</code>.</p>
 <hr />
-<h3 id="benchmark"><code>benchmark</code></h3>
-<pre><code class="language-python">benchmark() -&gt; BenchmarkComparison
-</code></pre>
+<h3 id="benchmark"><code>benchmark</code><a class="headerlink" href="#benchmark" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">benchmark</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">BenchmarkComparison</span>
+</code></pre></div>
 <p>Compare this application against historical NMTC winner benchmarks. Returns a <code>BenchmarkComparison</code> with per-metric tier classifications and percentile positions.</p>
 <hr />
-<h3 id="recommendations"><code>recommendations</code></h3>
-<pre><code class="language-python">recommendations() -&gt; RecommendationSet
-</code></pre>
+<h3 id="recommendations"><code>recommendations</code><a class="headerlink" href="#recommendations" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">recommendations</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">RecommendationSet</span>
+</code></pre></div>
 <p>Generate actionable, quantified recommendations for improving competitiveness. Runs benchmarking and win scoring internally. Returns a <code>RecommendationSet</code> sorted by priority (critical → high → medium).</p>
 <hr />
-<h3 id="optimize_pipeline"><code>optimize_pipeline</code></h3>
-<pre><code class="language-python">optimize_pipeline(
-    constraints: OptimizationConstraints = None,
-    max_iterations: int = 500,
-) -&gt; OptimizationResult
-</code></pre>
+<h3 id="optimize_pipeline"><code>optimize_pipeline</code><a class="headerlink" href="#optimize_pipeline" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">optimize_pipeline</span><span class="p">(</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="n">constraints</span><span class="p">:</span> <span class="n">OptimizationConstraints</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="n">max_iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptimizationResult</span>
+</code></pre></div>
 <p>Optimize the pipeline to maximize alignment with historical winner patterns. Uses greedy construction + swap-based local search. Always returns a result — infeasible constraints are reported in <code>OptimizationResult.infeasibility_reason</code>.</p>
 <p><strong>Parameters:</strong>
 - <code>constraints</code> — <code>OptimizationConstraints</code> instance. If <code>None</code>, runs unconstrained (all projects eligible, no budget cap).
 - <code>max_iterations</code> — Maximum local-search swap iterations. Default: 500.</p>
 <hr />
-<h3 id="generate"><code>generate</code></h3>
-<pre><code class="language-python">generate(
-    output_dir: str = &quot;./drafts&quot;,
-    formats: list = None,
-) -&gt; dict
-</code></pre>
+<h3 id="generate"><code>generate</code><a class="headerlink" href="#generate" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">generate</span><span class="p">(</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="n">output_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;./drafts&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="n">formats</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span>
+</code></pre></div>
 <p>Generate the full NMTC application document package. Runs <code>analyze()</code> internally (using cache). Creates <code>output_dir</code> if it does not exist.</p>
 <p><strong>Parameters:</strong>
 - <code>output_dir</code> — Destination directory for generated files. Default: <code>"./drafts"</code>.
 - <code>formats</code> — List of formats to generate. Defaults to <code>["markdown", "word", "excel", "pdf"]</code>. Formats with missing dependencies are skipped with a warning.</p>
 <p><strong>Returns:</strong> Dict mapping format name (<code>"markdown"</code>, <code>"word"</code>, <code>"excel"</code>, <code>"pdf"</code>) to the generated file path.</p>
 <hr />
-<h2 id="applicationanalysis">ApplicationAnalysis</h2>
+<h2 id="applicationanalysis">ApplicationAnalysis<a class="headerlink" href="#applicationanalysis" title="Permanent link">&para;</a></h2>
 <p><code>nmtcapp.core.application.ApplicationAnalysis</code></p>
 <p>Dataclass returned by <code>Application.analyze()</code>. All fields are populated by the analysis orchestrator.</p>
 <table>
@@ -2085,36 +2085,36 @@
 - <code>summary() -&gt; None</code> — Print a human-readable multi-section summary
 - <code>to_dict() -&gt; dict</code> — Serialize to a JSON-safe dictionary</p>
 <hr />
-<h2 id="pipeline">Pipeline</h2>
+<h2 id="pipeline">Pipeline<a class="headerlink" href="#pipeline" title="Permanent link">&para;</a></h2>
 <p><code>nmtcapp.core.pipeline.Pipeline</code></p>
 <p>Container for a CDE's pipeline of NMTC candidate projects.</p>
-<h3 id="__init___1"><code>__init__</code></h3>
-<pre><code class="language-python">Pipeline(projects: list[PipelineProject] = None)
-</code></pre>
-<h3 id="add"><code>add</code></h3>
-<pre><code class="language-python">add(project: PipelineProject) -&gt; None
-</code></pre>
+<h3 id="__init___1"><code>__init__</code><a class="headerlink" href="#__init___1" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">Pipeline</span><span class="p">(</span><span class="n">projects</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PipelineProject</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="add"><code>add</code><a class="headerlink" href="#add" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">add</span><span class="p">(</span><span class="n">project</span><span class="p">:</span> <span class="n">PipelineProject</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
 <p>Append a single project to the pipeline.</p>
-<h3 id="from_csv"><code>from_csv</code></h3>
-<pre><code class="language-python">@classmethod
-from_csv(path: str) -&gt; Pipeline
-</code></pre>
+<h3 id="from_csv"><code>from_csv</code><a class="headerlink" href="#from_csv" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="nd">@classmethod</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">from_csv</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Pipeline</span>
+</code></pre></div>
 <p>Load a pipeline from a CSV file. Required columns match <code>PipelineProject</code> required fields. Optional columns are read when present. Raises <code>FileNotFoundError</code> if the file does not exist; <code>ValueError</code> if required columns are missing or a row cannot be parsed.</p>
-<h3 id="sample"><code>sample</code></h3>
-<pre><code class="language-python">@classmethod
-sample(n: int = 20) -&gt; Pipeline
-</code></pre>
+<h3 id="sample"><code>sample</code><a class="headerlink" href="#sample" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="nd">@classmethod</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="n">sample</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Pipeline</span>
+</code></pre></div>
 <p>Return a realistic sample pipeline of <code>n</code> projects (max 20) for testing and demos. All eligibility fields are pre-populated — no API calls made.</p>
-<h3 id="to_dataframe"><code>to_dataframe</code></h3>
-<pre><code class="language-python">to_dataframe() -&gt; pandas.DataFrame
-</code></pre>
+<h3 id="to_dataframe"><code>to_dataframe</code><a class="headerlink" href="#to_dataframe" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">to_dataframe</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span>
+</code></pre></div>
 <p>Convert the pipeline to a pandas DataFrame with one row per project and columns matching <code>PipelineProject</code> field names.</p>
 <p><strong>Also supports:</strong> <code>len(pipeline)</code>, <code>for project in pipeline</code>, <code>repr(pipeline)</code> (shows project count and total QEI).</p>
 <hr />
-<h2 id="pipelineproject">PipelineProject</h2>
+<h2 id="pipelineproject">PipelineProject<a class="headerlink" href="#pipelineproject" title="Permanent link">&para;</a></h2>
 <p><code>nmtcapp.core.pipeline.PipelineProject</code></p>
 <p>Dataclass representing a single QALICB project.</p>
-<h3 id="required-fields">Required fields</h3>
+<h3 id="required-fields">Required fields<a class="headerlink" href="#required-fields" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -2186,7 +2186,7 @@ sample(n: int = 20) -&gt; Pipeline
 </tr>
 </tbody>
 </table>
-<h3 id="optional-fields">Optional fields</h3>
+<h3 id="optional-fields">Optional fields<a class="headerlink" href="#optional-fields" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -2228,7 +2228,7 @@ sample(n: int = 20) -&gt; Pipeline
 </tr>
 </tbody>
 </table>
-<h3 id="enrichment-fields-set-by-analyze">Enrichment fields (set by analyze())</h3>
+<h3 id="enrichment-fields-set-by-analyze">Enrichment fields (set by analyze())<a class="headerlink" href="#enrichment-fields-set-by-analyze" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -2263,54 +2263,54 @@ sample(n: int = 20) -&gt; Pipeline
 </tr>
 </tbody>
 </table>
-<h3 id="properties">Properties</h3>
+<h3 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>full_address: str</code> — <code>"{address}, {city}, {state}"</code></li>
 <li><code>is_enriched: bool</code> — <code>True</code> if <code>is_nmtc_eligible</code> is not None</li>
 <li><code>is_deep_distress: bool</code> — <code>True</code> if <code>distress_level</code> is <code>"deep"</code> or <code>"severe"</code></li>
 </ul>
-<h3 id="methods">Methods</h3>
+<h3 id="methods">Methods<a class="headerlink" href="#methods" title="Permanent link">&para;</a></h3>
 <ul>
 <li><code>to_dict() -&gt; dict</code> — Serialize all fields to a JSON-safe dictionary</li>
 </ul>
 <hr />
-<h2 id="cdeprofile">CDEProfile</h2>
+<h2 id="cdeprofile">CDEProfile<a class="headerlink" href="#cdeprofile" title="Permanent link">&para;</a></h2>
 <p><code>nmtcapp.core.cde.CDEProfile</code></p>
 <p>Dataclass representing a Community Development Entity.</p>
-<h3 id="__init___2"><code>__init__</code></h3>
-<pre><code class="language-python">CDEProfile(
-    name: str,
-    cde_id: str,
-    certification_date: str,
-    mission: str,
-    target_markets: list[str],
-    prior_awards: list[dict],
-    contact: dict,
-    governance: dict,
-    website: str = None,
-)
-</code></pre>
-<h3 id="from_yaml"><code>from_yaml</code></h3>
-<pre><code class="language-python">@classmethod
-from_yaml(path: str) -&gt; CDEProfile
-</code></pre>
+<h3 id="__init___2"><code>__init__</code><a class="headerlink" href="#__init___2" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">CDEProfile</span><span class="p">(</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>    <span class="n">cde_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>    <span class="n">certification_date</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>    <span class="n">mission</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>    <span class="n">target_markets</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>    <span class="n">prior_awards</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>    <span class="n">contact</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>    <span class="n">governance</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>    <span class="n">website</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a><span class="p">)</span>
+</code></pre></div>
+<h3 id="from_yaml"><code>from_yaml</code><a class="headerlink" href="#from_yaml" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="nd">@classmethod</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="n">from_yaml</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CDEProfile</span>
+</code></pre></div>
 <p>Load a profile from a YAML file. Raises <code>FileNotFoundError</code> if the file does not exist; <code>ValueError</code> if required fields are missing.</p>
 <p>Required YAML keys: <code>name</code>, <code>cde_id</code>, <code>certification_date</code>, <code>mission</code>, <code>target_markets</code>, <code>prior_awards</code>, <code>contact</code>, <code>governance</code>.</p>
-<h3 id="sample_1"><code>sample</code></h3>
-<pre><code class="language-python">@classmethod
-sample() -&gt; CDEProfile
-</code></pre>
+<h3 id="sample_1"><code>sample</code><a class="headerlink" href="#sample_1" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="nd">@classmethod</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="n">sample</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">CDEProfile</span>
+</code></pre></div>
 <p>Return a realistic sample CDE profile (Heartland Impact CDE, LLC) for testing and demos.</p>
-<h3 id="total_prior_allocation"><code>total_prior_allocation</code></h3>
-<pre><code class="language-python">total_prior_allocation() -&gt; float
-</code></pre>
+<h3 id="total_prior_allocation"><code>total_prior_allocation</code><a class="headerlink" href="#total_prior_allocation" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="n">total_prior_allocation</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">float</span>
+</code></pre></div>
 <p>Sum of all prior award amounts in dollars.</p>
-<h3 id="to_dict"><code>to_dict</code></h3>
-<pre><code class="language-python">to_dict() -&gt; dict
-</code></pre>
+<h3 id="to_dict"><code>to_dict</code><a class="headerlink" href="#to_dict" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="n">to_dict</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span>
+</code></pre></div>
 <p>Serialize to a JSON-safe dictionary including computed <code>total_prior_allocation</code>.</p>
 <hr />
-<h2 id="optimizationconstraints">OptimizationConstraints</h2>
+<h2 id="optimizationconstraints">OptimizationConstraints<a class="headerlink" href="#optimizationconstraints" title="Permanent link">&para;</a></h2>
 <p><code>nmtcapp.optimizer.constraints.OptimizationConstraints</code></p>
 <p>Dataclass defining constraints for the pipeline optimizer.</p>
 <table>
@@ -2391,12 +2391,12 @@ sample() -&gt; CDEProfile
 </tr>
 </tbody>
 </table>
-<h3 id="is_feasible"><code>is_feasible</code></h3>
-<pre><code class="language-python">is_feasible(projects: list[PipelineProject]) -&gt; tuple[bool, str]
-</code></pre>
+<h3 id="is_feasible"><code>is_feasible</code><a class="headerlink" href="#is_feasible" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="n">is_feasible</span><span class="p">(</span><span class="n">projects</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PipelineProject</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+</code></pre></div>
 <p>Check whether a candidate project list satisfies all constraints. Returns <code>(True, "")</code> if satisfied, or <code>(False, reason)</code> describing the first violated constraint.</p>
 <hr />
-<h2 id="winprobabilityscore">WinProbabilityScore</h2>
+<h2 id="winprobabilityscore">WinProbabilityScore<a class="headerlink" href="#winprobabilityscore" title="Permanent link">&para;</a></h2>
 <p><code>nmtcapp.intelligence.win_probability.WinProbabilityScore</code></p>
 <p>Returned by <code>Application.score_win_probability()</code>.</p>
 <table>
@@ -2443,7 +2443,7 @@ sample() -&gt; CDEProfile
 <p><strong>Methods:</strong> <code>summary() -&gt; str</code>, <code>to_dict() -&gt; dict</code></p>
 <p><strong>Dimensional score keys:</strong> <code>"distress_concentration"</code>, <code>"geographic_diversity"</code>, <code>"impact_intensity"</code>, <code>"sector_diversity"</code>, <code>"pipeline_quality"</code></p>
 <hr />
-<h2 id="recommendationset-and-recommendation">RecommendationSet and Recommendation</h2>
+<h2 id="recommendationset-and-recommendation">RecommendationSet and Recommendation<a class="headerlink" href="#recommendationset-and-recommendation" title="Permanent link">&para;</a></h2>
 <p><code>nmtcapp.intelligence.recommendations.RecommendationSet</code></p>
 <p>Returned by <code>Application.recommendations()</code>.</p>
 <table>
@@ -2521,7 +2521,7 @@ sample() -&gt; CDEProfile
 </tbody>
 </table>
 <hr />
-<h2 id="optimizationresult">OptimizationResult</h2>
+<h2 id="optimizationresult">OptimizationResult<a class="headerlink" href="#optimizationresult" title="Permanent link">&para;</a></h2>
 <p><code>nmtcapp.optimizer.pipeline_optimizer.OptimizationResult</code></p>
 <p>Returned by <code>Application.optimize_pipeline()</code>.</p>
 <table>

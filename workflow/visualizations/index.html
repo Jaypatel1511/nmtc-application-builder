@@ -1277,42 +1277,42 @@
   
 
 
-<h1 id="visualizations">Visualizations</h1>
+<h1 id="visualizations">Visualizations<a class="headerlink" href="#visualizations" title="Permanent link">&para;</a></h1>
 <p>All five visualization functions produce 300 DPI PNG files suitable for embedding in presentations, Word documents, or reports. They require <code>matplotlib&gt;=3.7</code>:</p>
-<pre><code class="language-bash">pip install &quot;nmtc-application-builder[viz]&quot;
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;nmtc-application-builder[viz]&quot;</span>
+</code></pre></div>
 <p>Each function takes an <code>Application</code> instance and an output file path, runs <code>analyze()</code> internally (using the cache if available), and returns the output path.</p>
 <hr />
-<h2 id="plot_pipeline_map">plot_pipeline_map</h2>
-<pre><code class="language-python">from nmtcapp.visualization import plot_pipeline_map
-
-plot_pipeline_map(app, &quot;./charts/pipeline_map.png&quot;)
-</code></pre>
+<h2 id="plot_pipeline_map">plot_pipeline_map<a class="headerlink" href="#plot_pipeline_map" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_pipeline_map</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">plot_pipeline_map</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./charts/pipeline_map.png&quot;</span><span class="p">)</span>
+</code></pre></div>
 <p><strong>What it shows:</strong> A simplified US map (contiguous 48 states + DC) with pipeline projects plotted as scatter dots positioned at state centroids. Dot size is proportional to the project's QEI request — larger dots represent larger investments. Dots are color-coded by distress level: red (deep), yellow (severe), green (LIC), gray (unknown/other).</p>
 <p><strong>Why it matters:</strong> Reviewers and internal stakeholders immediately see geographic spread and distress depth without reading the data table. A map dominated by red dots across many states is the visual signature of a competitive application.</p>
 <p><strong>Notes:</strong>
 - Alaska and Hawaii are excluded from the contiguous map view.
 - Projects are positioned at state centroids, not exact addresses. Do not use this chart as a precise geographic map — it is a distribution visualization. See <a href="../../about/limitations/">Limitations</a> for the geographic data note.
 - Dot positions include a small random jitter so projects in the same state are visible as separate dots rather than stacked.</p>
-<pre><code class="language-python"># Full example
-from nmtcapp.core.application import Application
-from nmtcapp.core.cde import CDEProfile
-from nmtcapp.core.pipeline import Pipeline
-from nmtcapp.visualization import plot_pipeline_map
-
-cde = CDEProfile.sample()
-app = Application(cde=cde, requested_allocation=65_000_000)
-app.add_pipeline(Pipeline.sample(n=20))
-
-path = plot_pipeline_map(app, &quot;./pipeline_map.png&quot;)
-print(f&quot;Saved to: {path}&quot;)
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Full example</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.application</span><span class="w"> </span><span class="kn">import</span> <span class="n">Application</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.cde</span><span class="w"> </span><span class="kn">import</span> <span class="n">CDEProfile</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_pipeline_map</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">cde</span> <span class="o">=</span> <span class="n">CDEProfile</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">app</span> <span class="o">=</span> <span class="n">Application</span><span class="p">(</span><span class="n">cde</span><span class="o">=</span><span class="n">cde</span><span class="p">,</span> <span class="n">requested_allocation</span><span class="o">=</span><span class="mi">65_000_000</span><span class="p">)</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">app</span><span class="o">.</span><span class="n">add_pipeline</span><span class="p">(</span><span class="n">Pipeline</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">20</span><span class="p">))</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="n">path</span> <span class="o">=</span> <span class="n">plot_pipeline_map</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./pipeline_map.png&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saved to: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
 <hr />
-<h2 id="plot_distress_heatmap">plot_distress_heatmap</h2>
-<pre><code class="language-python">from nmtcapp.visualization import plot_distress_heatmap
-
-plot_distress_heatmap(app, &quot;./charts/distress_heatmap.png&quot;)
-</code></pre>
+<h2 id="plot_distress_heatmap">plot_distress_heatmap<a class="headerlink" href="#plot_distress_heatmap" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_distress_heatmap</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">plot_distress_heatmap</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./charts/distress_heatmap.png&quot;</span><span class="p">)</span>
+</code></pre></div>
 <p><strong>What it shows:</strong> A horizontal bar chart with one bar per state (top 15 by QEI). Bar length represents total QEI in that state. Bar color represents the dominant distress level of projects in that state: red (deep), yellow (severe), green (LIC), gray (other). Dollar labels appear at the end of each bar.</p>
 <p><strong>Why it matters:</strong> Shows at a glance which states carry the most QEI and whether those states are in the high-distress range. A chart where the longest bars are red indicates both scale and community need alignment.</p>
 <p><strong>Chart properties:</strong>
@@ -1320,25 +1320,25 @@ plot_distress_heatmap(app, &quot;./charts/distress_heatmap.png&quot;)
 - Maximum 15 states shown
 - X-axis formatted as "$XM"
 - Professional styling: no top/right spines, light gray grid</p>
-<pre><code class="language-python">plot_distress_heatmap(app, &quot;./distress_heatmap.png&quot;)
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">plot_distress_heatmap</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./distress_heatmap.png&quot;</span><span class="p">)</span>
+</code></pre></div>
 <hr />
-<h2 id="plot_sector_distribution">plot_sector_distribution</h2>
-<pre><code class="language-python">from nmtcapp.visualization import plot_sector_distribution
-
-plot_sector_distribution(app, &quot;./charts/sector_mix.png&quot;)
-</code></pre>
+<h2 id="plot_sector_distribution">plot_sector_distribution<a class="headerlink" href="#plot_sector_distribution" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_sector_distribution</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">plot_sector_distribution</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./charts/sector_mix.png&quot;</span><span class="p">)</span>
+</code></pre></div>
 <p><strong>What it shows:</strong> A horizontal bar chart of QEI by sector, sorted by QEI descending. Bars are color-coded by CDFI Fund priority tier: deep blue (high priority: healthcare, affordable housing, education), medium blue (medium priority: small business, mixed use), light blue (other sectors). Each bar shows the sector's percentage of total QEI.</p>
 <p><strong>Reference annotation:</strong> The chart includes a note that "Winners typically have ≥50% in high-priority sectors (healthcare, affordable housing, education)."</p>
 <p><strong>Why it matters:</strong> Quick visual check on whether your sector mix aligns with CDFI Fund priority areas. A chart dominated by high-priority sectors (deep blue) is the target pattern.</p>
-<pre><code class="language-python">plot_sector_distribution(app, &quot;./sector_mix.png&quot;)
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">plot_sector_distribution</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./sector_mix.png&quot;</span><span class="p">)</span>
+</code></pre></div>
 <hr />
-<h2 id="plot_readiness_radar">plot_readiness_radar</h2>
-<pre><code class="language-python">from nmtcapp.visualization import plot_readiness_radar
-
-plot_readiness_radar(app, &quot;./charts/readiness_radar.png&quot;)
-</code></pre>
+<h2 id="plot_readiness_radar">plot_readiness_radar<a class="headerlink" href="#plot_readiness_radar" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_readiness_radar</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">plot_readiness_radar</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./charts/readiness_radar.png&quot;</span><span class="p">)</span>
+</code></pre></div>
 <p><strong>What it shows:</strong> A spider/radar chart with five axes — one for each win-alignment dimension (Distress, Geographic, Impact, Sector, Pipeline). Each axis runs from 0 to 100. The chart overlays two polygons:</p>
 <ul>
 <li><strong>Your Pipeline</strong> (solid deep blue line, light fill) — your dimensional alignment scores</li>
@@ -1346,14 +1346,14 @@ plot_readiness_radar(app, &quot;./charts/readiness_radar.png&quot;)
 </ul>
 <p><strong>Why it matters:</strong> Immediately shows which dimensions are strong (extending beyond the benchmark line) and which are weak (falling inside it). The radar chart is the most effective single visualization for communicating application strengths and gaps to a CDE board or investor.</p>
 <p><strong>Title includes</strong> the composite score and competitive tier (e.g., "Win Alignment Radar — 71/100 [COMPETITIVE]"). The title color reflects the tier: green (strong), blue (competitive), yellow (marginal), red (weak).</p>
-<pre><code class="language-python">plot_readiness_radar(app, &quot;./readiness_radar.png&quot;)
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">plot_readiness_radar</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./readiness_radar.png&quot;</span><span class="p">)</span>
+</code></pre></div>
 <hr />
-<h2 id="plot_winner_alignment">plot_winner_alignment</h2>
-<pre><code class="language-python">from nmtcapp.visualization import plot_winner_alignment
-
-plot_winner_alignment(app, &quot;./charts/winner_alignment.png&quot;)
-</code></pre>
+<h2 id="plot_winner_alignment">plot_winner_alignment<a class="headerlink" href="#plot_winner_alignment" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_winner_alignment</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">plot_winner_alignment</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./charts/winner_alignment.png&quot;</span><span class="p">)</span>
+</code></pre></div>
 <p><strong>What it shows:</strong> A three-panel horizontal bar chart comparing your pipeline on three key metrics against historical winner distributions:</p>
 <ol>
 <li><strong>Distress % (Deep + Severe)</strong> — your value vs. winner P25, P50 (median), P75</li>
@@ -1362,39 +1362,39 @@ plot_winner_alignment(app, &quot;./charts/winner_alignment.png&quot;)
 </ol>
 <p>Each panel shows four bars: Winner P25, Winner P50 (Median), Winner P75, and Your Pipeline. A dashed amber vertical line marks the competitive threshold (P50). Your pipeline bar is dark blue; winner bars are light blue.</p>
 <p><strong>Why it matters:</strong> The most data-dense visualization — shows exactly where you stand relative to the winner distribution on the three most important metrics. A pipeline bar that extends past the P50 line on all three panels is in competitive territory. A bar that falls short of P25 on any panel signals a critical gap.</p>
-<pre><code class="language-python">plot_winner_alignment(app, &quot;./winner_alignment.png&quot;)
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">plot_winner_alignment</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./winner_alignment.png&quot;</span><span class="p">)</span>
+</code></pre></div>
 <hr />
-<h2 id="embedding-in-word-output">Embedding in Word output</h2>
+<h2 id="embedding-in-word-output">Embedding in Word output<a class="headerlink" href="#embedding-in-word-output" title="Permanent link">&para;</a></h2>
 <p>When you call <code>app.generate()</code> with Word output enabled, all five charts are automatically generated and embedded in the appropriate document sections. You do not need to call visualization functions separately — the <code>WordApplicationBuilder</code> handles this internally.</p>
 <p>Charts are generated as temporary files during document construction and deleted after embedding. If <code>matplotlib</code> is not installed, the charts are omitted without error and the document is still generated.</p>
 <p>To ensure charts are included in Word output:</p>
-<pre><code class="language-bash">pip install &quot;nmtc-application-builder[output,viz]&quot;
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;nmtc-application-builder[output,viz]&quot;</span>
+</code></pre></div>
 <hr />
-<h2 id="customizing-chart-output">Customizing chart output</h2>
+<h2 id="customizing-chart-output">Customizing chart output<a class="headerlink" href="#customizing-chart-output" title="Permanent link">&para;</a></h2>
 <p>All five functions return the output path as a string. You can generate charts to any location:</p>
-<pre><code class="language-python">import os
-
-chart_dir = &quot;./charts/&quot;
-os.makedirs(chart_dir, exist_ok=True)
-
-from nmtcapp.visualization import (
-    plot_pipeline_map, plot_distress_heatmap, plot_sector_distribution,
-    plot_readiness_radar, plot_winner_alignment,
-)
-
-charts = {
-    &quot;map&quot;:       plot_pipeline_map(app, f&quot;{chart_dir}pipeline_map.png&quot;),
-    &quot;distress&quot;:  plot_distress_heatmap(app, f&quot;{chart_dir}distress_heatmap.png&quot;),
-    &quot;sector&quot;:    plot_sector_distribution(app, f&quot;{chart_dir}sector_mix.png&quot;),
-    &quot;radar&quot;:     plot_readiness_radar(app, f&quot;{chart_dir}readiness_radar.png&quot;),
-    &quot;alignment&quot;: plot_winner_alignment(app, f&quot;{chart_dir}winner_alignment.png&quot;),
-}
-
-for name, path in charts.items():
-    print(f&quot;{name}: {path}&quot;)
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="n">chart_dir</span> <span class="o">=</span> <span class="s2">&quot;./charts/&quot;</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">chart_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>    <span class="n">plot_pipeline_map</span><span class="p">,</span> <span class="n">plot_distress_heatmap</span><span class="p">,</span> <span class="n">plot_sector_distribution</span><span class="p">,</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>    <span class="n">plot_readiness_radar</span><span class="p">,</span> <span class="n">plot_winner_alignment</span><span class="p">,</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="p">)</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="n">charts</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>    <span class="s2">&quot;map&quot;</span><span class="p">:</span>       <span class="n">plot_pipeline_map</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">chart_dir</span><span class="si">}</span><span class="s2">pipeline_map.png&quot;</span><span class="p">),</span>
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>    <span class="s2">&quot;distress&quot;</span><span class="p">:</span>  <span class="n">plot_distress_heatmap</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">chart_dir</span><span class="si">}</span><span class="s2">distress_heatmap.png&quot;</span><span class="p">),</span>
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>    <span class="s2">&quot;sector&quot;</span><span class="p">:</span>    <span class="n">plot_sector_distribution</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">chart_dir</span><span class="si">}</span><span class="s2">sector_mix.png&quot;</span><span class="p">),</span>
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>    <span class="s2">&quot;radar&quot;</span><span class="p">:</span>     <span class="n">plot_readiness_radar</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">chart_dir</span><span class="si">}</span><span class="s2">readiness_radar.png&quot;</span><span class="p">),</span>
+<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a>    <span class="s2">&quot;alignment&quot;</span><span class="p">:</span> <span class="n">plot_winner_alignment</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">chart_dir</span><span class="si">}</span><span class="s2">winner_alignment.png&quot;</span><span class="p">),</span>
+<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a><span class="p">}</span>
+<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a>
+<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a><span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">charts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="__codelineno-12-20" name="__codelineno-12-20" href="#__codelineno-12-20"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
 <p>All charts are saved at 300 DPI with white background (<code>facecolor="white"</code>), suitable for professional print use. The figure size and DPI are fixed — the library does not currently expose chart size as a parameter.</p>
 
 

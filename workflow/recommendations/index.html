@@ -1433,13 +1433,13 @@
   
 
 
-<h1 id="recommendations">Recommendations</h1>
+<h1 id="recommendations">Recommendations<a class="headerlink" href="#recommendations" title="Permanent link">&para;</a></h1>
 <p>The recommendation engine translates the gap between your pipeline's current metrics and historical winner patterns into specific, quantified actions. Unlike generic advice ("improve distress concentration"), every recommendation includes a concrete action, a numeric improvement estimate, and a target threshold derived from the winner distribution.</p>
 <hr />
-<h2 id="how-recommendations-are-generated">How recommendations are generated</h2>
-<pre><code class="language-python">recs = app.recommendations()
-print(recs.summary())
-</code></pre>
+<h2 id="how-recommendations-are-generated">How recommendations are generated<a class="headerlink" href="#how-recommendations-are-generated" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">recs</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">recommendations</span><span class="p">()</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">recs</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+</code></pre></div>
 <p>Internally, <code>app.recommendations()</code> runs three steps:</p>
 <ol>
 <li><strong>Benchmarking</strong> — <code>HistoricalBenchmarks().compare()</code> computes per-metric percentile positions against winner distributions</li>
@@ -1448,7 +1448,7 @@ print(recs.summary())
 </ol>
 <p>The resulting <code>RecommendationSet</code> sorts recommendations by priority (critical first) and groups them into <code>strategic_changes</code> (critical + high) and <code>quick_wins</code> (medium).</p>
 <hr />
-<h2 id="priority-levels">Priority levels</h2>
+<h2 id="priority-levels">Priority levels<a class="headerlink" href="#priority-levels" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1477,7 +1477,7 @@ print(recs.summary())
 </table>
 <p>Critical recommendations should be addressed before submission — they represent gaps that historically correlate with non-funding. High recommendations are important but not necessarily blocking; address as many as the pipeline timeline allows. Medium recommendations are refinements.</p>
 <hr />
-<h2 id="categories">Categories</h2>
+<h2 id="categories">Categories<a class="headerlink" href="#categories" title="Permanent link">&para;</a></h2>
 <p>Each recommendation is tagged with one of five categories:</p>
 <table>
 <thead>
@@ -1510,54 +1510,54 @@ print(recs.summary())
 </tbody>
 </table>
 <hr />
-<h2 id="reading-a-recommendation-object">Reading a recommendation object</h2>
-<pre><code class="language-python">recs = app.recommendations()
-
-for rec in recs.recommendations:
-    print(f&quot;[{rec.priority.upper()}] {rec.category}&quot;)
-    print(f&quot;  Finding: {rec.finding}&quot;)
-    print(f&quot;  Action:  {rec.action}&quot;)
-    print(f&quot;  Impact:  {rec.expected_impact}&quot;)
-    print(f&quot;  Estimate: {rec.quantified_improvement}&quot;)
-    print()
-</code></pre>
+<h2 id="reading-a-recommendation-object">Reading a recommendation object<a class="headerlink" href="#reading-a-recommendation-object" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">recs</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">recommendations</span><span class="p">()</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="n">recs</span><span class="o">.</span><span class="n">recommendations</span><span class="p">:</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">rec</span><span class="o">.</span><span class="n">priority</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">rec</span><span class="o">.</span><span class="n">category</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Finding: </span><span class="si">{</span><span class="n">rec</span><span class="o">.</span><span class="n">finding</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Action:  </span><span class="si">{</span><span class="n">rec</span><span class="o">.</span><span class="n">action</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Impact:  </span><span class="si">{</span><span class="n">rec</span><span class="o">.</span><span class="n">expected_impact</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Estimate: </span><span class="si">{</span><span class="n">rec</span><span class="o">.</span><span class="n">quantified_improvement</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="nb">print</span><span class="p">()</span>
+</code></pre></div>
 <p>A sample distress recommendation:</p>
-<pre><code>[HIGH] distress
-  Finding: Deep/severe distress concentration (74%) is competitive but
-           below the winner median of 82%.
-  Action:  Substitute 8pp of LIC projects with deeper-distress
-           alternatives to reach the winner median. Target projects in
-           tracts with poverty rate ≥30% or median family income ≤60% AMI.
-  Impact:  Reach median winner distress concentration; stronger NOFA score.
-  Estimate: Estimated +8–15 distress alignment score points;
-             advances from 'competitive' to 'strong' tier.
-</code></pre>
-<h3 id="quantified_improvement"><code>quantified_improvement</code></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>[HIGH] distress
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  Finding: Deep/severe distress concentration (74%) is competitive but
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>           below the winner median of 82%.
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>  Action:  Substitute 8pp of LIC projects with deeper-distress
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>           alternatives to reach the winner median. Target projects in
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>           tracts with poverty rate ≥30% or median family income ≤60% AMI.
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  Impact:  Reach median winner distress concentration; stronger NOFA score.
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>  Estimate: Estimated +8–15 distress alignment score points;
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>             advances from &#39;competitive&#39; to &#39;strong&#39; tier.
+</code></pre></div>
+<h3 id="quantified_improvement"><code>quantified_improvement</code><a class="headerlink" href="#quantified_improvement" title="Permanent link">&para;</a></h3>
 <p>This field always contains a numeric estimate. The estimate is based on the scoring formulas in <code>WinProbabilityModel</code> — specifically, the change in dimensional score from moving a metric from its current value to the target threshold. The estimates are ranges, not point predictions, because the actual improvement depends on which specific projects are modified. Use them as directional signals, not commitments.</p>
 <hr />
-<h2 id="working-with-the-full-recommendationset">Working with the full RecommendationSet</h2>
-<pre><code class="language-python">recs = app.recommendations()
-
-# Overall assessment narrative
-print(recs.overall_assessment)
-# e.g. &quot;Competitive alignment (71/100). Priority changes below could
-#        improve your score by 10–20 points before submission.&quot;
-
-# Strategic changes (critical + high priority) — address these first
-for rec in recs.strategic_changes:
-    print(f&quot;[{rec.priority}] {rec.category}: {rec.action}&quot;)
-
-# Quick wins (medium priority) — incremental improvements
-for rec in recs.quick_wins:
-    print(f&quot;[medium] {rec.category}: {rec.action}&quot;)
-
-# All recommendations as a list of dicts (JSON-safe)
-import json
-print(json.dumps(recs.to_dict(), indent=2))
-</code></pre>
+<h2 id="working-with-the-full-recommendationset">Working with the full RecommendationSet<a class="headerlink" href="#working-with-the-full-recommendationset" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">recs</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">recommendations</span><span class="p">()</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># Overall assessment narrative</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="nb">print</span><span class="p">(</span><span class="n">recs</span><span class="o">.</span><span class="n">overall_assessment</span><span class="p">)</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="c1"># e.g. &quot;Competitive alignment (71/100). Priority changes below could</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="c1">#        improve your score by 10–20 points before submission.&quot;</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="c1"># Strategic changes (critical + high priority) — address these first</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="n">recs</span><span class="o">.</span><span class="n">strategic_changes</span><span class="p">:</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">rec</span><span class="o">.</span><span class="n">priority</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">rec</span><span class="o">.</span><span class="n">category</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">rec</span><span class="o">.</span><span class="n">action</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="c1"># Quick wins (medium priority) — incremental improvements</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="n">recs</span><span class="o">.</span><span class="n">quick_wins</span><span class="p">:</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[medium] </span><span class="si">{</span><span class="n">rec</span><span class="o">.</span><span class="n">category</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">rec</span><span class="o">.</span><span class="n">action</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="c1"># All recommendations as a list of dicts (JSON-safe)</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">recs</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+</code></pre></div>
 <hr />
-<h2 id="acting-on-recommendations">Acting on recommendations</h2>
-<h3 id="distress-recommendations">Distress recommendations</h3>
+<h2 id="acting-on-recommendations">Acting on recommendations<a class="headerlink" href="#acting-on-recommendations" title="Permanent link">&para;</a></h2>
+<h3 id="distress-recommendations">Distress recommendations<a class="headerlink" href="#distress-recommendations" title="Permanent link">&para;</a></h3>
 <p>Distress gaps are addressed by substituting standard LIC projects with projects in deeper-distress census tracts. The CDFI Fund's NMTC Mapping Tool (https://www.cdfifund.gov/nmtc) allows you to identify qualifying tracts by address or census tract ID. Look for:</p>
 <ul>
 <li>Tracts with poverty rate ≥30% (often classified as "deep")</li>
@@ -1565,40 +1565,40 @@ print(json.dumps(recs.to_dict(), indent=2))
 <li>BIA-designated Native American areas (earn a bonus on the distress dimension)</li>
 <li>USDA high-migration rural counties</li>
 </ul>
-<h3 id="geographic-recommendations">Geographic recommendations</h3>
+<h3 id="geographic-recommendations">Geographic recommendations<a class="headerlink" href="#geographic-recommendations" title="Permanent link">&para;</a></h3>
 <p>Geographic gaps are addressed by adding projects in additional states. If your HHI is high (concentrated in a small number of states), consider splitting a single large-state commitment into smaller projects in two or three states. The goal is to reach at least the winner p25 of 4 states, ideally 7+ states.</p>
-<h3 id="impact-recommendations">Impact recommendations</h3>
+<h3 id="impact-recommendations">Impact recommendations<a class="headerlink" href="#impact-recommendations" title="Permanent link">&para;</a></h3>
 <p>The fastest way to improve jobs-per-million-QEI is to add operating business projects. Manufacturing facilities, healthcare clinics with significant staffing, and retail/service businesses in LICs typically generate 20–40 FTE jobs per $1MM QEI. Real estate projects typically generate 5–10. The difference compounds across the portfolio.</p>
-<h3 id="sector-recommendations">Sector recommendations</h3>
+<h3 id="sector-recommendations">Sector recommendations<a class="headerlink" href="#sector-recommendations" title="Permanent link">&para;</a></h3>
 <p>If a single sector exceeds 35% of QEI, the sector concentration penalty reduces your sector dimension score. The fix is to add 1–2 projects in complementary sectors. Healthcare + education + community facility is a common winning combination. Affordable housing + small business also frequently appears in high-scoring applications.</p>
-<h3 id="pipeline-recommendations">Pipeline recommendations</h3>
+<h3 id="pipeline-recommendations">Pipeline recommendations<a class="headerlink" href="#pipeline-recommendations" title="Permanent link">&para;</a></h3>
 <p>Low eligibility rate is the most urgent pipeline recommendation. Verify every project using the CDFI Fund NMTC Mapping Tool before submission. Projects that appear eligible based on zip code or neighborhood may not be in qualifying census tracts.</p>
 <hr />
-<h2 id="example-full-recommendation-workflow">Example: full recommendation workflow</h2>
-<pre><code class="language-python">from nmtcapp.core.application import Application
-from nmtcapp.core.cde import CDEProfile
-from nmtcapp.core.pipeline import Pipeline
-
-cde = CDEProfile.sample()
-pipeline = Pipeline.from_csv(&quot;my_pipeline.csv&quot;)
-
-app = Application(cde=cde, requested_allocation=55_000_000)
-app.add_pipeline(pipeline)
-
-# Score first to understand starting position
-score = app.score_win_probability()
-print(f&quot;Starting score: {score.composite_score:.0f}/100 [{score.competitive_tier}]&quot;)
-
-# Get recommendations
-recs = app.recommendations()
-
-# Print only critical and high priority items
-for rec in recs.strategic_changes:
-    print(f&quot;\n[{rec.priority.upper()}] {rec.category.upper()}&quot;)
-    print(f&quot;  {rec.finding}&quot;)
-    print(f&quot;  Action: {rec.action}&quot;)
-    print(f&quot;  Expected: {rec.quantified_improvement}&quot;)
-</code></pre>
+<h2 id="example-full-recommendation-workflow">Example: full recommendation workflow<a class="headerlink" href="#example-full-recommendation-workflow" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.application</span><span class="w"> </span><span class="kn">import</span> <span class="n">Application</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.cde</span><span class="w"> </span><span class="kn">import</span> <span class="n">CDEProfile</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">cde</span> <span class="o">=</span> <span class="n">CDEProfile</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="o">.</span><span class="n">from_csv</span><span class="p">(</span><span class="s2">&quot;my_pipeline.csv&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">app</span> <span class="o">=</span> <span class="n">Application</span><span class="p">(</span><span class="n">cde</span><span class="o">=</span><span class="n">cde</span><span class="p">,</span> <span class="n">requested_allocation</span><span class="o">=</span><span class="mi">55_000_000</span><span class="p">)</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="n">app</span><span class="o">.</span><span class="n">add_pipeline</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="c1"># Score first to understand starting position</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="n">score</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">score_win_probability</span><span class="p">()</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting score: </span><span class="si">{</span><span class="n">score</span><span class="o">.</span><span class="n">composite_score</span><span class="si">:</span><span class="s2">.0f</span><span class="si">}</span><span class="s2">/100 [</span><span class="si">{</span><span class="n">score</span><span class="o">.</span><span class="n">competitive_tier</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="c1"># Get recommendations</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="n">recs</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">recommendations</span><span class="p">()</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="c1"># Print only critical and high priority items</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="k">for</span> <span class="n">rec</span> <span class="ow">in</span> <span class="n">recs</span><span class="o">.</span><span class="n">strategic_changes</span><span class="p">:</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">[</span><span class="si">{</span><span class="n">rec</span><span class="o">.</span><span class="n">priority</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">rec</span><span class="o">.</span><span class="n">category</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">rec</span><span class="o">.</span><span class="n">finding</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Action: </span><span class="si">{</span><span class="n">rec</span><span class="o">.</span><span class="n">action</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  Expected: </span><span class="si">{</span><span class="n">rec</span><span class="o">.</span><span class="n">quantified_improvement</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
 
 
 

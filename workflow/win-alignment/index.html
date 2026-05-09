@@ -1377,18 +1377,20 @@
   
 
 
-<h1 id="win-alignment-scoring">Win Alignment Scoring</h1>
-<p>!!! danger "Critical Methodology Disclosure — Read This First"
-    The score produced by <code>score_win_probability()</code> is an <strong>alignment score</strong>, not a win probability. The CDFI Fund publishes only winner-level award announcement data; application-level data for non-winners is not publicly available. Without the full distribution of both winning and non-winning applications, it is mathematically impossible to compute a true conditional probability of selection. The score tells you how closely your application resembles the pattern of historical winners — it does not tell you the probability that CDFI Fund reviewers will select your application. <strong>A high alignment score improves competitive positioning; it does not guarantee an award.</strong></p>
+<h1 id="win-alignment-scoring">Win Alignment Scoring<a class="headerlink" href="#win-alignment-scoring" title="Permanent link">&para;</a></h1>
+<div class="admonition danger">
+<p class="admonition-title">Critical Methodology Disclosure — Read This First</p>
+<p>The score produced by <code>score_win_probability()</code> is an <strong>alignment score</strong>, not a win probability. The CDFI Fund publishes only winner-level award announcement data; application-level data for non-winners is not publicly available. Without the full distribution of both winning and non-winning applications, it is mathematically impossible to compute a true conditional probability of selection. The score tells you how closely your application resembles the pattern of historical winners — it does not tell you the probability that CDFI Fund reviewers will select your application. <strong>A high alignment score improves competitive positioning; it does not guarantee an award.</strong></p>
+</div>
 <hr />
-<h2 id="overview">Overview</h2>
-<pre><code class="language-python">score = app.score_win_probability()
-print(score.summary())
-</code></pre>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">score</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">score_win_probability</span><span class="p">()</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+</code></pre></div>
 <p><code>score_win_probability()</code> runs <code>analyze()</code> internally (using the cached result if available), then passes the <code>PipelineAnalysisResult</code> to <code>WinProbabilityModel.score()</code>, which computes a composite 0–100 alignment score from five weighted dimensions.</p>
 <hr />
-<h2 id="the-five-dimensions">The five dimensions</h2>
-<h3 id="1-distress-concentration-weight-35">1. Distress Concentration (weight: 35%)</h3>
+<h2 id="the-five-dimensions">The five dimensions<a class="headerlink" href="#the-five-dimensions" title="Permanent link">&para;</a></h2>
+<h3 id="1-distress-concentration-weight-35">1. Distress Concentration (weight: 35%)<a class="headerlink" href="#1-distress-concentration-weight-35" title="Permanent link">&para;</a></h3>
 <p>The most heavily weighted dimension, reflecting the CDFI Fund's "Community Need" criterion, which accounts for the largest share of NOFA points.</p>
 <p>The scoring compares your pipeline's <code>pct_deep_or_severe</code> (the fraction of total QEI deployed in deep or severely distressed census tracts) against the historical winner distribution:</p>
 <table>
@@ -1422,7 +1424,7 @@ print(score.summary())
 </tbody>
 </table>
 <p>If your pipeline's deep/severe concentration falls below the 50% floor, the distress dimension score is proportionally reduced. At the 50% mark you score approximately 30/100 on this dimension. At the winner median (82%), you score near 60/100. Exceeding the winner mean pushes you toward 80–100.</p>
-<h3 id="2-impact-intensity-weight-25">2. Impact Intensity (weight: 25%)</h3>
+<h3 id="2-impact-intensity-weight-25">2. Impact Intensity (weight: 25%)<a class="headerlink" href="#2-impact-intensity-weight-25" title="Permanent link">&para;</a></h3>
 <p>Measures jobs per million dollars of QEI, the primary impact metric in CDFI Fund annual reports and NOFA scoring. Operating business projects (manufacturing, healthcare clinics, small businesses) typically produce 20–40 jobs per $1MM QEI. Real estate projects typically produce 5–10. A pipeline with significant operating business exposure scores substantially higher on this dimension.</p>
 <table>
 <thead>
@@ -1455,7 +1457,7 @@ print(score.summary())
 </tbody>
 </table>
 <p>At 0 jobs/$MM the dimension score is 0. At or above the top decile (28 jobs/$MM) the score is 100.</p>
-<h3 id="3-geographic-diversity-weight-20">3. Geographic Diversity (weight: 20%)</h3>
+<h3 id="3-geographic-diversity-weight-20">3. Geographic Diversity (weight: 20%)<a class="headerlink" href="#3-geographic-diversity-weight-20" title="Permanent link">&para;</a></h3>
 <p>Evaluates two factors: the number of states served and the Herfindahl-Hirschman Index (HHI) of geographic concentration. Lower HHI means QEI is more evenly distributed across states. There is also a rural bonus — reaching the winner average of 18% rural QEI adds up to 10 points.</p>
 <table>
 <thead>
@@ -1488,14 +1490,14 @@ print(score.summary())
 </tbody>
 </table>
 <p>The dimension score is 50% from the states count, 40% from the HHI score, and 10% from the rural bonus.</p>
-<h3 id="4-sector-diversity-weight-15">4. Sector Diversity (weight: 15%)</h3>
+<h3 id="4-sector-diversity-weight-15">4. Sector Diversity (weight: 15%)<a class="headerlink" href="#4-sector-diversity-weight-15" title="Permanent link">&para;</a></h3>
 <p>Evaluates two factors: the number of distinct sectors represented and the concentration in any single sector. Historical winners average 4.8 sectors represented and rarely exceed 35% QEI concentration in any single sector.</p>
 <ul>
 <li>Sector score = <code>(sectors_represented / 4.8) × 80</code>, capped at 100</li>
 <li>Concentration penalty = <code>(max_single_sector_pct - 0.35) × 200</code>, subtracted if over the 35% ceiling</li>
 </ul>
 <p>A pipeline with only healthcare projects (1 sector, 100% concentration) would score near 0 on this dimension even if the healthcare projects themselves are excellent. Diversifying into education, small business, and community facilities rapidly improves the sector score.</p>
-<h3 id="5-pipeline-quality-weight-5">5. Pipeline Quality (weight: 5%)</h3>
+<h3 id="5-pipeline-quality-weight-5">5. Pipeline Quality (weight: 5%)<a class="headerlink" href="#5-pipeline-quality-weight-5" title="Permanent link">&para;</a></h3>
 <p>A composite of three factors:</p>
 <ul>
 <li><strong>Eligibility rate</strong> (40% of the sub-score): what fraction of projects are in NMTC-eligible census tracts. Winner average is 96%. Below 90% the score drops sharply.</li>
@@ -1503,10 +1505,10 @@ print(score.summary())
 <li><strong>Award size fit</strong> (30%): requests in the $35–65MM range score 90/100. Requests under $25MM score 50/100. The $35–65MM range represents ~60% of historical awards by volume.</li>
 </ul>
 <hr />
-<h2 id="composite-score-and-competitive-tiers">Composite score and competitive tiers</h2>
+<h2 id="composite-score-and-competitive-tiers">Composite score and competitive tiers<a class="headerlink" href="#composite-score-and-competitive-tiers" title="Permanent link">&para;</a></h2>
 <p>The five dimension scores are multiplied by their weights and summed:</p>
-<pre><code>composite = (distress × 0.35) + (impact × 0.25) + (geographic × 0.20) + (sector × 0.15) + (pipeline × 0.05)
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>composite = (distress × 0.35) + (impact × 0.25) + (geographic × 0.20) + (sector × 0.15) + (pipeline × 0.05)
+</code></pre></div>
 <p>The composite score is then classified into a competitive tier:</p>
 <table>
 <thead>
@@ -1540,45 +1542,45 @@ print(score.summary())
 </tbody>
 </table>
 <hr />
-<h2 id="reading-the-score-output">Reading the score output</h2>
-<pre><code class="language-python">score = app.score_win_probability()
-
-# Composite alignment score
-print(score.composite_score)          # e.g. 71.4
-
-# Per-dimension scores
-print(score.dimensional_scores)
-# {
-#   &quot;distress_concentration&quot;: 82.0,
-#   &quot;geographic_diversity&quot;:   65.0,
-#   &quot;impact_intensity&quot;:       74.0,
-#   &quot;sector_diversity&quot;:       71.0,
-#   &quot;pipeline_quality&quot;:       85.0,
-# }
-
-# Competitive tier
-print(score.competitive_tier)         # &quot;competitive&quot;
-
-# Historical acceptance rate baseline
-print(score.acceptance_rate_baseline) # e.g. 0.345 (34.5%)
-
-# Always-present disclosure
-print(score.methodology_disclosure)
-
-# Human-readable summary
-print(score.summary())
-
-# JSON-safe dict
-data = score.to_dict()
-</code></pre>
+<h2 id="reading-the-score-output">Reading the score output<a class="headerlink" href="#reading-the-score-output" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">score</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">score_win_probability</span><span class="p">()</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># Composite alignment score</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">composite_score</span><span class="p">)</span>          <span class="c1"># e.g. 71.4</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="c1"># Per-dimension scores</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">dimensional_scores</span><span class="p">)</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="c1"># {</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="c1">#   &quot;distress_concentration&quot;: 82.0,</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="c1">#   &quot;geographic_diversity&quot;:   65.0,</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="c1">#   &quot;impact_intensity&quot;:       74.0,</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="c1">#   &quot;sector_diversity&quot;:       71.0,</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="c1">#   &quot;pipeline_quality&quot;:       85.0,</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="c1"># }</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="c1"># Competitive tier</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">competitive_tier</span><span class="p">)</span>         <span class="c1"># &quot;competitive&quot;</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="c1"># Historical acceptance rate baseline</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">acceptance_rate_baseline</span><span class="p">)</span> <span class="c1"># e.g. 0.345 (34.5%)</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="c1"># Always-present disclosure</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">methodology_disclosure</span><span class="p">)</span>
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="c1"># Human-readable summary</span>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="c1"># JSON-safe dict</span>
+<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="n">data</span> <span class="o">=</span> <span class="n">score</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+</code></pre></div>
 <hr />
-<h2 id="using-the-score-to-prioritize-improvements">Using the score to prioritize improvements</h2>
+<h2 id="using-the-score-to-prioritize-improvements">Using the score to prioritize improvements<a class="headerlink" href="#using-the-score-to-prioritize-improvements" title="Permanent link">&para;</a></h2>
 <p>The dimensional breakdown is the most actionable output. To identify where to focus:</p>
-<pre><code class="language-python">dims = score.dimensional_scores
-# Find dimensions below 55 (marginal threshold)
-gaps = {k: v for k, v in dims.items() if v &lt; 55}
-print(f&quot;Priority gaps: {gaps}&quot;)
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">dims</span> <span class="o">=</span> <span class="n">score</span><span class="o">.</span><span class="n">dimensional_scores</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1"># Find dimensions below 55 (marginal threshold)</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">gaps</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dims</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="mi">55</span><span class="p">}</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Priority gaps: </span><span class="si">{</span><span class="n">gaps</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
 <p>Then use <code>app.recommendations()</code> for specific, quantified actions tied to each gap. The recommendation engine directly maps to these same five dimensions — each recommendation includes a numeric improvement estimate tied to the relevant dimension score.</p>
 <p><strong>Typical prioritization logic:</strong></p>
 <ol>
@@ -1589,7 +1591,7 @@ print(f&quot;Priority gaps: {gaps}&quot;)
 <li><strong>Pipeline quality</strong> (5% weight) — meaningful for borderline applications but usually not the deciding factor.</li>
 </ol>
 <hr />
-<h2 id="acceptance-rate-baseline">Acceptance rate baseline</h2>
+<h2 id="acceptance-rate-baseline">Acceptance rate baseline<a class="headerlink" href="#acceptance-rate-baseline" title="Permanent link">&para;</a></h2>
 <p><code>score.acceptance_rate_baseline</code> is the average acceptance rate across the four most recent NMTC allocation rounds (CY2020–CY2023). Recent round data:</p>
 <table>
 <thead>

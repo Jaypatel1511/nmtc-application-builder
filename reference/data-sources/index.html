@@ -1255,10 +1255,10 @@
   
 
 
-<h1 id="data-sources">Data Sources</h1>
+<h1 id="data-sources">Data Sources<a class="headerlink" href="#data-sources" title="Permanent link">&para;</a></h1>
 <p>This page documents the primary data sources that underpin the intelligence layer and the 17-library open source stack the platform is built on.</p>
 <hr />
-<h2 id="cdfi-fund-nmtc-award-announcements-cy2020cy2024">CDFI Fund NMTC Award Announcements (CY2020–CY2024)</h2>
+<h2 id="cdfi-fund-nmtc-award-announcements-cy2020cy2024">CDFI Fund NMTC Award Announcements (CY2020–CY2024)<a class="headerlink" href="#cdfi-fund-nmtc-award-announcements-cy2020cy2024" title="Permanent link">&para;</a></h2>
 <p><strong>Source:</strong> <a href="https://www.cdfifund.gov/programs-training/programs/new-markets-tax-credit">cdfifund.gov/programs-training/programs/new-markets-tax-credit</a></p>
 <p><strong>What is publicly available:</strong>
 - Round-level aggregate statistics: total applications received, awards made, total dollars allocated, average award size
@@ -1272,7 +1272,7 @@
 - NOFA scores for any application (winner or non-winner)</p>
 <p>This is the critical limitation that prevents computation of true win probability — see <a href="../methodology/">Methodology</a> and <a href="../../about/limitations/">Limitations</a> for the full discussion.</p>
 <hr />
-<h2 id="cdfi-fund-annual-reports-fy2018fy2023">CDFI Fund Annual Reports (FY2018–FY2023)</h2>
+<h2 id="cdfi-fund-annual-reports-fy2018fy2023">CDFI Fund Annual Reports (FY2018–FY2023)<a class="headerlink" href="#cdfi-fund-annual-reports-fy2018fy2023" title="Permanent link">&para;</a></h2>
 <p><strong>Source:</strong> <a href="https://www.cdfifund.gov/research">cdfifund.gov/research</a> — NMTC Program Annual Reports</p>
 <p><strong>What we use:</strong>
 - Impact statistics tables: jobs created and retained per dollar of QEI invested (used to populate <code>WINNER_IMPACT_BENCHMARKS</code>)
@@ -1281,7 +1281,7 @@
 <p><strong>Coverage:</strong> FY2018–FY2023 annual reports. FY2024 data will be incorporated when published.</p>
 <p><strong>Note on aggregation:</strong> Annual reports present program-level aggregates, not individual application data. Winner patterns in <code>historical_awards.py</code> are inferred from these aggregates, not computed from a microdata sample. The inference methodology is described in <a href="../methodology/">Methodology</a>.</p>
 <hr />
-<h2 id="nmtc-program-nofa">NMTC Program NOFA</h2>
+<h2 id="nmtc-program-nofa">NMTC Program NOFA<a class="headerlink" href="#nmtc-program-nofa" title="Permanent link">&para;</a></h2>
 <p><strong>Source:</strong> CDFI Fund Notice of Funds Availability (NOFA), published annually</p>
 <p><strong>What we use:</strong>
 - Scoring criteria weights for the five application categories (Business Strategy, Community Outcomes, Management Capacity, Capitalization, Prior Awards)
@@ -1289,7 +1289,7 @@
 - Program rules: 39% credit rate, 7-year compliance period, minimum QEI thresholds</p>
 <p><strong>Note:</strong> The NOFA is revised each year. Scoring weights and specific criteria can change between rounds. The current library reflects the CY2024 NOFA structure. Always verify against the applicable NOFA for your specific application round.</p>
 <hr />
-<h2 id="integration-libraries-open-source-third-party">Integration libraries (open source, third party)</h2>
+<h2 id="integration-libraries-open-source-third-party">Integration libraries (open source, third party)<a class="headerlink" href="#integration-libraries-open-source-third-party" title="Permanent link">&para;</a></h2>
 <p>The library wraps five community-developed Python libraries:</p>
 <table>
 <thead>
@@ -1328,7 +1328,7 @@
 </tbody>
 </table>
 <hr />
-<h2 id="the-17-library-open-source-stack">The 17-library open source stack</h2>
+<h2 id="the-17-library-open-source-stack">The 17-library open source stack<a class="headerlink" href="#the-17-library-open-source-stack" title="Permanent link">&para;</a></h2>
 <p>NMTC Application Builder is built on these open source libraries:</p>
 <p><strong>Core data science:</strong>
 - <code>pandas &gt;= 1.3</code> — DataFrames for pipeline and analysis results
@@ -1353,7 +1353,7 @@
 - <code>pytest-cov &gt;= 4.0</code> — Coverage reporting
 - <code>jupyter &gt;= 1.0</code> — Example notebooks</p>
 <hr />
-<h2 id="data-recency-and-update-policy">Data recency and update policy</h2>
+<h2 id="data-recency-and-update-policy">Data recency and update policy<a class="headerlink" href="#data-recency-and-update-policy" title="Permanent link">&para;</a></h2>
 <p>The embedded historical data in <code>nmtcapp/data/historical_awards.py</code> covers CY2020–CY2024 award rounds. Data is updated when:</p>
 <ol>
 <li>The CDFI Fund publishes new award announcement data (typically once per year)</li>
@@ -1361,11 +1361,11 @@
 </ol>
 <p>Users working on CY2025 and later applications should verify that the winner patterns used for scoring reflect the most recent available data. Check the <code>historical_awards.py</code> module header comment for the current data coverage date.</p>
 <p>To see the current round data programmatically:</p>
-<pre><code class="language-python">from nmtcapp.data.historical_awards import get_historical_winners
-
-df = get_historical_winners()
-print(df[[&quot;round&quot;, &quot;acceptance_rate&quot;, &quot;avg_award&quot;, &quot;median_award&quot;]])
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.data.historical_awards</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_historical_winners</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">df</span> <span class="o">=</span> <span class="n">get_historical_winners</span><span class="p">()</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nb">print</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="s2">&quot;round&quot;</span><span class="p">,</span> <span class="s2">&quot;acceptance_rate&quot;</span><span class="p">,</span> <span class="s2">&quot;avg_award&quot;</span><span class="p">,</span> <span class="s2">&quot;median_award&quot;</span><span class="p">]])</span>
+</code></pre></div>
 
 
 

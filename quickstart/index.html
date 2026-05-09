@@ -1321,40 +1321,40 @@
   
 
 
-<h1 id="quickstart">Quickstart</h1>
+<h1 id="quickstart">Quickstart<a class="headerlink" href="#quickstart" title="Permanent link">&para;</a></h1>
 <p>This guide walks through a complete first run — from install to generated application package — in under 60 seconds of reading. Every code block is runnable as-is.</p>
 <hr />
-<h2 id="step-1-install">Step 1: Install</h2>
-<pre><code class="language-bash">pip install &quot;nmtc-application-builder[output,viz]&quot;
-</code></pre>
+<h2 id="step-1-install">Step 1: Install<a class="headerlink" href="#step-1-install" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;nmtc-application-builder[output,viz]&quot;</span>
+</code></pre></div>
 <p>This installs everything: core intelligence engine, Word/Excel/PDF renderers, and matplotlib visualizations.</p>
 <hr />
-<h2 id="step-2-create-a-sample-cde-and-pipeline">Step 2: Create a sample CDE and pipeline</h2>
+<h2 id="step-2-create-a-sample-cde-and-pipeline">Step 2: Create a sample CDE and pipeline<a class="headerlink" href="#step-2-create-a-sample-cde-and-pipeline" title="Permanent link">&para;</a></h2>
 <p><code>CDEProfile.sample()</code> returns a realistic Midwest/South CDE profile pre-populated with prior award history, governance structure, and contact details. <code>Pipeline.sample(n=20)</code> returns 20 realistic projects spanning multiple states, sectors, and distress levels — all eligibility fields pre-populated so no external API calls are needed.</p>
-<pre><code class="language-python">from nmtcapp.core.application import Application
-from nmtcapp.core.cde import CDEProfile
-from nmtcapp.core.pipeline import Pipeline
-
-cde = CDEProfile.sample()
-pipeline = Pipeline.sample(n=20)
-
-print(cde.name)           # &quot;Heartland Impact CDE, LLC&quot;
-print(len(pipeline))      # 20
-print(pipeline)           # Pipeline(projects=20, total_qei=$120,500,000)
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.application</span><span class="w"> </span><span class="kn">import</span> <span class="n">Application</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.cde</span><span class="w"> </span><span class="kn">import</span> <span class="n">CDEProfile</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">cde</span> <span class="o">=</span> <span class="n">CDEProfile</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="nb">print</span><span class="p">(</span><span class="n">cde</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>           <span class="c1"># &quot;Heartland Impact CDE, LLC&quot;</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pipeline</span><span class="p">))</span>      <span class="c1"># 20</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>           <span class="c1"># Pipeline(projects=20, total_qei=$120,500,000)</span>
+</code></pre></div>
 <p>To use your own data, load from a YAML file (CDE) and CSV (pipeline):</p>
-<pre><code class="language-python">cde = CDEProfile.from_yaml(&quot;my_cde.yaml&quot;)
-pipeline = Pipeline.from_csv(&quot;my_pipeline.csv&quot;)
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">cde</span> <span class="o">=</span> <span class="n">CDEProfile</span><span class="o">.</span><span class="n">from_yaml</span><span class="p">(</span><span class="s2">&quot;my_cde.yaml&quot;</span><span class="p">)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="o">.</span><span class="n">from_csv</span><span class="p">(</span><span class="s2">&quot;my_pipeline.csv&quot;</span><span class="p">)</span>
+</code></pre></div>
 <p>See <code>templates/cde_profile_template.yaml</code> and <code>templates/pipeline_template.csv</code> in the repository for the expected column structure.</p>
 <hr />
-<h2 id="step-3-run-analyze">Step 3: Run analyze()</h2>
-<pre><code class="language-python">app = Application(cde=cde, requested_allocation=65_000_000)
-app.add_pipeline(pipeline)
-
-analysis = app.analyze()
-analysis.summary()
-</code></pre>
+<h2 id="step-3-run-analyze">Step 3: Run analyze()<a class="headerlink" href="#step-3-run-analyze" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">app</span> <span class="o">=</span> <span class="n">Application</span><span class="p">(</span><span class="n">cde</span><span class="o">=</span><span class="n">cde</span><span class="p">,</span> <span class="n">requested_allocation</span><span class="o">=</span><span class="mi">65_000_000</span><span class="p">)</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">app</span><span class="o">.</span><span class="n">add_pipeline</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">analysis</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">analyze</span><span class="p">()</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">analysis</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
+</code></pre></div>
 <p><code>analyze()</code> orchestrates five steps internally:</p>
 <ol>
 <li>Enriches each project with NMTC eligibility and distress level via <code>nmtc-mapper</code></li>
@@ -1365,35 +1365,37 @@ analysis.summary()
 </ol>
 <p>Results are cached — calling <code>analyze()</code> again returns the same object without re-running.</p>
 <hr />
-<h2 id="step-4-score-win-alignment">Step 4: Score win alignment</h2>
-<pre><code class="language-python">score = app.score_win_probability()
-print(score.summary())
-</code></pre>
+<h2 id="step-4-score-win-alignment">Step 4: Score win alignment<a class="headerlink" href="#step-4-score-win-alignment" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">score</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">score_win_probability</span><span class="p">()</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">score</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+</code></pre></div>
 <p>Sample output:</p>
-<pre><code>====================================================================
-  APPLICATION ALIGNMENT SCORE (vs. Historical NMTC Winners)
-  Composite Score:    71.4 / 100
-  Competitive Tier:   COMPETITIVE
-  Acceptance Baseline:34.5% (recent 4-round average)
-====================================================================
-
-  Dimensional Scores:
-  Distress Concentration         82.0  ████████████
-  Geographic Diversity           65.0  ████████░░░░
-  Impact Intensity               74.0  █████████░░░
-  Sector Diversity               71.0  ████████░░░░
-  Pipeline Quality               85.0  ██████████░░
-
-  Assessment: Competitive alignment — above threshold in key dimensions.
-====================================================================
-</code></pre>
-<p>!!! warning "This is not a win probability"
-    The composite score measures alignment with historical winner patterns (CY2020–CY2024), not probability of funding. See <a href="../workflow/win-alignment/">Win Alignment Scoring</a> for the full methodology explanation.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>====================================================================
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  APPLICATION ALIGNMENT SCORE (vs. Historical NMTC Winners)
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  Composite Score:    71.4 / 100
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  Competitive Tier:   COMPETITIVE
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>  Acceptance Baseline:34.5% (recent 4-round average)
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>====================================================================
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>  Dimensional Scores:
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>  Distress Concentration         82.0  ████████████
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>  Geographic Diversity           65.0  ████████░░░░
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>  Impact Intensity               74.0  █████████░░░
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>  Sector Diversity               71.0  ████████░░░░
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>  Pipeline Quality               85.0  ██████████░░
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>  Assessment: Competitive alignment — above threshold in key dimensions.
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>====================================================================
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">This is not a win probability</p>
+<p>The composite score measures alignment with historical winner patterns (CY2020–CY2024), not probability of funding. See <a href="../workflow/win-alignment/">Win Alignment Scoring</a> for the full methodology explanation.</p>
+</div>
 <hr />
-<h2 id="step-5-get-recommendations">Step 5: Get recommendations</h2>
-<pre><code class="language-python">recs = app.recommendations()
-print(recs.summary())
-</code></pre>
+<h2 id="step-5-get-recommendations">Step 5: Get recommendations<a class="headerlink" href="#step-5-get-recommendations" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">recs</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">recommendations</span><span class="p">()</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">recs</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+</code></pre></div>
 <p>The recommendation engine benchmarks each dimension against historical winners and returns prioritized, quantified recommendations. A typical output includes:</p>
 <ul>
 <li><strong>Critical</strong>: if distress concentration or eligibility rate falls below minimum competitive thresholds</li>
@@ -1402,55 +1404,55 @@ print(recs.summary())
 </ul>
 <p>Each recommendation includes a specific action and a numeric improvement estimate (e.g., "+8–15 distress alignment score points").</p>
 <hr />
-<h2 id="step-6-optimize-pipeline">Step 6: Optimize pipeline</h2>
-<pre><code class="language-python">from nmtcapp.optimizer.constraints import OptimizationConstraints
-
-constraints = OptimizationConstraints(
-    max_total_qei=65_000_000,
-    min_projects=10,
-    min_states=5,
-    min_distress_pct=0.70,
-)
-
-result = app.optimize_pipeline(constraints)
-print(result.summary())
-</code></pre>
+<h2 id="step-6-optimize-pipeline">Step 6: Optimize pipeline<a class="headerlink" href="#step-6-optimize-pipeline" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.optimizer.constraints</span><span class="w"> </span><span class="kn">import</span> <span class="n">OptimizationConstraints</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">constraints</span> <span class="o">=</span> <span class="n">OptimizationConstraints</span><span class="p">(</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="n">max_total_qei</span><span class="o">=</span><span class="mi">65_000_000</span><span class="p">,</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="n">min_projects</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="n">min_states</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    <span class="n">min_distress_pct</span><span class="o">=</span><span class="mf">0.70</span><span class="p">,</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="p">)</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="n">result</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">optimize_pipeline</span><span class="p">(</span><span class="n">constraints</span><span class="p">)</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+</code></pre></div>
 <p>The optimizer selects a subset of your pipeline that maximizes alignment score subject to your constraints. It runs greedy construction followed by swap-based local search (default 500 iterations). The result shows which projects were selected and the dimensional improvement at each step.</p>
 <hr />
-<h2 id="step-7-generate-outputs">Step 7: Generate outputs</h2>
-<pre><code class="language-python">paths = app.generate(&quot;./drafts/&quot;)
-print(paths)
-# {
-#   &quot;markdown&quot;: &quot;./drafts/CDE-2018-0117_application.md&quot;,
-#   &quot;word&quot;:     &quot;./drafts/CDE-2018-0117_application.docx&quot;,
-#   &quot;excel&quot;:    &quot;./drafts/CDE-2018-0117_application.xlsx&quot;,
-#   &quot;pdf&quot;:      &quot;./drafts/CDE-2018-0117_application.pdf&quot;
-# }
-</code></pre>
+<h2 id="step-7-generate-outputs">Step 7: Generate outputs<a class="headerlink" href="#step-7-generate-outputs" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">&quot;./drafts/&quot;</span><span class="p">)</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># {</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1">#   &quot;markdown&quot;: &quot;./drafts/CDE-2018-0117_application.md&quot;,</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="c1">#   &quot;word&quot;:     &quot;./drafts/CDE-2018-0117_application.docx&quot;,</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="c1">#   &quot;excel&quot;:    &quot;./drafts/CDE-2018-0117_application.xlsx&quot;,</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="c1">#   &quot;pdf&quot;:      &quot;./drafts/CDE-2018-0117_application.pdf&quot;</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="c1"># }</span>
+</code></pre></div>
 <p>To generate only specific formats:</p>
-<pre><code class="language-python">paths = app.generate(&quot;./drafts/&quot;, formats=[&quot;word&quot;, &quot;excel&quot;])
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">&quot;./drafts/&quot;</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;word&quot;</span><span class="p">,</span> <span class="s2">&quot;excel&quot;</span><span class="p">])</span>
+</code></pre></div>
 <p>The output directory is created automatically. File names are derived from the CDE's <code>cde_id</code> field.</p>
 <hr />
-<h2 id="visualizations">Visualizations</h2>
+<h2 id="visualizations">Visualizations<a class="headerlink" href="#visualizations" title="Permanent link">&para;</a></h2>
 <p>After generating outputs, create standalone charts:</p>
-<pre><code class="language-python">from nmtcapp.visualization import (
-    plot_pipeline_map,
-    plot_distress_heatmap,
-    plot_sector_distribution,
-    plot_readiness_radar,
-    plot_winner_alignment,
-)
-
-plot_pipeline_map(app, &quot;./charts/pipeline_map.png&quot;)
-plot_distress_heatmap(app, &quot;./charts/distress_heatmap.png&quot;)
-plot_sector_distribution(app, &quot;./charts/sector_mix.png&quot;)
-plot_readiness_radar(app, &quot;./charts/readiness_radar.png&quot;)
-plot_winner_alignment(app, &quot;./charts/winner_alignment.png&quot;)
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>    <span class="n">plot_pipeline_map</span><span class="p">,</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>    <span class="n">plot_distress_heatmap</span><span class="p">,</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>    <span class="n">plot_sector_distribution</span><span class="p">,</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>    <span class="n">plot_readiness_radar</span><span class="p">,</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>    <span class="n">plot_winner_alignment</span><span class="p">,</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="p">)</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="n">plot_pipeline_map</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./charts/pipeline_map.png&quot;</span><span class="p">)</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="n">plot_distress_heatmap</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./charts/distress_heatmap.png&quot;</span><span class="p">)</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="n">plot_sector_distribution</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./charts/sector_mix.png&quot;</span><span class="p">)</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="n">plot_readiness_radar</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./charts/readiness_radar.png&quot;</span><span class="p">)</span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="n">plot_winner_alignment</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./charts/winner_alignment.png&quot;</span><span class="p">)</span>
+</code></pre></div>
 <p>Requires <code>matplotlib&gt;=3.7</code> — install with <code>pip install "nmtc-application-builder[viz]"</code>.</p>
 <hr />
-<h2 id="next-steps">Next steps</h2>
+<h2 id="next-steps">Next steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h2>
 <ul>
 <li><a href="../workflow/pipeline-analysis/">Pipeline Analysis</a> — what <code>analyze()</code> produces in detail</li>
 <li><a href="../workflow/win-alignment/">Win Alignment Scoring</a> — how the 5 dimensions are scored</li>

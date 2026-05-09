@@ -1555,14 +1555,14 @@
   
 
 
-<h1 id="pipeline-analysis">Pipeline Analysis</h1>
+<h1 id="pipeline-analysis">Pipeline Analysis<a class="headerlink" href="#pipeline-analysis" title="Permanent link">&para;</a></h1>
 <p>The <code>analyze()</code> method is the central operation of NMTC Application Builder. It orchestrates five sequential steps, caches the result, and returns an <code>ApplicationAnalysis</code> object that feeds every downstream operation: scoring, recommendations, optimization, and output generation.</p>
 <hr />
-<h2 id="what-happens-when-you-call-analyze">What happens when you call analyze()</h2>
-<pre><code class="language-python">analysis = app.analyze()
-</code></pre>
+<h2 id="what-happens-when-you-call-analyze">What happens when you call analyze()<a class="headerlink" href="#what-happens-when-you-call-analyze" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">analysis</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">analyze</span><span class="p">()</span>
+</code></pre></div>
 <p>Internally, five steps run in sequence:</p>
-<h3 id="step-1-eligibility-enrichment-nmtc-mapper">Step 1: Eligibility enrichment (nmtc-mapper)</h3>
+<h3 id="step-1-eligibility-enrichment-nmtc-mapper">Step 1: Eligibility enrichment (nmtc-mapper)<a class="headerlink" href="#step-1-eligibility-enrichment-nmtc-mapper" title="Permanent link">&para;</a></h3>
 <p>Every <code>PipelineProject</code> in the pipeline is passed through <code>enrich_pipeline_eligibility()</code>, which calls the <code>nmtc-mapper</code> library to look up the census tract for each project address and determine NMTC eligibility and distress level. After enrichment, each project has its <code>census_tract</code>, <code>is_nmtc_eligible</code>, <code>distress_level</code>, <code>is_native_area</code>, <code>is_high_migration_rural</code>, and <code>is_opportunity_zone</code> fields populated.</p>
 <p>The four distress level codes:</p>
 <table>
@@ -1592,9 +1592,9 @@
 </tbody>
 </table>
 <p>Projects with pre-populated eligibility fields (as returned by <code>Pipeline.sample()</code>) skip the API call.</p>
-<h3 id="step-2-deal-economics-nmtc-calc">Step 2: Deal economics (nmtc-calc)</h3>
+<h3 id="step-2-deal-economics-nmtc-calc">Step 2: Deal economics (nmtc-calc)<a class="headerlink" href="#step-2-deal-economics-nmtc-calc" title="Permanent link">&para;</a></h3>
 <p><code>compute_pipeline_economics()</code> calculates the NMTC deal economics for the full pipeline: total NMTCs generated (39% of QEI over 7 years), investor equity raised at the current market credit price (~$0.83/credit dollar), estimated CDE fees (2.5% of QEI), and net subsidy to the QALICB. These figures populate <code>deal_economics_summary</code> in the result.</p>
-<h3 id="step-3-intelligence-analyses">Step 3: Intelligence analyses</h3>
+<h3 id="step-3-intelligence-analyses">Step 3: Intelligence analyses<a class="headerlink" href="#step-3-intelligence-analyses" title="Permanent link">&para;</a></h3>
 <p>Four analyses run in parallel on the enriched pipeline:</p>
 <ul>
 <li><strong>Distress concentration</strong> — what percentage of QEI is deployed into deep, severe, LIC, and ineligible tracts; native area and high-migration rural percentages; comparison against winner distributions</li>
@@ -1602,14 +1602,14 @@
 <li><strong>Sector mix</strong> — sectors represented, dominant sector, high-priority sector percentage (healthcare + affordable housing + education), sector diversity score</li>
 <li><strong>Impact aggregation</strong> — total jobs created and retained, units built, square footage, and the critical jobs-per-million-QEI metric benchmarked against historical winners</li>
 </ul>
-<h3 id="step-4-validation">Step 4: Validation</h3>
+<h3 id="step-4-validation">Step 4: Validation<a class="headerlink" href="#step-4-validation" title="Permanent link">&para;</a></h3>
 <p>Three validation checks run automatically:</p>
 <ul>
 <li><strong>Eligibility check</strong> — confirms all projects have valid census tracts and eligibility determinations; flags ineligible projects</li>
 <li><strong>Completeness check</strong> — verifies all required fields are populated on every project and the <code>CDEProfile</code></li>
 <li><strong>Consistency check</strong> — checks that <code>qei_request &lt;= total_project_cost</code>, <code>qlici_amount &lt;= qei_request</code>, and other internal consistency rules</li>
 </ul>
-<h3 id="step-5-readiness-score">Step 5: Readiness score</h3>
+<h3 id="step-5-readiness-score">Step 5: Readiness score<a class="headerlink" href="#step-5-readiness-score" title="Permanent link">&para;</a></h3>
 <p><code>compute_readiness_score()</code> computes a weighted 0–100 score from six components with a letter grade (A–F):</p>
 <table>
 <thead>
@@ -1647,8 +1647,8 @@
 </table>
 <p>Grade thresholds: A ≥ 85, B ≥ 70, C ≥ 55, D ≥ 40, F below 40.</p>
 <hr />
-<h2 id="pipelineproject-fields">PipelineProject fields</h2>
-<h3 id="required-fields-must-be-set-at-construction">Required fields (must be set at construction)</h3>
+<h2 id="pipelineproject-fields">PipelineProject fields<a class="headerlink" href="#pipelineproject-fields" title="Permanent link">&para;</a></h2>
+<h3 id="required-fields-must-be-set-at-construction">Required fields (must be set at construction)<a class="headerlink" href="#required-fields-must-be-set-at-construction" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -1720,7 +1720,7 @@
 </tr>
 </tbody>
 </table>
-<h3 id="optional-fields">Optional fields</h3>
+<h3 id="optional-fields">Optional fields<a class="headerlink" href="#optional-fields" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -1769,7 +1769,7 @@
 </tr>
 </tbody>
 </table>
-<h3 id="enrichment-fields-populated-by-analyze">Enrichment fields (populated by analyze())</h3>
+<h3 id="enrichment-fields-populated-by-analyze">Enrichment fields (populated by analyze())<a class="headerlink" href="#enrichment-fields-populated-by-analyze" title="Permanent link">&para;</a></h3>
 <p>These begin as <code>None</code> and are set by the eligibility enrichment step. Do not set them manually unless using pre-enriched data (as <code>Pipeline.sample()</code> does).</p>
 <table>
 <thead>
@@ -1812,98 +1812,98 @@
 </tr>
 </tbody>
 </table>
-<h3 id="valid-sector-values">Valid sector values</h3>
-<pre><code class="language-python">VALID_SECTORS = [
-    &quot;healthcare&quot;,
-    &quot;affordable_housing&quot;,
-    &quot;education&quot;,
-    &quot;small_business&quot;,
-    &quot;mixed_use&quot;,
-    &quot;community_facility&quot;,
-    &quot;clean_energy&quot;,
-    &quot;other&quot;,
-]
-</code></pre>
+<h3 id="valid-sector-values">Valid sector values<a class="headerlink" href="#valid-sector-values" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">VALID_SECTORS</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="s2">&quot;healthcare&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="s2">&quot;affordable_housing&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="s2">&quot;education&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="s2">&quot;small_business&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="s2">&quot;mixed_use&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="s2">&quot;community_facility&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="s2">&quot;clean_energy&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="s2">&quot;other&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="p">]</span>
+</code></pre></div>
 <p>CDFI Fund priority sectors are <code>healthcare</code>, <code>affordable_housing</code>, and <code>education</code>. Projects in these sectors score highest on the sector diversity dimension.</p>
 <hr />
-<h2 id="loading-from-csv">Loading from CSV</h2>
+<h2 id="loading-from-csv">Loading from CSV<a class="headerlink" href="#loading-from-csv" title="Permanent link">&para;</a></h2>
 <p>The <code>Pipeline.from_csv()</code> class method reads a CSV file with columns matching <code>PipelineProject</code> field names. Required columns are the 12 required fields above. Optional columns are read when present and default to <code>None</code> when absent.</p>
-<pre><code class="language-python">pipeline = Pipeline.from_csv(&quot;my_pipeline.csv&quot;)
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="o">.</span><span class="n">from_csv</span><span class="p">(</span><span class="s2">&quot;my_pipeline.csv&quot;</span><span class="p">)</span>
+</code></pre></div>
 <p>A template CSV is available at <code>templates/pipeline_template.csv</code> in the repository. A sample strong pipeline is at <code>templates/pipeline_sample_strong.csv</code>.</p>
 <p><strong>Example CSV structure (abbreviated):</strong></p>
-<pre><code>project_id,project_name,qalicb_name,address,city,state,sector,project_type,total_project_cost,qei_request,qlici_amount,expected_jobs_created
-PRJ-001,Southside Health Center,Southside HC QALICB LLC,3400 S Michigan Ave,Chicago,IL,healthcare,real_estate,12500000,8500000,8500000,52
-PRJ-002,East Houston Charter Academy,East Houston Academy QALICB LLC,5200 Lawndale St,Houston,TX,education,real_estate,9800000,7000000,7000000,38
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>project_id,project_name,qalicb_name,address,city,state,sector,project_type,total_project_cost,qei_request,qlici_amount,expected_jobs_created
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>PRJ-001,Southside Health Center,Southside HC QALICB LLC,3400 S Michigan Ave,Chicago,IL,healthcare,real_estate,12500000,8500000,8500000,52
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>PRJ-002,East Houston Charter Academy,East Houston Academy QALICB LLC,5200 Lawndale St,Houston,TX,education,real_estate,9800000,7000000,7000000,38
+</code></pre></div>
 <hr />
-<h2 id="building-programmatically">Building programmatically</h2>
-<pre><code class="language-python">from nmtcapp.core.pipeline import Pipeline, PipelineProject
-
-project = PipelineProject(
-    project_id=&quot;PRJ-001&quot;,
-    project_name=&quot;Southside Health Center&quot;,
-    qalicb_name=&quot;Southside HC QALICB, LLC&quot;,
-    address=&quot;3400 S Michigan Ave&quot;,
-    city=&quot;Chicago&quot;,
-    state=&quot;IL&quot;,
-    sector=&quot;healthcare&quot;,
-    project_type=&quot;real_estate&quot;,
-    total_project_cost=12_500_000,
-    qei_request=8_500_000,
-    qlici_amount=8_500_000,
-    expected_jobs_created=52,
-    expected_jobs_retained=18,
-    expected_sq_ft=24_000,
-    closing_target_date=&quot;2025-09-30&quot;,
-)
-
-pipeline = Pipeline(projects=[project])
-# or:
-pipeline = Pipeline()
-pipeline.add(project)
-</code></pre>
+<h2 id="building-programmatically">Building programmatically<a class="headerlink" href="#building-programmatically" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span><span class="p">,</span> <span class="n">PipelineProject</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">project</span> <span class="o">=</span> <span class="n">PipelineProject</span><span class="p">(</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="n">project_id</span><span class="o">=</span><span class="s2">&quot;PRJ-001&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    <span class="n">project_name</span><span class="o">=</span><span class="s2">&quot;Southside Health Center&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">qalicb_name</span><span class="o">=</span><span class="s2">&quot;Southside HC QALICB, LLC&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="n">address</span><span class="o">=</span><span class="s2">&quot;3400 S Michigan Ave&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="n">city</span><span class="o">=</span><span class="s2">&quot;Chicago&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="n">state</span><span class="o">=</span><span class="s2">&quot;IL&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    <span class="n">sector</span><span class="o">=</span><span class="s2">&quot;healthcare&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    <span class="n">project_type</span><span class="o">=</span><span class="s2">&quot;real_estate&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    <span class="n">total_project_cost</span><span class="o">=</span><span class="mi">12_500_000</span><span class="p">,</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>    <span class="n">qei_request</span><span class="o">=</span><span class="mi">8_500_000</span><span class="p">,</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>    <span class="n">qlici_amount</span><span class="o">=</span><span class="mi">8_500_000</span><span class="p">,</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>    <span class="n">expected_jobs_created</span><span class="o">=</span><span class="mi">52</span><span class="p">,</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>    <span class="n">expected_jobs_retained</span><span class="o">=</span><span class="mi">18</span><span class="p">,</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>    <span class="n">expected_sq_ft</span><span class="o">=</span><span class="mi">24_000</span><span class="p">,</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>    <span class="n">closing_target_date</span><span class="o">=</span><span class="s2">&quot;2025-09-30&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="p">)</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">(</span><span class="n">projects</span><span class="o">=</span><span class="p">[</span><span class="n">project</span><span class="p">])</span>
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a><span class="c1"># or:</span>
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="p">()</span>
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a><span class="n">pipeline</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">project</span><span class="p">)</span>
+</code></pre></div>
 <hr />
-<h2 id="reading-the-analysis-output">Reading the analysis output</h2>
-<pre><code class="language-python">analysis = app.analyze()
-
-# High-level summary to terminal
-analysis.summary()
-
-# Access individual analyses
-print(analysis.distress_analysis[&quot;pct_deep_or_severe&quot;])   # e.g. 0.82
-print(analysis.geographic_analysis[&quot;states_count&quot;])        # e.g. 10
-print(analysis.sector_analysis[&quot;sectors_represented&quot;])     # e.g. 6
-print(analysis.impact_summary[&quot;jobs_per_million_qei&quot;])    # e.g. 14.2
-
-# Readiness score
-rs = analysis.readiness_score
-print(f&quot;Grade: {rs.grade}, Score: {rs.overall_score}&quot;)    # e.g. Grade: B, Score: 74.5
-
-# Serialize to dict (JSON-safe)
-import json
-print(json.dumps(analysis.to_dict(), indent=2))
-</code></pre>
-<h3 id="distress-analysis-keys">Distress analysis keys</h3>
-<pre><code class="language-python">d = analysis.distress_analysis
-d[&quot;pct_deep_or_severe&quot;]       # float — fraction of QEI in deep + severe tracts
-d[&quot;pct_lic&quot;]                  # float — fraction in standard LIC tracts
-d[&quot;pct_non_lic&quot;]              # float — fraction in non-LIC (ineligible) tracts
-d[&quot;pct_native_area&quot;]          # float — fraction in Native American areas
-d[&quot;meets_target_threshold&quot;]   # bool — True if pct_deep_or_severe &gt;= 0.75
-d[&quot;vs_historical_winners&quot;]    # str — e.g. &quot;above_median&quot;
-</code></pre>
-<h3 id="geographic-analysis-keys">Geographic analysis keys</h3>
-<pre><code class="language-python">g = analysis.geographic_analysis
-g[&quot;states_count&quot;]                  # int — number of distinct states
-g[&quot;msa_count&quot;]                     # int — number of MSAs represented
-g[&quot;urban_pct&quot;]                     # float — fraction of QEI in urban tracts
-g[&quot;rural_pct&quot;]                     # float — fraction of QEI in rural tracts
-g[&quot;hhi&quot;]                           # float — Herfindahl-Hirschman Index (lower = more diverse)
-g[&quot;geographic_concentration_label&quot;] # str — e.g. &quot;low&quot;, &quot;medium&quot;, &quot;high&quot;
-g[&quot;state_breakdown&quot;]               # dict — per-state QEI and project counts
-</code></pre>
-<h3 id="readiness-score-interpretation">Readiness score interpretation</h3>
+<h2 id="reading-the-analysis-output">Reading the analysis output<a class="headerlink" href="#reading-the-analysis-output" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">analysis</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">analyze</span><span class="p">()</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1"># High-level summary to terminal</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="n">analysis</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="c1"># Access individual analyses</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="nb">print</span><span class="p">(</span><span class="n">analysis</span><span class="o">.</span><span class="n">distress_analysis</span><span class="p">[</span><span class="s2">&quot;pct_deep_or_severe&quot;</span><span class="p">])</span>   <span class="c1"># e.g. 0.82</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="nb">print</span><span class="p">(</span><span class="n">analysis</span><span class="o">.</span><span class="n">geographic_analysis</span><span class="p">[</span><span class="s2">&quot;states_count&quot;</span><span class="p">])</span>        <span class="c1"># e.g. 10</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="nb">print</span><span class="p">(</span><span class="n">analysis</span><span class="o">.</span><span class="n">sector_analysis</span><span class="p">[</span><span class="s2">&quot;sectors_represented&quot;</span><span class="p">])</span>     <span class="c1"># e.g. 6</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="nb">print</span><span class="p">(</span><span class="n">analysis</span><span class="o">.</span><span class="n">impact_summary</span><span class="p">[</span><span class="s2">&quot;jobs_per_million_qei&quot;</span><span class="p">])</span>    <span class="c1"># e.g. 14.2</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="c1"># Readiness score</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="n">rs</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">readiness_score</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Grade: </span><span class="si">{</span><span class="n">rs</span><span class="o">.</span><span class="n">grade</span><span class="si">}</span><span class="s2">, Score: </span><span class="si">{</span><span class="n">rs</span><span class="o">.</span><span class="n">overall_score</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>    <span class="c1"># e.g. Grade: B, Score: 74.5</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="c1"># Serialize to dict (JSON-safe)</span>
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">analysis</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+</code></pre></div>
+<h3 id="distress-analysis-keys">Distress analysis keys<a class="headerlink" href="#distress-analysis-keys" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">d</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">distress_analysis</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">d</span><span class="p">[</span><span class="s2">&quot;pct_deep_or_severe&quot;</span><span class="p">]</span>       <span class="c1"># float — fraction of QEI in deep + severe tracts</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">d</span><span class="p">[</span><span class="s2">&quot;pct_lic&quot;</span><span class="p">]</span>                  <span class="c1"># float — fraction in standard LIC tracts</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">d</span><span class="p">[</span><span class="s2">&quot;pct_non_lic&quot;</span><span class="p">]</span>              <span class="c1"># float — fraction in non-LIC (ineligible) tracts</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">d</span><span class="p">[</span><span class="s2">&quot;pct_native_area&quot;</span><span class="p">]</span>          <span class="c1"># float — fraction in Native American areas</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="n">d</span><span class="p">[</span><span class="s2">&quot;meets_target_threshold&quot;</span><span class="p">]</span>   <span class="c1"># bool — True if pct_deep_or_severe &gt;= 0.75</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">d</span><span class="p">[</span><span class="s2">&quot;vs_historical_winners&quot;</span><span class="p">]</span>    <span class="c1"># str — e.g. &quot;above_median&quot;</span>
+</code></pre></div>
+<h3 id="geographic-analysis-keys">Geographic analysis keys<a class="headerlink" href="#geographic-analysis-keys" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">g</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">geographic_analysis</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">g</span><span class="p">[</span><span class="s2">&quot;states_count&quot;</span><span class="p">]</span>                  <span class="c1"># int — number of distinct states</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">g</span><span class="p">[</span><span class="s2">&quot;msa_count&quot;</span><span class="p">]</span>                     <span class="c1"># int — number of MSAs represented</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">g</span><span class="p">[</span><span class="s2">&quot;urban_pct&quot;</span><span class="p">]</span>                     <span class="c1"># float — fraction of QEI in urban tracts</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">g</span><span class="p">[</span><span class="s2">&quot;rural_pct&quot;</span><span class="p">]</span>                     <span class="c1"># float — fraction of QEI in rural tracts</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">g</span><span class="p">[</span><span class="s2">&quot;hhi&quot;</span><span class="p">]</span>                           <span class="c1"># float — Herfindahl-Hirschman Index (lower = more diverse)</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="n">g</span><span class="p">[</span><span class="s2">&quot;geographic_concentration_label&quot;</span><span class="p">]</span> <span class="c1"># str — e.g. &quot;low&quot;, &quot;medium&quot;, &quot;high&quot;</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="n">g</span><span class="p">[</span><span class="s2">&quot;state_breakdown&quot;</span><span class="p">]</span>               <span class="c1"># dict — per-state QEI and project counts</span>
+</code></pre></div>
+<h3 id="readiness-score-interpretation">Readiness score interpretation<a class="headerlink" href="#readiness-score-interpretation" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
@@ -1942,12 +1942,12 @@ g[&quot;state_breakdown&quot;]               # dict — per-state QEI and projec
 </table>
 <p>Note that the readiness score is distinct from the win alignment score — it measures internal completeness and quality, while the alignment score measures competitiveness against winner patterns.</p>
 <hr />
-<h2 id="caching-behavior">Caching behavior</h2>
+<h2 id="caching-behavior">Caching behavior<a class="headerlink" href="#caching-behavior" title="Permanent link">&para;</a></h2>
 <p><code>analyze()</code> caches its result after the first call. Calling <code>analyze()</code> again on the same <code>Application</code> object returns the cached result immediately. The cache is invalidated if you call <code>add_pipeline()</code> or <code>add_project()</code> after the initial analysis.</p>
-<pre><code class="language-python">analysis1 = app.analyze()    # runs full analysis
-analysis2 = app.analyze()    # returns cached result
-assert analysis1 is analysis2  # True — same object
-</code></pre>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">analysis1</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">analyze</span><span class="p">()</span>    <span class="c1"># runs full analysis</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">analysis2</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">analyze</span><span class="p">()</span>    <span class="c1"># returns cached result</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="k">assert</span> <span class="n">analysis1</span> <span class="ow">is</span> <span class="n">analysis2</span>  <span class="c1"># True — same object</span>
+</code></pre></div>
 
 
 
