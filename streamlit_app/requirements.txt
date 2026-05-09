@@ -1,5 +1,5 @@
 streamlit>=1.28.0
-nmtc-application-builder>=1.0.0
+git+https://github.com/Jaypatel1511/nmtc-application-builder.git@main
 plotly>=5.18.0
 pandas>=1.3
 numpy>=1.21
