@@ -338,8 +338,8 @@ with tabs[2]:
 
         fig_states, ax_states = plt.subplots(figsize=(9, 4))
         ax_states.bar(state_qei["state"], state_qei["QEI ($M)"], color=PRIMARY)
-        for i, val in enumerate(state_qei["QEI ($M)"]):
-            ax_states.text(i, val + 0.05, f"{val:.1f}", ha="center", va="bottom", fontsize=8)
+        for idx, val in enumerate(state_qei["QEI ($M)"]):
+            ax_states.text(idx, val + 0.05, f"{val:.1f}", ha="center", va="bottom", fontsize=8)
         ax_states.set_xlabel("State")
         ax_states.set_ylabel("QEI ($ millions)")
         ax_states.set_title("QEI by state")
@@ -418,8 +418,8 @@ with tabs[3]:
 
         fig_sector, ax_sector = plt.subplots(figsize=(8, 4))
         ax_sector.barh(sector_qei["sector_label"], sector_qei["QEI ($M)"], color=PRIMARY)
-        for i, val in enumerate(sector_qei["QEI ($M)"]):
-            ax_sector.text(val + 0.05, i, f"{val:.1f}", ha="left", va="center", fontsize=9)
+        for idx, val in enumerate(sector_qei["QEI ($M)"]):
+            ax_sector.text(val + 0.05, idx, f"{val:.1f}", ha="left", va="center", fontsize=9)
         ax_sector.set_xlabel("QEI ($ millions)")
         ax_sector.set_title("QEI allocation by sector")
         ax_sector.spines[["top", "right"]].set_visible(False)
