@@ -35,6 +35,60 @@ _PLACEHOLDER_INVESTORS = [
 ]
 
 
+def build_investor_identification_table(application: "Application") -> pd.DataFrame:
+    """Investor identification: name, type, CRA status, commitment status (4 cols).
+
+    Example::
+
+        df = build_investor_identification_table(application)
+    """
+    pipeline = application.pipeline
+    if pipeline is None:
+        return pd.DataFrame()
+    rows = []
+    for tmpl in _PLACEHOLDER_INVESTORS:
+        rows.append({
+            "Investor Name":      tmpl["Investor Name"],
+            "Investor Type":      tmpl["Investor Type"],
+            "CRA Obligation":     tmpl["CRA Obligation"],
+            "Commitment Status":  tmpl["Commitment Status"],
+        })
+    return pd.DataFrame(rows)
+
+
+def build_investor_commitment_table(application: "Application") -> pd.DataFrame:
+    """Investor commitment amounts and pricing (5 cols).
+
+    Example::
+
+        df = build_investor_commitment_table(application)
+    """
+    pipeline = application.pipeline
+    if pipeline is None:
+        return pd.DataFrame()
+    total_qei = sum(p.qei_request for p in pipeline)
+    total_nmtcs = total_qei * 0.39
+    total_equity = total_nmtcs * 0.83
+    splits = [0.70, 0.30]
+    rows = []
+    for i, tmpl in enumerate(_PLACEHOLDER_INVESTORS):
+        rows.append({
+            "Investor Name":          tmpl["Investor Name"],
+            "Commitment Amount ($)":  round(total_equity * splits[i]),
+            "NMTCs Allocated ($)":    round(total_nmtcs * splits[i]),
+            "Credit Price ($/credit)": tmpl["Credit Price ($/credit)"],
+            "Notes":                  tmpl["Notes"],
+        })
+    rows.append({
+        "Investor Name":         "TOTALS",
+        "Commitment Amount ($)": round(total_equity),
+        "NMTCs Allocated ($)":   round(total_nmtcs),
+        "Credit Price ($/credit)": "",
+        "Notes":                 f"Based on ${total_qei:,.0f} QEI at $0.83/credit",
+    })
+    return pd.DataFrame(rows)
+
+
 def build_investor_table(application: "Application") -> pd.DataFrame:
     """Build the Section D investor commitments table.
 

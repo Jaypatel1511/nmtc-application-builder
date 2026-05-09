@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.section import WD_SECTION
+from docx.enum.section import WD_SECTION, WD_ORIENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Pt, RGBColor, Inches, Cm
@@ -18,10 +18,13 @@ from nmtcapp.renderers._word_helpers import (
 )
 from nmtcapp.renderers.styles import COLORS, TYPOGRAPHY, PAGE_LAYOUT
 from nmtcapp.sections import ALL_SECTIONS
-from nmtcapp.tables.distress_table import build_distress_table
+from nmtcapp.tables.distress_table import build_distress_table, build_distress_summary_table
 from nmtcapp.tables.geographic_table import build_geographic_table
-from nmtcapp.tables.impact_table import build_impact_table
-from nmtcapp.tables.pipeline_table import build_pipeline_table
+from nmtcapp.tables.impact_table import build_impact_table, build_impact_summary_table
+from nmtcapp.tables.investor_table import (
+    build_investor_identification_table, build_investor_commitment_table,
+)
+from nmtcapp.tables.pipeline_table import build_pipeline_table, build_pipeline_summary_table
 from nmtcapp.tables.track_record_table import build_track_record_table
 
 if TYPE_CHECKING:
@@ -75,6 +78,8 @@ class WordApplicationBuilder:
         self._build_appendix_geographic(doc)
         doc.add_page_break()
         self._build_appendix_impact(doc)
+        doc.add_page_break()
+        self._build_investor_section(doc)
         doc.add_page_break()
         self._build_appendix_track_record(doc)
         doc.add_page_break()
@@ -278,15 +283,46 @@ class WordApplicationBuilder:
     # ------------------------------------------------------------------
 
     def _build_appendix_pipeline(self, doc: Document) -> None:
+        """Appendix A: 6-col summary in portrait + full detail in landscape."""
         add_styled_paragraph(doc, "Appendix A: Pipeline Detail", level=1, color_key="primary")
-        df = build_pipeline_table(self.application.pipeline, self.application.cde)
-        _write_df_to_doc(doc, df, max_rows=25)
+
+        # Summary table in portrait — fits on page
+        summary_df = build_pipeline_summary_table(self.application.pipeline)
+        _write_df_to_doc(doc, summary_df)
+
+        # Note pointing to Excel for full detail
+        p = doc.add_paragraph(
+            "Full 33-column pipeline detail (deal economics, QLICI structure, timeline) "
+            "is provided in the accompanying Excel workbook, Pipeline Detail tab. "
+            "The landscape pages below contain key pipeline fields for reference."
+        )
+        p.runs[0].font.italic = True
+        p.runs[0].font.size = Pt(TYPOGRAPHY["size_caption"])
+
+        # Landscape section with the full table (key 12-col subset)
+        self._switch_to_landscape(doc)
+        add_styled_paragraph(doc, "Appendix A (continued): Pipeline Detail — Full View",
+                              level=2, color_key="secondary")
+        full_df = build_pipeline_table(self.application.pipeline, self.application.cde)
+        # Key 12 columns that fit in landscape with 8pt
+        landscape_cols = [
+            "Project ID", "Project Name", "City", "State",
+            "Distress Level", "NMTC Eligible (Y/N)", "NMTC Native Area (Y/N)",
+            "QEI Request ($)", "Total Project Cost ($)",
+            "Jobs Created", "Jobs Retained", "Sector (NAICS)",
+        ]
+        existing = [c for c in landscape_cols if c in full_df.columns]
+        _write_df_to_doc(doc, full_df[existing], max_rows=50, font_size=8)
+        self._switch_to_portrait(doc)
 
     def _build_appendix_distress(self, doc: Document) -> None:
+        """Appendix B: distress table in landscape (15 cols fits at 8pt)."""
+        self._switch_to_landscape(doc)
         add_styled_paragraph(doc, "Appendix B: Distress Documentation", level=1,
                               color_key="primary")
         df = build_distress_table(self.application.pipeline)
-        _write_df_to_doc(doc, df)
+        _write_df_to_doc(doc, df, font_size=8)
+        self._switch_to_portrait(doc)
 
     def _build_appendix_geographic(self, doc: Document) -> None:
         add_styled_paragraph(doc, "Appendix C: Geographic Targeting", level=1,
@@ -295,15 +331,64 @@ class WordApplicationBuilder:
         _write_df_to_doc(doc, df)
 
     def _build_appendix_impact(self, doc: Document) -> None:
+        """Appendix D: 7-col summary in portrait."""
         add_styled_paragraph(doc, "Appendix D: Impact Projections", level=1,
                               color_key="primary")
-        df = build_impact_table(self.application.pipeline)
+        df = build_impact_summary_table(self.application.pipeline)
         _write_df_to_doc(doc, df, max_rows=25)
+        p = doc.add_paragraph(
+            "Full impact detail (units, square footage, OZ/HMR flags) is provided "
+            "in the accompanying Excel workbook, Impact Projections tab."
+        )
+        p.runs[0].font.italic = True
+        p.runs[0].font.size = Pt(TYPOGRAPHY["size_caption"])
 
     def _build_appendix_track_record(self, doc: Document) -> None:
         add_styled_paragraph(doc, "Appendix E: CDE Track Record", level=1, color_key="primary")
         df = build_track_record_table(self.application.cde)
         _write_df_to_doc(doc, df)
+
+    # ------------------------------------------------------------------
+    # Investor section (Section D body) — split into two narrow tables
+    # ------------------------------------------------------------------
+
+    def _build_investor_section(self, doc: Document) -> None:
+        """Add the investor table split into identification + commitment detail."""
+        add_styled_paragraph(doc, "Section D: Investor Commitments", level=2,
+                              color_key="secondary")
+        id_df = build_investor_identification_table(self.application)
+        commit_df = build_investor_commitment_table(self.application)
+        if not id_df.empty:
+            _write_df_to_doc(doc, id_df)
+        doc.add_paragraph()
+        if not commit_df.empty:
+            _write_df_to_doc(doc, commit_df)
+
+    # ------------------------------------------------------------------
+    # Orientation helpers
+    # ------------------------------------------------------------------
+
+    def _switch_to_landscape(self, doc: Document) -> None:
+        """Add a page break into a new landscape section."""
+        new_sec = doc.add_section(WD_SECTION.NEW_PAGE)
+        new_sec.orientation = WD_ORIENT.LANDSCAPE
+        new_sec.page_width = Inches(11)
+        new_sec.page_height = Inches(8.5)
+        new_sec.left_margin = Inches(0.75)
+        new_sec.right_margin = Inches(0.75)
+        new_sec.top_margin = Inches(0.75)
+        new_sec.bottom_margin = Inches(0.75)
+
+    def _switch_to_portrait(self, doc: Document) -> None:
+        """Add a page break back to portrait layout."""
+        new_sec = doc.add_section(WD_SECTION.NEW_PAGE)
+        new_sec.orientation = WD_ORIENT.PORTRAIT
+        new_sec.page_width = Inches(8.5)
+        new_sec.page_height = Inches(11)
+        new_sec.left_margin = Inches(PAGE_LAYOUT["margin_left"])
+        new_sec.right_margin = Inches(PAGE_LAYOUT["margin_right"])
+        new_sec.top_margin = Inches(PAGE_LAYOUT["margin_top"])
+        new_sec.bottom_margin = Inches(PAGE_LAYOUT["margin_bottom"])
 
     def _build_methodology(self, doc: Document) -> None:
         from nmtcapp import __version__
@@ -362,7 +447,7 @@ class WordApplicationBuilder:
 # Helper functions
 # ---------------------------------------------------------------------------
 
-def _write_df_to_doc(doc: Document, df, max_rows: int = 50) -> None:
+def _write_df_to_doc(doc: Document, df, max_rows: int = 50, font_size: int = None) -> None:
     """Write a DataFrame as a styled table to the document."""
     if df is None or df.empty:
         doc.add_paragraph("No data available.")
@@ -370,7 +455,7 @@ def _write_df_to_doc(doc: Document, df, max_rows: int = 50) -> None:
     display = df.head(max_rows)
     headers = list(display.columns)
     data = [list(row) for _, row in display.iterrows()]
-    add_styled_table(doc, headers, data, totals_last=True)
+    add_styled_table(doc, headers, data, totals_last=True, font_size=font_size)
     if len(df) > max_rows:
         p = doc.add_paragraph(f"Showing {max_rows} of {len(df)} rows. See Excel attachment for complete data.")
         p.runs[0].font.italic = True

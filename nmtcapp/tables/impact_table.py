@@ -12,6 +12,48 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def build_impact_summary_table(pipeline: "Pipeline") -> pd.DataFrame:
+    """Build a 7-column impact summary for Word/PDF body sections.
+
+    Example::
+
+        df = build_impact_summary_table(pipeline)
+    """
+    rows = []
+    for p in pipeline:
+        name = p.project_name
+        if len(name) > 35:
+            name = name[:32] + "..."
+        cost_per_job = (
+            p.total_project_cost / p.expected_jobs_created
+            if p.expected_jobs_created > 0 else 0.0
+        )
+        rows.append({
+            "Project Name":      name,
+            "State":             p.state,
+            "Sector":            p.sector.replace("_", " ").title(),
+            "Jobs Created":      p.expected_jobs_created,
+            "QEI ($)":           p.qei_request,
+            "Cost per Job ($)":  round(cost_per_job),
+            "Distress Level":    p.distress_level or "Pending",
+        })
+    if not rows:
+        return pd.DataFrame()
+    df = pd.DataFrame(rows)
+    total_jobs = df["Jobs Created"].sum()
+    total_qei = df["QEI ($)"].sum()
+    df.loc[len(df)] = {
+        "Project Name": f"TOTALS ({len(df)} projects)",
+        "State": "",
+        "Sector": "",
+        "Jobs Created": total_jobs,
+        "QEI ($)": total_qei,
+        "Cost per Job ($)": round(df["QEI ($)"].sum() / total_jobs) if total_jobs > 0 else 0,
+        "Distress Level": "",
+    }
+    return df
+
+
 def build_impact_table(pipeline: "Pipeline") -> pd.DataFrame:
     """Build per-project impact projections in CDFI Fund Section B format.
 

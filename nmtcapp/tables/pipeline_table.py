@@ -111,6 +111,44 @@ def _build_totals_row(df: pd.DataFrame) -> dict:
     return row
 
 
+def build_pipeline_summary_table(pipeline: "Pipeline") -> pd.DataFrame:
+    """Build a 6-column summary of the pipeline for Word/PDF body sections.
+
+    Full 33-column detail lives in the Excel attachment.  This view gives
+    reviewers the key facts on a single portrait page.
+
+    Example::
+
+        df = build_pipeline_summary_table(pipeline)
+    """
+    rows = []
+    for p in pipeline:
+        name = p.project_name
+        if len(name) > 40:
+            name = name[:37] + "..."
+        rows.append({
+            "Project ID":          p.project_id,
+            "Project Name":        name,
+            "State":               p.state,
+            "Distress Level":      DISTRESS_DISPLAY.get(p.distress_level, "Not Assessed"),
+            "QEI Request ($)":     p.qei_request,
+            "Total Project Cost ($)": p.total_project_cost,
+        })
+    if not rows:
+        return pd.DataFrame(columns=["Project ID", "Project Name", "State",
+                                     "Distress Level", "QEI Request ($)", "Total Project Cost ($)"])
+    df = pd.DataFrame(rows)
+    totals = {
+        "Project ID": "TOTALS",
+        "Project Name": f"{len(df)} projects",
+        "State": "",
+        "Distress Level": "",
+        "QEI Request ($)": df["QEI Request ($)"].sum(),
+        "Total Project Cost ($)": df["Total Project Cost ($)"].sum(),
+    }
+    return pd.concat([df, pd.DataFrame([totals])], ignore_index=True)
+
+
 _PIPELINE_COLUMNS = [
     "Project ID", "QALICB Name", "Project Name", "Street Address", "City", "State",
     "ZIP Code", "Census Tract (11-digit)", "NMTC Eligible (Y/N)", "Distress Level",

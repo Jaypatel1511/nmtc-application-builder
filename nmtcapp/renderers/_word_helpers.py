@@ -72,19 +72,24 @@ def add_styled_paragraph(doc, text: str, level: int = 0, center: bool = False,
 
 
 def add_styled_table(doc, headers: list, data: list,
-                     col_widths: list = None, totals_last: bool = False) -> object:
+                     col_widths: list = None, totals_last: bool = False,
+                     font_size: int = None) -> object:
     """Add a professionally styled table with dark header and alternating rows."""
     if not headers:
         return None
+
+    body_pt = font_size or TYPOGRAPHY["size_table_body"]
+    header_pt = max(body_pt - 1, 7) if font_size else TYPOGRAPHY["size_table_header"]
 
     n_rows = 1 + len(data)
     n_cols = len(headers)
     table = doc.add_table(rows=n_rows, cols=n_cols)
     table.style = "Table Grid"
+    table.autofit = True
 
     # Header row
     hrow = table.rows[0]
-    hrow.height = Inches(0.35)
+    hrow.height = Inches(0.30)
     for j, hdr in enumerate(headers):
         cell = hrow.cells[j]
         _clear_and_set(cell, str(hdr))
@@ -92,7 +97,7 @@ def add_styled_table(doc, headers: list, data: list,
         run = cell.paragraphs[0].runs[0]
         run.font.bold = True
         run.font.color.rgb = RGBColor(255, 255, 255)
-        run.font.size = Pt(TYPOGRAPHY["size_table_header"])
+        run.font.size = Pt(header_pt)
         cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     # Data rows
@@ -103,11 +108,11 @@ def add_styled_table(doc, headers: list, data: list,
         )
         for j, val in enumerate(row_data):
             cell = row.cells[j]
-            text = _fmt_cell(val)
+            text = _truncate(_fmt_cell(val), 80)
             _clear_and_set(cell, text)
             shade_cell(cell, bg)
             run = cell.paragraphs[0].runs[0]
-            run.font.size = Pt(TYPOGRAPHY["size_table_body"])
+            run.font.size = Pt(body_pt)
             if totals_last and i == len(data) - 1:
                 run.font.bold = True
 
@@ -167,6 +172,13 @@ def _add_body_text(doc, text: str) -> None:
             p = doc.add_paragraph(para)
             if p.runs:
                 p.runs[0].font.size = Pt(TYPOGRAPHY["size_body"])
+
+
+def _truncate(text: str, max_len: int) -> str:
+    """Truncate cell text with ellipsis if it exceeds max_len."""
+    if len(text) <= max_len:
+        return text
+    return text[:max_len - 3] + "..."
 
 
 def _clear_and_set(cell, text: str) -> None:

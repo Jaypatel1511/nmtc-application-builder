@@ -78,6 +78,27 @@ def build_distress_table(pipeline: "Pipeline") -> pd.DataFrame:
     return df
 
 
+def build_distress_summary_table(pipeline: "Pipeline") -> pd.DataFrame:
+    """Build a 5-column distress summary for Word/PDF body sections.
+
+    Example::
+
+        df = build_distress_summary_table(pipeline)
+    """
+    rows = []
+    for p in pipeline:
+        rows.append({
+            "Project ID":           p.project_id,
+            "Census Tract (GEOID)": p.census_tract or "Pending",
+            "Distress Level":       DISTRESS_DISPLAY.get(p.distress_level, "Not Assessed"),
+            "Severely Distressed":  "Yes" if p.distress_level in ("deep", "severe") else "No",
+            "Native Area":          "Yes" if p.is_native_area else "No",
+        })
+    if not rows:
+        return pd.DataFrame()
+    return pd.DataFrame(rows)
+
+
 def _fmt_pct(p) -> str:
     """Return formatted poverty rate if available via distress level proxy."""
     if p.distress_level == "deep":
