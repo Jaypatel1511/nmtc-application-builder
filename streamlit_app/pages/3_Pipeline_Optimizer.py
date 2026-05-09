@@ -5,8 +5,8 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+import matplotlib.pyplot as plt
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
@@ -23,11 +23,13 @@ from utils import (
     fmt_millions,
     fmt_pct,
     get_or_create_app,
+    apply_theme,
 )
 
 # ---------------------------------------------------------------------------
 # Page header
 # ---------------------------------------------------------------------------
+apply_theme()
 st.title("⚙️ Pipeline Optimizer")
 st.markdown(
     "Automatically select the highest-scoring project subset from your pipeline given "
@@ -256,23 +258,18 @@ if selected:
     left, right = st.columns([1, 1])
 
     with left:
-        fig_pie = px.pie(
-            names=sector_labels,
-            values=sector_values,
-            color_discrete_sequence=px.colors.qualitative.Bold,
-            title="Selected QEI by sector",
-            hole=0.35,
+        fig_pie, ax_pie = plt.subplots(figsize=(5, 5))
+        ax_pie.pie(
+            sector_values,
+            labels=sector_labels,
+            autopct="%1.1f%%",
+            wedgeprops=dict(width=0.65),
+            startangle=90,
         )
-        fig_pie.update_traces(
-            textinfo="label+percent",
-            hovertemplate="%{label}: $%{value:,.0f}<extra></extra>",
-        )
-        fig_pie.update_layout(
-            margin=dict(l=0, r=0, t=40, b=0),
-            height=340,
-            legend=dict(orientation="h", y=-0.15),
-        )
-        st.plotly_chart(fig_pie, use_container_width=True)
+        ax_pie.set_title("Selected QEI by sector")
+        fig_pie.tight_layout()
+        st.pyplot(fig_pie, use_container_width=True)
+        plt.close(fig_pie)
 
     with right:
         st.markdown("**State distribution**")

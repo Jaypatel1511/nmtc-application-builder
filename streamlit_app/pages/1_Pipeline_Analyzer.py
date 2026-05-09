@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 import tempfile
 
 import pandas as pd
-import plotly.express as px
+import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import streamlit as st
 
@@ -26,11 +26,13 @@ from utils import (
     fmt_millions,
     fmt_pct,
     get_or_create_app,
+    apply_theme,
 )
 
 # ---------------------------------------------------------------------------
 # Page config
 # ---------------------------------------------------------------------------
+apply_theme()
 st.title("📋 Pipeline Analyzer")
 st.markdown(
     "Run a comprehensive intelligence analysis on your NMTC project pipeline — "
@@ -188,23 +190,17 @@ with tabs[0]:
                 for k, v in breakdown.items()
             ]
         )
-        fig = px.bar(
-            breakdown_df,
-            x="Score",
-            y="Dimension",
-            orientation="h",
-            color_discrete_sequence=[PRIMARY],
-            range_x=[0, 100],
-            text="Score",
-        )
-        fig.update_layout(
-            margin=dict(l=0, r=0, t=20, b=0),
-            height=240,
-            xaxis_title="Score (0–100)",
-            yaxis_title=None,
-        )
-        fig.update_traces(texttemplate="%{text:.1f}", textposition="outside")
-        st.plotly_chart(fig, use_container_width=True)
+        fig, ax = plt.subplots(figsize=(8, 3))
+        bars = ax.barh(breakdown_df["Dimension"], breakdown_df["Score"], color=PRIMARY)
+        for bar, score in zip(bars, breakdown_df["Score"]):
+            ax.text(score + 1, bar.get_y() + bar.get_height() / 2, f"{score:.1f}",
+                    va="center", ha="left", fontsize=9)
+        ax.set_xlim(0, 115)
+        ax.set_xlabel("Score (0–100)")
+        ax.spines[["top", "right"]].set_visible(False)
+        fig.tight_layout()
+        st.pyplot(fig, use_container_width=True)
+        plt.close(fig)
     else:
         st.markdown(f"**Overall readiness grade:** `{grade}` ({readiness:.1f}/100)")
 
@@ -279,28 +275,30 @@ with tabs[1]:
                 winner_p75 * 100,
             ],
         }
-        fig_bench = px.bar(
-            bench_data,
-            x="Metric",
-            y="Deep/Severe %",
-            color="Metric",
-            color_discrete_map={
-                "Your pipeline": ACCENT,
-                "Winner p25": "#aab7d4",
-                "Winner median": "#6680b3",
-                "Winner p75": PRIMARY,
-            },
-            text_auto=".1f",
+        _bench_colors = {
+            "Your pipeline": ACCENT,
+            "Winner p25": "#aab7d4",
+            "Winner median": "#6680b3",
+            "Winner p75": PRIMARY,
+        }
+        fig_bench, ax_bench = plt.subplots(figsize=(6, 3.5))
+        _bars = ax_bench.bar(
+            bench_data["Metric"],
+            bench_data["Deep/Severe %"],
+            color=[_bench_colors[m] for m in bench_data["Metric"]],
         )
-        fig_bench.update_layout(
-            showlegend=False,
-            margin=dict(l=0, r=0, t=20, b=0),
-            height=280,
-            yaxis_range=[0, 100],
-            yaxis_title="% of QEI",
-            xaxis_title=None,
-        )
-        st.plotly_chart(fig_bench, use_container_width=True)
+        for bar in _bars:
+            ax_bench.text(
+                bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.5,
+                f"{bar.get_height():.1f}", ha="center", va="bottom", fontsize=9,
+            )
+        ax_bench.set_ylim(0, 105)
+        ax_bench.set_ylabel("% of QEI")
+        ax_bench.tick_params(axis="x", rotation=10)
+        ax_bench.spines[["top", "right"]].set_visible(False)
+        fig_bench.tight_layout()
+        st.pyplot(fig_bench, use_container_width=True)
+        plt.close(fig_bench)
 
         vs_hist = d.get("vs_historical_winners", "N/A")
         st.markdown(f"**Historical ranking:** {vs_hist}")
@@ -338,22 +336,18 @@ with tabs[2]:
         )
         state_qei["QEI ($M)"] = state_qei["QEI ($)"] / 1_000_000
 
-        fig_states = px.bar(
-            state_qei,
-            x="state",
-            y="QEI ($M)",
-            color_discrete_sequence=[PRIMARY],
-            text_auto=".1f",
-            labels={"state": "State", "QEI ($M)": "QEI ($ millions)"},
-            title="QEI by state",
-        )
-        fig_states.update_layout(
-            margin=dict(l=0, r=0, t=40, b=0),
-            height=360,
-            xaxis_title="State",
-            yaxis_title="QEI ($ millions)",
-        )
-        st.plotly_chart(fig_states, use_container_width=True)
+        fig_states, ax_states = plt.subplots(figsize=(9, 4))
+        ax_states.bar(state_qei["state"], state_qei["QEI ($M)"], color=PRIMARY)
+        for i, val in enumerate(state_qei["QEI ($M)"]):
+            ax_states.text(i, val + 0.05, f"{val:.1f}", ha="center", va="bottom", fontsize=8)
+        ax_states.set_xlabel("State")
+        ax_states.set_ylabel("QEI ($ millions)")
+        ax_states.set_title("QEI by state")
+        ax_states.tick_params(axis="x", rotation=45)
+        ax_states.spines[["top", "right"]].set_visible(False)
+        fig_states.tight_layout()
+        st.pyplot(fig_states, use_container_width=True)
+        plt.close(fig_states)
 
     # Urban / rural split
     left, right = st.columns(2)
@@ -422,23 +416,16 @@ with tabs[3]:
         sector_qei["QEI ($M)"] = sector_qei["QEI ($)"] / 1_000_000
         sector_qei["sector_label"] = sector_qei["sector"].str.replace("_", " ").str.title()
 
-        fig_sector = px.bar(
-            sector_qei,
-            x="QEI ($M)",
-            y="sector_label",
-            orientation="h",
-            color_discrete_sequence=[PRIMARY],
-            text_auto=".1f",
-            labels={"sector_label": "Sector", "QEI ($M)": "QEI ($ millions)"},
-            title="QEI allocation by sector",
-        )
-        fig_sector.update_layout(
-            margin=dict(l=0, r=0, t=40, b=0),
-            height=360,
-            xaxis_title="QEI ($ millions)",
-            yaxis_title=None,
-        )
-        st.plotly_chart(fig_sector, use_container_width=True)
+        fig_sector, ax_sector = plt.subplots(figsize=(8, 4))
+        ax_sector.barh(sector_qei["sector_label"], sector_qei["QEI ($M)"], color=PRIMARY)
+        for i, val in enumerate(sector_qei["QEI ($M)"]):
+            ax_sector.text(val + 0.05, i, f"{val:.1f}", ha="left", va="center", fontsize=9)
+        ax_sector.set_xlabel("QEI ($ millions)")
+        ax_sector.set_title("QEI allocation by sector")
+        ax_sector.spines[["top", "right"]].set_visible(False)
+        fig_sector.tight_layout()
+        st.pyplot(fig_sector, use_container_width=True)
+        plt.close(fig_sector)
 
     # Sector QEI share breakdown
     sector_breakdown = s.get("sector_breakdown", {})
@@ -496,29 +483,31 @@ with tabs[4]:
         bench_df = pd.DataFrame(
             [{"Metric": k, "Jobs / $1MM QEI": v} for k, v in benchmarks.items()]
         )
-        fig_jpm = px.bar(
-            bench_df,
-            x="Metric",
-            y="Jobs / $1MM QEI",
-            color="Metric",
-            color_discrete_map={
-                "Your pipeline": ACCENT,
-                "Winner p25": "#c8d3e8",
-                "Winner median": "#7b96c9",
-                "Winner p75": "#3d6ab0",
-                "Winner top 10%": PRIMARY,
-            },
-            text_auto=".1f",
-            title="Jobs/$1MM QEI vs. winner benchmarks",
+        _jpm_colors = {
+            "Your pipeline": ACCENT,
+            "Winner p25": "#c8d3e8",
+            "Winner median": "#7b96c9",
+            "Winner p75": "#3d6ab0",
+            "Winner top 10%": PRIMARY,
+        }
+        fig_jpm, ax_jpm = plt.subplots(figsize=(7, 3.5))
+        _jpm_bars = ax_jpm.bar(
+            bench_df["Metric"],
+            bench_df["Jobs / $1MM QEI"],
+            color=[_jpm_colors[m] for m in bench_df["Metric"]],
         )
-        fig_jpm.update_layout(
-            showlegend=False,
-            margin=dict(l=0, r=0, t=40, b=0),
-            height=300,
-            xaxis_title=None,
-            yaxis_title="Jobs / $1MM QEI",
-        )
-        st.plotly_chart(fig_jpm, use_container_width=True)
+        for bar in _jpm_bars:
+            ax_jpm.text(
+                bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.2,
+                f"{bar.get_height():.1f}", ha="center", va="bottom", fontsize=9,
+            )
+        ax_jpm.set_ylabel("Jobs / $1MM QEI")
+        ax_jpm.set_title("Jobs/$1MM QEI vs. winner benchmarks")
+        ax_jpm.tick_params(axis="x", rotation=15)
+        ax_jpm.spines[["top", "right"]].set_visible(False)
+        fig_jpm.tight_layout()
+        st.pyplot(fig_jpm, use_container_width=True)
+        plt.close(fig_jpm)
 
     with right:
         st.markdown("**Impact summary**")

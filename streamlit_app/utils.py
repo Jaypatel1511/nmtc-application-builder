@@ -100,6 +100,20 @@ def priority_color(priority: str) -> str:
     }.get(priority.lower(), MUTED)
 
 
+def apply_theme() -> None:
+    """Inject shared dark sidebar CSS — call at the top of every page."""
+    st.markdown(
+        """
+        <style>
+        [data-testid="stSidebar"] {
+            background-color: #0e1117;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def render_methodology_warning() -> None:
     """Display the mandatory win-alignment methodology disclosure."""
     st.warning(

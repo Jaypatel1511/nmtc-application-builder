@@ -4,14 +4,21 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
+import sys
+import os
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
 import pandas as pd
 import streamlit as st
 
 from nmtcapp.data.historical_awards import NMTC_AWARD_ROUNDS, APPLICATION_VOLUME_TRENDS
+from utils import apply_theme
 
 # ---------------------------------------------------------------------------
 # Page header
 # ---------------------------------------------------------------------------
+apply_theme()
 st.title("📖 About & Methodology")
 st.markdown(
     "Documentation for the NMTC Application Builder — data sources, scoring methodology, "

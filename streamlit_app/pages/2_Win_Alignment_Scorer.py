@@ -22,11 +22,13 @@ from utils import (
     tier_badge_html,
     priority_color,
     render_methodology_warning,
+    apply_theme,
 )
 
 # ---------------------------------------------------------------------------
 # Page header
 # ---------------------------------------------------------------------------
+apply_theme()
 st.title("🎯 Win Alignment Scorer")
 st.markdown(
     "Score this application's alignment with patterns observed in historical NMTC "

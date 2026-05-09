@@ -1,5 +1,6 @@
 """NMTC Application Builder — Streamlit demo entry point."""
 import streamlit as st
+from utils import apply_theme
 
 st.set_page_config(
     page_title="NMTC Application Builder",
@@ -85,11 +86,6 @@ st.markdown(
         letter-spacing: 0.03em;
     }
 
-    /* Sidebar */
-    [data-testid="stSidebar"] {
-        background: #f0f4fb;
-    }
-
     /* Competitive tier badge */
     .tier-badge {
         display: inline-block;
@@ -104,6 +100,7 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+apply_theme()
 
 # ---------------------------------------------------------------------------
 # Header
