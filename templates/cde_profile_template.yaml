@@ -1,0 +1,22 @@
+# CDE Profile Template — nmtc-application-builder
+# Complete all required fields before running analysis.
+# See documentation for field descriptions.
+
+cde_id: ""              # e.g., "CDE-2025-001"
+name: ""                # Full legal CDE name
+ein: ""                 # Employer Identification Number (XX-XXXXXXX)
+headquarters_state: ""  # Two-letter state code
+service_area_states: [] # List of states where CDE deploys capital
+mission_statement: ""   # Brief mission statement (1-2 sentences)
+organization_type: ""   # "nonprofit" | "for_profit" | "government"
+
+prior_awards:
+  - allocation_round: ""        # e.g., "CY2020"
+    allocation_amount: 0        # Dollars
+    deployment_status: ""       # "fully_deployed" | "in_deployment" | "not_started"
+    states: []                  # States where this round was deployed
+
+financial_profile:
+  total_assets: 0               # Most recent audited total assets
+  net_assets: 0                 # Most recent audited net assets
+  years_in_operation: 0         # Years since CDE certification

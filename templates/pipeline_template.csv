@@ -1,0 +1,4 @@
+project_id,project_name,qalicb_name,address,city,state,sector,project_type,total_project_cost,qei_request,qlici_amount,expected_jobs_created,expected_jobs_retained,expected_units_built,expected_sq_ft,closing_target_date
+# VALID SECTORS: healthcare | affordable_housing | education | small_business | mixed_use | community_facility | clean_energy | other
+# VALID PROJECT TYPES: real_estate | operating_business | mixed_use
+# closing_target_date format: YYYY-MM-DD

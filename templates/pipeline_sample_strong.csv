@@ -1,0 +1,21 @@
+project_id,project_name,qalicb_name,address,city,state,sector,project_type,total_project_cost,qei_request,qlici_amount,expected_jobs_created,expected_jobs_retained,expected_units_built,expected_sq_ft,closing_target_date
+PRJ-S001,Southside Community Health Center,Southside HC QALICB LLC,3400 S Michigan Ave,Chicago,IL,healthcare,real_estate,12500000,8500000,8500000,52,18,,24000,2025-09-30
+PRJ-S002,East Houston Charter Academy,East Houston Academy QALICB LLC,5200 Lawndale St,Houston,TX,education,real_estate,9800000,7000000,7000000,38,22,,,2025-12-15
+PRJ-S003,Bronx Food Hub,Bronx Food Hub QALICB LLC,800 Hunts Point Ave,Bronx,NY,small_business,real_estate,7200000,5000000,5000000,65,8,,18000,2025-08-31
+PRJ-S004,Watts Manufacturing Center,Watts MFG QALICB LLC,9500 S Grape St,Los Angeles,CA,small_business,operating_business,6000000,4500000,4500000,80,25,,,2025-11-30
+PRJ-S005,Cleveland Neighborhood Clinic,Cleveland Neighborhood HC QALICB LLC,2100 Euclid Ave,Cleveland,OH,healthcare,real_estate,10000000,7500000,7500000,42,30,,20000,2026-01-31
+PRJ-S006,Atlanta Affordable Homes Phase II,Atlanta AH QALICB LLC,640 McDaniel St SW,Atlanta,GA,affordable_housing,real_estate,14000000,9000000,9000000,15,5,72,,2025-10-31
+PRJ-S007,North Philadelphia Wellness Hub,North Philly Wellness QALICB LLC,2500 N Broad St,Philadelphia,PA,healthcare,mixed_use,11000000,8000000,8000000,55,20,,22000,2026-03-31
+PRJ-S008,New Orleans Culinary Arts Center,NOLA Culinary QALICB LLC,1800 Oretha Castle Haley Blvd,New Orleans,LA,education,real_estate,8200000,6000000,6000000,35,8,,16000,2025-11-15
+PRJ-S009,Memphis Small Business Incubator,Memphis SBI QALICB LLC,400 Monroe Ave,Memphis,TN,small_business,operating_business,4800000,3500000,3500000,90,15,,,2025-08-15
+PRJ-S010,Charlotte Workforce Training Center,Charlotte WTC QALICB LLC,2800 Freedom Dr,Charlotte,NC,education,real_estate,7500000,5500000,5500000,30,12,,14000,2025-12-31
+PRJ-S011,Phoenix Native American Health Clinic,Phoenix Native HC QALICB LLC,4212 W Indian School Rd,Phoenix,AZ,healthcare,real_estate,9000000,6500000,6500000,48,25,,18500,2026-01-15
+PRJ-S012,Detroit Auto Parts Manufacturer,Detroit Auto Parts QALICB LLC,7800 E Jefferson Ave,Detroit,MI,small_business,operating_business,6500000,5000000,5000000,110,45,,,2025-09-30
+PRJ-S013,Indianapolis Mixed-Use Community Hub,Indy Community Hub QALICB LLC,1200 N Alabama St,Indianapolis,IN,mixed_use,mixed_use,10500000,7500000,7500000,35,10,24,20000,2026-03-15
+PRJ-S014,Milwaukee Affordable Apartments,MKE Affordable QALICB LLC,1900 W National Ave,Milwaukee,WI,affordable_housing,real_estate,13500000,9500000,9500000,12,4,64,,2026-02-28
+PRJ-S015,St. Louis Community Solar Project,STL Solar QALICB LLC,3600 Market St,St. Louis,MO,clean_energy,operating_business,5000000,3800000,3800000,22,6,,,2025-10-15
+PRJ-S016,Rural Mississippi Health Access Center,Rural MS Health QALICB LLC,510 Main St,Greenville,MS,healthcare,real_estate,4200000,3200000,3200000,20,15,,8000,2025-11-30
+PRJ-S017,Kansas City Affordable Senior Housing,KC Senior Housing QALICB LLC,3500 Troost Ave,Kansas City,KS,affordable_housing,real_estate,11800000,8500000,8500000,10,3,56,,2026-02-15
+PRJ-S018,Baltimore Community Food Market,Baltimore Food QALICB LLC,2700 Pennsylvania Ave,Baltimore,MD,community_facility,real_estate,5800000,4200000,4200000,45,8,,11000,2025-10-31
+PRJ-S019,Albuquerque Mixed-Use Arts District,ABQ Arts QALICB LLC,400 Central Ave NE,Albuquerque,NM,mixed_use,mixed_use,7800000,5800000,5800000,32,9,18,15000,2025-12-15
+PRJ-S020,Tampa Bay Healthcare Collaborative,Tampa HC QALICB LLC,1801 N Howard Ave,Tampa,FL,healthcare,real_estate,8900000,6200000,6200000,44,18,,19000,2026-01-20

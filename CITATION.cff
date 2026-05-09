@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this software in research, please cite it as below."
+type: software
+title: "NMTC Application Builder"
+abstract: >
+  An open-source intelligence platform for Community Development Entities (CDEs)
+  preparing New Markets Tax Credit (NMTC) allocation applications to the CDFI Fund.
+  Provides pipeline analysis, win alignment scoring against historical winner patterns,
+  quantified recommendations, pipeline optimization, and automated document generation.
+authors:
+  - family-names: Patel
+    given-names: Jay
+    orcid: ""
+    email: thejaypatel1511@gmail.com
+repository-code: "https://github.com/Jaypatel1511/nmtc-application-builder"
+url: "https://jaypatel1511.github.io/nmtc-application-builder/"
+license: MIT
+version: "1.0.0"
+date-released: "2025-05-09"
+keywords:
+  - NMTC
+  - CDFI
+  - new-markets-tax-credit
+  - community-development
+  - pipeline-analysis
+  - win-alignment
+  - Python

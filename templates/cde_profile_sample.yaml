@@ -1,0 +1,76 @@
+# CDE Profile Sample — nmtc-application-builder
+# This is a realistic fictional CDE profile for a strong NMTC applicant.
+# All names, EINs, and financial figures are fictional.
+
+cde_id: "CDE-2018-0117"
+name: "Heartland Impact CDE, LLC"
+ein: "82-4491073"
+headquarters_state: "IL"
+service_area_states:
+  - "IL"
+  - "OH"
+  - "MI"
+  - "IN"
+  - "TN"
+  - "GA"
+  - "LA"
+  - "MO"
+mission_statement: >
+  Deploy New Markets Tax Credit capital into deep-distress communities across
+  the Midwest and South, with a focus on healthcare, education, and small
+  business operating businesses in persistent poverty counties.
+organization_type: "nonprofit"
+
+prior_awards:
+  - allocation_round: "CY2019"
+    allocation_amount: 40000000
+    deployment_status: "fully_deployed"
+    states:
+      - "IL"
+      - "OH"
+      - "TN"
+  - allocation_round: "CY2021"
+    allocation_amount: 55000000
+    deployment_status: "fully_deployed"
+    states:
+      - "IL"
+      - "GA"
+      - "LA"
+  - allocation_round: "CY2023"
+    allocation_amount: 60000000
+    deployment_status: "in_deployment"
+    states:
+      - "OH"
+      - "MI"
+      - "MO"
+      - "TN"
+
+financial_profile:
+  total_assets: 142000000
+  net_assets: 38500000
+  years_in_operation: 7
+
+# Additional fields (informational)
+contact:
+  name: "Sarah Johnson"
+  title: "President & CEO"
+  email: "sjohnson@heartlandimpactcde.org"
+  phone: "312-555-0192"
+
+governance:
+  board_members: 9
+  community_representatives: 4
+  independent_directors: 3
+  board_meeting_frequency: "quarterly"
+
+certification_date: "2018-06-20"
+website: "https://heartlandimpactcde.org"
+target_markets:
+  - "Illinois"
+  - "Ohio"
+  - "Michigan"
+  - "Indiana"
+  - "Tennessee"
+  - "Georgia"
+  - "Louisiana"
+  - "Missouri"

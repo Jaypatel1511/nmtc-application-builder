@@ -1,0 +1,13 @@
+project_id,project_name,qalicb_name,address,city,state,sector,project_type,total_project_cost,qei_request,qlici_amount,expected_jobs_created,expected_jobs_retained,expected_units_built,expected_sq_ft,closing_target_date
+PRJ-W001,Springfield Community Center,Springfield CF QALICB LLC,100 Main St,Springfield,IL,community_facility,real_estate,7500000,5500000,5500000,8,3,,,2025-10-31
+PRJ-W002,Rockford Neighborhood Center,Rockford CF QALICB LLC,220 E State St,Rockford,IL,community_facility,real_estate,6800000,5000000,5000000,7,2,,,2025-11-30
+PRJ-W003,Peoria Community Hub,Peoria CF QALICB LLC,415 Hamilton Blvd,Peoria,IL,community_facility,real_estate,7200000,5200000,5200000,9,4,,,2026-01-15
+PRJ-W004,Aurora Civic Building,Aurora CF QALICB LLC,43 W Galena Blvd,Aurora,IL,community_facility,real_estate,6500000,4800000,4800000,6,2,,,2025-12-31
+PRJ-W005,Elgin Social Services Facility,Elgin CF QALICB LLC,150 Dexter Ct,Elgin,IL,community_facility,real_estate,5800000,4300000,4300000,8,3,,,2025-09-30
+PRJ-W006,Joliet Multipurpose Center,Joliet CF QALICB LLC,81 N Chicago St,Joliet,IL,community_facility,real_estate,6200000,4600000,4600000,7,2,,,2026-02-28
+PRJ-W007,Naperville Resource Hub,Naperville CF QALICB LLC,55 S Main St,Naperville,IL,community_facility,real_estate,5500000,4100000,4100000,5,1,,,2025-10-15
+PRJ-W008,Waukegan Community Building,Waukegan CF QALICB LLC,100 N Martin Luther King Jr Ave,Waukegan,IL,community_facility,real_estate,6000000,4400000,4400000,10,5,,,2026-03-31
+PRJ-W009,Cicero Social Services Center,Cicero CF QALICB LLC,5600 W Cermak Rd,Cicero,IL,community_facility,real_estate,5900000,4350000,4350000,6,2,,,2025-11-15
+PRJ-W010,Berwyn Neighborhood Facility,Berwyn CF QALICB LLC,6700 W 26th St,Berwyn,IL,community_facility,real_estate,5700000,4200000,4200000,8,3,,,2025-08-31
+PRJ-W011,Decatur Community Center,Decatur CF QALICB LLC,1 Civic Center Plaza,Decatur,IL,community_facility,real_estate,6100000,4500000,4500000,12,5,,,2026-01-31
+PRJ-W012,Champaign Resource Center,Champaign CF QALICB LLC,102 N Neil St,Champaign,IL,community_facility,real_estate,5900000,4350000,4350000,9,3,,,2025-12-15

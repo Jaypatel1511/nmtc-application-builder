@@ -1,395 +1,213 @@
-# nmtc-application-builder
+# NMTC Application Builder
 
-**Weeks 1–3 of 4 — Foundation, Intelligence Layer & Output Renderers**
+**The open-source intelligence platform for competitive CDFI Fund applications.**
 
-The flagship library in a 17-library community development finance portfolio. Purpose-built for CDEs preparing New Markets Tax Credit (NMTC) allocation applications to the CDFI Fund.
+[![PyPI version](https://img.shields.io/pypi/v/nmtc-application-builder.svg)](https://pypi.org/project/nmtc-application-builder/)
+[![Python](https://img.shields.io/pypi/pyversions/nmtc-application-builder.svg)](https://pypi.org/project/nmtc-application-builder/)
+[![Tests](https://img.shields.io/badge/tests-544%20passing-brightgreen.svg)](https://github.com/Jaypatel1511/nmtc-application-builder/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://jaypatel1511.github.io/nmtc-application-builder/)
 
----
-
-## What This Is
-
-`nmtc-application-builder` gives CDEs a programmatic intelligence layer for NMTC application preparation. A single `generate()` call produces a complete, competition-ready application package:
-
-- Load and validate your project pipeline from CSV or Python
-- Enrich each project with NMTC eligibility, distress level, and census tract data
-- Get comprehensive analytics: distress concentration, geographic diversity, sector mix, impact projections
-- Score your application readiness (0–100) against historical winning application patterns
-- **Score alignment** with historical NMTC winners across 5 dimensions and 9 benchmarks
-- **Optimize your pipeline** subset with greedy + local-search to maximize winner alignment
-- **Get quantified recommendations** — specific, numbered improvement actions per dimension
-- Generate **Word**, **Excel**, **PDF**, and **Markdown** drafts — automatically
+**[Documentation](https://jaypatel1511.github.io/nmtc-application-builder/) · [Streamlit Demo](https://nmtc-application-builder.streamlit.app) · [Examples](examples/) · [PyPI](https://pypi.org/project/nmtc-application-builder/)**
 
 ---
 
-## Quick Start
+CDEs spend months preparing NMTC allocation applications without knowing how their pipeline compares to historical winners. This library changes that — scoring your pipeline against five years of CDFI Fund award data in seconds, generating competition-ready document drafts automatically, and telling you exactly what to fix.
 
 ```python
-from nmtcapp.core.application import Application
-from nmtcapp.core.cde import CDEProfile
-from nmtcapp.core.pipeline import Pipeline
+app = Application(cde=CDEProfile.sample(), requested_allocation=65_000_000)
+app.add_pipeline(Pipeline.from_csv("pipeline.csv"))
+score = app.score_win_probability()
+print(f"Alignment: {score.composite_score:.0f}/100 [{score.competitive_tier}]")
+# → Alignment: 66/100 [competitive]
+paths = app.generate("./drafts/")
+# → Word, Excel, PDF, and Markdown application package ready in ./drafts/
+```
+
+---
+
+## The Problem
+
+CDE teams preparing NMTC allocation applications work blind. They spend weeks manually assembling pipeline data in Excel, draft narrative sections without knowing how their distress concentration or geographic diversity compares to past winners, and submit applications with no objective measure of competitiveness. The CDFI Fund receives 280–340 applications per round with a ~35% acceptance rate — yet most CDEs have no systematic way to benchmark their position before the deadline.
+
+## The Solution
+
+`nmtc-application-builder` gives CDEs a programmatic intelligence layer built on five years of CDFI Fund public award data. Load your pipeline from CSV, run `analyze()`, and immediately see where you stand on every dimension the CDFI Fund scores: distress concentration, geographic diversity, sector mix, impact intensity, and pipeline quality. Get specific, numbered recommendations. Optimize your project subset automatically. Generate the Word, Excel, PDF, and Markdown drafts that go directly into your application package.
+
+---
+
+## Quickstart
+
+```bash
+pip install nmtc-application-builder[output,viz]
+```
+
+```python
+from nmtcapp import Application, CDEProfile, Pipeline
+from nmtcapp.optimizer import OptimizationConstraints
 
 # 1. Define your CDE
-cde = CDEProfile.sample()          # or CDEProfile.from_yaml("my_cde.yaml")
+cde = CDEProfile.sample()                           # or CDEProfile.from_yaml("cde.yaml")
 
 # 2. Load your pipeline
-pipeline = Pipeline.sample(n=20)   # or Pipeline.from_csv("pipeline.csv")
+pipeline = Pipeline.from_csv("pipeline.csv")        # or Pipeline.sample(n=20) for demo
 
-# 3. Create and analyze the application
+# 3. Analyze
 app = Application(cde=cde, requested_allocation=65_000_000)
 app.add_pipeline(pipeline)
 analysis = app.analyze()
 analysis.summary()
 
-# 4. Score alignment with historical winners (Week 3)
-score = app.score_win_probability()
-print(f"Alignment score: {score.composite_score:.1f}/100 [{score.competitive_tier}]")
-# NOTE: alignment score ≠ win probability — see score.methodology_disclosure
+# 4. Score alignment with historical winners
+score = app.score_win_probability()                 # alignment score, not win probability
+print(f"{score.composite_score:.0f}/100 [{score.competitive_tier}]")
 
 # 5. Get quantified recommendations
 recs = app.recommendations()
 print(recs.summary())
 
 # 6. Optimize your pipeline subset
-from nmtcapp.optimizer import OptimizationConstraints
 result = app.optimize_pipeline(
     constraints=OptimizationConstraints(max_total_qei=65_000_000, min_states=5)
 )
-print(f"Score: {result.alignment_score_before:.2f} → {result.alignment_score_after:.2f}")
+print(f"Score: {result.alignment_score_before*100:.0f} → {result.alignment_score_after*100:.0f}")
 
-# 7. Generate the full document package
+# 7. Generate the full application package
 paths = app.generate("./drafts/")
-# → ./drafts/CDE-2018-0117_application.md    (31 KB)
-# → ./drafts/CDE-2018-0117_application.docx  (51 KB)
-# → ./drafts/CDE-2018-0117_application.xlsx  (24 KB)
-# → ./drafts/CDE-2018-0117_application.pdf   (37 KB)
 ```
 
-### Sample Analysis Output
+Or bootstrap a starter project in 60 seconds:
 
-```
-======================================================================
-  NMTC APPLICATION ANALYSIS
-  CDE:   Heartland Impact CDE, LLC
-  Round: CY2025  |  Requested: $65,000,000
-======================================================================
-── Distress Concentration ─────────────────────────────
-  Deep/Severe:     87%  (✓ target)
-  Native Area:     10%
-  Historical Rank: top_quartile
-── Geographic Diversity ────────────────────────────────
-  States:          20
-  HHI:             549  (diverse)
-── Impact Projections ──────────────────────────────────
-  Jobs Created:    864
-  Jobs/$MM QEI:    7.0
-  Benchmark:       average
-============================================================
-  APPLICATION READINESS SCORE: 86.6/100  [A]
-  [█████████████████████████░░░░░] 86.6%
-============================================================
+```bash
+nmtcapp init my-application/
+cd my-application/
+jupyter notebook analysis.ipynb
 ```
 
 ---
 
-## Installation
+## What It Does
 
-```bash
-pip install nmtc-application-builder   # coming Week 4
-```
+- **Pipeline ingestion** — Load from CSV or build programmatically; validates all required fields
+- **NMTC eligibility enrichment** — Census tract lookup, distress level classification (deep / severe / LIC), opportunity zone and native area flags
+- **Distress concentration analysis** — Deep/severe QEI percentage vs. CDFI Fund competitive thresholds (target: ≥75%)
+- **Geographic diversity scoring** — State count, HHI concentration index, urban/rural split
+- **Sector mix analysis** — Shannon entropy, dominant sector, high-priority sector alignment
+- **Impact projection** — Jobs per $MM QEI benchmarked against historical winner distributions
+- **Win alignment scoring** — 5-dimensional score (0–100) against CY2020–2024 winner patterns
+- **Quantified recommendations** — Specific, numbered improvement actions per dimension with estimated score impact
+- **Pipeline optimizer** — Greedy + local-search selects the best project subset for your target budget
+- **Output generation** — Word, Excel, PDF, and Markdown application drafts in one call
+- **Geographic visualizations** — Publication-quality pipeline maps, radar charts, and benchmark plots at 300 DPI
+- **CLI** — `nmtcapp init` / `nmtcapp analyze` for quick command-line workflows
 
-For development:
-
-```bash
-git clone https://github.com/Jaypatel1511/nmtc-application-builder.git
-cd nmtc-application-builder
-pip install -e ".[dev]"
-```
-
-Optional output dependencies (included in `[dev]` extra):
-
-```bash
-pip install "nmtc-application-builder[output]"   # Word + Excel + PDF
-pip install "nmtc-application-builder[word]"      # python-docx only
-pip install "nmtc-application-builder[excel]"     # openpyxl only
-pip install "nmtc-application-builder[pdf]"       # reportlab only
-```
+> **Methodology note:** Alignment scores measure similarity to historical winner patterns — they are not win probabilities. The CDFI Fund does not publish rejected application data, so a true probability model cannot be built from public information alone.
 
 ---
 
-## Output Formats
+## Sample Output Gallery
 
-Each output includes: cover page, executive summary, readiness score callout, Sections A–E, and Appendices A–F (pipeline, distress, geographic, impact, track record, methodology).
+Generated outputs are in [`examples/sample_output/`](examples/sample_output/) — Word, Excel, PDF, and Markdown for a realistic sample CDE application.
 
-| Format | Class | Contents |
-|---|---|---|
-| **Markdown** | `MarkdownApplicationBuilder` | Full narrative draft, version-control friendly |
-| **Word** | `WordApplicationBuilder` | Professional `.docx` with tables, shading, footers |
-| **Excel** | `ExcelApplicationBuilder` | 7-sheet workbook with frozen panes, conditional formatting, chart |
-| **PDF** | `PDFApplicationBuilder` | Board-ready PDF via ReportLab |
+The three example notebooks tell a complete story:
 
-### Word Document
-
-The `.docx` output includes:
-- Dark blue banner cover page with gold accent
-- Details table (round, allocation, date, readiness grade)
-- Key metrics table and readiness score callout
-- All five application sections (A–E) with narrative and tables
-- Six appendices including pipeline detail and distress documentation
-- Page numbers in footer with CDE name and confidentiality notice
-
-### Excel Workbook (7 sheets)
-
-| Sheet | Contents |
+| Notebook | What it demonstrates |
 |---|---|
-| Summary Dashboard | Key metrics, readiness score breakdown, bar chart |
-| Pipeline Detail | Full pipeline with deal economics; conditional formatting by distress level |
-| Distress Documentation | ACS data and distress classification per project |
-| Geographic Targeting | State-level QEI breakdown with color-scale formatting |
-| Impact Projections | Jobs, units, cost-per-job per project |
-| Investor Commitments | Scaffold for Section D investor lineup |
-| Track Record | Prior award deployment history |
-
----
-
-## Section Generators
-
-Sections A–E are generated from structured content dicts — renderer-agnostic so the same content goes to Word, Markdown, and PDF:
-
-```python
-from nmtcapp.sections import ALL_SECTIONS
-
-for section_gen in ALL_SECTIONS:
-    content = section_gen.generate_content(app, analysis)
-    # content["subsections"] → list of {"heading", "body", "type"}
-    
-    md = section_gen.generate_markdown(app, analysis)
-    section_gen.generate_word(doc, app, analysis)
-```
-
-| Section | Title | Subsections |
-|---|---|---|
-| A | Business Strategy | Investment thesis, target markets, pipeline overview, deployment strategy |
-| B | Community Outcomes | Impact narrative, distress commitments, HMDA community need |
-| C | Management Capacity | Organizational history, governance, underwriting process |
-| D | Capitalization Strategy | Deal economics, investor narrative, leverage structure |
-| E | Prior Awards | Deployment history (skipped if no prior awards) |
+| [01_quickstart.ipynb](examples/01_quickstart.ipynb) | End-to-end workflow in 10 minutes |
+| [02_full_application_walkthrough.ipynb](examples/02_full_application_walkthrough.ipynb) | Complete document generation |
+| [03_intelligence_and_optimization.ipynb](examples/03_intelligence_and_optimization.ipynb) | **5.5 → 65.9 → 79.1/100** — weak→competitive pipeline transformation |
 
 ---
 
 ## Architecture
 
 ```
-nmtcapp/
-├── core/
-│   ├── application.py     # Application — master entry point + generate()
-│   ├── cde.py             # CDEProfile dataclass
-│   └── pipeline.py        # Pipeline + PipelineProject
-├── intelligence/
-│   ├── pipeline_analyzer.py
-│   ├── distress_analysis.py
-│   ├── geographic_analysis.py
-│   ├── sector_analysis.py
-│   └── impact_aggregator.py
-├── validation/
-│   ├── eligibility_check.py
-│   ├── completeness_check.py
-│   ├── consistency_check.py
-│   └── readiness_score.py     # 0–100 weighted readiness score
-├── sections/
-│   ├── base.py                # SectionGenerator ABC
-│   ├── section_a_business.py
-│   ├── section_b_outcomes.py
-│   ├── section_c_management.py
-│   ├── section_d_capitalization.py
-│   └── section_e_prior_awards.py
-├── tables/
-│   ├── pipeline_table.py
-│   ├── distress_table.py
-│   ├── geographic_table.py
-│   ├── impact_table.py
-│   ├── investor_table.py
-│   └── track_record_table.py
-├── renderers/
-│   ├── styles.py              # Shared color + typography constants
-│   ├── markdown_builder.py
-│   ├── word_builder.py
-│   ├── excel_builder.py
-│   └── pdf_builder.py
-├── integrations/
-│   ├── nmtc_mapper_adapter.py
-│   ├── nmtc_calc_adapter.py
-│   ├── hmda_adapter.py
-│   ├── cdfidata_adapter.py
-│   └── impact_adapter.py
-├── data/
-│   ├── schema.py              # Constants, thresholds, ValidationResult
-│   ├── historical_awards.py   # CDFI Fund winner data (CY2020-2024)
-│   └── benchmark_thresholds.py # Calibrated winner-pattern thresholds
-└── optimizer/
-    ├── constraints.py         # OptimizationConstraints dataclass
-    ├── objectives.py          # Alignment objective functions
-    ├── candidate_pool.py      # CandidatePool — filter, rank, sample
-    └── pipeline_optimizer.py  # PipelineOptimizer (greedy + local search)
+nmtc-application-builder/
+├── nmtcapp/
+│   ├── core/               Application · CDEProfile · Pipeline
+│   ├── intelligence/       PipelineAnalyzer · WinProbabilityModel · RecommendationEngine
+│   ├── optimizer/          PipelineOptimizer · CandidatePool · Objectives
+│   ├── validation/         EligibilityCheck · CompletenessCheck · ReadinessScore
+│   ├── integrations/       nmtc-mapper · nmtc-calc · cdfidata · impact-ledger
+│   ├── visualization/      pipeline maps · distress heatmap · radar · alignment charts
+│   ├── renderers/          Word · Excel · PDF · Markdown builders
+│   ├── data/               historical awards · benchmark thresholds · schema
+│   └── cli.py              nmtcapp init / analyze / version
+├── examples/               3 executed Jupyter notebooks + sample output
+├── streamlit_app/          Interactive web demo (4 pages)
+├── templates/              pipeline_template.csv · cde_profile_template.yaml
+└── docs/                   MkDocs documentation site
 ```
 
+### Built on the Open-Source CDFI Analytics Stack
+
+This library integrates six companion libraries built for the CDFI space:
+
+| Library | Role in this project |
+|---|---|
+| `nmtc-mapper` | Census tract geocoding and eligibility classification (deep / severe / LIC) |
+| `nmtc-calc` | NMTC leveraged deal economics (QEI → NMTCs → investor equity) |
+| `cdfidata` | CDFI Fund TLR/CLR/Awards ETL and dataset loader |
+| `impact-ledger` | Portfolio-level impact tracking by sector |
+| `hmda-analyzer` | HMDA CRA assessment data integration |
+| `cra-scraper` | Community Reinvestment Act data extraction |
 
 ---
 
-## Ecosystem Integration
+## Use Cases
 
-| Package | Purpose | Used For |
-|---|---|---|
-| `nmtc-mapper` | NMTC eligibility + geocoding | Enriching pipeline census tract data |
-| `nmtc-calc` | Deal economics modeling | Computing QEI, NMTCs, investor equity |
-| `hmda-analyzer` | HMDA lending disparity | Community need documentation |
-| `cdfidata` | CDFI Fund TLR/Awards ETL | CDE track record pull |
-| `impact-ledger` | Impact portfolio tracking | Portfolio-level impact reporting |
+**CDE application teams** — Run `analyze()` on your pipeline weekly during application season. Watch your readiness score improve as you add projects and address recommendations. Generate the first draft of every section automatically.
 
-All adapters include offline fallbacks — tests run without internet access.
+**CDFI consultants** — Drop a client's pipeline CSV in and produce a competitive benchmark report in minutes. Show exactly where they stand vs. historical winners before committing to a full engagement.
+
+**Researchers and policy analysts** — Query the embedded CY2020–2024 CDFI Fund award statistics. Study what differentiates winning applications across distress concentration, geographic reach, and impact intensity.
+
+**CDEs evaluating pipeline strategy** — Use the optimizer to understand what subset of your project pipeline maximizes competitive alignment given a target allocation amount and diversity constraints.
 
 ---
 
-## Readiness Score
+## Limitations & Honest Disclosures
 
-The 0–100 readiness score weights six components against CDFI Fund scoring criteria:
-
-| Component | Weight | What It Measures |
-|---|---|---|
-| Eligibility Quality | 25% | % of pipeline in LIC tracts |
-| Distress Concentration | 25% | % of QEI in deep/severe distress tracts |
-| Geographic Diversity | 15% | States served, HHI concentration |
-| Impact Metrics | 20% | Jobs/units vs CDFI Fund historical benchmarks |
-| Validation Pass Rate | 10% | % of validation checks passing |
-| Completeness | 5% | Required fields populated |
-
-**Competitive thresholds:** Deep/severe distress ≥ 75% of QEI → top-tier; ≥ 3 states → minimum geographic diversity.
+- **Not a win probability model.** Alignment score ≠ probability of receiving an allocation. The CDFI Fund does not publish rejected application data, so a calibrated probability model cannot be built from public information alone.
+- **Historical patterns, not current NOFA.** Benchmarks derive from CY2020–2024 award data. CDFI Fund priorities shift — always check the current NOFA for updated criteria.
+- **Approximate geographic data.** Pipeline maps use state centroids, not actual project addresses. Eligibility enrichment uses `nmtc-mapper` and falls back to embedded sample data when offline.
+- **Not a substitute for expert review.** Always have a qualified CDFI practitioner or attorney review application materials before submission.
+- **No investor or underwriting analysis.** This library covers competitive positioning, not deal structuring, investor sourcing, or legal compliance.
 
 ---
 
-## Win Alignment Scoring (Week 3)
+## Documentation
 
-```python
-score = app.score_win_probability()
-print(score.summary())
-```
+Full documentation at **[jaypatel1511.github.io/nmtc-application-builder](https://jaypatel1511.github.io/nmtc-application-builder/)**
 
-**IMPORTANT — Data Limitation:** The CDFI Fund publishes only winner-level data. Non-winner (loser) application data is not public. This means a true win probability cannot be computed. All scores reflect _alignment with historical winner patterns_, not probability of selection. The `methodology_disclosure` field always carries this notice.
-
-### Five Dimensions
-
-| Dimension | Weight | Source |
-|---|---|---|
-| Distress Concentration | 35% | % deep/severe vs. winner distribution |
-| Impact Intensity | 25% | Jobs/$MM QEI vs. winner p25/p50/p75 |
-| Geographic Diversity | 20% | States + HHI vs. winner patterns |
-| Sector Diversity | 15% | Sector count + concentration vs. winners |
-| Pipeline Quality | 5% | Eligibility rate + project count + award size fit |
-
-### Benchmark Comparison
-
-```python
-bc = app.benchmark()
-print(bc.summary())
-# Each metric: strong / competitive / weak / below_weak tier
-# vs. 9 metrics from CY2020-2024 CDFI Fund winner data
-```
-
-### Optimizer
-
-```python
-from nmtcapp.optimizer import OptimizationConstraints
-constraints = OptimizationConstraints(
-    max_total_qei=65_000_000,
-    min_states=5,
-    min_projects=10,
-    required_sectors=["healthcare"],
-)
-result = app.optimize_pipeline(constraints=constraints)
-print(result.summary())
-# Projects selected:  12
-# Total QEI:          $55,000,000
-# Alignment (before): 52.3 / 100
-# Alignment (after):  71.8 / 100
-# Improvement:        +19.5 pts
-```
-
-The optimizer uses greedy construction + swap-based local search (pure Python, no scipy/LP solver). Infeasible constraints are reported gracefully — always returns a result.
-
-### Recommendations
-
-```python
-recs = app.recommendations()
-print(recs.summary())
-# [!] CRITICAL: Distress concentration at 34% — below p25 floor.
-#     Action: Replace 16pp of LIC projects with deep-distressed alternatives...
-#     Estimate: +15–25 distress alignment points
-```
-
-Every recommendation includes: finding, specific action, expected impact, and a quantified improvement estimate.
+- [Installation guide](https://jaypatel1511.github.io/nmtc-application-builder/installation/)
+- [60-second quickstart](https://jaypatel1511.github.io/nmtc-application-builder/quickstart/)
+- [Pipeline analysis workflow](https://jaypatel1511.github.io/nmtc-application-builder/workflow/pipeline-analysis/)
+- [Win alignment scoring & methodology](https://jaypatel1511.github.io/nmtc-application-builder/workflow/win-alignment/)
+- [Full API reference](https://jaypatel1511.github.io/nmtc-application-builder/reference/api/)
+- [Honest limitations](https://jaypatel1511.github.io/nmtc-application-builder/about/limitations/)
 
 ---
 
-## Running Tests
+## Contributing
+
+Contributions welcome — bug fixes, additional data sources, visualization improvements, and documentation all help.
 
 ```bash
-PYTHONPATH=. pytest tests/ -v
+git clone https://github.com/Jaypatel1511/nmtc-application-builder.git
+cd nmtc-application-builder
+pip install -e ".[dev]"
+PYTHONPATH=. pytest tests/ -v          # 544 tests, should all pass
 ```
 
-498 tests passing.
-
----
-
-## Deliverables
-
-### Week 1 ✓ — Foundation & Pipeline Intelligence
-- [x] CDEProfile with YAML loading and sample data
-- [x] Pipeline with CSV loading, 20-project sample, DataFrame export
-- [x] PipelineAnalyzer orchestrating distress, geographic, sector, and impact modules
-- [x] Eligibility, completeness, and consistency validation
-- [x] 0–100 readiness score with grade and recommendations
-- [x] Adapters for nmtc-mapper, nmtc-calc, hmda-analyzer, cdfidata, impact-ledger
-- [x] 132 passing tests
-- [x] `examples/01_quickstart.ipynb`
-
-### Week 2 ✓ — Section Generators, Tables & Output Renderers
-- [x] Section generators A–E (narrative, list, table subsection types)
-- [x] Table builders: pipeline, distress, geographic, impact, investor, track record
-- [x] Word output — professional `.docx` with cover page, sections, appendices, footer
-- [x] Excel output — 7-sheet workbook with conditional formatting, frozen panes, chart
-- [x] PDF output — board-ready PDF via ReportLab
-- [x] Markdown output — version-control-friendly full draft
-- [x] Landscape orientation for wide appendix tables (Word + PDF)
-- [x] Investor table split into identification + commitment tables
-- [x] `Application.generate()` — one call produces all four formats
-- [x] 297 passing tests (165 new)
-- [x] `examples/02_full_application_walkthrough.ipynb`
-- [x] Sample outputs in `examples/sample_output/`
-
-### Week 3 ✓ — Intelligence Layer
-- [x] `historical_awards.py` — embedded CDFI Fund winner data CY2020–2024
-- [x] `benchmark_thresholds.py` — calibrated strong/competitive/weak tiers per metric
-- [x] `HistoricalBenchmarks.compare()` — 9-metric benchmark vs. historical winners
-- [x] `WinProbabilityModel.score()` — 5-dimension alignment score (with mandatory methodology disclosure)
-- [x] `RecommendationEngine.recommend()` — quantified, prioritized recommendations
-- [x] `analyze_winning_patterns()` / `compare_to_winners()` — pattern analysis functions
-- [x] `PipelineOptimizer.optimize()` — greedy + local-search pipeline optimizer
-- [x] `Application.score_win_probability()`, `.benchmark()`, `.recommendations()`, `.optimize_pipeline()`
-- [x] 201 new passing tests (498 total)
-- [x] `examples/03_intelligence_and_optimization.ipynb`
-
----
-
-## Roadmap
-
-| Week | Deliverable |
-|---|---|
-| **Week 1** ✓ | Foundation + Pipeline Intelligence |
-| **Week 2** ✓ | Section Generators + Output Renderers (Word/Excel/PDF/Markdown) |
-| **Week 3** ✓ | Win Alignment Scoring + Optimizer + Recommendations |
-| Week 4 | Visualizations, PyPI publish, final polish |
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on pull requests, code style, and issue reporting.
 
 ---
 
 ## License
 
-MIT © Jay Patel
+MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+*Built by [Jay Patel](https://github.com/Jaypatel1511) as part of an open-source CDFI analytics portfolio. Not affiliated with the CDFI Fund or the US Treasury.*

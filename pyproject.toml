@@ -1,22 +1,26 @@
 [build-system]
 requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "nmtc-application-builder"
-version = "0.2.0"
-description = "Flagship NMTC application intelligence platform — pipeline analysis, eligibility validation, and readiness scoring for CDEs"
+version = "1.0.0"
+description = "Flagship NMTC application intelligence platform — pipeline analysis, eligibility validation, readiness scoring, and visualization for CDEs"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.9"
 authors = [{ name = "Jay Patel", email = "thejaypatel1511@gmail.com" }]
 keywords = ["nmtc", "cdfi", "community-development", "new-markets-tax-credit", "pipeline"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Financial and Insurance Industry",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Office/Business :: Financial",
+    "Topic :: Scientific/Engineering :: GIS",
 ]
 
 dependencies = [
@@ -31,6 +35,9 @@ dependencies = [
     "cra-scraper>=0.1.0",
 ]
 
+[project.scripts]
+nmtcapp = "nmtcapp.cli:main"
+
 [project.optional-dependencies]
 word = [
     "python-docx>=1.1.0",
@@ -40,6 +47,9 @@ excel = [
 ]
 pdf = [
     "reportlab>=4.0.0",
+]
+viz = [
+    "matplotlib>=3.7",
 ]
 output = [
     "python-docx>=1.1.0",
@@ -53,11 +63,14 @@ dev = [
     "python-docx>=1.1.0",
     "openpyxl>=3.0.9",
     "reportlab>=4.0.0",
+    "matplotlib>=3.7",
 ]
 
 [project.urls]
 Homepage = "https://github.com/Jaypatel1511/nmtc-application-builder"
 Repository = "https://github.com/Jaypatel1511/nmtc-application-builder"
+Documentation = "https://github.com/Jaypatel1511/nmtc-application-builder#readme"
+"Issue Tracker" = "https://github.com/Jaypatel1511/nmtc-application-builder/issues"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
