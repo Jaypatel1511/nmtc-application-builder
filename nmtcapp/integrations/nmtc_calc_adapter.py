@@ -39,7 +39,7 @@ def compute_pipeline_economics(pipeline: "Pipeline") -> dict:
 
     try:
         from nmtccalc import NMTCDeal
-        import nmtccalc.transaction as nmtc_transaction
+        import nmtccalc.models.transaction as nmtc_transaction
         return _compute_via_library(projects, NMTCDeal, nmtc_transaction)
     except Exception as exc:
         logger.warning(
