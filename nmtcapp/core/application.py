@@ -1,0 +1,265 @@
+"""Master Application class — central entry point for all functionality."""
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass
+from datetime import datetime
+from typing import List, Optional, TYPE_CHECKING
+
+from nmtcapp.core.cde import CDEProfile
+from nmtcapp.core.pipeline import Pipeline, PipelineProject
+from nmtcapp.intelligence.pipeline_analyzer import PipelineAnalyzer, PipelineAnalysisResult
+from nmtcapp.validation.completeness_check import check_completeness
+from nmtcapp.validation.consistency_check import check_consistency
+from nmtcapp.validation.eligibility_check import check_eligibility
+from nmtcapp.validation.readiness_score import ReadinessScore, compute_readiness_score
+from nmtcapp.data.schema import ValidationResult
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class ApplicationAnalysis:
+    """Comprehensive result from Application.analyze().
+
+    Contains all intelligence analyses, validation results, and readiness score.
+    """
+    cde_name: str
+    requested_allocation: float
+    application_round: str
+    pipeline_result: PipelineAnalysisResult
+    distress_analysis: dict
+    geographic_analysis: dict
+    sector_analysis: dict
+    impact_summary: dict
+    deal_economics: dict
+    validation_results: List[ValidationResult]
+    readiness_score: ReadinessScore
+    analyzed_at: str
+
+    def summary(self) -> None:
+        """Print a rich human-readable summary of the full analysis.
+
+        Example::
+
+            analysis = app.analyze()
+            analysis.summary()
+        """
+        passed = sum(1 for v in self.validation_results if v.passed)
+        total_val = len(self.validation_results)
+        print("\n" + "=" * 70)
+        print(f"  NMTC APPLICATION ANALYSIS")
+        print(f"  CDE:   {self.cde_name}")
+        print(f"  Round: {self.application_round}  |  "
+              f"Requested: ${self.requested_allocation:,.0f}")
+        print(f"  Analyzed: {self.analyzed_at[:19]}")
+        print("=" * 70)
+        print(self.pipeline_result.summary())
+        print()
+        print("── Validation ──────────────────────────────────────────────────")
+        for vr in self.validation_results:
+            print(vr.summary())
+        print(f"\n  {passed}/{total_val} checks passed")
+        print()
+        print(self.readiness_score.summary())
+
+    def to_dict(self) -> dict:
+        """Serialize to a JSON-safe dictionary.
+
+        Example::
+
+            import json
+            data = analysis.to_dict()
+            print(json.dumps(data, indent=2))
+        """
+        return {
+            "cde_name": self.cde_name,
+            "requested_allocation": self.requested_allocation,
+            "application_round": self.application_round,
+            "analyzed_at": self.analyzed_at,
+            "pipeline_result": self.pipeline_result.to_dict(),
+            "distress_analysis": self.distress_analysis,
+            "geographic_analysis": self.geographic_analysis,
+            "sector_analysis": self.sector_analysis,
+            "impact_summary": self.impact_summary,
+            "deal_economics": self.deal_economics,
+            "validation_results": [
+                {
+                    "check_name": v.check_name,
+                    "passed": v.passed,
+                    "issues": v.issues,
+                    "warnings": v.warnings,
+                }
+                for v in self.validation_results
+            ],
+            "readiness_score": self.readiness_score.to_dict(),
+        }
+
+
+class Application:
+    """Master orchestration class — entry point for all NMTC application functionality.
+
+    Combines a CDE profile and a project pipeline, then produces a comprehensive
+    intelligence report via :meth:`analyze`.
+
+    Example::
+
+        from nmtcapp.core.application import Application
+        from nmtcapp.core.cde import CDEProfile
+        from nmtcapp.core.pipeline import Pipeline
+
+        cde = CDEProfile.sample()
+        pipeline = Pipeline.sample(n=20)
+        app = Application(cde=cde, requested_allocation=65_000_000)
+        app.add_pipeline(pipeline)
+        analysis = app.analyze()
+        analysis.summary()
+    """
+
+    def __init__(
+        self,
+        cde: CDEProfile,
+        requested_allocation: float,
+        application_round: str = "CY2025",
+    ) -> None:
+        if not isinstance(cde, CDEProfile):
+            raise TypeError("cde must be a CDEProfile instance")
+        if requested_allocation <= 0:
+            raise ValueError("requested_allocation must be > 0")
+
+        self.cde = cde
+        self.requested_allocation = requested_allocation
+        self.application_round = application_round
+        self._pipeline: Optional[Pipeline] = None
+        self._analysis_cache: Optional[ApplicationAnalysis] = None
+
+        logger.info(
+            "Application created for %s — round %s, allocation $%,.0f",
+            cde.name, application_round, requested_allocation,
+        )
+
+    @property
+    def pipeline(self) -> Optional[Pipeline]:
+        return self._pipeline
+
+    def add_pipeline(self, pipeline: Pipeline) -> None:
+        """Set the project pipeline, replacing any existing pipeline.
+
+        Example::
+
+            app.add_pipeline(Pipeline.sample(n=20))
+        """
+        if not isinstance(pipeline, Pipeline):
+            raise TypeError("pipeline must be a Pipeline instance")
+        self._pipeline = pipeline
+        self._analysis_cache = None
+        logger.info("Pipeline set: %d projects", len(pipeline))
+
+    def add_project(self, project: PipelineProject) -> None:
+        """Add a single project to the pipeline.
+
+        Creates a new Pipeline if none exists.
+
+        Example::
+
+            app.add_project(PipelineProject(...))
+        """
+        if not isinstance(project, PipelineProject):
+            raise TypeError("project must be a PipelineProject instance")
+        if self._pipeline is None:
+            self._pipeline = Pipeline()
+        self._pipeline.add(project)
+        self._analysis_cache = None
+        logger.info("Project added: %s", project.project_id)
+
+    def analyze(self) -> ApplicationAnalysis:
+        """Run comprehensive analysis and return an :class:`ApplicationAnalysis`.
+
+        Orchestrates:
+        1. Pipeline eligibility enrichment (nmtc-mapper)
+        2. Deal economics computation (nmtc-calc)
+        3. Distress, geographic, sector, and impact analyses
+        4. Eligibility, completeness, and consistency validation
+        5. Readiness score computation
+
+        Results are cached — calling analyze() multiple times is safe and
+        returns the same result unless the pipeline is modified.
+
+        Example::
+
+            analysis = app.analyze()
+            analysis.summary()
+        """
+        if self._pipeline is None or len(self._pipeline) == 0:
+            raise ValueError(
+                "Cannot analyze — no pipeline projects. "
+                "Call add_pipeline() or add_project() first."
+            )
+
+        if self._analysis_cache is not None:
+            logger.debug("Returning cached analysis result")
+            return self._analysis_cache
+
+        logger.info("Running full application analysis for %s", self.cde.name)
+
+        try:
+            pipeline_result = PipelineAnalyzer().analyze(self._pipeline)
+        except Exception as exc:
+            raise RuntimeError(
+                f"Pipeline analysis failed for {self.cde.name}: {exc}"
+            ) from exc
+
+        try:
+            eligibility_val = check_eligibility(self._pipeline)
+            completeness_val = check_completeness(self)
+            consistency_val = check_consistency(self)
+            validation_results = [eligibility_val, completeness_val, consistency_val]
+        except Exception as exc:
+            raise RuntimeError(f"Validation failed for {self.cde.name}: {exc}") from exc
+
+        try:
+            readiness = compute_readiness_score(pipeline_result, validation_results)
+        except Exception as exc:
+            raise RuntimeError(f"Readiness scoring failed: {exc}") from exc
+
+        analysis = ApplicationAnalysis(
+            cde_name=self.cde.name,
+            requested_allocation=self.requested_allocation,
+            application_round=self.application_round,
+            pipeline_result=pipeline_result,
+            distress_analysis=pipeline_result.distress_breakdown,
+            geographic_analysis=pipeline_result.geographic_diversity,
+            sector_analysis=pipeline_result.sector_mix,
+            impact_summary=pipeline_result.aggregate_impact,
+            deal_economics=pipeline_result.deal_economics_summary,
+            validation_results=validation_results,
+            readiness_score=readiness,
+            analyzed_at=datetime.now().isoformat(),
+        )
+
+        self._analysis_cache = analysis
+        logger.info(
+            "Analysis complete — readiness score: %.1f (%s)",
+            readiness.overall_score, readiness.grade,
+        )
+        return analysis
+
+    def summary(self) -> None:
+        """Run analyze() and print a human-readable summary.
+
+        Example::
+
+            app.summary()
+        """
+        self.analyze().summary()
+
+    def to_dict(self) -> dict:
+        """Run analyze() and serialize to a JSON-safe dictionary.
+
+        Example::
+
+            import json
+            data = app.to_dict()
+            print(json.dumps(data, indent=2))
+        """
+        return self.analyze().to_dict()

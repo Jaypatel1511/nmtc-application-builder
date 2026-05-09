@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "nmtc-application-builder"
+version = "0.1.0"
+description = "Flagship NMTC application intelligence platform — pipeline analysis, eligibility validation, and readiness scoring for CDEs"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+authors = [{ name = "Jay Patel", email = "thejaypatel1511@gmail.com" }]
+keywords = ["nmtc", "cdfi", "community-development", "new-markets-tax-credit", "pipeline"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: Office/Business :: Financial",
+]
+
+dependencies = [
+    "pandas>=1.3",
+    "numpy>=1.21",
+    "pyyaml>=6.0",
+    "nmtc-mapper>=0.3.0",
+    "nmtc-calc>=0.1.0",
+    "hmda-analyzer>=0.1.0",
+    "cdfidata>=0.1.7",
+    "impact-ledger>=0.2.0",
+    "cra-scraper>=0.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "jupyter>=1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Jaypatel1511/nmtc-application-builder"
+Repository = "https://github.com/Jaypatel1511/nmtc-application-builder"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["nmtcapp*"]
