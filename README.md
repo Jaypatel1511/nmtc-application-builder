@@ -1,6 +1,6 @@
 # nmtc-application-builder
 
-**Weeks 1–2 of 4 — Foundation, Pipeline Intelligence & Output Renderers**
+**Weeks 1–3 of 4 — Foundation, Intelligence Layer & Output Renderers**
 
 The flagship library in a 17-library community development finance portfolio. Purpose-built for CDEs preparing New Markets Tax Credit (NMTC) allocation applications to the CDFI Fund.
 
@@ -14,6 +14,9 @@ The flagship library in a 17-library community development finance portfolio. Pu
 - Enrich each project with NMTC eligibility, distress level, and census tract data
 - Get comprehensive analytics: distress concentration, geographic diversity, sector mix, impact projections
 - Score your application readiness (0–100) against historical winning application patterns
+- **Score alignment** with historical NMTC winners across 5 dimensions and 9 benchmarks
+- **Optimize your pipeline** subset with greedy + local-search to maximize winner alignment
+- **Get quantified recommendations** — specific, numbered improvement actions per dimension
 - Generate **Word**, **Excel**, **PDF**, and **Markdown** drafts — automatically
 
 ---
@@ -37,7 +40,23 @@ app.add_pipeline(pipeline)
 analysis = app.analyze()
 analysis.summary()
 
-# 4. Generate the full document package
+# 4. Score alignment with historical winners (Week 3)
+score = app.score_win_probability()
+print(f"Alignment score: {score.composite_score:.1f}/100 [{score.competitive_tier}]")
+# NOTE: alignment score ≠ win probability — see score.methodology_disclosure
+
+# 5. Get quantified recommendations
+recs = app.recommendations()
+print(recs.summary())
+
+# 6. Optimize your pipeline subset
+from nmtcapp.optimizer import OptimizationConstraints
+result = app.optimize_pipeline(
+    constraints=OptimizationConstraints(max_total_qei=65_000_000, min_states=5)
+)
+print(f"Score: {result.alignment_score_before:.2f} → {result.alignment_score_after:.2f}")
+
+# 7. Generate the full document package
 paths = app.generate("./drafts/")
 # → ./drafts/CDE-2018-0117_application.md    (31 KB)
 # → ./drafts/CDE-2018-0117_application.docx  (51 KB)
@@ -202,9 +221,17 @@ nmtcapp/
 │   ├── hmda_adapter.py
 │   ├── cdfidata_adapter.py
 │   └── impact_adapter.py
-└── data/
-    └── schema.py              # Constants, thresholds, ValidationResult
+├── data/
+│   ├── schema.py              # Constants, thresholds, ValidationResult
+│   ├── historical_awards.py   # CDFI Fund winner data (CY2020-2024)
+│   └── benchmark_thresholds.py # Calibrated winner-pattern thresholds
+└── optimizer/
+    ├── constraints.py         # OptimizationConstraints dataclass
+    ├── objectives.py          # Alignment objective functions
+    ├── candidate_pool.py      # CandidatePool — filter, rank, sample
+    └── pipeline_optimizer.py  # PipelineOptimizer (greedy + local search)
 ```
+
 
 ---
 
@@ -239,13 +266,76 @@ The 0–100 readiness score weights six components against CDFI Fund scoring cri
 
 ---
 
+## Win Alignment Scoring (Week 3)
+
+```python
+score = app.score_win_probability()
+print(score.summary())
+```
+
+**IMPORTANT — Data Limitation:** The CDFI Fund publishes only winner-level data. Non-winner (loser) application data is not public. This means a true win probability cannot be computed. All scores reflect _alignment with historical winner patterns_, not probability of selection. The `methodology_disclosure` field always carries this notice.
+
+### Five Dimensions
+
+| Dimension | Weight | Source |
+|---|---|---|
+| Distress Concentration | 35% | % deep/severe vs. winner distribution |
+| Impact Intensity | 25% | Jobs/$MM QEI vs. winner p25/p50/p75 |
+| Geographic Diversity | 20% | States + HHI vs. winner patterns |
+| Sector Diversity | 15% | Sector count + concentration vs. winners |
+| Pipeline Quality | 5% | Eligibility rate + project count + award size fit |
+
+### Benchmark Comparison
+
+```python
+bc = app.benchmark()
+print(bc.summary())
+# Each metric: strong / competitive / weak / below_weak tier
+# vs. 9 metrics from CY2020-2024 CDFI Fund winner data
+```
+
+### Optimizer
+
+```python
+from nmtcapp.optimizer import OptimizationConstraints
+constraints = OptimizationConstraints(
+    max_total_qei=65_000_000,
+    min_states=5,
+    min_projects=10,
+    required_sectors=["healthcare"],
+)
+result = app.optimize_pipeline(constraints=constraints)
+print(result.summary())
+# Projects selected:  12
+# Total QEI:          $55,000,000
+# Alignment (before): 52.3 / 100
+# Alignment (after):  71.8 / 100
+# Improvement:        +19.5 pts
+```
+
+The optimizer uses greedy construction + swap-based local search (pure Python, no scipy/LP solver). Infeasible constraints are reported gracefully — always returns a result.
+
+### Recommendations
+
+```python
+recs = app.recommendations()
+print(recs.summary())
+# [!] CRITICAL: Distress concentration at 34% — below p25 floor.
+#     Action: Replace 16pp of LIC projects with deep-distressed alternatives...
+#     Estimate: +15–25 distress alignment points
+```
+
+Every recommendation includes: finding, specific action, expected impact, and a quantified improvement estimate.
+
+---
+
 ## Running Tests
 
 ```bash
 PYTHONPATH=. pytest tests/ -v
 ```
 
-297 tests, all passing.
+498 tests passing.
 
 ---
 
@@ -268,10 +358,24 @@ PYTHONPATH=. pytest tests/ -v
 - [x] Excel output — 7-sheet workbook with conditional formatting, frozen panes, chart
 - [x] PDF output — board-ready PDF via ReportLab
 - [x] Markdown output — version-control-friendly full draft
+- [x] Landscape orientation for wide appendix tables (Word + PDF)
+- [x] Investor table split into identification + commitment tables
 - [x] `Application.generate()` — one call produces all four formats
 - [x] 297 passing tests (165 new)
 - [x] `examples/02_full_application_walkthrough.ipynb`
 - [x] Sample outputs in `examples/sample_output/`
+
+### Week 3 ✓ — Intelligence Layer
+- [x] `historical_awards.py` — embedded CDFI Fund winner data CY2020–2024
+- [x] `benchmark_thresholds.py` — calibrated strong/competitive/weak tiers per metric
+- [x] `HistoricalBenchmarks.compare()` — 9-metric benchmark vs. historical winners
+- [x] `WinProbabilityModel.score()` — 5-dimension alignment score (with mandatory methodology disclosure)
+- [x] `RecommendationEngine.recommend()` — quantified, prioritized recommendations
+- [x] `analyze_winning_patterns()` / `compare_to_winners()` — pattern analysis functions
+- [x] `PipelineOptimizer.optimize()` — greedy + local-search pipeline optimizer
+- [x] `Application.score_win_probability()`, `.benchmark()`, `.recommendations()`, `.optimize_pipeline()`
+- [x] 201 new passing tests (498 total)
+- [x] `examples/03_intelligence_and_optimization.ipynb`
 
 ---
 
@@ -281,7 +385,7 @@ PYTHONPATH=. pytest tests/ -v
 |---|---|
 | **Week 1** ✓ | Foundation + Pipeline Intelligence |
 | **Week 2** ✓ | Section Generators + Output Renderers (Word/Excel/PDF/Markdown) |
-| Week 3 | Win probability model + allocation optimizer |
+| **Week 3** ✓ | Win Alignment Scoring + Optimizer + Recommendations |
 | Week 4 | Visualizations, PyPI publish, final polish |
 
 ---

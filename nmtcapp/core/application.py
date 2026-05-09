@@ -6,6 +6,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Optional, TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from nmtcapp.intelligence.benchmarks import BenchmarkComparison
+    from nmtcapp.intelligence.recommendations import RecommendationSet
+    from nmtcapp.intelligence.win_probability import WinProbabilityScore
+    from nmtcapp.optimizer.constraints import OptimizationConstraints
+    from nmtcapp.optimizer.pipeline_optimizer import OptimizationResult
+
 from nmtcapp.core.cde import CDEProfile
 from nmtcapp.core.pipeline import Pipeline, PipelineProject
 from nmtcapp.intelligence.pipeline_analyzer import PipelineAnalyzer, PipelineAnalysisResult
@@ -324,6 +331,101 @@ class Application:
             len(paths), output_dir, ", ".join(paths.keys()),
         )
         return paths
+
+    def score_win_probability(self) -> "WinProbabilityScore":
+        """Score this application's alignment with historical NMTC winner patterns.
+
+        IMPORTANT: Returns alignment score, not win probability. See
+        :class:`~nmtcapp.intelligence.win_probability.WinProbabilityScore`
+        for the mandatory methodology disclosure.
+
+        Example::
+
+            score = app.score_win_probability()
+            print(score.summary())
+        """
+        from nmtcapp.intelligence.win_probability import WinProbabilityModel
+        analysis = self.analyze()
+        return WinProbabilityModel().score(
+            analysis.pipeline_result,
+            self.requested_allocation,
+            self.application_round,
+        )
+
+    def benchmark(self) -> "BenchmarkComparison":
+        """Compare this application against historical NMTC winner benchmarks.
+
+        Example::
+
+            bc = app.benchmark()
+            print(bc.summary())
+        """
+        from nmtcapp.intelligence.benchmarks import HistoricalBenchmarks
+        analysis = self.analyze()
+        return HistoricalBenchmarks().compare(
+            analysis.pipeline_result, self.requested_allocation
+        )
+
+    def recommendations(self) -> "RecommendationSet":
+        """Generate actionable, quantified recommendations for improving competitiveness.
+
+        Example::
+
+            recs = app.recommendations()
+            print(recs.summary())
+        """
+        from nmtcapp.intelligence.benchmarks import HistoricalBenchmarks
+        from nmtcapp.intelligence.recommendations import RecommendationEngine
+        from nmtcapp.intelligence.win_probability import WinProbabilityModel
+        analysis = self.analyze()
+        bc = HistoricalBenchmarks().compare(
+            analysis.pipeline_result, self.requested_allocation
+        )
+        win_score = WinProbabilityModel().score(
+            analysis.pipeline_result,
+            self.requested_allocation,
+            self.application_round,
+        )
+        return RecommendationEngine().recommend(
+            analysis.pipeline_result, bc, win_score
+        )
+
+    def optimize_pipeline(
+        self,
+        constraints: Optional["OptimizationConstraints"] = None,
+        max_iterations: int = 500,
+    ) -> "OptimizationResult":
+        """Optimize the pipeline to maximize alignment with historical winner patterns.
+
+        Uses greedy construction + swap-based local search. Handles infeasible
+        constraints gracefully — always returns a result.
+
+        Args:
+            constraints: Optional :class:`~nmtcapp.optimizer.constraints.OptimizationConstraints`.
+                         Defaults to unconstrained (all projects eligible).
+            max_iterations: Maximum local-search iterations (default 500).
+
+        Example::
+
+            from nmtcapp.optimizer import OptimizationConstraints
+            constraints = OptimizationConstraints(
+                max_total_qei=65_000_000,
+                min_states=5,
+            )
+            result = app.optimize_pipeline(constraints)
+            print(result.summary())
+        """
+        from nmtcapp.optimizer.constraints import OptimizationConstraints as OC
+        from nmtcapp.optimizer.pipeline_optimizer import PipelineOptimizer
+        if self._pipeline is None or len(self._pipeline) == 0:
+            raise ValueError(
+                "Cannot optimize — no pipeline projects. "
+                "Call add_pipeline() or add_project() first."
+            )
+        c = constraints or OC()
+        return PipelineOptimizer(max_iterations=max_iterations).optimize(
+            self._pipeline, c, self.requested_allocation
+        )
 
     def to_dict(self) -> dict:
         """Run analyze() and serialize to a JSON-safe dictionary.
