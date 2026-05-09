@@ -4,7 +4,7 @@ build-backend = "setuptools.backends.legacy:build"
 
 [project]
 name = "nmtc-application-builder"
-version = "0.1.0"
+version = "0.2.0"
 description = "Flagship NMTC application intelligence platform — pipeline analysis, eligibility validation, and readiness scoring for CDEs"
 readme = "README.md"
 license = { text = "MIT" }
@@ -32,10 +32,27 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+word = [
+    "python-docx>=1.1.0",
+]
+excel = [
+    "openpyxl>=3.0.9",
+]
+pdf = [
+    "reportlab>=4.0.0",
+]
+output = [
+    "python-docx>=1.1.0",
+    "openpyxl>=3.0.9",
+    "reportlab>=4.0.0",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "jupyter>=1.0",
+    "python-docx>=1.1.0",
+    "openpyxl>=3.0.9",
+    "reportlab>=4.0.0",
 ]
 
 [project.urls]

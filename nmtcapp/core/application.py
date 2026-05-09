@@ -253,6 +253,78 @@ class Application:
         """
         self.analyze().summary()
 
+    def generate(self, output_dir: str = "./drafts", formats: list = None) -> dict:
+        """Generate the full NMTC application document package.
+
+        Runs analyze() then renders all requested output formats. Creates the
+        output directory if it does not exist.
+
+        Args:
+            output_dir: Directory for generated files.
+            formats: List of formats to generate. Defaults to all available
+                     formats: ``["markdown", "word", "excel", "pdf"]``.
+
+        Returns:
+            Dict mapping format name to output path.
+
+        Example::
+
+            paths = app.generate("./drafts/")
+            print(paths)
+            # {"markdown": "./drafts/application.md",
+            #  "word": "./drafts/application.docx",
+            #  "excel": "./drafts/application.xlsx",
+            #  "pdf": "./drafts/application.pdf"}
+        """
+        import os
+        os.makedirs(output_dir, exist_ok=True)
+
+        if formats is None:
+            formats = ["markdown", "word", "excel", "pdf"]
+
+        analysis = self.analyze()
+        slug = self.cde.cde_id or "application"
+        paths = {}
+
+        if "markdown" in formats:
+            from nmtcapp.renderers.markdown_builder import MarkdownApplicationBuilder
+            path = os.path.join(output_dir, f"{slug}_application.md")
+            MarkdownApplicationBuilder(self, analysis).save(path)
+            paths["markdown"] = path
+
+        if "word" in formats:
+            try:
+                from nmtcapp.renderers.word_builder import WordApplicationBuilder
+                path = os.path.join(output_dir, f"{slug}_application.docx")
+                WordApplicationBuilder(self, analysis).save(path)
+                paths["word"] = path
+            except ImportError:
+                logger.warning("python-docx not installed — skipping Word output")
+
+        if "excel" in formats:
+            try:
+                from nmtcapp.renderers.excel_builder import ExcelApplicationBuilder
+                path = os.path.join(output_dir, f"{slug}_application.xlsx")
+                ExcelApplicationBuilder(self, analysis).save(path)
+                paths["excel"] = path
+            except ImportError:
+                logger.warning("openpyxl not installed — skipping Excel output")
+
+        if "pdf" in formats:
+            try:
+                from nmtcapp.renderers.pdf_builder import PDFApplicationBuilder
+                path = os.path.join(output_dir, f"{slug}_application.pdf")
+                PDFApplicationBuilder(self, analysis).save(path)
+                paths["pdf"] = path
+            except ImportError:
+                logger.warning("reportlab not installed — skipping PDF output")
+
+        logger.info(
+            "generate() complete — %d files written to %s: %s",
+            len(paths), output_dir, ", ".join(paths.keys()),
+        )
+        return paths
+
     def to_dict(self) -> dict:
         """Run analyze() and serialize to a JSON-safe dictionary.
 

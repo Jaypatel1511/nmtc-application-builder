@@ -1,6 +1,6 @@
 """
-nmtc-application-builder — Week 1: Foundation & Pipeline Intelligence
-======================================================================
+nmtc-application-builder — Weeks 1–2: Foundation, Pipeline Intelligence & Output Renderers
+===========================================================================================
 Flagship NMTC application intelligence platform for CDEs.
 
 Quick start::
@@ -16,8 +16,11 @@ Quick start::
     app.add_pipeline(pipeline)
     analysis = app.analyze()
     analysis.summary()
+
+    # Generate Word, Excel, PDF, and Markdown outputs
+    paths = app.generate("./drafts/")
 """
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Jay Patel"
 
 from nmtcapp.core.application import Application, ApplicationAnalysis

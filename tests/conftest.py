@@ -1,10 +1,11 @@
 """Shared test fixtures."""
 import pytest
 
-from nmtcapp.core.application import Application
+from nmtcapp.core.application import Application, ApplicationAnalysis
 from nmtcapp.core.cde import CDEProfile
 from nmtcapp.core.pipeline import Pipeline, PipelineProject
 from nmtcapp.intelligence.pipeline_analyzer import PipelineAnalysisResult
+from nmtcapp.validation.readiness_score import compute_readiness_score
 from nmtcapp.data.schema import ValidationResult
 
 
@@ -67,6 +68,28 @@ def failing_validation() -> ValidationResult:
         passed=False,
         issues=["Something is wrong"],
         warnings=["Also a warning"],
+    )
+
+
+@pytest.fixture
+def application_analysis(sample_cde, sample_pipeline, sample_pipeline_result) -> ApplicationAnalysis:
+    from datetime import datetime
+    from nmtcapp.data.schema import ValidationResult
+    val = ValidationResult(check_name="eligibility", passed=True, issues=[], warnings=[])
+    readiness = compute_readiness_score(sample_pipeline_result, [val, val, val])
+    return ApplicationAnalysis(
+        cde_name=sample_cde.name,
+        requested_allocation=65_000_000,
+        application_round="CY2025",
+        pipeline_result=sample_pipeline_result,
+        distress_analysis=sample_pipeline_result.distress_breakdown,
+        geographic_analysis=sample_pipeline_result.geographic_diversity,
+        sector_analysis=sample_pipeline_result.sector_mix,
+        impact_summary=sample_pipeline_result.aggregate_impact,
+        deal_economics=sample_pipeline_result.deal_economics_summary,
+        validation_results=[val, val, val],
+        readiness_score=readiness,
+        analyzed_at=datetime.now().isoformat(),
     )
 
 

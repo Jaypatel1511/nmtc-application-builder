@@ -1,0 +1,385 @@
+"""Professional Word document builder for NMTC applications."""
+from __future__ import annotations
+
+import logging
+import os
+from datetime import date
+from typing import TYPE_CHECKING
+
+from docx import Document
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.section import WD_SECTION
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.shared import Pt, RGBColor, Inches, Cm
+
+from nmtcapp.renderers._word_helpers import (
+    add_styled_paragraph, add_styled_table, shade_cell, _hex_to_rgb,
+)
+from nmtcapp.renderers.styles import COLORS, TYPOGRAPHY, PAGE_LAYOUT
+from nmtcapp.sections import ALL_SECTIONS
+from nmtcapp.tables.distress_table import build_distress_table
+from nmtcapp.tables.geographic_table import build_geographic_table
+from nmtcapp.tables.impact_table import build_impact_table
+from nmtcapp.tables.pipeline_table import build_pipeline_table
+from nmtcapp.tables.track_record_table import build_track_record_table
+
+if TYPE_CHECKING:
+    from nmtcapp.core.application import Application, ApplicationAnalysis
+
+logger = logging.getLogger(__name__)
+
+_PRIMARY = COLORS["primary"].lstrip("#")
+_ACCENT = COLORS["accent"].lstrip("#")
+
+
+class WordApplicationBuilder:
+    """Builds a professional Word document for the full NMTC application.
+
+    The output document includes a cover page, executive summary, all five
+    sections (A–E), and all supporting attachments.
+
+    Example::
+
+        builder = WordApplicationBuilder(application, analysis)
+        doc = builder.build()
+        builder.save("./drafts/application.docx")
+    """
+
+    def __init__(self, application: "Application", analysis: "ApplicationAnalysis") -> None:
+        self.application = application
+        self.analysis = analysis
+
+    def build(self) -> Document:
+        """Build and return a python-docx Document.
+
+        Example::
+
+            doc = builder.build()
+        """
+        doc = Document()
+        self._configure_document(doc)
+        self._build_cover_page(doc)
+        self._build_executive_summary(doc)
+        self._build_readiness_callout(doc)
+
+        for section_gen in ALL_SECTIONS:
+            doc.add_page_break()
+            section_gen.generate_word(doc, self.application, self.analysis)
+
+        doc.add_page_break()
+        self._build_appendix_pipeline(doc)
+        doc.add_page_break()
+        self._build_appendix_distress(doc)
+        doc.add_page_break()
+        self._build_appendix_geographic(doc)
+        doc.add_page_break()
+        self._build_appendix_impact(doc)
+        doc.add_page_break()
+        self._build_appendix_track_record(doc)
+        doc.add_page_break()
+        self._build_methodology(doc)
+
+        self._add_page_numbers(doc)
+        return doc
+
+    def save(self, path: str) -> None:
+        """Save the document to a .docx file.
+
+        Example::
+
+            builder.save("./output/application.docx")
+        """
+        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+        doc = self.build()
+        doc.save(path)
+        size_kb = os.path.getsize(path) // 1024
+        logger.info("Word document saved: %s (%d KB)", path, size_kb)
+
+    # ------------------------------------------------------------------
+    # Document configuration
+    # ------------------------------------------------------------------
+
+    def _configure_document(self, doc: Document) -> None:
+        section = doc.sections[0]
+        section.top_margin    = Inches(PAGE_LAYOUT["margin_top"])
+        section.bottom_margin = Inches(PAGE_LAYOUT["margin_bottom"])
+        section.left_margin   = Inches(PAGE_LAYOUT["margin_left"])
+        section.right_margin  = Inches(PAGE_LAYOUT["margin_right"])
+        # Configure core style
+        style = doc.styles["Normal"]
+        style.font.name = "Calibri"
+        style.font.size = Pt(TYPOGRAPHY["size_body"])
+
+    # ------------------------------------------------------------------
+    # Cover page
+    # ------------------------------------------------------------------
+
+    def _build_cover_page(self, doc: Document) -> None:
+        app = self.application
+        score = self.analysis.readiness_score
+
+        # ---- Top blue banner ----
+        banner_tbl = doc.add_table(rows=1, cols=1)
+        banner_tbl.style = "Table Grid"
+        banner_cell = banner_tbl.cell(0, 0)
+        banner_cell.width = Inches(6.0)
+        banner_tbl.rows[0].height = Inches(1.2)
+        shade_cell(banner_cell, _PRIMARY)
+
+        p_banner = banner_cell.paragraphs[0]
+        p_banner.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r1 = p_banner.add_run("NEW MARKETS TAX CREDIT")
+        r1.font.bold = True
+        r1.font.size = Pt(22)
+        r1.font.color.rgb = RGBColor(255, 255, 255)
+        p_banner.add_run("\n")
+        r2 = p_banner.add_run("ALLOCATION APPLICATION")
+        r2.font.bold = True
+        r2.font.size = Pt(18)
+        r2.font.color.rgb = RGBColor(255, 255, 255)
+
+        # ---- Gold accent line ----
+        doc.add_paragraph()
+        accent_tbl = doc.add_table(rows=1, cols=1)
+        accent_tbl.style = "Table Grid"
+        shade_cell(accent_tbl.cell(0, 0), _ACCENT)
+        accent_tbl.rows[0].height = Cm(0.3)
+
+        # ---- CDE name ----
+        doc.add_paragraph()
+        p_cde = doc.add_paragraph()
+        p_cde.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r = p_cde.add_run(app.cde.name)
+        r.font.bold = True
+        r.font.size = Pt(TYPOGRAPHY["size_h1"])
+        r.font.color.rgb = RGBColor(*_hex_to_rgb(COLORS["primary"]))
+
+        # ---- Application details ----
+        details_tbl = doc.add_table(rows=4, cols=2)
+        details_tbl.style = "Table Grid"
+        details = [
+            ("Application Round:", app.application_round),
+            ("Requested NMTC Allocation:", f"${app.requested_allocation:,.0f}"),
+            ("Preparation Date:", date.today().strftime("%B %d, %Y")),
+            ("Readiness Assessment:", f"Grade {score.grade} — {score.overall_score:.1f}/100"),
+        ]
+        for i, (label, value) in enumerate(details):
+            label_cell = details_tbl.cell(i, 0)
+            value_cell = details_tbl.cell(i, 1)
+            shade_cell(label_cell, COLORS["bg_light"].lstrip("#"))
+            _set_cell_text(label_cell, label, bold=True)
+            _set_cell_text(value_cell, value)
+
+        # ---- Contact info ----
+        contact = app.cde.contact
+        doc.add_paragraph()
+        p_contact = doc.add_paragraph()
+        p_contact.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r = p_contact.add_run(
+            f"Contact: {contact.get('name', '')} | {contact.get('email', '')} | "
+            f"{contact.get('phone', '')}"
+        )
+        r.font.size = Pt(TYPOGRAPHY["size_caption"])
+        r.font.color.rgb = RGBColor(*_hex_to_rgb(COLORS["text_muted"]))
+
+        # ---- Confidentiality notice ----
+        doc.add_paragraph()
+        p_conf = doc.add_paragraph()
+        p_conf.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r = p_conf.add_run(
+            "CONFIDENTIAL — Prepared for CDFI Fund Review Only | "
+            "Do Not Distribute Without CDE Authorization"
+        )
+        r.font.size = Pt(TYPOGRAPHY["size_footnote"])
+        r.font.italic = True
+        r.font.color.rgb = RGBColor(*_hex_to_rgb(COLORS["text_muted"]))
+
+        doc.add_page_break()
+
+    # ------------------------------------------------------------------
+    # Executive summary
+    # ------------------------------------------------------------------
+
+    def _build_executive_summary(self, doc: Document) -> None:
+        app = self.application
+        pr = self.analysis.pipeline_result
+        distress = pr.distress_breakdown
+
+        add_styled_paragraph(doc, "Executive Summary", level=1, color_key="primary")
+
+        summary_text = (
+            f"{app.cde.name} requests ${app.requested_allocation/1e6:.1f} million in "
+            f"New Markets Tax Credit allocation for {app.application_round}. "
+            f"Our {pr.total_projects}-project pipeline spans "
+            f"{pr.geographic_diversity.get('states_count', 0)} states, with "
+            f"{distress.get('pct_deep_or_severe', 0):.0%} of QEI committed to deep and "
+            f"severely distressed census tracts — placing us in the "
+            f"{distress.get('vs_historical_winners', 'competitive').replace('_', ' ')} "
+            f"tier of CDFI Fund applicants historically."
+        )
+        p = doc.add_paragraph(summary_text)
+        p.runs[0].font.size = Pt(TYPOGRAPHY["size_body"])
+
+        doc.add_paragraph()
+
+        # Key metrics table
+        impact = pr.aggregate_impact
+        add_styled_paragraph(doc, "Key Metrics", level=2, color_key="secondary")
+        metrics_data = [
+            ["Total QEI Requested", f"${pr.total_qei_request:,.0f}"],
+            ["Total Project Cost", f"${pr.total_project_cost:,.0f}"],
+            ["States Represented", str(pr.geographic_diversity.get("states_count", 0))],
+            ["Deep/Severe Distress Concentration",
+             f"{distress.get('pct_deep_or_severe', 0):.0%}"],
+            ["NMTC Eligibility Rate", f"{pr.eligibility_pct:.0%}"],
+            ["Jobs to Be Created", f"{impact.get('total_jobs_created', 0):,}"],
+            ["Affordable Units to Be Built", f"{impact.get('total_units_built', 0):,}"],
+            ["Jobs per $1MM QEI", f"{impact.get('jobs_per_million_qei', 0):.1f}"],
+        ]
+        add_styled_table(doc, ["Metric", "Value"], metrics_data)
+
+    def _build_readiness_callout(self, doc: Document) -> None:
+        """Add a readiness score callout box after the executive summary."""
+        score = self.analysis.readiness_score
+        doc.add_paragraph()
+        add_styled_paragraph(doc, "Application Readiness Assessment", level=2,
+                              color_key="secondary")
+
+        score_tbl = doc.add_table(rows=1, cols=2)
+        score_tbl.style = "Table Grid"
+
+        # Left: grade
+        left = score_tbl.cell(0, 0)
+        shade_cell(left, _PRIMARY)
+        left.width = Inches(1.2)
+        p = left.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        r = p.add_run(f"Grade\n{score.grade}")
+        r.font.bold = True
+        r.font.size = Pt(28)
+        r.font.color.rgb = RGBColor(*_hex_to_rgb(COLORS["accent"]))
+
+        # Right: component scores
+        right = score_tbl.cell(0, 1)
+        shade_cell(right, COLORS["bg_light"].lstrip("#"))
+        p2 = right.paragraphs[0]
+        r2 = p2.add_run(
+            f"Overall Score: {score.overall_score:.1f}/100\n" +
+            "\n".join(
+                f"  {k.replace('_', ' ').title()}: {v:.0f}/100"
+                for k, v in score.component_scores.items()
+            )
+        )
+        r2.font.size = Pt(TYPOGRAPHY["size_body"])
+
+    # ------------------------------------------------------------------
+    # Appendices
+    # ------------------------------------------------------------------
+
+    def _build_appendix_pipeline(self, doc: Document) -> None:
+        add_styled_paragraph(doc, "Appendix A: Pipeline Detail", level=1, color_key="primary")
+        df = build_pipeline_table(self.application.pipeline, self.application.cde)
+        _write_df_to_doc(doc, df, max_rows=25)
+
+    def _build_appendix_distress(self, doc: Document) -> None:
+        add_styled_paragraph(doc, "Appendix B: Distress Documentation", level=1,
+                              color_key="primary")
+        df = build_distress_table(self.application.pipeline)
+        _write_df_to_doc(doc, df)
+
+    def _build_appendix_geographic(self, doc: Document) -> None:
+        add_styled_paragraph(doc, "Appendix C: Geographic Targeting", level=1,
+                              color_key="primary")
+        df = build_geographic_table(self.application.pipeline)
+        _write_df_to_doc(doc, df)
+
+    def _build_appendix_impact(self, doc: Document) -> None:
+        add_styled_paragraph(doc, "Appendix D: Impact Projections", level=1,
+                              color_key="primary")
+        df = build_impact_table(self.application.pipeline)
+        _write_df_to_doc(doc, df, max_rows=25)
+
+    def _build_appendix_track_record(self, doc: Document) -> None:
+        add_styled_paragraph(doc, "Appendix E: CDE Track Record", level=1, color_key="primary")
+        df = build_track_record_table(self.application.cde)
+        _write_df_to_doc(doc, df)
+
+    def _build_methodology(self, doc: Document) -> None:
+        from nmtcapp import __version__
+        add_styled_paragraph(doc, "Appendix F: Methodology", level=1, color_key="primary")
+        p = doc.add_paragraph(
+            f"Generated by nmtc-application-builder v{__version__} on {date.today().isoformat()}.\n\n"
+            "ELIGIBILITY: CDFI Fund NMTC Eligibility Table using 2016–2020 ACS 5-Year Estimates. "
+            "Tract eligibility determined by Low Income Community (LIC) criteria per IRC §45D.\n\n"
+            "DISTRESS LEVELS: Deep distress = poverty rate >30% or unemployment >1.5× national "
+            "average. Severe distress = LIC plus additional qualifying factors. "
+            "(Source: CDFI Fund NMTC Program guidance, NOFA 2024.)\n\n"
+            "DEAL ECONOMICS: Computed using nmtc-calc library. Standard leveraged NMTC structure "
+            "with credit price $0.83/credit, CDE fee 2.5% of QEI, 7-year compliance period.\n\n"
+            "IMPACT BENCHMARKS: CDFI Fund Annual Reports, CY2018–CY2023. "
+            "Average jobs per $1MM QEI: 12.0 FTE. Top quartile: ≥20.0 FTE per $1MM.\n\n"
+            "READINESS SCORE: Proprietary weighted model (eligibility 25%, distress "
+            "concentration 25%, geographic diversity 15%, impact metrics 20%, "
+            "validation 10%, completeness 5%) calibrated against historical CDFI Fund "
+            "award patterns."
+        )
+        p.runs[0].font.size = Pt(TYPOGRAPHY["size_body"])
+
+    # ------------------------------------------------------------------
+    # Utility: page numbers in footer
+    # ------------------------------------------------------------------
+
+    def _add_page_numbers(self, doc: Document) -> None:
+        for section in doc.sections:
+            footer = section.footer
+            footer.is_linked_to_previous = False
+            p = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+            p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            p.clear()
+            run = p.add_run()
+            run.font.size = Pt(TYPOGRAPHY["size_footnote"])
+            run.font.color.rgb = RGBColor(*_hex_to_rgb(COLORS["text_muted"]))
+            # Add field code for page number
+            fldChar1 = OxmlElement("w:fldChar")
+            fldChar1.set(qn("w:fldCharType"), "begin")
+            instrText = OxmlElement("w:instrText")
+            instrText.text = "PAGE"
+            fldChar2 = OxmlElement("w:fldChar")
+            fldChar2.set(qn("w:fldCharType"), "end")
+            run._r.append(fldChar1)
+            run._r.append(instrText)
+            run._r.append(fldChar2)
+            conf_run = p.add_run(
+                f"  |  {self.application.cde.name} — NMTC {self.application.application_round} "
+                f"Application  |  CONFIDENTIAL"
+            )
+            conf_run.font.size = Pt(TYPOGRAPHY["size_footnote"])
+            conf_run.font.color.rgb = RGBColor(*_hex_to_rgb(COLORS["text_muted"]))
+
+
+# ---------------------------------------------------------------------------
+# Helper functions
+# ---------------------------------------------------------------------------
+
+def _write_df_to_doc(doc: Document, df, max_rows: int = 50) -> None:
+    """Write a DataFrame as a styled table to the document."""
+    if df is None or df.empty:
+        doc.add_paragraph("No data available.")
+        return
+    display = df.head(max_rows)
+    headers = list(display.columns)
+    data = [list(row) for _, row in display.iterrows()]
+    add_styled_table(doc, headers, data, totals_last=True)
+    if len(df) > max_rows:
+        p = doc.add_paragraph(f"Showing {max_rows} of {len(df)} rows. See Excel attachment for complete data.")
+        p.runs[0].font.italic = True
+        p.runs[0].font.size = Pt(TYPOGRAPHY["size_caption"])
+
+
+def _set_cell_text(cell, text: str, bold: bool = False) -> None:
+    """Set plain text in a table cell, clearing existing content."""
+    cell.paragraphs[0].clear()
+    run = cell.paragraphs[0].add_run(text)
+    run.font.bold = bold
+    run.font.size = Pt(TYPOGRAPHY["size_body"])
