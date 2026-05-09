@@ -177,6 +177,15 @@ class PipelineOptimizer:
 
         score_after = composite_alignment_score(selected, requested_allocation, self.weights)
 
+        # No-regression guarantee: if the optimizer produced a worse result than the
+        # original full pipeline, try using all_projects when they fit the constraints.
+        if score_after < score_before - 1e-6:
+            all_ok, _ = constraints.is_feasible(all_projects)
+            if all_ok:
+                selected = all_projects
+                score_after = score_before
+                logger.info("Optimizer: reverting to full pipeline (optimized subset scored lower)")
+
         # Dimensional improvements
         def _dims(projects):
             return {

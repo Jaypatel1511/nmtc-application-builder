@@ -144,8 +144,9 @@ class TestCandidatePool:
         assert len(sample) <= len(pool)
 
     def test_eligible_only_filters(self, sample_pipeline):
+        import copy
         from nmtcapp.optimizer.candidate_pool import CandidatePool
-        projects = list(sample_pipeline)
+        projects = [copy.copy(p) for p in sample_pipeline]
         for p in projects[:2]:
             p.is_nmtc_eligible = False
         pool = CandidatePool(projects)
@@ -185,7 +186,7 @@ class TestObjectiveFunctions:
         from nmtcapp.optimizer.objectives import score_distress_alignment
         projects = list(sample_pipeline)
         for p in projects:
-            p.distress_level = "deep_distressed"
+            p.distress_level = "deep"
         score = score_distress_alignment(projects, 55_000_000)
         assert score > 0.5
 

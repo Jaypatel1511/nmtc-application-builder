@@ -46,7 +46,7 @@ def score_distress_alignment(
         return 0.0
     deep_qei = sum(
         p.qei_request for p in projects
-        if getattr(p, "distress_level", "lic") in ("deep_distressed", "severely_distressed")
+        if getattr(p, "distress_level", "lic") in ("deep", "severe")
     )
     deep_pct = deep_qei / total_qei
     winner_p75 = WINNER_DISTRESS_PATTERNS["p75_pct_deep_or_severe"]

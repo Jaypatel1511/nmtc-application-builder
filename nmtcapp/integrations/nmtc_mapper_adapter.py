@@ -1,6 +1,8 @@
 """Adapter wrapping nmtc-mapper for pipeline eligibility enrichment."""
 from __future__ import annotations
 
+import contextlib
+import io
 import logging
 from typing import TYPE_CHECKING
 
@@ -65,7 +67,8 @@ def enrich_pipeline_eligibility(pipeline: "Pipeline") -> "Pipeline":
 
     try:
         from nmtcmapper import NMTCMapper
-        mapper = NMTCMapper()
+        with contextlib.redirect_stdout(io.StringIO()):
+            mapper = NMTCMapper()
         _enrich_via_api(projects, mapper)
         logger.info("nmtc-mapper enrichment complete for %d projects", len(projects))
     except Exception as exc:

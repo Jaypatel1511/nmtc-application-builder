@@ -72,11 +72,16 @@ def analyze_sector_mix(pipeline: "Pipeline") -> dict:
     )
     high_priority_pct = high_priority_qei / total_qei
 
+    max_single_sector_pct = max(
+        (v["pct"] for v in sector_breakdown.values()), default=1.0
+    )
+
     return {
         "sector_breakdown": sector_breakdown,
         "dominant_sector": dominant_sector,
         "sector_diversity_score": round(diversity_score, 1),
         "sectors_represented": n_sectors,
+        "max_single_sector_pct": max_single_sector_pct,
         "high_priority_pct": high_priority_pct,
         "total_qei": total_qei,
         "vs_winning_application_patterns": _assess_vs_winners(high_priority_pct, n_sectors),
