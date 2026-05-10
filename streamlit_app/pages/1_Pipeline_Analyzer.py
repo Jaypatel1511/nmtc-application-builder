@@ -603,7 +603,8 @@ with tabs[4]:
                         y=[total_pc / 1e6, qei_val / 1e6, nmtcs_val / 1e6, equity_val / 1e6, subsidy_val / 1e6],
                         text=[f"${v / 1e6:.1f}M" for v in [total_pc, qei_val, nmtcs_val, equity_val, subsidy_val]],
                         textposition="outside",
-                        marker=dict(color=[PRIMARY, MID_BLUE, LIGHT_BLUE, ACCENT, SUCCESS]),
+                        increasing={"marker": {"color": PRIMARY}},
+                        decreasing={"marker": {"color": DANGER}},
                         connector={"visible": False},
                     )
                 )
