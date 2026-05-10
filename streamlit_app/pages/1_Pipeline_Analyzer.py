@@ -587,26 +587,24 @@ with tabs[4]:
         econ = analysis.deal_economics
         if econ or pr.total_project_cost > 0:
             st.markdown("---")
-            MID_BLUE = "#2E6DB4"
-            LIGHT_BLUE = "#9DC3E6"
-            total_pc = pr.total_project_cost
             qei_val = econ.get("total_qei", pr.total_qei_request) if econ else pr.total_qei_request
             nmtcs_val = econ.get("total_nmtcs", qei_val * 0.39) if econ else qei_val * 0.39
             equity_val = econ.get("total_investor_equity", nmtcs_val * 0.83) if econ else nmtcs_val * 0.83
-            subsidy_val = econ.get("total_net_subsidy", qei_val * 0.95) if econ else qei_val * 0.95
+            cde_fees_val = econ.get("total_cde_fees", qei_val * 0.025) if econ else qei_val * 0.025
+            # subsidy_val is the single source of truth: QEI − CDE fees (capital delivered to QALICBs)
+            subsidy_val = econ.get("total_net_subsidy", qei_val - cde_fees_val) if econ else qei_val - cde_fees_val
 
             if qei_val > 0:
                 fig_wf = go.Figure(go.Waterfall(
                     name="Deal Economics",
                     orientation="v",
-                    measure=["absolute", "relative", "relative", "total"],
-                    x=["QEI Raised", "+ Federal NMTC (39%)", "− Investor Equity", "Net Subsidy"],
-                    y=[qei_val / 1e6, nmtcs_val / 1e6, -equity_val / 1e6, 0],
+                    measure=["absolute", "relative", "total"],
+                    x=["QEI Raised", "− CDE Fees (2.5%)", "Net Capital to QALICBs"],
+                    y=[qei_val / 1e6, -cde_fees_val / 1e6, 0],
                     text=[
                         f"${qei_val / 1e6:.1f}M",
-                        f"+${nmtcs_val / 1e6:.1f}M",
-                        f"−${equity_val / 1e6:.1f}M",
-                        f"${(qei_val + nmtcs_val - equity_val) / 1e6:.1f}M",
+                        f"−${cde_fees_val / 1e6:.1f}M",
+                        f"${subsidy_val / 1e6:.1f}M",
                     ],
                     textposition="outside",
                     increasing={"marker": {"color": SUCCESS}},
@@ -615,15 +613,16 @@ with tabs[4]:
                     connector={"visible": True, "line": {"color": "rgba(150,150,150,0.5)", "width": 1}},
                 ))
                 fig_wf.update_layout(
-                    title="Deal economics waterfall — sources and uses",
+                    title="Deal economics waterfall — capital flow to QALICBs",
                     yaxis_title="$ Millions",
                     showlegend=False,
-                    height=420,
+                    height=380,
                     margin=dict(l=20, r=20, t=60, b=80),
                 )
                 st.plotly_chart(fig_wf, use_container_width=True)
+                st.caption("Net capital = QEI raised − CDE arrangement fees (2.5% of QEI)")
 
             st.markdown("**Deal economics**")
             st.markdown(f"- Total NMTCs: **{fmt_millions(nmtcs_val)}**")
             st.markdown(f"- Investor equity: **{fmt_millions(equity_val)}**")
-            st.markdown(f"- Net subsidy: **{fmt_millions(subsidy_val)}**")
+            st.markdown(f"- Net capital to QALICBs: **{fmt_millions(subsidy_val)}**")
