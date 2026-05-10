@@ -271,7 +271,8 @@ with st.expander("📋 Get Recommendations", expanded=False):
                                 padding:0.75rem 1rem;
                                 margin-bottom:0.75rem;
                                 background:#f8f9fc;
-                                border-radius:0 8px 8px 0;">
+                                border-radius:0 8px 8px 0;
+                                color:#2C2C2C;">
                         <strong style="color:{color};">[{r.category.upper()}]</strong>
                         &nbsp;{r.finding}<br>
                         <em>Action:</em> {r.action}<br>

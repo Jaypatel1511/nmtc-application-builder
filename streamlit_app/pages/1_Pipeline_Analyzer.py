@@ -4,6 +4,7 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
+import io
 import tempfile
 
 import pandas as pd
@@ -43,8 +44,25 @@ st.markdown("---")
 # ---------------------------------------------------------------------------
 # Sidebar — data source selection
 # ---------------------------------------------------------------------------
+_TEMPLATE_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "..", "templates", "pipeline_template.xlsx"
+)
+
 with st.sidebar:
     st.header("Data source")
+
+    _tmpl_path = os.path.abspath(_TEMPLATE_PATH)
+    if os.path.exists(_tmpl_path):
+        with open(_tmpl_path, "rb") as _f:
+            st.download_button(
+                label="📥 Download blank template (Excel)",
+                data=_f.read(),
+                file_name="nmtc_pipeline_template.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                help="Pre-formatted with dropdowns and 5 example rows. Edit, save as CSV, then upload.",
+                use_container_width=True,
+            )
+
     data_source = st.radio(
         "Choose pipeline source",
         ["Use sample data (20 projects)", "Upload your own CSV"],
@@ -54,13 +72,16 @@ with st.sidebar:
     uploaded_file = None
     if data_source == "Upload your own CSV":
         uploaded_file = st.file_uploader(
-            "Upload pipeline CSV",
-            type=["csv"],
-            help=(
-                "Required columns: project_id, project_name, qalicb_name, address, "
-                "city, state, sector, project_type, total_project_cost, qei_request, "
-                "qlici_amount, expected_jobs_created"
-            ),
+            "Upload your pipeline file (CSV or Excel)",
+            type=["csv", "xlsx", "xls"],
+        )
+        st.caption(
+            "Accepted formats: .csv, .xlsx, .xls — "
+            "Required columns: project_id, project_name, state, city, sector, "
+            "project_type, qei_millions, total_project_cost_millions, jobs_created. "
+            "Optional: jobs_retained, affordable_units, commercial_sqft, "
+            "distress_level, urban_rural, census_tract, address, "
+            "minority_owned, women_owned, notes."
         )
 
     st.markdown("---")
@@ -79,10 +100,52 @@ def load_sample_pipeline(n: int = 20) -> Pipeline:
 
 
 def load_uploaded_pipeline(file_bytes: bytes, filename: str) -> Pipeline:
-    """Write bytes to a temp file and parse with Pipeline.from_csv()."""
-    with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp:
-        tmp.write(file_bytes)
+    """Parse an uploaded CSV or Excel file into a Pipeline."""
+    ext = filename.rsplit(".", 1)[-1].lower()
+    buf = io.BytesIO(file_bytes)
+
+    if ext == "csv":
+        df = pd.read_csv(buf)
+    elif ext in ("xlsx", "xls"):
+        try:
+            df = pd.read_excel(buf, sheet_name="Pipeline")
+        except Exception:
+            buf.seek(0)
+            df = pd.read_excel(buf, sheet_name=0)
+    else:
+        raise ValueError(f"Unsupported file type: .{ext}")
+
+    # Map user-friendly template column names to the internal names Pipeline expects.
+    # Multiply "*_millions" columns by 1e6 before renaming so raw-dollar CSVs pass through unchanged.
+    for mil_col, raw_col in (
+        ("qei_millions", "qei_request"),
+        ("total_project_cost_millions", "total_project_cost"),
+    ):
+        if mil_col in df.columns:
+            df[mil_col] = pd.to_numeric(df[mil_col], errors="coerce").fillna(0) * 1_000_000
+            df = df.rename(columns={mil_col: raw_col})
+
+    for src, dst in (
+        ("jobs_created", "expected_jobs_created"),
+        ("jobs_retained", "expected_jobs_retained"),
+        ("affordable_units", "expected_units_built"),
+        ("commercial_sqft", "expected_sq_ft"),
+    ):
+        if src in df.columns:
+            df = df.rename(columns={src: dst})
+
+    # Supply defaults for columns required by Pipeline.from_csv() but absent in the template.
+    if "qalicb_name" not in df.columns:
+        df["qalicb_name"] = df.get("project_name", "")
+    if "address" not in df.columns:
+        df["address"] = ""
+    if "qlici_amount" not in df.columns and "qei_request" in df.columns:
+        df["qlici_amount"] = df["qei_request"]
+
+    with tempfile.NamedTemporaryFile(suffix=".csv", delete=False, mode="w", newline="") as tmp:
+        df.to_csv(tmp, index=False)
         tmp_path = tmp.name
+
     return Pipeline.from_csv(tmp_path)
 
 
@@ -520,15 +583,40 @@ with tabs[4]:
         st.markdown(f"- Jobs / $1MM QEI: **{jpm:.1f}**")
         st.markdown(f"- Historical benchmark: **{benchmark_label}**")
 
-        # Deal economics summary
+        # Deal economics waterfall + summary
         econ = analysis.deal_economics
-        if econ:
+        if econ or pr.total_project_cost > 0:
             st.markdown("---")
+            MID_BLUE = "#2E6DB4"
+            LIGHT_BLUE = "#9DC3E6"
+            total_pc = pr.total_project_cost
+            qei_val = econ.get("total_qei", pr.total_qei_request) if econ else pr.total_qei_request
+            nmtcs_val = econ.get("total_nmtcs", qei_val * 0.39) if econ else qei_val * 0.39
+            equity_val = econ.get("total_investor_equity", nmtcs_val * 0.83) if econ else nmtcs_val * 0.83
+            subsidy_val = econ.get("total_net_subsidy", qei_val * 0.95) if econ else qei_val * 0.95
+
+            if total_pc > 0:
+                fig_wf = go.Figure(
+                    go.Waterfall(
+                        measure=["absolute", "absolute", "absolute", "absolute", "absolute"],
+                        x=["Total<br>Project Cost", "QEI", "Federal NMTC<br>(39%)", "Investor<br>Equity", "Net Subsidy"],
+                        y=[total_pc / 1e6, qei_val / 1e6, nmtcs_val / 1e6, equity_val / 1e6, subsidy_val / 1e6],
+                        text=[f"${v / 1e6:.1f}M" for v in [total_pc, qei_val, nmtcs_val, equity_val, subsidy_val]],
+                        textposition="outside",
+                        marker=dict(color=[PRIMARY, MID_BLUE, LIGHT_BLUE, ACCENT, SUCCESS]),
+                        connector={"visible": False},
+                    )
+                )
+                fig_wf.update_layout(
+                    title="Deal economics waterfall",
+                    yaxis_title="$ Millions",
+                    height=380,
+                    margin=dict(l=0, r=20, t=40, b=0),
+                    showlegend=False,
+                )
+                st.plotly_chart(fig_wf, use_container_width=True)
+
             st.markdown("**Deal economics**")
-            st.markdown(f"- Total NMTCs: **{fmt_millions(econ.get('total_nmtcs', 0))}**")
-            st.markdown(
-                f"- Investor equity: **{fmt_millions(econ.get('total_investor_equity', 0))}**"
-            )
-            st.markdown(
-                f"- Net subsidy: **{fmt_millions(econ.get('total_net_subsidy', 0))}**"
-            )
+            st.markdown(f"- Total NMTCs: **{fmt_millions(nmtcs_val)}**")
+            st.markdown(f"- Investor equity: **{fmt_millions(equity_val)}**")
+            st.markdown(f"- Net subsidy: **{fmt_millions(subsidy_val)}**")
