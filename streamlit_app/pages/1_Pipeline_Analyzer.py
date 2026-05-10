@@ -595,25 +595,31 @@ with tabs[4]:
             equity_val = econ.get("total_investor_equity", nmtcs_val * 0.83) if econ else nmtcs_val * 0.83
             subsidy_val = econ.get("total_net_subsidy", qei_val * 0.95) if econ else qei_val * 0.95
 
-            if total_pc > 0:
-                fig_wf = go.Figure(
-                    go.Waterfall(
-                        measure=["absolute", "absolute", "absolute", "absolute", "absolute"],
-                        x=["Total<br>Project Cost", "QEI", "Federal NMTC<br>(39%)", "Investor<br>Equity", "Net Subsidy"],
-                        y=[total_pc / 1e6, qei_val / 1e6, nmtcs_val / 1e6, equity_val / 1e6, subsidy_val / 1e6],
-                        text=[f"${v / 1e6:.1f}M" for v in [total_pc, qei_val, nmtcs_val, equity_val, subsidy_val]],
-                        textposition="outside",
-                        increasing={"marker": {"color": PRIMARY}},
-                        decreasing={"marker": {"color": DANGER}},
-                        connector={"visible": False},
-                    )
-                )
+            if qei_val > 0:
+                fig_wf = go.Figure(go.Waterfall(
+                    name="Deal Economics",
+                    orientation="v",
+                    measure=["absolute", "relative", "relative", "total"],
+                    x=["QEI Raised", "+ Federal NMTC (39%)", "− Investor Equity", "Net Subsidy"],
+                    y=[qei_val / 1e6, nmtcs_val / 1e6, -equity_val / 1e6, 0],
+                    text=[
+                        f"${qei_val / 1e6:.1f}M",
+                        f"+${nmtcs_val / 1e6:.1f}M",
+                        f"−${equity_val / 1e6:.1f}M",
+                        f"${(qei_val + nmtcs_val - equity_val) / 1e6:.1f}M",
+                    ],
+                    textposition="outside",
+                    increasing={"marker": {"color": SUCCESS}},
+                    decreasing={"marker": {"color": DANGER}},
+                    totals={"marker": {"color": PRIMARY}},
+                    connector={"visible": True, "line": {"color": "rgba(150,150,150,0.5)", "width": 1}},
+                ))
                 fig_wf.update_layout(
-                    title="Deal economics waterfall",
+                    title="Deal economics waterfall — sources and uses",
                     yaxis_title="$ Millions",
-                    height=380,
-                    margin=dict(l=0, r=20, t=40, b=0),
                     showlegend=False,
+                    height=420,
+                    margin=dict(l=20, r=20, t=60, b=80),
                 )
                 st.plotly_chart(fig_wf, use_container_width=True)
 
