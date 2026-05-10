@@ -93,7 +93,7 @@ class CDEProfile:
             print(cde.name)
         """
         return cls(
-            name="Heartland Impact CDE, LLC",
+            name="Riverbend Community Capital CDE, LLC",
             cde_id="CDE-2018-0117",
             certification_date="2018-06-20",
             mission=(
@@ -116,7 +116,7 @@ class CDEProfile:
             contact={
                 "name": "Sarah Johnson",
                 "title": "President & CEO",
-                "email": "sjohnson@heartlandimpact.org",
+                "email": "sjohnson@riverbendcapital.org",
                 "phone": "312-555-0192",
             },
             governance={
@@ -125,7 +125,7 @@ class CDEProfile:
                 "independent_directors": 3,
                 "board_meeting_frequency": "quarterly",
             },
-            website="https://heartlandimpactcde.org",
+            website="https://riverbendcommunitycapital.org",
         )
 
     def total_prior_allocation(self) -> float:

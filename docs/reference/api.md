@@ -303,7 +303,7 @@ Required YAML keys: `name`, `cde_id`, `certification_date`, `mission`, `target_m
 sample() -> CDEProfile
 ```
 
-Return a realistic sample CDE profile (Heartland Impact CDE, LLC) for testing and demos.
+Return a realistic sample CDE profile (Riverbend Community Capital CDE, LLC) for testing and demos.
 
 ### `total_prior_allocation`
 

@@ -3,7 +3,7 @@
 # All names, EINs, and financial figures are fictional.
 
 cde_id: "CDE-2018-0117"
-name: "Heartland Impact CDE, LLC"
+name: "Riverbend Community Capital CDE, LLC"
 ein: "82-4491073"
 headquarters_state: "IL"
 service_area_states:
@@ -54,7 +54,7 @@ financial_profile:
 contact:
   name: "Sarah Johnson"
   title: "President & CEO"
-  email: "sjohnson@heartlandimpactcde.org"
+  email: "sjohnson@riverbendcommunitycapital.org"
   phone: "312-555-0192"
 
 governance:
@@ -64,7 +64,7 @@ governance:
   board_meeting_frequency: "quarterly"
 
 certification_date: "2018-06-20"
-website: "https://heartlandimpactcde.org"
+website: "https://riverbendcommunitycapital.org"
 target_markets:
   - "Illinois"
   - "Ohio"

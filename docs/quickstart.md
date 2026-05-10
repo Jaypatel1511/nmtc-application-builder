@@ -26,7 +26,7 @@ from nmtcapp.core.pipeline import Pipeline
 cde = CDEProfile.sample()
 pipeline = Pipeline.sample(n=20)
 
-print(cde.name)           # "Heartland Impact CDE, LLC"
+print(cde.name)           # "Riverbend Community Capital CDE, LLC"
 print(len(pipeline))      # 20
 print(pipeline)           # Pipeline(projects=20, total_qei=$120,500,000)
 ```

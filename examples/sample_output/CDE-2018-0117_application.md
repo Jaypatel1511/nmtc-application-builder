@@ -1,6 +1,6 @@
 # NEW MARKETS TAX CREDIT ALLOCATION APPLICATION
 
-**Heartland Impact CDE, LLC**
+**Riverbend Community Capital CDE, LLC**
 
 Application Round: CY2025  
 Requested Allocation: **$65,000,000**  
@@ -15,7 +15,7 @@ Readiness Grade: **A** (86.6/100)
 
 ## Executive Summary
 
-Heartland Impact CDE, LLC respectfully requests $65.0MM in New Markets Tax Credit allocation for application round CY2025. Our 20-project pipeline spans 20 states with **87% of QEI committed to deep/severely distressed tracts** — ranking in the top quartile tier of historical NMTC applications.
+Riverbend Community Capital CDE, LLC respectfully requests $65.0MM in New Markets Tax Credit allocation for application round CY2025. Our 20-project pipeline spans 20 states with **87% of QEI committed to deep/severely distressed tracts** — ranking in the top quartile tier of historical NMTC applications.
 
 **Application Readiness Score: 86.6/100 (Grade A)**
 
@@ -48,7 +48,7 @@ Heartland Impact CDE, LLC respectfully requests $65.0MM in New Markets Tax Credi
 
 ### Investment Thesis and Strategy
 
-Heartland Impact CDE, LLC will deploy $65.0 million in NMTC allocation across 20 projects in 20 states — targeting 87% of QEI in deep and severely distressed census tracts. Our pipeline focuses on healthcare and complementary high-impact sectors in markets where conventional capital is systematically absent.
+Riverbend Community Capital CDE, LLC will deploy $65.0 million in NMTC allocation across 20 projects in 20 states — targeting 87% of QEI in deep and severely distressed census tracts. Our pipeline focuses on healthcare and complementary high-impact sectors in markets where conventional capital is systematically absent.
 
 [NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. CDFI Fund reviewers score on specificity, evidence, and alignment with community need. Word limit for this section: 3000 words.]
 
@@ -58,7 +58,7 @@ Heartland Impact CDE, LLC will deploy $65.0 million in NMTC allocation across 20
 
 Primary geographic targets: AZ, CA, FL, GA, IL and others.
 
-Heartland Impact CDE, LLC's mission — "Deploy New Markets Tax Credit capital into deep-distress communities across the Midwest and South, with a focus on healthcare, education, and small business operating businesses in persistent poverty ..." — guides our market selection toward persistent-poverty counties and high-migration rural communities where NMTC leverage is greatest.
+Riverbend Community Capital CDE, LLC's mission — "Deploy New Markets Tax Credit capital into deep-distress communities across the Midwest and South, with a focus on healthcare, education, and small business operating businesses in persistent poverty ..." — guides our market selection toward persistent-poverty counties and high-migration rural communities where NMTC leverage is greatest.
 
 
 
@@ -79,7 +79,7 @@ Heartland Impact CDE, LLC's mission — "Deploy New Markets Tax Credit capital i
 
 ### QEI Deployment Strategy and Timeline
 
-Heartland Impact CDE, LLC targets a CY2025 award and plans to close the first tranche of transactions within 12 months of award announcement. All 20 projects have completed preliminary underwriting review.
+Riverbend Community Capital CDE, LLC targets a CY2025 award and plans to close the first tranche of transactions within 12 months of award announcement. All 20 projects have completed preliminary underwriting review.
 
 QEI deployment strategy: 87% of QEI committed to deep/severe distress tracts (CDFI Fund target: ≥75%).
 
@@ -104,7 +104,7 @@ QEI deployment strategy: 87% of QEI committed to deep/severe distress tracts (CD
 
 ### Aggregate Community Impact Projections
 
-The 20 projects in Heartland Impact CDE, LLC's pipeline will produce the following direct community impacts upon project completion:
+The 20 projects in Riverbend Community Capital CDE, LLC's pipeline will produce the following direct community impacts upon project completion:
 
   • 864 permanent full-time-equivalent jobs created
   • 298 existing jobs retained
@@ -126,11 +126,11 @@ The 20 projects in Heartland Impact CDE, LLC's pipeline will produce the followi
 **QEI in High Migration Rural (HMR) Tracts:** 2.6%
 **CDFI Fund Competitive Minimum (Deep/Severe):** 50.0%
 **CDFI Fund Target (Deep/Severe):** 75.0%
-**Heartland Impact CDE, LLC Commitment (Deep/Severe):** 86.7%
+**Riverbend Community Capital CDE, LLC Commitment (Deep/Severe):** 86.7%
 
 ### Community Need Documentation
 
-HMDA mortgage lending data confirms severe unmet capital need across Heartland Impact CDE, LLC's target markets. In the 5 census tracts where our pipeline projects are located, average loan denial rates exceed 30%, with racial disparities of 2.3× for minority applicants relative to white applicants (HMDA 5-year data, 2018–2022). NMTC capital is uniquely positioned to bridge this gap through below-market QLICI financing.
+HMDA mortgage lending data confirms severe unmet capital need across Riverbend Community Capital CDE, LLC's target markets. In the 5 census tracts where our pipeline projects are located, average loan denial rates exceed 30%, with racial disparities of 2.3× for minority applicants relative to white applicants (HMDA 5-year data, 2018–2022). NMTC capital is uniquely positioned to bridge this gap through below-market QLICI financing.
 
 
 
@@ -157,7 +157,7 @@ HMDA mortgage lending data confirms severe unmet capital need across Heartland I
 
 ### CDE History and Certification
 
-Heartland Impact CDE, LLC was certified as a Community Development Entity by the CDFI Fund on 2018-06-20. Since certification, the organization has received 3 NMTC allocation awards totaling $155,000,000, with 2 rounds fully deployed within 18 months of award.
+Riverbend Community Capital CDE, LLC was certified as a Community Development Entity by the CDFI Fund on 2018-06-20. Since certification, the organization has received 3 NMTC allocation awards totaling $155,000,000, with 2 rounds fully deployed within 18 months of award.
 
 Our track record demonstrates consistent execution across multiple states and sectors, with zero compliance violations or performance defaults to date.
 
@@ -184,7 +184,7 @@ Our track record demonstrates consistent execution across multiple states and se
 
 ### Underwriting Process and Internal Controls
 
-Heartland Impact CDE, LLC maintains a rigorous underwriting process calibrated to NMTC compliance requirements and community development mission:
+Riverbend Community Capital CDE, LLC maintains a rigorous underwriting process calibrated to NMTC compliance requirements and community development mission:
 
   1. Initial Screening: NMTC eligibility verification via geocoding + ACS tract data
   2. Community Impact Assessment: Jobs/unit projections and HMDA disparity review
@@ -224,7 +224,7 @@ Heartland Impact CDE, LLC maintains a rigorous underwriting process calibrated t
 
 ### Investor Strategy and Relationships
 
-Heartland Impact CDE, LLC has established relationships with CRA-motivated bank investors in our primary markets. Based on $122.5MM of requested QEI at a standard credit price of $0.83/NMTC credit, we anticipate raising $39.7MM in investor equity from one or two lead investors.
+Riverbend Community Capital CDE, LLC has established relationships with CRA-motivated bank investors in our primary markets. Based on $122.5MM of requested QEI at a standard credit price of $0.83/NMTC credit, we anticipate raising $39.7MM in investor equity from one or two lead investors.
 
 Primary investor profile: CRA-rated commercial banks with Community Development obligations in 20 target states.
 
@@ -270,7 +270,7 @@ CDE fee rate: 2.5% of QEI ($3.1MM). Fees cover origination, compliance monitorin
 
 ### Prior Allocation Summary
 
-Heartland Impact CDE, LLC has successfully deployed 2 of 3 prior NMTC allocation awards totaling $155,000,000. All compliance obligations have been met; no compliance events or repayments have occurred.
+Riverbend Community Capital CDE, LLC has successfully deployed 2 of 3 prior NMTC allocation awards totaling $155,000,000. All compliance obligations have been met; no compliance events or repayments have occurred.
 
 The deployment history table below provides details on each prior award, including states served, sectors financed, and outcomes achieved.
 

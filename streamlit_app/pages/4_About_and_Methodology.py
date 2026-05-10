@@ -176,7 +176,7 @@ assignments will produce misleading scores.
 
 ### 5. Sample data is illustrative only
 
-The sample pipeline (20 projects, Heartland Impact CDE) is fictional. All
+The sample pipeline (20 projects, Riverbend Community Capital CDE) is fictional. All
 distress levels, census tracts, and job estimates are illustrative. Do not use
 sample output to benchmark a real application.
 

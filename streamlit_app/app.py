@@ -132,7 +132,7 @@ def home():
         st.subheader("Sample CDE profile")
         st.markdown(
             """
-            The demo uses **Heartland Impact CDE, LLC** — a realistic sample profile
+            The demo uses **Riverbend Community Capital CDE, LLC** — a realistic sample profile
             with three prior NMTC award rounds and a 20-project pipeline spanning
             12 states across healthcare, education, affordable housing, and small
             business sectors.
