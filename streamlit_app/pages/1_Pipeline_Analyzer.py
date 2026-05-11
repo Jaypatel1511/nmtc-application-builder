@@ -1,4 +1,9 @@
-"""Pipeline Analyzer — full intelligence report for a project pipeline."""
+"""Pipeline Analyzer — full intelligence report for a project pipeline.
+
+IMPORTANT: do not use `i` as a loop variable anywhere in this file.
+`i` is reserved for `i = analysis.impact_summary` (a dict) used in Tab 4.
+Use `idx` for all enumerate indexes.
+"""
 import sys
 import os
 
@@ -27,7 +32,7 @@ from chart_style import (
     apply_matplotlib_theme, style_matplotlib_axes, style_plotly_fig,
     bar_gradient, PLOTLY_CONFIG, PLOTLY_LAYOUT,
     NAVY, BLUE, MID_BLUE, LIGHT_BLUE, ACCENT, SUCCESS, DANGER, NEUTRAL,
-    TEXT_DARK, TEXT_MUTED, PANEL_BG,
+    TEXT_DARK, TEXT_MUTED, TEXT_LIGHT, PANEL_BG, GRID, BORDER,
 )
 
 apply_matplotlib_theme()
@@ -319,14 +324,20 @@ with tabs[1]:
             )
         )
         fig_pie = style_plotly_fig(fig_pie, title="QEI distribution by distress level", height=340)
+        fig_pie.update_traces(
+            textfont=dict(color="#FFFFFF", size=12),
+            insidetextfont=dict(color="#FFFFFF", size=12),
+            outsidetextfont=dict(color=TEXT_LIGHT, size=11),
+        )
         fig_pie.update_layout(
             showlegend=True,
-            legend=dict(orientation="v", x=1.02, y=0.5, xanchor="left"),
+            legend=dict(orientation="v", x=1.02, y=0.5, xanchor="left",
+                        font=dict(color=TEXT_LIGHT)),
             margin=dict(l=0, r=120, t=60, b=20),
             annotations=[dict(
                 text=center_text,
                 x=0.38, y=0.5,
-                font=dict(size=13, color=NAVY),
+                font=dict(size=13, color=TEXT_LIGHT),
                 showarrow=False,
                 xref="paper", yref="paper",
             )],
@@ -449,14 +460,20 @@ with tabs[2]:
             )
         )
         fig_ur = style_plotly_fig(fig_ur, title="Urban / Rural QEI split", height=300)
+        fig_ur.update_traces(
+            textfont=dict(color="#FFFFFF", size=12),
+            insidetextfont=dict(color="#FFFFFF", size=12),
+            outsidetextfont=dict(color=TEXT_LIGHT, size=11),
+        )
         fig_ur.update_layout(
             showlegend=True,
-            legend=dict(orientation="v", x=1.02, y=0.5, xanchor="left"),
+            legend=dict(orientation="v", x=1.02, y=0.5, xanchor="left",
+                        font=dict(color=TEXT_LIGHT)),
             margin=dict(l=0, r=100, t=60, b=20),
             annotations=[dict(
                 text=f"{msa_count}<br>MSAs",
                 x=0.37, y=0.5,
-                font=dict(size=13, color=NAVY),
+                font=dict(size=13, color=TEXT_LIGHT),
                 showarrow=False,
                 xref="paper", yref="paper",
             )],
@@ -534,9 +551,9 @@ with tabs[3]:
         ax_sector.text(avg_sec + max_val * 0.01, n_sec - 0.5,
                        f"Avg ${avg_sec:.1f}M", color=NEUTRAL, fontsize=8, va="top")
         # Label: "$XM (N proj, Y%)" at end of each bar
-        for i, (val, cnt, pct) in enumerate(zip(
+        for idx, (val, cnt, pct) in enumerate(zip(
                 sector_qei["QEI ($M)"], sector_qei["count"], sector_qei["pct"])):
-            ax_sector.text(val + max_val * 0.02, i,
+            ax_sector.text(val + max_val * 0.02, idx,
                            f"${val:.1f}M ({cnt} proj, {pct:.0f}%)",
                            va="center", ha="left", fontsize=8, color=TEXT_DARK)
         ax_sector.set_xlim(0, max_val * 1.55)
@@ -661,28 +678,29 @@ with tabs[4]:
                         f"${subsidy_val / 1e6:.1f}M",
                     ],
                     textposition="outside",
+                    textfont=dict(color=TEXT_LIGHT, size=11),
                     increasing={"marker": {"color": SUCCESS}},
                     decreasing={"marker": {"color": DANGER}},
                     totals={"marker": {"color": NAVY}},
                     connector={
                         "visible": True,
-                        "line": {"color": "#D1D5DB", "width": 1, "dash": "dot"},
+                        "line": {"color": BORDER, "width": 1, "dash": "dot"},
                     },
                 ))
                 title_text = (
                     "Deal economics — capital flow to QALICBs"
-                    "<br><span style='font-size:11px;color:#6B7280'>"
+                    "<br><span style='font-size:11px;color:#9CA3AF'>"
                     "From QEI raised to net capital flowing to QALICBs</span>"
                 )
                 fig_wf = style_plotly_fig(fig_wf, height=360)
                 fig_wf.update_layout(
-                    title=dict(text=title_text, font=dict(size=14, color=TEXT_DARK),
+                    title=dict(text=title_text, font=dict(size=14, color=TEXT_LIGHT),
                                x=0.01, xanchor="left"),
                     yaxis=dict(
                         title="$ Millions",
                         tickprefix="$",
                         ticksuffix="M",
-                        gridcolor="#E5E7EB",
+                        gridcolor=GRID,
                         zeroline=False,
                     ),
                     margin=dict(l=50, r=20, t=70, b=50),

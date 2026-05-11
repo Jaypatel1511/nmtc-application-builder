@@ -14,6 +14,11 @@ st.set_page_config(
 # Home page content
 # ---------------------------------------------------------------------------
 def home():
+    # apply_theme() FIRST so that the page-level CSS below is injected after.
+    # When two rules share !important + equal specificity, last declaration wins,
+    # so the page rules (e.g. .nmtc-header h1 white) beat the scoped h1 rule.
+    apply_theme()
+
     st.markdown(
         """
         <style>
@@ -24,23 +29,25 @@ def home():
             border-radius: 12px;
             margin-bottom: 2rem;
         }
-        .nmtc-header h1 { margin: 0; font-size: 2.4rem; font-weight: 700; letter-spacing: -0.5px; }
-        .nmtc-header p  { margin: 0.4rem 0 0 0; font-size: 1.1rem; opacity: 0.85; }
+        /* !important needed to override the global h1/h2/h3 rule in apply_theme() */
+        .nmtc-header h1 { margin: 0; font-size: 2.4rem; font-weight: 700; letter-spacing: -0.5px; color: white !important; }
+        .nmtc-header p  { margin: 0.4rem 0 0 0; font-size: 1.1rem; opacity: 0.85; color: rgba(255,255,255,0.9) !important; }
 
         [data-testid="metric-container"] [data-testid="stMetricValue"] {
-            font-size: 2rem !important; font-weight: 700 !important; color: #1B438C !important;
+            font-size: 2rem !important; font-weight: 700 !important; color: #F3F4F6 !important;
         }
         [data-testid="metric-container"] [data-testid="stMetricLabel"] {
-            font-size: 0.85rem !important; color: #6C757D !important; font-weight: 500 !important;
+            font-size: 0.85rem !important; color: #9CA3AF !important; font-weight: 500 !important;
         }
 
         .feature-card {
-            background: #f8f9fc; border: 1px solid #dde3f0;
-            border-left: 4px solid #1B438C; border-radius: 8px;
+            background: #1A1F2E; border: 1px solid #374151;
+            border-left: 4px solid #3B7BB8; border-radius: 8px;
             padding: 1.25rem 1.5rem; margin-bottom: 1rem; height: 100%;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
         }
-        .feature-card h3 { color: #1B438C; margin: 0 0 0.5rem 0; font-size: 1.05rem; font-weight: 600; }
-        .feature-card p  { color: #495057; margin: 0; font-size: 0.9rem; line-height: 1.5; }
+        .feature-card h3 { color: #7DA8D3; margin: 0 0 0.5rem 0; font-size: 1.05rem; font-weight: 600; }
+        .feature-card p  { color: #F3F4F6; margin: 0; font-size: 0.9rem; line-height: 1.5; }
         .feature-card .icon { font-size: 1.6rem; margin-bottom: 0.4rem; }
 
         .stats-bar {
@@ -56,8 +63,6 @@ def home():
         """,
         unsafe_allow_html=True,
     )
-
-    apply_theme()
 
     st.markdown(
         """

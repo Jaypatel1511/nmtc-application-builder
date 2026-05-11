@@ -21,7 +21,7 @@ from utils import (
 from chart_style import (
     apply_matplotlib_theme, style_plotly_fig, PLOTLY_CONFIG,
     NAVY, BLUE, MID_BLUE, LIGHT_BLUE, ACCENT, SUCCESS, DANGER, NEUTRAL,
-    TEXT_DARK, TEXT_MUTED, PANEL_BG,
+    TEXT_DARK, TEXT_MUTED, TEXT_LIGHT, PANEL_BG, GRID,
 )
 
 apply_matplotlib_theme()
@@ -125,8 +125,8 @@ fig_gauge = go.Figure(go.Indicator(
     mode="gauge+number",
     value=composite,
     domain={"x": [0, 1], "y": [0, 1]},
-    title={"text": "Composite Alignment Score", "font": {"size": 13, "color": TEXT_DARK}},
-    number={"suffix": " / 100", "font": {"size": 26, "color": NAVY}},
+    title={"text": "Composite Alignment Score", "font": {"size": 13, "color": TEXT_LIGHT}},
+    number={"suffix": " / 100", "font": {"size": 26, "color": TEXT_LIGHT}},
     gauge={
         "axis": {
             "range": [0, 100],
@@ -212,15 +212,16 @@ with left:
             radialaxis=dict(
                 range=[0, 100],
                 tickfont=dict(size=10, color=TEXT_MUTED),
-                gridcolor="#E5E7EB",
+                gridcolor=GRID,
             ),
-            angularaxis=dict(tickfont=dict(size=11, color=TEXT_DARK)),
+            angularaxis=dict(tickfont=dict(size=11, color=TEXT_LIGHT)),
             bgcolor=PANEL_BG,
         ),
         showlegend=True,
         legend=dict(
             orientation="h", y=-0.18,
-            font=dict(size=10, color=TEXT_MUTED),
+            font=dict(size=11, color=TEXT_LIGHT),
+            bgcolor="rgba(0,0,0,0)",
         ),
         margin=dict(l=30, r=30, t=30, b=60),
     )
@@ -245,7 +246,7 @@ with right:
             ],
             text=[f"{v:.1f}" for v in bar_values],
             textposition="outside",
-            textfont=dict(color=TEXT_DARK, size=11),
+            textfont=dict(color=TEXT_LIGHT, size=11),
         )
     )
 
@@ -257,7 +258,7 @@ with right:
         annotation_text="Competitive (55)",
         annotation_position="top",
         annotation_font_size=10,
-        annotation_font_color=TEXT_MUTED,
+        annotation_font_color=TEXT_LIGHT,
     )
 
     fig_bar = style_plotly_fig(fig_bar, height=350)
@@ -318,9 +319,10 @@ with st.expander("📋 Get Recommendations", expanded=False):
                     <div style="border-left:4px solid {color};
                                 padding:0.75rem 1rem;
                                 margin-bottom:0.75rem;
-                                background:#f8f9fc;
+                                background:#1A1F2E;
                                 border-radius:0 8px 8px 0;
-                                color:#2C2C2C;">
+                                color:#F3F4F6;
+                                box-shadow:0 1px 4px rgba(0,0,0,0.4);">
                         <strong style="color:{color};">[{r.category.upper()}]</strong>
                         &nbsp;{r.finding}<br>
                         <em>Action:</em> {r.action}<br>

@@ -101,28 +101,33 @@ def priority_color(priority: str) -> str:
 
 
 def apply_theme() -> None:
-    """Inject shared CSS — dark sidebar, off-white main area, brand typography."""
+    """Inject shared dark-mode CSS.
+
+    IMPORTANT: call this BEFORE injecting page-level CSS in the same function,
+    so page-level !important rules with equal specificity win (last-wins rule).
+    """
     st.markdown(
         """
         <style>
         [data-testid="stMain"] {
-            background-color: #FAFAFB;
+            background-color: #0E1117;
         }
         [data-testid="stSidebar"] {
-            background-color: #0e1117;
+            background-color: #1A1F2E;
         }
-        h1, h2, h3 {
-            color: #0E2F56 !important;
+        h1, h2, h3, h4 {
+            color: #E5E7EB !important;
             font-weight: 600 !important;
         }
-        .stMetricLabel {
-            color: #6B7280 !important;
-            font-size: 0.85rem !important;
+        p, li {
+            color: #E5E7EB;
         }
-        .stMetricValue {
-            color: #0E2F56 !important;
-            font-weight: 600 !important;
-        }
+        .stMetricLabel { color: #9CA3AF !important; font-size: 0.85rem !important; }
+        .stMetricValue { color: #F3F4F6 !important; font-weight: 600 !important; }
+        [data-testid="stRadio"] label,
+        [data-testid="stCheckbox"] label { color: #E5E7EB !important; }
+        [data-baseweb="tab"] { color: #9CA3AF; }
+        [data-baseweb="tab"][aria-selected="true"] { color: #F3F4F6; }
         </style>
         """,
         unsafe_allow_html=True,

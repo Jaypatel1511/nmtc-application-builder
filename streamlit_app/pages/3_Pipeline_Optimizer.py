@@ -22,7 +22,7 @@ from utils import (
 from chart_style import (
     apply_matplotlib_theme, style_plotly_fig, PLOTLY_CONFIG,
     NAVY, BLUE, MID_BLUE, LIGHT_BLUE, ACCENT, SUCCESS, DANGER, NEUTRAL,
-    TEXT_DARK, TEXT_MUTED, PANEL_BG,
+    TEXT_DARK, TEXT_MUTED, TEXT_LIGHT, PANEL_BG, PAGE_BG,
 )
 
 apply_matplotlib_theme()
@@ -206,8 +206,8 @@ if dim_improvements:
         dims = list(dim_improvements.keys())
         labels = [dim_label_map.get(d, d.replace("_", " ").title()) for d in dims]
         before_vals = [prior_dim_scores.get(d, 0.0) for d in dims]
-        after_vals  = [max(0, min(100, before_vals[i] + dim_improvements[d] * 100))
-                       for i, d in enumerate(dims)]
+        after_vals  = [max(0, min(100, before_vals[idx] + dim_improvements[d] * 100))
+                       for idx, d in enumerate(dims)]
 
         fig_ba = go.Figure()
         fig_ba.add_trace(go.Bar(
@@ -217,7 +217,7 @@ if dim_improvements:
             marker_color=LIGHT_BLUE,
             text=[f"{v:.1f}" for v in before_vals],
             textposition="inside",
-            textfont=dict(color=TEXT_DARK, size=10),
+            textfont=dict(color=PAGE_BG, size=10),  # dark text on pale LIGHT_BLUE fill
         ))
         fig_ba.add_trace(go.Bar(
             y=labels, x=after_vals,
@@ -263,7 +263,7 @@ if dim_improvements:
                 ],
                 text=[f"{r['_delta']:+.1f}" for r in dim_rows],
                 textposition="outside",
-                textfont=dict(color=TEXT_DARK, size=11),
+                textfont=dict(color=TEXT_LIGHT, size=11),
             )
         )
         fig_dims.add_vline(x=0, line_color="#D1D5DB", line_width=1)
@@ -335,15 +335,20 @@ if selected:
             hovertemplate="%{label}: %{value:$.1f}<extra></extra>",
         ))
         fig_pie = style_plotly_fig(fig_pie, title="Selected QEI by sector", height=320)
+        fig_pie.update_traces(
+            textfont=dict(color="#FFFFFF", size=12),
+            insidetextfont=dict(color="#FFFFFF", size=12),
+            outsidetextfont=dict(color=TEXT_LIGHT, size=11),
+        )
         fig_pie.update_layout(
             showlegend=True,
             legend=dict(orientation="v", x=1.02, y=0.5, xanchor="left",
-                        font=dict(size=10, color=TEXT_MUTED)),
+                        font=dict(size=10, color=TEXT_LIGHT)),
             margin=dict(l=0, r=120, t=60, b=20),
             annotations=[dict(
                 text=f"{fmt_millions(sum(sector_values))}<br>selected",
                 x=0.38, y=0.5,
-                font=dict(size=12, color=NAVY),
+                font=dict(size=12, color=TEXT_LIGHT),
                 showarrow=False,
                 xref="paper", yref="paper",
             )],
