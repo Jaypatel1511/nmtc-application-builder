@@ -101,12 +101,27 @@ def priority_color(priority: str) -> str:
 
 
 def apply_theme() -> None:
-    """Inject shared dark sidebar CSS — call at the top of every page."""
+    """Inject shared CSS — dark sidebar, off-white main area, brand typography."""
     st.markdown(
         """
         <style>
+        [data-testid="stMain"] {
+            background-color: #FAFAFB;
+        }
         [data-testid="stSidebar"] {
             background-color: #0e1117;
+        }
+        h1, h2, h3 {
+            color: #0E2F56 !important;
+            font-weight: 600 !important;
+        }
+        .stMetricLabel {
+            color: #6B7280 !important;
+            font-size: 0.85rem !important;
+        }
+        .stMetricValue {
+            color: #0E2F56 !important;
+            font-weight: 600 !important;
         }
         </style>
         """,

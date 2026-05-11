@@ -11,12 +11,6 @@ import streamlit as st
 from nmtcapp.core.pipeline import Pipeline
 
 from utils import (
-    ACCENT,
-    PRIMARY,
-    SUCCESS,
-    WARNING,
-    DANGER,
-    MUTED,
     fmt_pct,
     get_or_create_app,
     tier_badge_html,
@@ -24,6 +18,13 @@ from utils import (
     render_methodology_warning,
     apply_theme,
 )
+from chart_style import (
+    apply_matplotlib_theme, style_plotly_fig, PLOTLY_CONFIG,
+    NAVY, BLUE, MID_BLUE, LIGHT_BLUE, ACCENT, SUCCESS, DANGER, NEUTRAL,
+    TEXT_DARK, TEXT_MUTED, PANEL_BG,
+)
+
+apply_matplotlib_theme()
 
 # ---------------------------------------------------------------------------
 # Page header
@@ -36,11 +37,7 @@ st.markdown(
 )
 st.markdown("---")
 
-# ---------------------------------------------------------------------------
-# Mandatory methodology disclosure
-# ---------------------------------------------------------------------------
 render_methodology_warning()
-
 st.markdown("---")
 
 # ---------------------------------------------------------------------------
@@ -95,7 +92,7 @@ baseline = score.acceptance_rate_baseline
 COMPETITIVE_THRESHOLD = 55.0
 
 # ---------------------------------------------------------------------------
-# Top-line score
+# Top-line score metrics
 # ---------------------------------------------------------------------------
 col1, col2, col3 = st.columns([1, 1, 2])
 
@@ -121,10 +118,52 @@ with col3:
     st.markdown(tier_badge_html(tier), unsafe_allow_html=True)
     st.markdown(f"<br><small>{score.peer_comparison}</small>", unsafe_allow_html=True)
 
+# ---------------------------------------------------------------------------
+# J: Composite score gauge
+# ---------------------------------------------------------------------------
+fig_gauge = go.Figure(go.Indicator(
+    mode="gauge+number",
+    value=composite,
+    domain={"x": [0, 1], "y": [0, 1]},
+    title={"text": "Composite Alignment Score", "font": {"size": 13, "color": TEXT_DARK}},
+    number={"suffix": " / 100", "font": {"size": 26, "color": NAVY}},
+    gauge={
+        "axis": {
+            "range": [0, 100],
+            "tickwidth": 1,
+            "tickcolor": TEXT_MUTED,
+            "tickvals": [0, 30, 55, 75, 100],
+            "ticktext": ["0", "30", "55 (threshold)", "75", "100"],
+        },
+        "bar": {"color": NAVY, "thickness": 0.28},
+        "bgcolor": PANEL_BG,
+        "borderwidth": 1,
+        "bordercolor": "#D1D5DB",
+        "steps": [
+            {"range": [0, 30],  "color": DANGER},
+            {"range": [30, 55], "color": ACCENT},
+            {"range": [55, 75], "color": MID_BLUE},
+            {"range": [75, 100], "color": SUCCESS},
+        ],
+        "threshold": {
+            "line": {"color": NAVY, "width": 3},
+            "thickness": 0.75,
+            "value": COMPETITIVE_THRESHOLD,
+        },
+    },
+))
+fig_gauge.update_layout(
+    height=260,
+    margin=dict(l=30, r=30, t=50, b=10),
+    paper_bgcolor=PANEL_BG,
+    font=dict(family="Inter, -apple-system, sans-serif", color=TEXT_DARK),
+)
+st.plotly_chart(fig_gauge, use_container_width=True, config=PLOTLY_CONFIG)
+
 st.markdown("---")
 
 # ---------------------------------------------------------------------------
-# Radar chart + dimensional bar chart
+# I: Radar chart + dimensional bar chart
 # ---------------------------------------------------------------------------
 left, right = st.columns([1, 1])
 
@@ -144,40 +183,48 @@ with left:
 
     fig_radar = go.Figure()
 
-    # Your pipeline trace
-    fig_radar.add_trace(
-        go.Scatterpolar(
-            r=radar_values + [radar_values[0]],
-            theta=radar_labels + [radar_labels[0]],
-            fill="toself",
-            fillcolor=f"rgba(27,67,140,0.2)",
-            line=dict(color=PRIMARY, width=2),
-            name="Your Pipeline",
-        )
-    )
-
-    # Competitive threshold trace
+    # Winner median reference layer (LIGHT_BLUE dashed)
     fig_radar.add_trace(
         go.Scatterpolar(
             r=[COMPETITIVE_THRESHOLD] * len(radar_labels) + [COMPETITIVE_THRESHOLD],
             theta=radar_labels + [radar_labels[0]],
             fill=None,
-            line=dict(dash="dash", color="orange", width=1.5),
-            name="Competitive Threshold (55)",
+            line=dict(dash="dash", color=LIGHT_BLUE, width=2),
+            name="Competitive threshold (55)",
         )
     )
 
+    # Your pipeline trace (NAVY filled, 30% opacity)
+    fig_radar.add_trace(
+        go.Scatterpolar(
+            r=radar_values + [radar_values[0]],
+            theta=radar_labels + [radar_labels[0]],
+            fill="toself",
+            fillcolor=f"rgba(14,47,86,0.30)",
+            line=dict(color=NAVY, width=2.5),
+            name="Your pipeline",
+        )
+    )
+
+    fig_radar = style_plotly_fig(fig_radar, height=390)
     fig_radar.update_layout(
         polar=dict(
-            radialaxis=dict(range=[0, 100], tickfont=dict(size=10)),
-            angularaxis=dict(tickfont=dict(size=11)),
+            radialaxis=dict(
+                range=[0, 100],
+                tickfont=dict(size=10, color=TEXT_MUTED),
+                gridcolor="#E5E7EB",
+            ),
+            angularaxis=dict(tickfont=dict(size=11, color=TEXT_DARK)),
+            bgcolor=PANEL_BG,
         ),
         showlegend=True,
-        legend=dict(orientation="h", y=-0.15),
-        margin=dict(l=20, r=20, t=20, b=40),
-        height=380,
+        legend=dict(
+            orientation="h", y=-0.18,
+            font=dict(size=10, color=TEXT_MUTED),
+        ),
+        margin=dict(l=30, r=30, t=30, b=60),
     )
-    st.plotly_chart(fig_radar, use_container_width=True)
+    st.plotly_chart(fig_radar, use_container_width=True, config=PLOTLY_CONFIG)
 
 with right:
     st.subheader("Dimensional scores")
@@ -187,7 +234,6 @@ with right:
 
     fig_bar = go.Figure()
 
-    # Your scores
     fig_bar.add_trace(
         go.Bar(
             y=bar_labels,
@@ -195,32 +241,34 @@ with right:
             orientation="h",
             name="Your score",
             marker_color=[
-                PRIMARY if v >= COMPETITIVE_THRESHOLD else ACCENT for v in bar_values
+                NAVY if v >= COMPETITIVE_THRESHOLD else ACCENT for v in bar_values
             ],
             text=[f"{v:.1f}" for v in bar_values],
             textposition="outside",
+            textfont=dict(color=TEXT_DARK, size=11),
         )
     )
 
-    # Competitive reference line
     fig_bar.add_vline(
         x=COMPETITIVE_THRESHOLD,
         line_dash="dash",
-        line_color="orange",
+        line_color=LIGHT_BLUE,
+        line_width=1.5,
         annotation_text="Competitive (55)",
         annotation_position="top",
         annotation_font_size=10,
+        annotation_font_color=TEXT_MUTED,
     )
 
+    fig_bar = style_plotly_fig(fig_bar, height=350)
     fig_bar.update_layout(
-        xaxis=dict(range=[0, 105], title="Score (0–100)"),
+        xaxis=dict(range=[0, 115], title="Score (0–100)"),
         yaxis=dict(title=None),
         showlegend=False,
-        margin=dict(l=0, r=30, t=10, b=0),
-        height=340,
+        margin=dict(l=10, r=50, t=20, b=10),
         bargap=0.35,
     )
-    st.plotly_chart(fig_bar, use_container_width=True)
+    st.plotly_chart(fig_bar, use_container_width=True, config=PLOTLY_CONFIG)
 
 # Weights reference
 with st.expander("Dimension weights"):

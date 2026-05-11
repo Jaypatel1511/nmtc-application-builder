@@ -13,18 +13,19 @@ import streamlit as st
 from nmtcapp.optimizer.constraints import OptimizationConstraints
 
 from utils import (
-    ACCENT,
-    PRIMARY,
-    SUCCESS,
-    WARNING,
-    DANGER,
-    MUTED,
     VALID_SECTORS,
     fmt_millions,
     fmt_pct,
     get_or_create_app,
     apply_theme,
 )
+from chart_style import (
+    apply_matplotlib_theme, style_plotly_fig, PLOTLY_CONFIG,
+    NAVY, BLUE, MID_BLUE, LIGHT_BLUE, ACCENT, SUCCESS, DANGER, NEUTRAL,
+    TEXT_DARK, TEXT_MUTED, PANEL_BG,
+)
+
+apply_matplotlib_theme()
 
 # ---------------------------------------------------------------------------
 # Page header
@@ -168,7 +169,7 @@ c4.metric("Total QEI selected", fmt_millions(total_qei_selected))
 st.markdown("---")
 
 # ---------------------------------------------------------------------------
-# Dimensional improvements table
+# K: Dimensional improvements — before/after comparison
 # ---------------------------------------------------------------------------
 st.subheader("Dimensional improvements")
 
@@ -178,43 +179,105 @@ if dim_improvements:
     for dim, delta_v in dim_improvements.items():
         delta_pts = delta_v * 100
         arrow = "▲" if delta_pts > 0.05 else ("▼" if delta_pts < -0.05 else "→")
-        color = SUCCESS if delta_pts > 0.05 else (DANGER if delta_pts < -0.05 else MUTED)
         dim_rows.append(
             {
                 "Dimension": dim.replace("_", " ").title(),
                 "Change": f"{arrow} {delta_pts:+.1f} pts",
-                "Direction": arrow,
-                "_color": color,
                 "_delta": delta_pts,
+                "_dim_key": dim,
             }
         )
     dim_df = pd.DataFrame(dim_rows)[["Dimension", "Change"]]
     st.dataframe(dim_df, use_container_width=True, hide_index=True)
 
-    # Waterfall-style bar chart
-    fig_dims = go.Figure()
-    fig_dims.add_trace(
-        go.Bar(
-            y=[r["Dimension"] for r in dim_rows],
-            x=[r["_delta"] for r in dim_rows],
+    # Try to build before/after per-dimension chart from session win_score
+    win_score_session = st.session_state.get("win_score")
+    if win_score_session and hasattr(win_score_session, "dimensional_scores"):
+        # Full before/after grouped bar chart per dimension
+        prior_dim_scores = win_score_session.dimensional_scores
+        dim_label_map = {
+            "distress_concentration": "Distress",
+            "geographic_diversity": "Geographic",
+            "impact_intensity": "Impact",
+            "sector_diversity": "Sector",
+            "pipeline_quality": "Pipeline",
+        }
+
+        dims = list(dim_improvements.keys())
+        labels = [dim_label_map.get(d, d.replace("_", " ").title()) for d in dims]
+        before_vals = [prior_dim_scores.get(d, 0.0) for d in dims]
+        after_vals  = [max(0, min(100, before_vals[i] + dim_improvements[d] * 100))
+                       for i, d in enumerate(dims)]
+
+        fig_ba = go.Figure()
+        fig_ba.add_trace(go.Bar(
+            y=labels, x=before_vals,
             orientation="h",
-            marker_color=[
-                SUCCESS if r["_delta"] > 0.05 else (DANGER if r["_delta"] < -0.05 else MUTED)
-                for r in dim_rows
-            ],
-            text=[f"{r['_delta']:+.1f}" for r in dim_rows],
-            textposition="outside",
+            name="Before",
+            marker_color=LIGHT_BLUE,
+            text=[f"{v:.1f}" for v in before_vals],
+            textposition="inside",
+            textfont=dict(color=TEXT_DARK, size=10),
+        ))
+        fig_ba.add_trace(go.Bar(
+            y=labels, x=after_vals,
+            orientation="h",
+            name="After",
+            marker_color=NAVY,
+            text=[f"{v:.1f}" for v in after_vals],
+            textposition="inside",
+            textfont=dict(color="white", size=10),
+        ))
+        # Overall composite improvement annotation
+        fig_ba.add_annotation(
+            x=max(max(before_vals), max(after_vals)) + 5,
+            y=len(labels) - 1,
+            text=f"Overall: {delta:+.1f} pts",
+            showarrow=False,
+            font=dict(size=12, color=SUCCESS if delta >= 0 else DANGER, family="Inter, sans-serif"),
+            xanchor="left",
         )
-    )
-    fig_dims.add_vline(x=0, line_color="black", line_width=1)
-    fig_dims.update_layout(
-        xaxis_title="Score change (points)",
-        yaxis_title=None,
-        margin=dict(l=0, r=40, t=10, b=0),
-        height=260,
-        showlegend=False,
-    )
-    st.plotly_chart(fig_dims, use_container_width=True)
+        fig_ba = style_plotly_fig(fig_ba, title="Before / After: dimension scores", height=300)
+        fig_ba.update_layout(
+            barmode="group",
+            bargap=0.2,
+            bargroupgap=0.05,
+            xaxis=dict(range=[0, 115], title="Score (0–100)"),
+            yaxis=dict(title=None),
+            showlegend=True,
+            legend=dict(orientation="h", y=-0.2, font=dict(size=11)),
+            margin=dict(l=10, r=80, t=50, b=40),
+        )
+        st.plotly_chart(fig_ba, use_container_width=True, config=PLOTLY_CONFIG)
+    else:
+        # Fallback: styled delta chart
+        fig_dims = go.Figure()
+        fig_dims.add_trace(
+            go.Bar(
+                y=[r["Dimension"] for r in dim_rows],
+                x=[r["_delta"] for r in dim_rows],
+                orientation="h",
+                marker_color=[
+                    SUCCESS if r["_delta"] > 0.05 else (DANGER if r["_delta"] < -0.05 else NEUTRAL)
+                    for r in dim_rows
+                ],
+                text=[f"{r['_delta']:+.1f}" for r in dim_rows],
+                textposition="outside",
+                textfont=dict(color=TEXT_DARK, size=11),
+            )
+        )
+        fig_dims.add_vline(x=0, line_color="#D1D5DB", line_width=1)
+        fig_dims = style_plotly_fig(fig_dims, title="Score change by dimension", height=260)
+        fig_dims.update_layout(
+            xaxis_title="Score change (points)",
+            yaxis_title=None,
+            margin=dict(l=10, r=50, t=50, b=10),
+            showlegend=False,
+        )
+        st.plotly_chart(fig_dims, use_container_width=True, config=PLOTLY_CONFIG)
+        st.caption(
+            "Run **Win Alignment Scorer** first to see a before/after comparison per dimension."
+        )
 
 st.markdown("---")
 
@@ -242,7 +305,7 @@ else:
     st.warning("No projects selected.")
 
 # ---------------------------------------------------------------------------
-# Sector pie chart of selected projects
+# Sector donut of selected projects (styled plotly)
 # ---------------------------------------------------------------------------
 st.markdown("---")
 st.subheader("Selected projects — sector breakdown")
@@ -255,21 +318,37 @@ if selected:
     sector_labels = [k.replace("_", " ").title() for k in sector_qei]
     sector_values = list(sector_qei.values())
 
+    # Build a color list matching the number of sectors
+    _palette = [NAVY, BLUE, MID_BLUE, LIGHT_BLUE, ACCENT, SUCCESS, NEUTRAL, DANGER]
+    _colors = [_palette[i % len(_palette)] for i in range(len(sector_labels))]
+
     left, right = st.columns([1, 1])
 
     with left:
-        fig_pie, ax_pie = plt.subplots(figsize=(5, 5))
-        ax_pie.pie(
-            sector_values,
+        total_qei_sel_m = sum(sector_values) / 1e6
+        fig_pie = go.Figure(go.Pie(
             labels=sector_labels,
-            autopct="%1.1f%%",
-            wedgeprops=dict(width=0.65),
-            startangle=90,
+            values=sector_values,
+            hole=0.5,
+            marker_colors=_colors,
+            textinfo="label+percent",
+            hovertemplate="%{label}: %{value:$.1f}<extra></extra>",
+        ))
+        fig_pie = style_plotly_fig(fig_pie, title="Selected QEI by sector", height=320)
+        fig_pie.update_layout(
+            showlegend=True,
+            legend=dict(orientation="v", x=1.02, y=0.5, xanchor="left",
+                        font=dict(size=10, color=TEXT_MUTED)),
+            margin=dict(l=0, r=120, t=60, b=20),
+            annotations=[dict(
+                text=f"{fmt_millions(sum(sector_values))}<br>selected",
+                x=0.38, y=0.5,
+                font=dict(size=12, color=NAVY),
+                showarrow=False,
+                xref="paper", yref="paper",
+            )],
         )
-        ax_pie.set_title("Selected QEI by sector")
-        fig_pie.tight_layout()
-        st.pyplot(fig_pie, use_container_width=True)
-        plt.close(fig_pie)
+        st.plotly_chart(fig_pie, use_container_width=True, config=PLOTLY_CONFIG)
 
     with right:
         st.markdown("**State distribution**")

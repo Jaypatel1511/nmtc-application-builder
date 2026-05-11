@@ -18,17 +18,19 @@ from nmtcapp.core.pipeline import Pipeline
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from utils import (
-    ACCENT,
-    PRIMARY,
-    SUCCESS,
-    WARNING,
-    DANGER,
-    MUTED,
     fmt_millions,
     fmt_pct,
     get_or_create_app,
     apply_theme,
 )
+from chart_style import (
+    apply_matplotlib_theme, style_matplotlib_axes, style_plotly_fig,
+    bar_gradient, PLOTLY_CONFIG, PLOTLY_LAYOUT,
+    NAVY, BLUE, MID_BLUE, LIGHT_BLUE, ACCENT, SUCCESS, DANGER, NEUTRAL,
+    TEXT_DARK, TEXT_MUTED, PANEL_BG,
+)
+
+apply_matplotlib_theme()
 
 # ---------------------------------------------------------------------------
 # Page config
@@ -115,8 +117,6 @@ def load_uploaded_pipeline(file_bytes: bytes, filename: str) -> Pipeline:
     else:
         raise ValueError(f"Unsupported file type: .{ext}")
 
-    # Map user-friendly template column names to the internal names Pipeline expects.
-    # Multiply "*_millions" columns by 1e6 before renaming so raw-dollar CSVs pass through unchanged.
     for mil_col, raw_col in (
         ("qei_millions", "qei_request"),
         ("total_project_cost_millions", "total_project_cost"),
@@ -134,7 +134,6 @@ def load_uploaded_pipeline(file_bytes: bytes, filename: str) -> Pipeline:
         if src in df.columns:
             df = df.rename(columns={src: dst})
 
-    # Supply defaults for columns required by Pipeline.from_csv() but absent in the template.
     if "qalicb_name" not in df.columns:
         df["qalicb_name"] = df.get("project_name", "")
     if "address" not in df.columns:
@@ -155,7 +154,6 @@ def load_uploaded_pipeline(file_bytes: bytes, filename: str) -> Pipeline:
 run_clicked = st.button("▶  Run Analysis", type="primary", use_container_width=False)
 
 if run_clicked:
-    # --- Load pipeline ---
     pipeline = None
     if data_source == "Upload your own CSV":
         if uploaded_file is None:
@@ -172,7 +170,6 @@ if run_clicked:
         with st.spinner("Loading sample pipeline…"):
             pipeline = load_sample_pipeline(n=20)
 
-    # --- Create / update Application in session ---
     try:
         with st.spinner("Running full pipeline analysis — this may take a moment…"):
             app = get_or_create_app(pipeline=pipeline)
@@ -197,9 +194,6 @@ s = analysis.sector_analysis
 i = analysis.impact_summary
 rs = analysis.readiness_score
 
-# ---------------------------------------------------------------------------
-# Tabs
-# ---------------------------------------------------------------------------
 tabs = st.tabs(["Overview", "Distress", "Geographic", "Sector", "Impact"])
 
 # =============================================================================
@@ -222,7 +216,6 @@ with tabs[0]:
 
     st.markdown("---")
 
-    # CDE info
     left, right = st.columns(2)
     with left:
         st.markdown(f"**CDE:** {analysis.cde_name}")
@@ -242,7 +235,7 @@ with tabs[0]:
                 for iss in vr.issues:
                     st.caption(f"  🚨 {iss}")
 
-    # Readiness breakdown
+    # --- H: Readiness score breakdown ---
     st.markdown("---")
     st.markdown("**Readiness score breakdown**")
     breakdown = rs.component_scores if hasattr(rs, "component_scores") else {}
@@ -253,14 +246,29 @@ with tabs[0]:
                 for k, v in breakdown.items()
             ]
         )
-        fig, ax = plt.subplots(figsize=(8, 3))
-        bars = ax.barh(breakdown_df["Dimension"], breakdown_df["Score"], color=PRIMARY)
+
+        def _score_color(score: float) -> str:
+            if score < 50:
+                return DANGER
+            if score < 70:
+                return ACCENT
+            if score < 85:
+                return MID_BLUE
+            return SUCCESS
+
+        bar_colors = [_score_color(s) for s in breakdown_df["Score"]]
+
+        fig, ax = plt.subplots(figsize=(8, max(3, len(breakdown_df) * 0.55)))
+        bars = ax.barh(breakdown_df["Dimension"], breakdown_df["Score"], color=bar_colors, height=0.6)
+        # Vertical reference line at 70 (competitive threshold)
+        ax.axvline(x=70, color=NEUTRAL, linestyle="--", linewidth=1.2, alpha=0.8)
+        ax.text(70.5, ax.get_ylim()[1] * 0.98, "Competitive (70)", color=NEUTRAL,
+                fontsize=8, va="top", ha="left")
         for bar, score in zip(bars, breakdown_df["Score"]):
             ax.text(score + 1, bar.get_y() + bar.get_height() / 2, f"{score:.1f}",
-                    va="center", ha="left", fontsize=9)
-        ax.set_xlim(0, 115)
-        ax.set_xlabel("Score (0–100)")
-        ax.spines[["top", "right"]].set_visible(False)
+                    va="center", ha="left", fontsize=9, color=TEXT_DARK)
+        ax.set_xlim(0, 118)
+        style_matplotlib_axes(ax, xlabel="Score (0–100)")
         fig.tight_layout()
         st.pyplot(fig, use_container_width=True)
         plt.close(fig)
@@ -293,72 +301,79 @@ with tabs[1]:
     left, right = st.columns([1, 1])
 
     with left:
-        # Pie chart — distress distribution
+        # --- A: QEI distribution donut ---
         labels = ["Deep / Severe", "LIC (standard)", "Non-LIC"]
         values = [deep_severe_pct, lic_pct, non_lic_pct]
-        # Normalise just in case
-        total = sum(values) or 1.0
-        values = [v / total for v in values]
+        total_v = sum(values) or 1.0
+        values = [v / total_v for v in values]
+        center_text = f"{fmt_millions(total_qei)}<br>Total QEI"
 
         fig_pie = go.Figure(
             go.Pie(
                 labels=labels,
                 values=values,
-                hole=0.4,
-                marker_colors=[PRIMARY, ACCENT, MUTED],
+                hole=0.5,
+                marker_colors=[NAVY, ACCENT, NEUTRAL],
                 textinfo="label+percent",
                 hovertemplate="%{label}: %{percent}<extra></extra>",
             )
         )
+        fig_pie = style_plotly_fig(fig_pie, title="QEI distribution by distress level", height=340)
         fig_pie.update_layout(
-            title="QEI distribution by distress level",
-            margin=dict(l=0, r=0, t=40, b=0),
-            height=320,
-            legend=dict(orientation="h", y=-0.1),
+            showlegend=True,
+            legend=dict(orientation="v", x=1.02, y=0.5, xanchor="left"),
+            margin=dict(l=0, r=120, t=60, b=20),
+            annotations=[dict(
+                text=center_text,
+                x=0.38, y=0.5,
+                font=dict(size=13, color=NAVY),
+                showarrow=False,
+                xref="paper", yref="paper",
+            )],
         )
-        st.plotly_chart(fig_pie, use_container_width=True)
+        st.plotly_chart(fig_pie, use_container_width=True, config=PLOTLY_CONFIG)
 
     with right:
+        # --- B: Benchmarks vs. historical winners ---
         st.markdown("**Benchmarks vs. historical winners**")
+        WINNER_MEDIAN = 0.82
         winner_p25 = 0.72
-        winner_median = 0.82
         winner_p75 = 0.91
 
-        bench_data = {
-            "Metric": [
-                "Your pipeline",
-                "Winner p25",
-                "Winner median",
-                "Winner p75",
-            ],
-            "Deep/Severe %": [
-                deep_severe_pct * 100,
-                winner_p25 * 100,
-                winner_median * 100,
-                winner_p75 * 100,
-            ],
-        }
-        _bench_colors = {
-            "Your pipeline": ACCENT,
-            "Winner p25": "#aab7d4",
-            "Winner median": "#6680b3",
-            "Winner p75": PRIMARY,
-        }
+        bench_labels = ["Your pipeline", "Winner p25", "Winner median", "Winner p75"]
+        bench_values = [
+            deep_severe_pct * 100,
+            winner_p25 * 100,
+            WINNER_MEDIAN * 100,
+            winner_p75 * 100,
+        ]
+        bar_colors = [ACCENT if m == "Your pipeline" else LIGHT_BLUE for m in bench_labels]
+
         fig_bench, ax_bench = plt.subplots(figsize=(6, 3.5))
-        _bars = ax_bench.bar(
-            bench_data["Metric"],
-            bench_data["Deep/Severe %"],
-            color=[_bench_colors[m] for m in bench_data["Metric"]],
-        )
-        for bar in _bars:
-            ax_bench.text(
-                bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.5,
-                f"{bar.get_height():.1f}", ha="center", va="bottom", fontsize=9,
-            )
-        ax_bench.set_ylim(0, 105)
-        ax_bench.set_ylabel("% of QEI")
+        _bars = ax_bench.bar(bench_labels, bench_values, color=bar_colors, width=0.6)
+        # Median reference line
+        ax_bench.axhline(y=WINNER_MEDIAN * 100, color=NEUTRAL, linestyle="--",
+                         linewidth=1.2, alpha=0.8)
+        ax_bench.text(3.45, WINNER_MEDIAN * 100 + 0.5, f"Median {WINNER_MEDIAN*100:.0f}%",
+                      color=NEUTRAL, fontsize=8, ha="right", va="bottom")
+        # Value labels + "Your pipeline" annotation
+        for bar, val, lbl in zip(_bars, bench_values, bench_labels):
+            ax_bench.text(bar.get_x() + bar.get_width() / 2, val + 0.5,
+                          f"{val:.1f}", ha="center", va="bottom", fontsize=9)
+            if lbl == "Your pipeline":
+                diff = deep_severe_pct * 100 - WINNER_MEDIAN * 100
+                arrow = "↑ above" if diff >= 0 else "↓ below"
+                ax_bench.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    max(val - 6, 2),
+                    f"{arrow} median",
+                    ha="center", va="top", fontsize=8,
+                    color=SUCCESS if diff >= 0 else DANGER,
+                    style="italic",
+                )
+        ax_bench.set_ylim(0, 108)
+        style_matplotlib_axes(ax_bench, ylabel="% of QEI in deep/severe tracts")
         ax_bench.tick_params(axis="x", rotation=10)
-        ax_bench.spines[["top", "right"]].set_visible(False)
         fig_bench.tight_layout()
         st.pyplot(fig_bench, use_container_width=True)
         plt.close(fig_bench)
@@ -386,7 +401,7 @@ with tabs[2]:
 
     st.markdown("---")
 
-    # State-level bar chart from pipeline DataFrame
+    # --- C: State QEI bar chart ---
     app_obj = st.session_state.get("app")
     if app_obj and app_obj.pipeline:
         df = app_obj.pipeline.to_dataframe()
@@ -396,41 +411,57 @@ with tabs[2]:
             .reset_index()
             .rename(columns={"qei_request": "QEI ($)"})
             .sort_values("QEI ($)", ascending=False)
+            .reset_index(drop=True)
         )
         state_qei["QEI ($M)"] = state_qei["QEI ($)"] / 1_000_000
 
+        n_states = len(state_qei)
+        state_colors = [
+            NAVY if i < 3 else MID_BLUE for i in range(n_states)
+        ]
+        avg_qei = state_qei["QEI ($M)"].mean()
+
         fig_states, ax_states = plt.subplots(figsize=(9, 4))
-        ax_states.bar(state_qei["state"], state_qei["QEI ($M)"], color=PRIMARY)
+        ax_states.bar(state_qei["state"], state_qei["QEI ($M)"], color=state_colors, width=0.7)
+        ax_states.axhline(y=avg_qei, color=NEUTRAL, linestyle="--", linewidth=1.1, alpha=0.8)
+        ax_states.text(n_states - 0.5, avg_qei + 0.1, f"Avg ${avg_qei:.1f}M",
+                       color=NEUTRAL, fontsize=8, ha="right", va="bottom")
         for idx, val in enumerate(state_qei["QEI ($M)"]):
-            ax_states.text(idx, val + 0.05, f"{val:.1f}", ha="center", va="bottom", fontsize=8)
-        ax_states.set_xlabel("State")
-        ax_states.set_ylabel("QEI ($ millions)")
-        ax_states.set_title("QEI by state")
+            ax_states.text(idx, val + 0.1, f"{val:.1f}", ha="center", va="bottom", fontsize=8)
         ax_states.tick_params(axis="x", rotation=45)
-        ax_states.spines[["top", "right"]].set_visible(False)
+        style_matplotlib_axes(ax_states, title="QEI by state", ylabel="QEI ($ millions)")
         fig_states.tight_layout()
         st.pyplot(fig_states, use_container_width=True)
         plt.close(fig_states)
 
-    # Urban / rural split
+    # --- D: Urban / rural donut ---
     left, right = st.columns(2)
+    msa_count = g.get("msa_count", "N/A")
     with left:
         fig_ur = go.Figure(
             go.Pie(
                 labels=["Urban", "Rural"],
                 values=[urban_pct, rural_pct],
-                hole=0.4,
-                marker_colors=[PRIMARY, ACCENT],
+                hole=0.5,
+                marker_colors=[BLUE, ACCENT],
                 textinfo="label+percent",
                 hovertemplate="%{label}: %{percent}<extra></extra>",
             )
         )
+        fig_ur = style_plotly_fig(fig_ur, title="Urban / Rural QEI split", height=300)
         fig_ur.update_layout(
-            title="Urban / Rural QEI split",
-            margin=dict(l=0, r=0, t=40, b=0),
-            height=280,
+            showlegend=True,
+            legend=dict(orientation="v", x=1.02, y=0.5, xanchor="left"),
+            margin=dict(l=0, r=100, t=60, b=20),
+            annotations=[dict(
+                text=f"{msa_count}<br>MSAs",
+                x=0.37, y=0.5,
+                font=dict(size=13, color=NAVY),
+                showarrow=False,
+                xref="paper", yref="paper",
+            )],
         )
-        st.plotly_chart(fig_ur, use_container_width=True)
+        st.plotly_chart(fig_ur, use_container_width=True, config=PLOTLY_CONFIG)
 
     with right:
         st.markdown("**Geographic benchmarks**")
@@ -443,7 +474,6 @@ with tabs[2]:
         st.markdown(
             f"- Winner rural mean: **18%**  |  Your pipeline: **{fmt_pct(rural_pct)}**"
         )
-        msa_count = g.get("msa_count", "N/A")
         st.markdown(f"- MSAs represented: **{msa_count}**")
 
 # =============================================================================
@@ -465,7 +495,7 @@ with tabs[3]:
 
     st.markdown("---")
 
-    # Sector bar chart by QEI from pipeline DataFrame
+    # --- E: Sector horizontal bar chart ---
     app_obj = st.session_state.get("app")
     if app_obj and app_obj.pipeline:
         df = app_obj.pipeline.to_dataframe()
@@ -475,22 +505,48 @@ with tabs[3]:
             .reset_index()
             .rename(columns={"qei_request": "QEI ($)"})
             .sort_values("QEI ($)", ascending=True)
+            .reset_index(drop=True)
         )
         sector_qei["QEI ($M)"] = sector_qei["QEI ($)"] / 1_000_000
         sector_qei["sector_label"] = sector_qei["sector"].str.replace("_", " ").str.title()
 
-        fig_sector, ax_sector = plt.subplots(figsize=(8, 4))
-        ax_sector.barh(sector_qei["sector_label"], sector_qei["QEI ($M)"], color=PRIMARY)
-        for idx, val in enumerate(sector_qei["QEI ($M)"]):
-            ax_sector.text(val + 0.05, idx, f"{val:.1f}", ha="left", va="center", fontsize=9)
-        ax_sector.set_xlabel("QEI ($ millions)")
-        ax_sector.set_title("QEI allocation by sector")
-        ax_sector.spines[["top", "right"]].set_visible(False)
+        # Add count and % per sector
+        sector_counts = (
+            df.groupby("sector")["qei_request"]
+            .count()
+            .reset_index()
+            .rename(columns={"qei_request": "count"})
+        )
+        sector_qei = sector_qei.merge(sector_counts, on="sector")
+        total_sec = sector_qei["QEI ($)"].sum() or 1.0
+        sector_qei["pct"] = sector_qei["QEI ($)"] / total_sec * 100
+
+        n_sec = len(sector_qei)
+        sec_colors = bar_gradient(n_sec, lo=LIGHT_BLUE, hi=NAVY)
+        avg_sec = sector_qei["QEI ($M)"].mean()
+        max_val = sector_qei["QEI ($M)"].max()
+
+        fig_sector, ax_sector = plt.subplots(figsize=(8, max(3.5, n_sec * 0.55)))
+        ax_sector.barh(sector_qei["sector_label"], sector_qei["QEI ($M)"],
+                       color=sec_colors, height=0.6)
+        # Mean reference line
+        ax_sector.axvline(x=avg_sec, color=NEUTRAL, linestyle="--", linewidth=1.1, alpha=0.8)
+        ax_sector.text(avg_sec + max_val * 0.01, n_sec - 0.5,
+                       f"Avg ${avg_sec:.1f}M", color=NEUTRAL, fontsize=8, va="top")
+        # Label: "$XM (N proj, Y%)" at end of each bar
+        for i, (val, cnt, pct) in enumerate(zip(
+                sector_qei["QEI ($M)"], sector_qei["count"], sector_qei["pct"])):
+            ax_sector.text(val + max_val * 0.02, i,
+                           f"${val:.1f}M ({cnt} proj, {pct:.0f}%)",
+                           va="center", ha="left", fontsize=8, color=TEXT_DARK)
+        ax_sector.set_xlim(0, max_val * 1.55)
+        style_matplotlib_axes(ax_sector, title="QEI allocation by sector",
+                               xlabel="QEI ($ millions)")
         fig_sector.tight_layout()
         st.pyplot(fig_sector, use_container_width=True)
         plt.close(fig_sector)
 
-    # Sector QEI share breakdown
+    # Sector QEI share breakdown table
     sector_breakdown = s.get("sector_breakdown", {})
     if sector_breakdown:
         st.markdown("**QEI share by sector**")
@@ -531,43 +587,42 @@ with tabs[4]:
 
     st.markdown("---")
 
-    # Jobs benchmark gauge
     left, right = st.columns([1, 1])
 
     with left:
-        # Compare to winner benchmarks
-        benchmarks = {
-            "Your pipeline": jpm,
-            "Winner p25": 6.0,
-            "Winner median": 10.0,
-            "Winner p75": 18.0,
-            "Winner top 10%": 28.0,
-        }
-        bench_df = pd.DataFrame(
-            [{"Metric": k, "Jobs / $1MM QEI": v} for k, v in benchmarks.items()]
-        )
-        _jpm_colors = {
-            "Your pipeline": ACCENT,
-            "Winner p25": "#c8d3e8",
-            "Winner median": "#7b96c9",
-            "Winner p75": "#3d6ab0",
-            "Winner top 10%": PRIMARY,
-        }
+        # --- F: Jobs/$1MM QEI vs. winner benchmarks ---
+        WIN_P25   = 6.0
+        WIN_MED   = 10.0
+        WIN_P75   = 18.0
+        WIN_TOP10 = 28.0
+
+        bench_lbls = ["Your pipeline", "Winner p25", "Winner median", "Winner p75", "Winner top 10%"]
+        bench_vals = [jpm, WIN_P25, WIN_MED, WIN_P75, WIN_TOP10]
+        # ACCENT for "Your pipeline", graduated blues for winners
+        winner_blues = bar_gradient(4, lo=LIGHT_BLUE, hi=NAVY)
+        jpm_colors = [ACCENT] + winner_blues
+
         fig_jpm, ax_jpm = plt.subplots(figsize=(7, 3.5))
-        _jpm_bars = ax_jpm.bar(
-            bench_df["Metric"],
-            bench_df["Jobs / $1MM QEI"],
-            color=[_jpm_colors[m] for m in bench_df["Metric"]],
-        )
-        for bar in _jpm_bars:
+        # Competitive zone band (between p25 and top 10%)
+        ax_jpm.axhspan(WIN_P25, WIN_TOP10, alpha=0.07, color=SUCCESS, zorder=0)
+        ax_jpm.text(4.42, (WIN_P25 + WIN_TOP10) / 2, "Competitive\nzone",
+                    color=SUCCESS, fontsize=8, ha="right", va="center", style="italic")
+        _jpm_bars = ax_jpm.bar(bench_lbls, bench_vals, color=jpm_colors, width=0.6)
+        for bar, val in zip(_jpm_bars, bench_vals):
+            ax_jpm.text(bar.get_x() + bar.get_width() / 2, val + 0.3,
+                        f"{val:.1f}", ha="center", va="bottom", fontsize=9)
+        # Competitive range annotation on "Your pipeline" bar
+        if WIN_P25 <= jpm <= WIN_TOP10:
             ax_jpm.text(
-                bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.2,
-                f"{bar.get_height():.1f}", ha="center", va="bottom", fontsize=9,
+                _jpm_bars[0].get_x() + _jpm_bars[0].get_width() / 2,
+                _jpm_bars[0].get_height() / 2,
+                "✓ Competitive\nrange",
+                ha="center", va="center", fontsize=8,
+                color="white", fontweight="bold",
             )
-        ax_jpm.set_ylabel("Jobs / $1MM QEI")
-        ax_jpm.set_title("Jobs/$1MM QEI vs. winner benchmarks")
         ax_jpm.tick_params(axis="x", rotation=15)
-        ax_jpm.spines[["top", "right"]].set_visible(False)
+        style_matplotlib_axes(ax_jpm, title="Jobs/$1MM QEI vs. winner benchmarks",
+                               ylabel="Jobs / $1MM QEI")
         fig_jpm.tight_layout()
         st.pyplot(fig_jpm, use_container_width=True)
         plt.close(fig_jpm)
@@ -583,16 +638,15 @@ with tabs[4]:
         st.markdown(f"- Jobs / $1MM QEI: **{jpm:.1f}**")
         st.markdown(f"- Historical benchmark: **{benchmark_label}**")
 
-        # Deal economics waterfall + summary
+        # --- G: Deal economics waterfall ---
         econ = analysis.deal_economics
         if econ or pr.total_project_cost > 0:
             st.markdown("---")
-            qei_val = econ.get("total_qei", pr.total_qei_request) if econ else pr.total_qei_request
-            nmtcs_val = econ.get("total_nmtcs", qei_val * 0.39) if econ else qei_val * 0.39
-            equity_val = econ.get("total_investor_equity", nmtcs_val * 0.83) if econ else nmtcs_val * 0.83
+            qei_val     = econ.get("total_qei", pr.total_qei_request) if econ else pr.total_qei_request
+            nmtcs_val   = econ.get("total_nmtcs", qei_val * 0.39) if econ else qei_val * 0.39
+            equity_val  = econ.get("total_investor_equity", nmtcs_val * 0.83) if econ else nmtcs_val * 0.83
             cde_fees_val = econ.get("total_cde_fees", qei_val * 0.025) if econ else qei_val * 0.025
-            # subsidy_val is the single source of truth: QEI − CDE fees (capital delivered to QALICBs)
-            subsidy_val = econ.get("total_net_subsidy", qei_val - cde_fees_val) if econ else qei_val - cde_fees_val
+            subsidy_val  = econ.get("total_net_subsidy", qei_val - cde_fees_val) if econ else qei_val - cde_fees_val
 
             if qei_val > 0:
                 fig_wf = go.Figure(go.Waterfall(
@@ -609,18 +663,31 @@ with tabs[4]:
                     textposition="outside",
                     increasing={"marker": {"color": SUCCESS}},
                     decreasing={"marker": {"color": DANGER}},
-                    totals={"marker": {"color": PRIMARY}},
-                    connector={"visible": True, "line": {"color": "rgba(150,150,150,0.5)", "width": 1}},
+                    totals={"marker": {"color": NAVY}},
+                    connector={
+                        "visible": True,
+                        "line": {"color": "#D1D5DB", "width": 1, "dash": "dot"},
+                    },
                 ))
-                fig_wf.update_layout(
-                    title="Deal economics waterfall — capital flow to QALICBs",
-                    yaxis_title="$ Millions",
-                    showlegend=False,
-                    height=380,
-                    margin=dict(l=20, r=20, t=60, b=80),
+                title_text = (
+                    "Deal economics — capital flow to QALICBs"
+                    "<br><span style='font-size:11px;color:#6B7280'>"
+                    "From QEI raised to net capital flowing to QALICBs</span>"
                 )
-                st.plotly_chart(fig_wf, use_container_width=True)
-                st.caption("Net capital = QEI raised − CDE arrangement fees (2.5% of QEI)")
+                fig_wf = style_plotly_fig(fig_wf, height=360)
+                fig_wf.update_layout(
+                    title=dict(text=title_text, font=dict(size=14, color=TEXT_DARK),
+                               x=0.01, xanchor="left"),
+                    yaxis=dict(
+                        title="$ Millions",
+                        tickprefix="$",
+                        ticksuffix="M",
+                        gridcolor="#E5E7EB",
+                        zeroline=False,
+                    ),
+                    margin=dict(l=50, r=20, t=70, b=50),
+                )
+                st.plotly_chart(fig_wf, use_container_width=True, config=PLOTLY_CONFIG)
 
             st.markdown("**Deal economics**")
             st.markdown(f"- Total NMTCs: **{fmt_millions(nmtcs_val)}**")
