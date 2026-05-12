@@ -177,7 +177,10 @@ if run_clicked:
 
     try:
         with st.spinner("Running full pipeline analysis — this may take a moment…"):
-            app = get_or_create_app(pipeline=pipeline)
+            app = get_or_create_app(
+                pipeline=pipeline,
+                is_demo=(data_source != "Upload your own CSV"),
+            )
             analysis = app.analyze()
         st.session_state["analysis"] = analysis
     except Exception as exc:

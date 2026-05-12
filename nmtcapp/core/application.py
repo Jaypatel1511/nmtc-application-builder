@@ -375,6 +375,9 @@ class Application:
     def recommendations(self) -> "RecommendationSet":
         """Generate actionable, quantified recommendations for improving competitiveness.
 
+        Uses the same CDE attributes as :meth:`score_win_probability` so that
+        the recommendation text is consistent with the displayed scores.
+
         Example::
 
             recs = app.recommendations()
@@ -387,10 +390,14 @@ class Application:
         bc = HistoricalBenchmarks().compare(
             analysis.pipeline_result, self.requested_allocation
         )
+        cde_attributes = dict(self.cde.extra) if self.cde.extra else {}
+        if "prior_award_count" not in cde_attributes:
+            cde_attributes["prior_award_count"] = len(self.cde.prior_awards)
         win_score = WinProbabilityModel().score(
             analysis.pipeline_result,
             self.requested_allocation,
             self.application_round,
+            cde_attributes=cde_attributes,
         )
         return RecommendationEngine().recommend(
             analysis.pipeline_result, bc, win_score

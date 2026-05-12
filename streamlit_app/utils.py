@@ -50,18 +50,29 @@ VALID_SECTORS = [
 ]
 
 
-def get_or_create_app(pipeline: Pipeline | None = None) -> Application:
+def get_or_create_app(
+    pipeline: Pipeline | None = None,
+    is_demo: bool | None = None,
+) -> Application:
     """Return the shared Application object from session_state, creating if needed.
 
-    If *pipeline* is provided and differs from the current pipeline, a new
-    Application is created and stored.
+    Args:
+        pipeline: If provided, create a new Application using this pipeline.
+        is_demo: Explicitly set demo mode. Pass ``False`` when the user has
+            supplied their own pipeline so the demo banner is suppressed.
+            Defaults to ``True`` whenever no pipeline is provided (i.e., the
+            sample pipeline is being used).
     """
-    if "app" not in st.session_state or pipeline is not None:
+    creating_new = "app" not in st.session_state or pipeline is not None
+    if creating_new:
         cde = CDEProfile.sample()
         p = pipeline if pipeline is not None else Pipeline.sample(n=20)
         app = Application(cde=cde, requested_allocation=65_000_000, application_round="CY2025")
         app.add_pipeline(p)
         st.session_state["app"] = app
+        st.session_state["is_demo_data"] = (is_demo if is_demo is not None else pipeline is None)
+    elif "is_demo_data" not in st.session_state:
+        st.session_state["is_demo_data"] = True
     return st.session_state["app"]
 
 

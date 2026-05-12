@@ -47,18 +47,20 @@ st.markdown("---")
 # Ensure we have an Application in session
 # ---------------------------------------------------------------------------
 app = get_or_create_app()
+_is_demo = st.session_state.get("is_demo_data", True)
 
 # ---------------------------------------------------------------------------
 # Sidebar
 # ---------------------------------------------------------------------------
 with st.sidebar:
     st.header("Scoring session")
-    if "analysis" in st.session_state:
-        st.success("Pipeline analysis available from analyzer page.")
+    if "analysis" in st.session_state and not _is_demo:
+        st.success("Scoring your uploaded pipeline.")
     else:
         st.info(
-            "No pipeline analysis found. Using sample pipeline. "
-            "Run the Pipeline Analyzer first to use your own data."
+            "No uploaded pipeline found — scoring the Riverbend Community Capital "
+            "sample CDE. Run the Pipeline Analyzer first and upload your own CSV "
+            "to score your application."
         )
     st.markdown("---")
     st.markdown(
@@ -68,6 +70,17 @@ with st.sidebar:
     st.markdown(
         f"**Top Tier gate:** {TOP_TIER_AGGREGATE_MIN}+ aggregate AND "
         f"{TOP_TIER_SECTION_MIN}+ in each section"
+    )
+
+# ---------------------------------------------------------------------------
+# Demo-mode banner (pre-score)
+# ---------------------------------------------------------------------------
+if _is_demo:
+    st.info(
+        "📊 **DEMO MODE** — This page is scoring the sample CDE "
+        "**Riverbend Community Capital CDE, LLC** ($65M requested, 20-project pipeline). "
+        "Scores shown here are NOT your application's scores. "
+        "Go to **Pipeline Analyzer** and upload your own CSV first."
     )
 
 # ---------------------------------------------------------------------------
@@ -138,6 +151,14 @@ if score.tier_gating_notes:
     st.warning("**Gating status:**")
     for note in score.tier_gating_notes:
         st.markdown(f"⚠️ {note}")
+
+# Demo-mode banner (post-score, prominent inline with results)
+if _is_demo:
+    st.warning(
+        "⚠️ **DEMO MODE — Sample CDE scores** — The numbers above reflect "
+        "**Riverbend Community Capital CDE, LLC**, not your application. "
+        "Upload your own pipeline on the **Pipeline Analyzer** page to see your CDE's score."
+    )
 
 st.markdown("---")
 
@@ -311,7 +332,17 @@ with st.expander("📋 Get Recommendations", expanded=False):
         if rec_clicked:
             try:
                 with st.spinner("Generating recommendations…"):
-                    recs = app.recommendations()
+                    # Use the same win_score object already displayed above — never
+                    # recompute it here — so recommendation text matches the scores.
+                    from nmtcapp.intelligence.benchmarks import HistoricalBenchmarks
+                    from nmtcapp.intelligence.recommendations import RecommendationEngine
+                    _analysis = app.analyze()
+                    _bc = HistoricalBenchmarks().compare(
+                        _analysis.pipeline_result, app.requested_allocation
+                    )
+                    recs = RecommendationEngine().recommend(
+                        _analysis.pipeline_result, _bc, score
+                    )
                 st.session_state["recommendations"] = recs
             except Exception as exc:
                 st.error(f"Failed to generate recommendations: {exc}")
