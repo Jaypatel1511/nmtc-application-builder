@@ -36,6 +36,7 @@ class CDEProfile:
     contact: Dict
     governance: Dict
     website: Optional[str] = None
+    extra: Dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.name or not self.name.strip():
@@ -71,6 +72,12 @@ class CDEProfile:
         if missing:
             raise ValueError(f"CDE YAML missing required fields: {missing}")
 
+        known_keys = {
+            "name", "cde_id", "certification_date", "mission",
+            "target_markets", "prior_awards", "contact", "governance",
+            "website",
+        }
+        extra = {k: v for k, v in data.items() if k not in known_keys}
         return cls(
             name=data["name"],
             cde_id=data["cde_id"],
@@ -81,6 +88,7 @@ class CDEProfile:
             contact=data["contact"],
             governance=data["governance"],
             website=data.get("website"),
+            extra=extra,
         )
 
     @classmethod
@@ -126,6 +134,31 @@ class CDEProfile:
                 "board_meeting_frequency": "quarterly",
             },
             website="https://riverbendcommunitycapital.org",
+            extra={
+                # Business Strategy scoring inputs
+                "products_below_market_pct": 0.42,
+                "products_flexible_indicia_count": 5,
+                "pipeline_pct_identified": 0.83,
+                "has_own_capital_at_risk": False,
+                "prior_award_count": 3,
+                "years_in_operation": 7,
+                "track_record_pipeline_alignment_pct": 0.76,
+                "track_record_deployment_pct": 0.80,
+                # Community Outcomes scoring inputs
+                "pct_persistent_poverty": 0.31,
+                "pct_us_territories": 0.0,
+                "has_quantified_outcomes": True,
+                "has_third_party_validation": True,
+                "lic_board_representation_pct": 0.44,
+                "has_community_engagement_track_record": True,
+                # Priority Points scoring inputs
+                "dbc_focus_years": 4,
+                "dbc_dollar_volume_pct": 0.62,
+                "unrelated_entities_pct": 0.82,
+                # Phase 2 flags
+                "has_favorable_fee_structure": True,
+                "has_prior_reporting_issues": False,
+            },
         )
 
     def total_prior_allocation(self) -> float:

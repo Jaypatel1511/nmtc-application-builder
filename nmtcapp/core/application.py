@@ -333,11 +333,12 @@ class Application:
         return paths
 
     def score_win_probability(self) -> "WinProbabilityScore":
-        """Score this application's alignment with historical NMTC winner patterns.
+        """Score this application against the CDFI Fund's CY 2024-2025 framework.
 
-        IMPORTANT: Returns alignment score, not win probability. See
-        :class:`~nmtcapp.intelligence.win_probability.WinProbabilityScore`
-        for the mandatory methodology disclosure.
+        Scores two sections (Business Strategy 50 pts, Community Outcomes 50 pts)
+        plus Priority Points (10 pts). Returns a :class:`WinProbabilityScore` with
+        tier classification (Not Qualified / Highly Qualified / Top Tier) and a
+        mandatory methodology disclosure.
 
         Example::
 
@@ -346,10 +347,15 @@ class Application:
         """
         from nmtcapp.intelligence.win_probability import WinProbabilityModel
         analysis = self.analyze()
+        cde_attributes = dict(self.cde.extra) if self.cde.extra else {}
+        # Derive prior award count from the awards list if not explicitly set
+        if "prior_award_count" not in cde_attributes:
+            cde_attributes["prior_award_count"] = len(self.cde.prior_awards)
         return WinProbabilityModel().score(
             analysis.pipeline_result,
             self.requested_allocation,
             self.application_round,
+            cde_attributes=cde_attributes,
         )
 
     def benchmark(self) -> "BenchmarkComparison":

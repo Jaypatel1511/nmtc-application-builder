@@ -28,9 +28,11 @@ class TestApplicationScoreWinProbability:
         disclosure = score.methodology_disclosure.lower()
         assert "not" in disclosure or "cannot" in disclosure or "alignment" in disclosure
 
-    def test_has_five_dimensions(self, sample_application):
+    def test_has_three_dimensions(self, sample_application):
         score = sample_application.score_win_probability()
-        assert len(score.dimensional_scores) == 5
+        assert len(score.dimensional_scores) == 3
+        expected_keys = {"business_strategy", "community_outcomes", "priority_points"}
+        assert set(score.dimensional_scores.keys()) == expected_keys
 
     def test_competitive_tier_is_valid(self, sample_application):
         score = sample_application.score_win_probability()

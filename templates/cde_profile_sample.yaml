@@ -1,6 +1,9 @@
 # CDE Profile Sample — nmtc-application-builder
-# This is a realistic fictional CDE profile for a strong NMTC applicant.
+# Riverbend Community Capital CDE, LLC — fictional sample for demos and testing.
 # All names, EINs, and financial figures are fictional.
+#
+# Fields under "scoring_inputs" are used by WinProbabilityModel (CY 2024-2025 framework).
+# They are loaded into CDEProfile.extra and passed to the scoring model as cde_attributes.
 
 cde_id: "CDE-2018-0117"
 name: "Riverbend Community Capital CDE, LLC"
@@ -15,7 +18,7 @@ service_area_states:
   - "GA"
   - "LA"
   - "MO"
-mission_statement: >
+mission: >
   Deploy New Markets Tax Credit capital into deep-distress communities across
   the Midwest and South, with a focus on healthcare, education, and small
   business operating businesses in persistent poverty counties.
@@ -29,6 +32,9 @@ prior_awards:
       - "IL"
       - "OH"
       - "TN"
+    sectors:
+      - "healthcare"
+      - "small_business"
   - allocation_round: "CY2021"
     allocation_amount: 55000000
     deployment_status: "fully_deployed"
@@ -36,6 +42,9 @@ prior_awards:
       - "IL"
       - "GA"
       - "LA"
+    sectors:
+      - "education"
+      - "affordable_housing"
   - allocation_round: "CY2023"
     allocation_amount: 60000000
     deployment_status: "in_deployment"
@@ -44,13 +53,15 @@ prior_awards:
       - "MI"
       - "MO"
       - "TN"
+    sectors:
+      - "healthcare"
+      - "community_facility"
 
 financial_profile:
   total_assets: 142000000
   net_assets: 38500000
   years_in_operation: 7
 
-# Additional fields (informational)
 contact:
   name: "Sarah Johnson"
   title: "President & CEO"
@@ -59,7 +70,7 @@ contact:
 
 governance:
   board_members: 9
-  community_representatives: 4
+  community_representatives: 4     # 44% LIC representation (4/9)
   independent_directors: 3
   board_meeting_frequency: "quarterly"
 
@@ -74,3 +85,42 @@ target_markets:
   - "Georgia"
   - "Louisiana"
   - "Missouri"
+
+# ---------------------------------------------------------------------------
+# CDFI Fund CY 2024-2025 Scoring Inputs
+# These are used by WinProbabilityModel.score() when loaded via CDEProfile.from_yaml().
+#
+# Calibrated so Riverbend scores approximately:
+#   Business Strategy:   43 / 50
+#   Community Outcomes:  45 / 50  (pipeline-dependent)
+#   Priority Points:      7 / 10
+#   Aggregate base:      ~88 / 100  →  Tier: Highly Qualified
+# ---------------------------------------------------------------------------
+
+# --- Business Strategy ---
+products_below_market_pct: 0.42         # 42% of products offered below market rate (< 50% threshold)
+products_flexible_indicia_count: 5      # exactly 5 indicia of flexible terms (meets CDFI Fund threshold)
+pipeline_pct_identified: 0.83           # 83% of pipeline projects have signed LOIs
+has_own_capital_at_risk: false          # CDE has not committed own balance-sheet capital
+prior_award_count: 3                    # 3 prior NMTC allocations
+years_in_operation: 7                   # 7 years as a certified CDE
+track_record_pipeline_alignment_pct: 0.76   # 76% of NMTC pipeline supported by similar prior activity (≥ 70% threshold)
+track_record_deployment_pct: 0.80           # 80% of prior allocation deployed on schedule (< 90% threshold)
+
+# --- Community Outcomes ---
+pct_persistent_poverty: 0.31            # 31% of QEI committed to Persistent Poverty Counties
+pct_us_territories: 0.00                # No QEI in US Territories
+has_quantified_outcomes: true           # CDE provides quantified impact projections (jobs, units, sq ft)
+has_third_party_validation: true        # Third-party methodology supports outcome projections
+lic_board_representation_pct: 0.44     # 44% of board are LIC residents / community representatives
+has_community_engagement_track_record: true  # Documented community engagement track record
+
+# --- Priority Points ---
+dbc_focus_years: 4                      # 4 years serving Disadvantaged Businesses/Communities (< 5 threshold)
+dbc_dollar_volume_pct: 0.62             # 62% of direct financing volume to DBCs (< 70% threshold)
+unrelated_entities_pct: 0.82            # 82% of QEIs to unrelated entities (< 90% threshold)
+
+# --- Phase 2 Flags (informational, not scored) ---
+has_favorable_fee_structure: true       # CDE fee and compensation structure is favorable to QALICBs
+has_prior_reporting_issues: false       # No prior reporting compliance issues (clean record)
+non_metro_commitment_pct: 0.22          # 22% non-metro commitment (meets 20% minimum)

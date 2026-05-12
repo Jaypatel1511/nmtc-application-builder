@@ -1,261 +1,260 @@
 # Methodology
 
-This page provides a complete technical description of the scoring approach used by NMTC Application Builder. It is intended for practitioners who need to understand how scores are computed, what assumptions are embedded, and where the analysis has meaningful limitations.
+This page documents the scoring framework used by NMTC Application Builder and its relationship to the CDFI Fund's published evaluation criteria. It is intended for practitioners who need to understand how scores are computed, what limitations apply, and what this tool is and is not.
 
 ---
 
-## Executive summary
+## Source documents
 
-NMTC Application Builder scores applications by comparing their pipeline metrics against patterns extracted from CDFI Fund NMTC award announcements (CY2020–CY2024). It does not compute a win probability — it computes an alignment score reflecting how closely a pipeline resembles historical winners on five measurable dimensions.
+This tool's scoring framework is derived from the following primary sources:
 
-The five dimensions and their weights mirror the relative importance of scoring criteria in recent CDFI Fund NOFA documents:
-
-| Dimension | Weight | Primary metric |
-|-----------|--------|----------------|
-| Distress concentration | 35% | % of QEI in deep/severe distressed tracts |
-| Impact intensity | 25% | FTE jobs created per $1MM QEI |
-| Geographic diversity | 20% | States served + HHI + rural % |
-| Sector diversity | 15% | Sectors represented + concentration ceiling |
-| Pipeline quality | 5% | Eligibility rate + project count + award size fit |
+| Document | Notes |
+|---|---|
+| [CY 2024-2025 NMTC Allocation Application Review Process](https://www.cdfifund.gov/system/files/2025-12/CY_2024_25_NMTC_Program_Review_Process.pdf) | Primary source for scored sections, sub-criteria, gating thresholds |
+| [CY 2024-2025 NMTC Allocation Application (NOAA)](https://www.cdfifund.gov/programs-training/programs/new-markets-tax-credit) | Application structure and narrative requirements |
+| [CY 2024-2025 NMTC Application FAQ](https://www.cdfifund.gov/programs-training/programs/new-markets-tax-credit) | Clarifications on scoring intent and eligibility criteria |
+| CDFI Fund NMTC Award Announcements, CY2020–CY2024 | Historical award statistics used in the benchmarks module |
 
 ---
 
-## Why we cannot compute true win probability
+## What this tool IS
 
-The CDFI Fund does not publish application-level microdata for non-winning applicants. What is publicly available:
+A self-assessment tool for CDEs to evaluate how well their pipeline and organizational positioning align with the CDFI Fund's **published** CY 2024-2025 evaluation criteria. It translates the published scoring framework into quantitative scores so CDEs can identify gaps before submission.
 
-- **Round-level aggregates:** total applications received, awards made, total dollars allocated
-- **Winner-level data:** which CDEs received allocations and for what amounts (from award announcements)
-- **Program-level impact statistics:** aggregate jobs, units, and outcomes across the funded portfolio (from annual reports)
+## What this tool IS NOT
 
-What is not available:
-
-- Application-level data for the ~65–70% of applicants who were not selected in any given round
-- NOFA scores for any application
-- Project-level pipeline data from any application (winner or non-winner)
-
-Without the distribution of non-winner metrics, the standard conditional probability formula (P(win | metrics)) cannot be computed. We do not know whether applicants with 72% distress concentration are funded 40% of the time or 5% of the time — we only know that historical winners averaged 81% distress concentration.
-
-This means any "win probability" generated from available data would be a classification score based on feature similarity to winners only, not a calibrated probability derived from the full applicant distribution. We report this explicitly as an alignment score to avoid misleading practitioners into treating it as a prediction.
+- **Not a win probability calculator.** The CDFI Fund does not publish scores or application data for non-winning applicants. A true probability of selection cannot be computed from available data.
+- **Not a substitute for Phase 2 narrative review.** Phase 2 evaluates Management Capacity and Capitalization Strategy through qualitative reviewer judgment. This tool does not model those criteria.
+- **Not authoritative.** The CDFI Fund's actual scoring rubric is proprietary. This tool's sub-score weights are best-effort interpretations of the published guidance; the CDFI Fund does not publish exact point values for individual sub-criteria.
 
 ---
 
-## How each dimensional score is computed
+## Scoring framework
 
-### Distress concentration score (weight: 35%)
+The CDFI Fund evaluates applications on two scored sections plus optional Priority Points.
 
-**Input:** `pct_deep_or_severe` — the fraction of total portfolio QEI deployed in census tracts classified as deep distress or severe distress by the CDFI Fund's NMTC Mapping Tool.
+### Section 1 — Business Strategy (50 base points)
 
-**Historical winner statistics (CY2020–CY2024):**
+Evaluates the CDE's ability to deploy capital effectively and credibly.
 
-| Statistic | Value |
-|-----------|-------|
-| Mean | 81% |
-| Standard deviation | 11% |
-| P25 | 72% |
-| P50 (median) | 82% |
-| P75 | 91% |
-| P90 | 95% |
-| Floor (minimum observed) | 50% |
-| Mean eligibility rate | 96% |
+| Sub-criterion | Max points | Key threshold |
+|---|---|---|
+| Product Flexibility | 10 | 50%+ below-market rate OR 5+ indicia of flexible terms |
+| Pipeline Credibility | 15 | Identified, sized, and timed projects with LOIs |
+| Track Record Strength | 15 | 5-year direct financing record; bonus for own capital at risk |
+| Track Record Alignment | 10 | 70%+ pipeline supported by similar prior activity; 90%+ deployment rate |
+| **Section total** | **50** | — |
 
-**Scoring formula:**
+**Disclosure:** Within Business Strategy, sub-point allocations (Product Flexibility 10 pts, Pipeline Credibility 15 pts, etc.) are this tool's interpretation of the Review Process document. The CDFI Fund does not publish exact point weights for each sub-criterion.
 
-If `pct_deep_or_severe` < 50% (the historical floor):
-```
-score = (pct / 0.50) × 30
-```
+### Section 2 — Community Outcomes (50 base points)
 
-If `pct_deep_or_severe` ≥ 50%:
-```
-z = (pct - 0.81) / 0.11
-score = Φ(z) × 100
-```
-where Φ is the standard normal CDF, approximated using `math.erfc`. The score is bounded [0, 100].
+Evaluates the depth of community impact and accountability.
 
-This formulation means a pipeline at the winner mean (81%) scores near 50 (50th percentile of the winner distribution), and a pipeline at the winner p75 (91%) scores near 75.
+| Sub-criterion | Max points | Key threshold |
+|---|---|---|
+| Higher Distress Targeting | 15 | 85%+ of QEI in severe distress or multi-indicia distress areas |
+| Deep Distress Commitment | 10 | 20%+ of QEI in CDFI Fund-designated Deep Distress areas |
+| Special Targeting | 5 | QEI in U.S. Territories, High Migration Rural Counties, NMTC Native Areas, or Persistent Poverty Counties (CY 2024-2025 priority) |
+| Community Outcomes Quality | 10 | Quantified outcomes (jobs, units, sq ft) with third-party methodology |
+| Community Accountability | 10 | LIC representation on board; community engagement track record |
+| **Section total** | **50** | — |
 
-### Impact intensity score (weight: 25%)
+### Priority Points (10 bonus points)
 
-**Input:** `jobs_per_million_qei` — total FTE jobs created (from project projections) divided by total QEI in millions.
+Bonus points that increase an application's ranking within the Highly Qualified pool.
 
-**Historical winner statistics:**
-
-| Statistic | Value |
-|-----------|-------|
-| Mean | 12.0 jobs/$MM |
-| P25 | 6.0 jobs/$MM |
-| P50 (median) | 10.0 jobs/$MM |
-| P75 | 18.0 jobs/$MM |
-| Top decile | 28.0 jobs/$MM |
-
-**Scoring formula:**
-
-```
-if jpm <= 0: score = 0
-if jpm >= 28 (top decile): score = 100
-else: z = (jpm - 12.0) / 6.0; score = Φ(z) × 100
-```
-
-Score is bounded [0, 100].
-
-### Geographic diversity score (weight: 20%)
-
-**Input:** `states_count` (number of distinct states), `hhi` (Herfindahl-Hirschman Index of QEI concentration by state), `rural_pct` (fraction of QEI in rural tracts).
-
-**Historical winner statistics:**
-
-| Statistic | Value |
-|-----------|-------|
-| Mean states | 7.2 |
-| Std states | 3.8 |
-| P25 states | 4 |
-| P50 states | 7 |
-| P75 states | 10 |
-| Mean HHI | 620 |
-| Mean rural % | 18% |
-
-**Scoring formula:**
-
-```
-states_score = Φ((states - 7.2) / 3.8) × 100
-
-hhi_score = max(0, (2000 - hhi) / 2000 × 100)
-
-rural_bonus = min(10, (rural_pct / 0.18) × 5)
-
-score = min(100, states_score × 0.5 + hhi_score × 0.4 + rural_bonus)
-```
-
-The HHI score rewards lower concentration: an HHI of 0 (perfect equality) scores 100; an HHI ≥ 2000 scores 0. The rural bonus contributes up to 10 points and rewards reaching or exceeding the winner average rural allocation.
-
-### Sector diversity score (weight: 15%)
-
-**Input:** `sectors_represented` (count of distinct sectors), `max_single_sector_pct` (fraction of QEI in the most concentrated sector).
-
-**Historical winner statistics:**
-
-| Statistic | Value |
-|-----------|-------|
-| Mean sectors represented | 4.8 |
-| Max single sector concentration | 35% |
-| Healthcare share | 22% |
-| Affordable housing share | 18% |
-| Small business share | 17% |
-| Education share | 14% |
-| Community facility share | 12% |
-
-**Scoring formula:**
-
-```
-sector_score = min(100, (sectors / 4.8) × 80)
-conc_penalty = max(0, (max_single_pct - 0.35) × 200)
-score = max(0, min(100, sector_score - conc_penalty))
-```
-
-A pipeline with 4.8 sectors (winner mean) and no sector exceeding 35% scores approximately 80. Each percentage point above the 35% ceiling subtracts 2 points from the sector score.
-
-### Pipeline quality score (weight: 5%)
-
-**Input:** `eligibility_pct` (fraction of projects in eligible tracts), `total_projects`, `requested_allocation`.
-
-**Scoring formula:**
-
-```
-eligibility_score = min(100, (pct / 0.96) × 90)
-
-count_score = min(100, (projects / 14.5) × 80)
-
-size_score:
-  $35M–$65M → 90
-  $25M–$35M → 70
-  >$65M     → 75
-  <$25M     → 50
-
-score = eligibility_score × 0.4 + count_score × 0.3 + size_score × 0.3
-```
-
-### Composite score
-
-```
-composite = (distress × 0.35) + (impact × 0.25) + (geographic × 0.20) + (sector × 0.15) + (pipeline × 0.05)
-```
-
-Bounded [0, 100] and rounded to one decimal place.
+| Criterion | Max points | Key threshold |
+|---|---|---|
+| DBC Track Record | 5 | 5+ years AND 70%+ of direct financing volume to Disadvantaged Businesses/Communities |
+| Unrelated Entities Commitment | 5 | Substantially all (90%+) QEIs to entities unrelated to the CDE |
 
 ---
 
-## How the readiness score differs from the alignment score
+## Gating thresholds — Highly Qualified pool
 
-The **readiness score** (`ReadinessScore`) measures internal application quality and completeness:
+The CDFI Fund uses a two-stage gating process to form the "Highly Qualified" pool that advances to Phase 2 review:
 
+| Tier | Aggregate Base Score | Section Minimums |
+|---|---|---|
+| **Not Qualified** | < 85 | Either section < 40 |
+| **Highly Qualified** | 85–94 | Both sections ≥ 40 |
+| **Top Tier** | 95–100 | Both sections ≥ 45 |
+
+Applications that fail either section minimum (< 40 in Business Strategy or Community Outcomes) do not advance to Phase 2, regardless of aggregate score.
+
+**Award expectation by tier:**
+- *Not Qualified:* Will not advance to Phase 2. No award expected.
+- *Highly Qualified:* Phase 2 reviewed. Award depends on Phase 2 outcome and ranking within the pool.
+- *Top Tier:* High probability of Phase 2 advancement; award amount may approach the maximum requested.
+
+---
+
+## Phase 2 considerations (not scored by this tool)
+
+Phase 2 evaluates qualitative factors that cannot be quantified from pipeline data alone. These are reported as informational flags in the `phase2_flags` field of `WinProbabilityScore`.
+
+| Factor | Notes |
+|---|---|
+| Management Capacity | Organizational capacity to deploy capital; staffing and systems |
+| Capitalization Strategy | QEI-raising track record; investor relationships; capitalization feasibility |
+| Non-Metro commitment | ≥ 20% non-metro required; ≥ 50% if applying as Rural CDE |
+| Fee/compensation structure | Favorable fee structures to QALICBs viewed positively |
+| Prior reporting compliance | Late or inaccurate prior-round reports may result in point deductions |
+
+---
+
+## Sub-score formulas (Business Strategy)
+
+### Product Flexibility (0–10 pts)
+
+```
+score_below_mkt   = min(10, products_below_market_pct / 0.50 × 10)
+score_indicia     = min(10, products_flexible_indicia_count / 5 × 10)
+score             = max(score_below_mkt, score_indicia)
+```
+
+Full credit if either: ≥ 50% of products are offered below market rate, OR ≥ 5 indicia of flexible product terms are documented.
+
+### Pipeline Credibility (0–15 pts)
+
+```
+Piecewise based on pipeline_pct_identified:
+  ≥ 100%:  15 pts
+  ≥  80%:  9 + (pct − 0.60) / 0.40 × 6
+  ≥  60%:  6 + (pct − 0.40) / 0.20 × 3
+  <  60%:  pct / 0.60 × 6
+
+Adjusted for eligibility: penalty if eligibility_pct < 95%
+```
+
+### Track Record Strength (0–15 pts)
+
+```
+award_pts    = min(9, prior_award_count × 3)
+year_pts     = min(3, years_in_operation / 5 × 3)
+capital_bonus = 3 if has_own_capital_at_risk else 0
+score         = min(15, award_pts + year_pts + capital_bonus)
+```
+
+### Track Record Alignment (0–10 pts)
+
+```
+align_score  = min(5, track_record_pipeline_alignment_pct / 0.70 × 5)
+deploy_score = min(5, track_record_deployment_pct / 0.90 × 5)
+score        = align_score + deploy_score
+```
+
+---
+
+## Sub-score formulas (Community Outcomes)
+
+### Higher Distress Targeting (0–15 pts)
+
+```
+score = min(15, pct_deep_or_severe / 0.85 × 15)
+```
+
+At 85%+ in severe or multi-indicia distress: full 15 pts. Proportional credit below.
+
+### Deep Distress Commitment (0–10 pts)
+
+```
+score = min(10, pct_deep / 0.20 × 10)
+```
+
+At 20%+ in CDFI Fund Deep Distress areas: full 10 pts. Uses `pct_deep` from distress analysis; falls back to 50% of `pct_deep_or_severe` if not available separately.
+
+### Special Targeting (0–5 pts)
+
+```
+partial = Σ min(1.25, category_pct / 0.10 × 1.25)  for each of 4 categories
+score   = min(5, partial)
+```
+
+Categories: U.S. Territories, High Migration Rural Counties, NMTC Native Areas, Persistent Poverty Counties (each contributes up to 1.25 pts; 10%+ in a category = 1.25 pts).
+
+### Community Outcomes Quality (0–10 pts)
+
+| Condition | Score |
+|---|---|
+| Third-party validated outcomes | 9 |
+| Quantified but self-reported | 6 |
+| Not quantified | 2 |
+
+### Community Accountability (0–10 pts)
+
+```
+board_pts        = min(8, lic_board_representation_pct / 0.33 × 8)
+engagement_bonus = 2 if has_community_engagement_track_record else 0
+score            = min(10, board_pts + engagement_bonus)
+```
+
+---
+
+## Priority Points formulas
+
+### DBC Track Record (0–5 pts)
+
+```
+year_score = min(2.5, dbc_focus_years / 5 × 2.5)
+vol_score  = min(2.5, dbc_dollar_volume_pct / 0.70 × 2.5)
+score      = year_score + vol_score
+```
+
+### Unrelated Entities (0–5 pts)
+
+```
+score = min(5, unrelated_entities_pct / 0.90 × 5)
+```
+
+---
+
+## Readiness score vs. alignment score
+
+This tool computes two separate scores:
+
+**Readiness Score** (`ReadinessScore`) — internal application quality:
 - Is the pipeline NMTC-eligible?
 - Does the pipeline meet minimum distress thresholds?
-- Have all required fields been populated?
-- Do internal numbers (QEI, QLICI, project cost) satisfy program rules?
+- Are all required fields populated with valid values?
+- Do internal numbers satisfy program rules (QEI ≤ project cost, etc.)?
 
-The **alignment score** (`WinProbabilityScore`) measures external competitiveness:
+**Alignment Score** (`WinProbabilityScore`) — external competitive position:
+- Business Strategy: product terms, pipeline quality, track record
+- Community Outcomes: distress targeting, community impact, accountability
+- Priority Points: DBC focus, unrelated entities
 
-- Does the pipeline look like historical winners?
-- Is the distress concentration in the winner distribution?
-- Does geographic diversity match winner patterns?
-
-An application can have a high readiness score (everything is correctly filled out and eligible) but a low alignment score (distress concentration is only 55%, well below winner patterns). Both scores are necessary for a complete picture.
-
----
-
-## The optimization objective function
-
-The `PipelineOptimizer` maximizes the composite alignment score subject to constraints. The objective function is the same formula used in the alignment score, applied to the selected subset rather than the full pipeline.
-
-```python
-objective(selected) = composite_alignment_score(selected, requested_allocation, weights)
-```
-
-where `weights = {distress: 0.35, impact: 0.25, geographic: 0.20, sector: 0.15, pipeline: 0.05}`.
-
-The optimizer uses no convexity assumptions — it is a heuristic (greedy + local search) and is not guaranteed to find the globally optimal subset. For pipelines of 15–25 projects with typical constraint sets, the heuristic converges to a near-optimal solution in fewer than 100 swap iterations. The `max_iterations` parameter (default 500) provides headroom for larger or more constrained problems.
+An application can have a high readiness score but a low alignment score (eligible pipeline, but low distress concentration).
 
 ---
 
-## Validation methodology
+## What is not modeled
 
-Three validation checks run automatically in `analyze()`:
-
-**Eligibility check:** Each project's `is_nmtc_eligible` field is verified. Projects with `is_nmtc_eligible = False` generate errors; projects with `is_nmtc_eligible = None` (not yet enriched) generate warnings.
-
-**Completeness check:** All required `PipelineProject` fields (12 fields) and required `CDEProfile` fields are checked for presence and valid type. Optional fields with None values generate warnings, not errors.
-
-**Consistency check:** Cross-field validation:
-- `qei_request <= total_project_cost` (QEI cannot exceed total project cost)
-- `qlici_amount <= qei_request` (QLICI is a component of QEI)
-- `expected_jobs_created >= 0`
+1. **Phase 2 qualitative review.** Management Capacity and Capitalization Strategy are evaluated by CDFI Fund staff through narrative review. This tool reports these as Phase 2 flags, not scores.
+2. **Past reporting compliance deductions.** Late or inaccurate prior-round reporting can result in score deductions. This tool assumes clean compliance history; it is flagged in `phase2_flags.prior_reporting_compliance_risk`.
+3. **Subjective reviewer judgment.** Phase 1 reviewers exercise judgment on the quality of narrative explanations. Narrative quality, internal consistency, and clarity cannot be quantified from pipeline data alone.
+4. **Anomalous score resolution.** When two reviewers disagree by more than a threshold, a third reviewer resolves the discrepancy. This process is not modeled.
+5. **Non-winner data.** The CDFI Fund does not publish application-level data for non-winning applicants. Historical benchmarks in `HistoricalBenchmarks` are derived from winner-level data only.
 
 ---
 
-## Validation limitations
+## Historical program statistics
 
-The scoring framework has several important limitations that practitioners should understand:
-
-1. **No non-winner data.** Winner patterns are inferred from public award announcements and annual reports. The non-winner distribution is unknown. The scoring formulas are calibrated against winner data only.
-
-2. **Aggregate inference.** Winner statistics (mean, standard deviation, percentiles) are inferred from program-level aggregates in annual reports, not computed from a microdata sample of individual applications. The inference introduces uncertainty, particularly for standard deviations and percentiles.
-
-3. **NOFA changes.** The CDFI Fund revises NOFA criteria and scoring weights between rounds. The current library reflects the CY2024 NOFA structure. Scoring weights and dimensional definitions may not perfectly match future rounds.
-
-4. **Impact projections are self-reported.** `expected_jobs_created` is entered by the CDE and not verified by the platform. Inflated job projections will improve the impact score without reflecting actual community outcomes.
-
-5. **Geographic centroids.** The pipeline map uses state centroids, not exact project addresses. The geographic analysis itself uses census tract data (from `nmtc-mapper`), but the visualization is approximate.
+| Stat | CY 2024-2025 (estimated) |
+|---|---|
+| Total applicants | 216 |
+| Total QEI requested | $19.2B |
+| Total authority available | $10.0B |
+| Rural CDE award share (historical) | ~16.9% |
 
 ---
 
 ## Acknowledgments
 
-The scoring methodology was developed by reference to the following primary sources:
+Scoring methodology developed by reference to:
 
-- CDFI Fund. *New Markets Tax Credit Program: Notice of Funds Availability (NOFA)*, various years (2020–2024). U.S. Department of the Treasury.
-- CDFI Fund. *NMTC Program Award Book*, various years. U.S. Department of the Treasury.
-- CDFI Fund. *Community Development Financial Institutions Fund Annual Report*, FY2018–FY2023. U.S. Department of the Treasury.
-- U.S. Congress. *Consolidated Appropriations Act, 2023*, Pub. L. No. 117-328 (authorizing $5 billion in NMTC authority for CY2022).
-
-The dimensional weighting structure is informed by but does not replicate the CDFI Fund's proprietary NOFA scoring rubric, which is not publicly disclosed at the question-level.
+- CDFI Fund. *CY 2024-2025 NMTC Allocation Application Review Process.* U.S. Department of the Treasury.
+- CDFI Fund. *New Markets Tax Credit Program: Notice of Allocation Availability (NOAA)*, CY 2024-2025. U.S. Department of the Treasury.
+- CDFI Fund. *NMTC Program Award Book*, various years (CY2020–CY2024). U.S. Department of the Treasury.
+- CDFI Fund. *Community Development Financial Institutions Fund Annual Report*, FY2020–FY2024. U.S. Department of the Treasury.

@@ -360,18 +360,13 @@ class TestPlotReadinessRadar:
         assert header == b"\x89PNG"
 
     def test_uses_polar_plot_dimensions(self, sample_app, tmp_path):
-        """Verify the radar covers all 5 win-alignment dimensions via score_win_probability."""
+        """Verify score_win_probability returns the three CDFI Fund section dimensions."""
         score = sample_app.score_win_probability()
         dims = score.dimensional_scores
-        assert len(dims) == 5, f"Expected 5 dimensions, got {len(dims)}: {list(dims.keys())}"
-        expected_keys = {
-            "distress_concentration",
-            "geographic_diversity",
-            "impact_intensity",
-            "sector_diversity",
-            "pipeline_quality",
-        }
-        assert set(dims.keys()) == expected_keys
+        expected_keys = {"business_strategy", "community_outcomes", "priority_points"}
+        assert set(dims.keys()) == expected_keys, (
+            f"Expected {expected_keys}, got {set(dims.keys())}"
+        )
 
 
 # ---------------------------------------------------------------------------

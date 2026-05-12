@@ -5,6 +5,55 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.1.0] — 2026-05-12
+
+Methodology realignment: scoring framework replaced with CDFI Fund's published CY 2024-2025 Review Process criteria.
+
+### Changed
+
+**Scoring framework — `nmtcapp/intelligence/win_probability.py`**
+- Replaced 5-dimension winner-pattern alignment model (Distress 25%, Geographic 20%, Sector 15%, Impact 25%, Pipeline 15%) with the CDFI Fund's published two-section framework
+- `WinProbabilityScore` now reports: Business Strategy (0–50 pts), Community Outcomes (0–50 pts), Priority Points (0–10 pts), aggregate base score (0–100), aggregate with priority (0–110), tier classification, and gating notes
+- Tier classification: **Not Qualified** (< 85 aggregate or either section < 40) → **Highly Qualified** (85–94, both sections ≥ 40) → **Top Tier** (≥ 95, both sections ≥ 45)
+- `WinProbabilityModel.score()` accepts an optional `cde_attributes` dict for CDE-level inputs (product flexibility, track record, board composition) that are not derivable from pipeline data alone
+- Old `composite_score`, `dimensional_scores`, `competitive_tier` fields retained for backward compatibility
+
+**Recommendations — `nmtcapp/intelligence/recommendations.py`**
+- `Recommendation` dataclass gains a `citation` field — each recommendation now cites the specific CDFI Fund Review Process section it addresses
+- Valid categories updated: `business_strategy`, `community_outcomes`, `priority_points`, `pipeline`
+- Engine dispatches to section-specific recommendation generators when a `WinProbabilityScore` is available; falls back to pipeline-level analysis otherwise
+
+**CDE profile — `nmtcapp/core/cde.py`**
+- `CDEProfile` gains an `extra: Dict` field; `from_yaml()` captures unknown YAML keys into `extra` so new scoring attributes can be added without changing the schema
+- `CDEProfile.sample()` updated for Riverbend Community Capital to include CDFI Fund scoring attributes (products, track record, governance) targeting the Highly Qualified tier (~87–88/100)
+- `Application.score_win_probability()` passes `cde.extra` as `cde_attributes` automatically
+
+**Thresholds — `nmtcapp/data/benchmark_thresholds.py`**
+- Added CDFI Fund CY 2024-2025 published thresholds: `HIGHLY_QUALIFIED_AGGREGATE_MIN=85`, `HIGHLY_QUALIFIED_SECTION_MIN=40`, `TOP_TIER_AGGREGATE_MIN=95`, `TOP_TIER_SECTION_MIN=45`, `SEVERE_DISTRESS_MIN_PCT=0.85`, `DEEP_DISTRESS_MIN_PCT=0.20`, `DBC_PRIORITY_YEARS_MIN=5`, `DBC_VOLUME_PCT_MIN=0.70`, `UNRELATED_ENTITIES_MIN_PCT=0.90`
+- Legacy winner-pattern thresholds retained for `HistoricalBenchmarks` backward compatibility
+
+**Streamlit demo — `streamlit_app/pages/2_Win_Alignment_Scorer.py`**
+- Replaced 5-dimension radar chart with stacked horizontal bar showing all 9 CDFI Fund sub-criteria (4 Business Strategy + 5 Community Outcomes)
+- Added aggregate gauge with tier zone color coding (Not Qualified / Highly Qualified / Top Tier)
+- Added section minimum status badges and tier badge
+- Recommendations panel now displays CDFI Fund citation per recommendation
+
+**Methodology documentation**
+- `docs/reference/methodology.md` — fully rewritten: sub-score formulas, gating thresholds, Phase 2 considerations, and "what is not modeled" disclosure
+- `streamlit_app/pages/4_About_and_Methodology.py` — updated to reflect the new framework
+- `templates/cde_profile_sample.yaml` — updated for Riverbend Community Capital with new scoring fields
+
+**Demo notebook — `examples/03_intelligence_and_optimization.ipynb`**
+- Rewritten to walk through Not Qualified → Highly Qualified → Top Tier arc
+- Each stage shows CDFI Fund section scores, gating notes, and the specific attribute changes required to advance tiers
+
+### Added
+
+- `distress_breakdown` dict now includes both `pct_deep_or_severe` (combined) and `pct_deep` (deep-only) keys, supporting separate Deep Distress Commitment scoring
+- Sub-score formulas documented in `docs/reference/methodology.md` with explicit disclosure that within-section point weights are this tool's interpretation (the CDFI Fund does not publish exact sub-criterion point values)
+
+---
+
 ## [1.0.0] — 2025-05-09
 
 Initial public release. Four weeks of development, 544 tests passing.
