@@ -22,7 +22,7 @@ from utils import (
     apply_theme,
 )
 from chart_style import (
-    apply_matplotlib_theme, style_plotly_fig, PLOTLY_CONFIG,
+    apply_matplotlib_theme, hex_rgba, style_plotly_fig, PLOTLY_CONFIG,
     NAVY, BLUE, MID_BLUE, LIGHT_BLUE, ACCENT, SUCCESS, DANGER, NEUTRAL,
     TEXT_DARK, TEXT_MUTED, TEXT_LIGHT, PANEL_BG, GRID,
 )
@@ -190,7 +190,7 @@ with left:
         y=all_labels,
         x=[m - v for v, m in zip(all_values, all_maxes)],
         orientation="h",
-        marker_color="#ffffff22",
+        marker_color=hex_rgba("#ffffff", 0.13),
         showlegend=False,
         hoverinfo="skip",
     ))
@@ -240,9 +240,9 @@ with right:
             "borderwidth": 1,
             "bordercolor": "#D1D5DB",
             "steps": [
-                {"range": [0, HIGHLY_QUALIFIED_AGGREGATE_MIN], "color": DANGER + "44"},
-                {"range": [HIGHLY_QUALIFIED_AGGREGATE_MIN, TOP_TIER_AGGREGATE_MIN], "color": MID_BLUE + "44"},
-                {"range": [TOP_TIER_AGGREGATE_MIN, 100], "color": SUCCESS + "44"},
+                {"range": [0, HIGHLY_QUALIFIED_AGGREGATE_MIN], "color": hex_rgba(DANGER, 0.27)},
+                {"range": [HIGHLY_QUALIFIED_AGGREGATE_MIN, TOP_TIER_AGGREGATE_MIN], "color": hex_rgba(MID_BLUE, 0.27)},
+                {"range": [TOP_TIER_AGGREGATE_MIN, 100], "color": hex_rgba(SUCCESS, 0.27)},
             ],
             "threshold": {
                 "line": {"color": ACCENT, "width": 3},

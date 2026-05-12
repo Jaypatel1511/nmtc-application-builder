@@ -144,6 +144,16 @@ PLOTLY_CONFIG = dict(
 )
 
 
+def hex_rgba(hex_color: str, alpha: float) -> str:
+    """Convert a 6-char hex color + alpha float (0–1) to an rgba() string.
+
+    Plotly 6.x rejects 8-char hex colors (#rrggbbaa); use this instead.
+    """
+    h = hex_color.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f"rgba({r},{g},{b},{alpha:.3f})"
+
+
 def style_plotly_fig(fig: go.Figure, title: str | None = None, height: int = 380) -> go.Figure:
     """Apply dark-mode standard layout to a plotly figure and return it."""
     fig.update_layout(**PLOTLY_LAYOUT)
