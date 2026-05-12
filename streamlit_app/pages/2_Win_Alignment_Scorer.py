@@ -196,10 +196,15 @@ with left:
     all_maxes = bs_maxes + co_maxes
     all_colors = [NAVY] * len(bs_labels) + [BLUE] * len(co_labels)
 
+    # Normalise every criterion to % of its own maximum so the remainder segment
+    # is always proportional (fixes invisible 1-pt remainders on 9/10-style bars).
+    all_pcts = [min(v / m * 100, 100) for v, m in zip(all_values, all_maxes)]
+    all_remainders = [100 - p for p in all_pcts]
+
     fig_bars = go.Figure()
     fig_bars.add_trace(go.Bar(
         y=all_labels,
-        x=all_values,
+        x=all_pcts,
         orientation="h",
         marker_color=all_colors,
         text=[f"{v}/{m}" for v, m in zip(all_values, all_maxes)],
@@ -209,9 +214,9 @@ with left:
     ))
     fig_bars.add_trace(go.Bar(
         y=all_labels,
-        x=[m - v for v, m in zip(all_values, all_maxes)],
+        x=all_remainders,
         orientation="h",
-        marker_color=hex_rgba("#ffffff", 0.13),
+        marker_color=hex_rgba("#ffffff", 0.18),
         showlegend=False,
         hoverinfo="skip",
     ))
@@ -219,7 +224,9 @@ with left:
     fig_bars = style_plotly_fig(fig_bars, height=480)
     fig_bars.update_layout(
         barmode="stack",
-        xaxis=dict(range=[0, 20], title="Points scored"),
+        xaxis=dict(range=[0, 125], title="% of criterion maximum",
+                   tickvals=[0, 25, 50, 75, 100],
+                   ticktext=["0%", "25%", "50%", "75%", "100%"]),
         yaxis=dict(title=None, tickfont=dict(size=10)),
         showlegend=False,
         margin=dict(l=10, r=60, t=10, b=20),
@@ -253,10 +260,16 @@ with right:
                 "range": [0, 100],
                 "tickwidth": 1,
                 "tickcolor": TEXT_MUTED,
+                # Shorter labels prevent right-edge clipping ("85 (HQ)" → "85 HQ")
                 "tickvals": [0, HIGHLY_QUALIFIED_AGGREGATE_MIN, TOP_TIER_AGGREGATE_MIN, 100],
-                "ticktext": ["0", f"{HIGHLY_QUALIFIED_AGGREGATE_MIN} (HQ)", f"{TOP_TIER_AGGREGATE_MIN} (TT)", "100"],
+                "ticktext": ["0", f"{HIGHLY_QUALIFIED_AGGREGATE_MIN} HQ",
+                             f"{TOP_TIER_AGGREGATE_MIN} TT", "100"],
             },
-            "bar": {"color": tier_color, "thickness": 0.30},
+            # Use ACCENT (gold) for the bar so it contrasts with every step zone colour.
+            # The previous tier_color matched the HQ step background (both MID_BLUE),
+            # making the bar edge invisible at ~85 and causing the needle to appear
+            # stuck at the red/blue zone boundary instead of the actual value.
+            "bar": {"color": ACCENT, "thickness": 0.25},
             "bgcolor": PANEL_BG,
             "borderwidth": 1,
             "bordercolor": "#D1D5DB",
@@ -266,15 +279,16 @@ with right:
                 {"range": [TOP_TIER_AGGREGATE_MIN, 100], "color": hex_rgba(SUCCESS, 0.27)},
             ],
             "threshold": {
-                "line": {"color": ACCENT, "width": 3},
+                "line": {"color": tier_color, "width": 3},
                 "thickness": 0.75,
                 "value": HIGHLY_QUALIFIED_AGGREGATE_MIN,
             },
         },
     ))
     fig_gauge.update_layout(
-        height=280,
-        margin=dict(l=20, r=20, t=50, b=10),
+        height=300,
+        # r=80 gives enough room for "100" and "95 TT" tick labels at 3 o'clock
+        margin=dict(l=20, r=80, t=50, b=10),
         paper_bgcolor=PANEL_BG,
         font=dict(family="Inter, -apple-system, sans-serif", color=TEXT_DARK),
     )

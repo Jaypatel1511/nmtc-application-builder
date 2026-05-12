@@ -81,10 +81,18 @@ class TestPage2WinAlignmentCharts:
         assert len(all_maxes_list) == len(all_labels)
         assert all(v is not None for v in all_values), "None in all_values"
 
+        # Percentage-normalised bars: every criterion maps to % of its own max so
+        # the remainder segment is always proportional (fixes invisible 1-unit remainders).
+        all_pcts = [min(v / m * 100, 100) for v, m in zip(all_values, all_maxes_list)]
+        all_remainders = [100 - p for p in all_pcts]
+
+        assert all(r >= 0 for r in all_remainders), "negative remainder"
+        assert all(p <= 100 for p in all_pcts), "pct > 100"
+
         fig = go.Figure()
         fig.add_trace(go.Bar(
             y=all_labels,
-            x=all_values,
+            x=all_pcts,
             orientation="h",
             marker_color=all_colors,
             text=[f"{v}/{m}" for v, m in zip(all_values, all_maxes_list)],
@@ -95,9 +103,9 @@ class TestPage2WinAlignmentCharts:
         # This trace historically crashed because "#ffffff22" (8-char hex) was used.
         fig.add_trace(go.Bar(
             y=all_labels,
-            x=[m - v for v, m in zip(all_values, all_maxes_list)],
+            x=all_remainders,
             orientation="h",
-            marker_color=hex_rgba("#ffffff", 0.13),
+            marker_color=hex_rgba("#ffffff", 0.18),
             showlegend=False,
             hoverinfo="skip",
         ))
@@ -114,6 +122,9 @@ class TestPage2WinAlignmentCharts:
         tier_color = tier_colors.get(tier, NEUTRAL)
 
         # This historically crashed because DANGER+"44" etc. (8-char hex) was used.
+        # Bar colour is ACCENT so it always contrasts with the step zone backgrounds —
+        # the previous tier_color (MID_BLUE) blended with the HQ step and made the
+        # needle appear stuck at 85 instead of its true value.
         fig = go.Figure(go.Indicator(
             mode="gauge+number",
             value=agg,
@@ -123,8 +134,10 @@ class TestPage2WinAlignmentCharts:
                 "axis": {
                     "range": [0, 100],
                     "tickvals": [0, HIGHLY_QUALIFIED_AGGREGATE_MIN, TOP_TIER_AGGREGATE_MIN, 100],
+                    "ticktext": ["0", f"{HIGHLY_QUALIFIED_AGGREGATE_MIN} HQ",
+                                 f"{TOP_TIER_AGGREGATE_MIN} TT", "100"],
                 },
-                "bar": {"color": tier_color, "thickness": 0.30},
+                "bar": {"color": ACCENT, "thickness": 0.25},
                 "bgcolor": PANEL_BG,
                 "steps": [
                     {"range": [0, HIGHLY_QUALIFIED_AGGREGATE_MIN], "color": hex_rgba(DANGER, 0.27)},
@@ -132,7 +145,7 @@ class TestPage2WinAlignmentCharts:
                     {"range": [TOP_TIER_AGGREGATE_MIN, 100], "color": hex_rgba(SUCCESS, 0.27)},
                 ],
                 "threshold": {
-                    "line": {"color": ACCENT, "width": 3},
+                    "line": {"color": tier_color, "width": 3},
                     "thickness": 0.75,
                     "value": HIGHLY_QUALIFIED_AGGREGATE_MIN,
                 },
@@ -143,23 +156,22 @@ class TestPage2WinAlignmentCharts:
     def test_all_tiers_render_gauge(self):
         """Gauge must render without error for every possible tier value."""
         for tier in ("Top Tier", "Highly Qualified", "Not Qualified"):
-            tier_colors = {
-                "Top Tier": SUCCESS,
-                "Highly Qualified": MID_BLUE,
-                "Not Qualified": DANGER,
-            }
-            color = tier_colors[tier]
             fig = go.Figure(go.Indicator(
                 mode="gauge+number",
                 value=50,
                 gauge={
                     "axis": {"range": [0, 100]},
-                    "bar": {"color": color},
+                    "bar": {"color": ACCENT, "thickness": 0.25},
                     "steps": [
                         {"range": [0, 85], "color": hex_rgba(DANGER, 0.27)},
                         {"range": [85, 95], "color": hex_rgba(MID_BLUE, 0.27)},
                         {"range": [95, 100], "color": hex_rgba(SUCCESS, 0.27)},
                     ],
+                    "threshold": {
+                        "line": {"color": MID_BLUE, "width": 3},
+                        "thickness": 0.75,
+                        "value": 85,
+                    },
                 },
             ))
             assert fig is not None, f"Gauge failed for tier={tier}"
