@@ -190,94 +190,46 @@ if dim_improvements:
     dim_df = pd.DataFrame(dim_rows)[["Dimension", "Change"]]
     st.dataframe(dim_df, use_container_width=True, hide_index=True)
 
-    # Try to build before/after per-dimension chart from session win_score
+    # Show CDFI Fund section scores before optimization (when win scorer has been run)
     win_score_session = st.session_state.get("win_score")
     if win_score_session and hasattr(win_score_session, "dimensional_scores"):
-        # Full before/after grouped bar chart per dimension
         prior_dim_scores = win_score_session.dimensional_scores
-        dim_label_map = {
-            "distress_concentration": "Distress",
-            "geographic_diversity": "Geographic",
-            "impact_intensity": "Impact",
-            "sector_diversity": "Sector",
-            "pipeline_quality": "Pipeline",
-        }
+        # dimensional_scores normalizes all sections to 0–100; denormalize for display
+        section_map = [
+            ("business_strategy",  "Business Strategy",  50),
+            ("community_outcomes", "Community Outcomes", 50),
+            ("priority_points",    "Priority Points",    10),
+        ]
+        sec_cols = st.columns(3)
+        for col, (k, lbl, cap) in zip(sec_cols, section_map):
+            raw_val = prior_dim_scores.get(k, 0.0) / 100 * cap
+            col.metric(f"{lbl} (before)", f"{raw_val:.0f} / {cap}")
 
-        dims = list(dim_improvements.keys())
-        labels = [dim_label_map.get(d, d.replace("_", " ").title()) for d in dims]
-        before_vals = [prior_dim_scores.get(d, 0.0) for d in dims]
-        after_vals  = [max(0, min(100, before_vals[idx] + dim_improvements[d] * 100))
-                       for idx, d in enumerate(dims)]
-
-        fig_ba = go.Figure()
-        fig_ba.add_trace(go.Bar(
-            y=labels, x=before_vals,
+    # Dimension delta chart — optimizer objective improvements (always shown)
+    fig_dims = go.Figure()
+    fig_dims.add_trace(
+        go.Bar(
+            y=[r["Dimension"] for r in dim_rows],
+            x=[r["_delta"] for r in dim_rows],
             orientation="h",
-            name="Before",
-            marker_color=LIGHT_BLUE,
-            text=[f"{v:.1f}" for v in before_vals],
-            textposition="inside",
-            textfont=dict(color=PAGE_BG, size=10),  # dark text on pale LIGHT_BLUE fill
-        ))
-        fig_ba.add_trace(go.Bar(
-            y=labels, x=after_vals,
-            orientation="h",
-            name="After",
-            marker_color=NAVY,
-            text=[f"{v:.1f}" for v in after_vals],
-            textposition="inside",
-            textfont=dict(color="white", size=10),
-        ))
-        # Overall composite improvement annotation
-        fig_ba.add_annotation(
-            x=max(max(before_vals), max(after_vals)) + 5,
-            y=len(labels) - 1,
-            text=f"Overall: {delta:+.1f} pts",
-            showarrow=False,
-            font=dict(size=12, color=SUCCESS if delta >= 0 else DANGER, family="Inter, sans-serif"),
-            xanchor="left",
+            marker_color=[
+                SUCCESS if r["_delta"] > 0.05 else (DANGER if r["_delta"] < -0.05 else NEUTRAL)
+                for r in dim_rows
+            ],
+            text=[f"{r['_delta']:+.1f}" for r in dim_rows],
+            textposition="outside",
+            textfont=dict(color=TEXT_LIGHT, size=11),
         )
-        fig_ba = style_plotly_fig(fig_ba, title="Before / After: dimension scores", height=300)
-        fig_ba.update_layout(
-            barmode="group",
-            bargap=0.2,
-            bargroupgap=0.05,
-            xaxis=dict(range=[0, 115], title="Score (0–100)"),
-            yaxis=dict(title=None),
-            showlegend=True,
-            legend=dict(orientation="h", y=-0.2, font=dict(size=11)),
-            margin=dict(l=10, r=80, t=50, b=40),
-        )
-        st.plotly_chart(fig_ba, use_container_width=True, config=PLOTLY_CONFIG)
-    else:
-        # Fallback: styled delta chart
-        fig_dims = go.Figure()
-        fig_dims.add_trace(
-            go.Bar(
-                y=[r["Dimension"] for r in dim_rows],
-                x=[r["_delta"] for r in dim_rows],
-                orientation="h",
-                marker_color=[
-                    SUCCESS if r["_delta"] > 0.05 else (DANGER if r["_delta"] < -0.05 else NEUTRAL)
-                    for r in dim_rows
-                ],
-                text=[f"{r['_delta']:+.1f}" for r in dim_rows],
-                textposition="outside",
-                textfont=dict(color=TEXT_LIGHT, size=11),
-            )
-        )
-        fig_dims.add_vline(x=0, line_color="#D1D5DB", line_width=1)
-        fig_dims = style_plotly_fig(fig_dims, title="Score change by dimension", height=260)
-        fig_dims.update_layout(
-            xaxis_title="Score change (points)",
-            yaxis_title=None,
-            margin=dict(l=10, r=50, t=50, b=10),
-            showlegend=False,
-        )
-        st.plotly_chart(fig_dims, use_container_width=True, config=PLOTLY_CONFIG)
-        st.caption(
-            "Run **Win Alignment Scorer** first to see a before/after comparison per dimension."
-        )
+    )
+    fig_dims.add_vline(x=0, line_color="#D1D5DB", line_width=1)
+    fig_dims = style_plotly_fig(fig_dims, title="Score change by dimension (optimizer objectives)", height=260)
+    fig_dims.update_layout(
+        xaxis_title="Score change (points)",
+        yaxis_title=None,
+        margin=dict(l=10, r=50, t=50, b=10),
+        showlegend=False,
+    )
+    st.plotly_chart(fig_dims, use_container_width=True, config=PLOTLY_CONFIG)
 
 st.markdown("---")
 

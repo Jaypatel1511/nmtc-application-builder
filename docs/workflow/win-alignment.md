@@ -1,102 +1,38 @@
 # Win Alignment Scoring
 
-!!! danger "Critical Methodology Disclosure — Read This First"
-    The score produced by `score_win_probability()` is an **alignment score**, not a win probability. The CDFI Fund publishes only winner-level award announcement data; application-level data for non-winners is not publicly available. Without the full distribution of both winning and non-winning applications, it is mathematically impossible to compute a true conditional probability of selection. The score tells you how closely your application resembles the pattern of historical winners — it does not tell you the probability that CDFI Fund reviewers will select your application. **A high alignment score improves competitive positioning; it does not guarantee an award.**
+!!! danger "Methodology Disclosure — Read This First"
+    The score produced by `score_win_probability()` is a **self-assessment alignment score**, not a win probability. See [Methodology](../reference/methodology.md) for a full disclosure of what this tool models, what it does not model, and the limitations of scoring against published criteria.
 
 ---
 
 ## Overview
 
+`score_win_probability()` evaluates your application against the CDFI Fund's **published CY 2024-2025 Review Process** criteria. It returns a `WinProbabilityScore` with:
+
+- Section scores for Business Strategy (0–50) and Community Outcomes (0–50)
+- Priority Points bonus (0–10)
+- An aggregate base score (0–100) and aggregate with priority (0–110)
+- A tier classification: **Not Qualified**, **Highly Qualified**, or **Top Tier**
+- Gating notes explaining any section minimums not met
+- Phase 2 flags for qualitative factors outside the scope of this tool
+
+For the canonical scoring framework — sub-score formulas, threshold tables, and methodology disclosure — see **[Methodology](../reference/methodology.md)**.
+
+---
+
+## Basic usage
+
 ```python
+from nmtcapp import Application, CDEProfile, Pipeline
+
+app = Application(cde=CDEProfile.sample(), requested_allocation=65_000_000)
+app.add_pipeline(Pipeline.from_csv("pipeline.csv"))
+
 score = app.score_win_probability()
 print(score.summary())
 ```
 
-`score_win_probability()` runs `analyze()` internally (using the cached result if available), then passes the `PipelineAnalysisResult` to `WinProbabilityModel.score()`, which computes a composite 0–100 alignment score from five weighted dimensions.
-
----
-
-## The five dimensions
-
-### 1. Distress Concentration (weight: 35%)
-
-The most heavily weighted dimension, reflecting the CDFI Fund's "Community Need" criterion, which accounts for the largest share of NOFA points.
-
-The scoring compares your pipeline's `pct_deep_or_severe` (the fraction of total QEI deployed in deep or severely distressed census tracts) against the historical winner distribution:
-
-| Statistic | Value |
-|-----------|-------|
-| Winner mean | 81% |
-| Winner p25 | 72% |
-| Winner median (p50) | 82% |
-| Winner p75 | 91% |
-| Floor (rarely funded below) | 50% |
-
-If your pipeline's deep/severe concentration falls below the 50% floor, the distress dimension score is proportionally reduced. At the 50% mark you score approximately 30/100 on this dimension. At the winner median (82%), you score near 60/100. Exceeding the winner mean pushes you toward 80–100.
-
-### 2. Impact Intensity (weight: 25%)
-
-Measures jobs per million dollars of QEI, the primary impact metric in CDFI Fund annual reports and NOFA scoring. Operating business projects (manufacturing, healthcare clinics, small businesses) typically produce 20–40 jobs per $1MM QEI. Real estate projects typically produce 5–10. A pipeline with significant operating business exposure scores substantially higher on this dimension.
-
-| Statistic | Value |
-|-----------|-------|
-| Winner mean | 12.0 jobs/$MM |
-| Winner p25 | 6.0 jobs/$MM |
-| Winner median (p50) | 10.0 jobs/$MM |
-| Winner p75 | 18.0 jobs/$MM |
-| Winner top decile | 28.0 jobs/$MM |
-
-At 0 jobs/$MM the dimension score is 0. At or above the top decile (28 jobs/$MM) the score is 100.
-
-### 3. Geographic Diversity (weight: 20%)
-
-Evaluates two factors: the number of states served and the Herfindahl-Hirschman Index (HHI) of geographic concentration. Lower HHI means QEI is more evenly distributed across states. There is also a rural bonus — reaching the winner average of 18% rural QEI adds up to 10 points.
-
-| Statistic | Value |
-|-----------|-------|
-| Winner mean states | 7.2 |
-| Winner median states (p50) | 7 |
-| Winner p25 states | 4 |
-| Winner mean HHI | 620 |
-| Winner mean rural % | 18% |
-
-The dimension score is 50% from the states count, 40% from the HHI score, and 10% from the rural bonus.
-
-### 4. Sector Diversity (weight: 15%)
-
-Evaluates two factors: the number of distinct sectors represented and the concentration in any single sector. Historical winners average 4.8 sectors represented and rarely exceed 35% QEI concentration in any single sector.
-
-- Sector score = `(sectors_represented / 4.8) × 80`, capped at 100
-- Concentration penalty = `(max_single_sector_pct - 0.35) × 200`, subtracted if over the 35% ceiling
-
-A pipeline with only healthcare projects (1 sector, 100% concentration) would score near 0 on this dimension even if the healthcare projects themselves are excellent. Diversifying into education, small business, and community facilities rapidly improves the sector score.
-
-### 5. Pipeline Quality (weight: 5%)
-
-A composite of three factors:
-
-- **Eligibility rate** (40% of the sub-score): what fraction of projects are in NMTC-eligible census tracts. Winner average is 96%. Below 90% the score drops sharply.
-- **Project count** (30%): normalized against the winner median of 13 projects. More projects demonstrate deployment certainty.
-- **Award size fit** (30%): requests in the $35–65MM range score 90/100. Requests under $25MM score 50/100. The $35–65MM range represents ~60% of historical awards by volume.
-
----
-
-## Composite score and competitive tiers
-
-The five dimension scores are multiplied by their weights and summed:
-
-```
-composite = (distress × 0.35) + (impact × 0.25) + (geographic × 0.20) + (sector × 0.15) + (pipeline × 0.05)
-```
-
-The composite score is then classified into a competitive tier:
-
-| Tier | Score Range | Interpretation |
-|------|-------------|----------------|
-| Strong | 75–100 | Well-aligned with historical winners across most dimensions |
-| Competitive | 55–74 | Above threshold in key dimensions; targeted improvements recommended |
-| Marginal | 35–54 | Significant gaps in one or more high-weight dimensions |
-| Weak | 0–34 | Below typical winner patterns; substantial restructuring required |
+`score_win_probability()` runs `analyze()` internally (or reuses the cached result if `analyze()` was already called). The `CDEProfile.extra` dict is automatically passed as `cde_attributes`, so any CDE-level scoring inputs in your YAML file are picked up without extra code.
 
 ---
 
@@ -105,30 +41,34 @@ The composite score is then classified into a competitive tier:
 ```python
 score = app.score_win_probability()
 
-# Composite alignment score
-print(score.composite_score)          # e.g. 71.4
+# Tier and aggregate
+print(score.tier)                           # "Not Qualified" | "Highly Qualified" | "Top Tier"
+print(score.aggregate_base_score)           # 0–100 (Business Strategy + Community Outcomes)
+print(score.aggregate_with_priority)        # 0–110 (includes Priority Points bonus)
 
-# Per-dimension scores
+# Section totals
+print(score.business_strategy["section_total"])    # 0–50
+print(score.community_outcomes["section_total"])   # 0–50
+print(score.priority_points["section_total"])      # 0–10
+
+# Section scores normalized to 0–100 (for charts and comparisons)
 print(score.dimensional_scores)
 # {
-#   "distress_concentration": 82.0,
-#   "geographic_diversity":   65.0,
-#   "impact_intensity":       74.0,
-#   "sector_diversity":       71.0,
-#   "pipeline_quality":       85.0,
+#   "business_strategy":  86.0,   # 43/50 × 100
+#   "community_outcomes": 94.0,   # 47/50 × 100
+#   "priority_points":    90.0,   # 9/10 × 100
 # }
 
-# Competitive tier
-print(score.competitive_tier)         # "competitive"
+# Gating notes (non-empty only when a section minimum is not met)
+for note in score.tier_gating_notes:
+    print(note)
 
-# Historical acceptance rate baseline
-print(score.acceptance_rate_baseline) # e.g. 0.345 (34.5%)
+# Phase 2 flags (informational — not scored by this tool)
+print(score.phase2_flags)
 
-# Always-present disclosure
-print(score.methodology_disclosure)
-
-# Human-readable summary
-print(score.summary())
+# Backward-compatible fields (maintained for existing callers)
+print(score.composite_score)    # float alias for aggregate_base_score
+print(score.competitive_tier)   # legacy string: "strong" | "competitive" | "weak"
 
 # JSON-safe dict
 data = score.to_dict()
@@ -136,38 +76,182 @@ data = score.to_dict()
 
 ---
 
-## Using the score to prioritize improvements
+## Tier classification
 
-The dimensional breakdown is the most actionable output. To identify where to focus:
+The CDFI Fund uses section minimums to gate applications into the "Highly Qualified" pool that advances to Phase 2 review.
+
+| Tier | Aggregate Base Score | Section Minimums | Phase 2? |
+|---|---|---|---|
+| **Not Qualified** | < 85, or either section < 40 | — | No |
+| **Highly Qualified** | 85–94 | Both sections ≥ 40/50 | Yes |
+| **Top Tier** | ≥ 95 | Both sections ≥ 45/50 | Yes — stronger ranking |
+
+**The section minimums are gating, not just weighted.** An application with 92 aggregate but 38 in Community Outcomes is Not Qualified — it does not advance to Phase 2 regardless of the aggregate.
 
 ```python
-dims = score.dimensional_scores
-# Find dimensions below 55 (marginal threshold)
-gaps = {k: v for k, v in dims.items() if v < 55}
-print(f"Priority gaps: {gaps}")
+if score.tier == "Not Qualified":
+    print("Does not advance to Phase 2.")
+    for note in score.tier_gating_notes:
+        print(f"  Gap: {note}")
+elif score.tier == "Highly Qualified":
+    print("Advances to Phase 2. Award depends on Phase 2 outcome and pool ranking.")
+elif score.tier == "Top Tier":
+    print("High probability of Phase 2 advancement.")
 ```
-
-Then use `app.recommendations()` for specific, quantified actions tied to each gap. The recommendation engine directly maps to these same five dimensions — each recommendation includes a numeric improvement estimate tied to the relevant dimension score.
-
-**Typical prioritization logic:**
-
-1. **Fix any distress dimension score below 40** — this is the highest-weight dimension and the most direct signal to the CDFI Fund that your pipeline serves genuinely distressed communities.
-2. **Ensure impact intensity is above the p25 threshold** (6 jobs/$MM) — below this the impact score contributes essentially nothing to the composite.
-3. **Confirm geographic diversity**: single-state pipelines are very rarely funded. If you have fewer than 4 states, geographic is likely scoring near zero and dragging down the composite.
-4. **Check sector concentration**: if one sector exceeds 35% of QEI, you are taking a penalty on the sector dimension.
-5. **Pipeline quality** (5% weight) — meaningful for borderline applications but usually not the deciding factor.
 
 ---
 
-## Acceptance rate baseline
+## Providing CDE-level attributes
 
-`score.acceptance_rate_baseline` is the average acceptance rate across the four most recent NMTC allocation rounds (CY2020–CY2023). Recent round data:
+Pipeline data alone is not sufficient to score all sub-criteria. Business Strategy and Community Accountability require CDE-level inputs (product terms, track record, governance) that are not derivable from a project CSV.
 
-| Round | Applications | Awards | Acceptance Rate |
-|-------|-------------|--------|-----------------|
-| CY2020 | 196 | 76 | 38.8% |
-| CY2021 | 341 | 100 | 29.3% |
-| CY2022 | 280 | 100 | 35.7% |
-| CY2023 | 305 | 107 | 35.1% |
+There are two ways to supply these inputs:
 
-The overall acceptance rate matters for context — even a "strong" alignment score does not remove the inherent selectivity of the program. The acceptance rate tells you that roughly 30–39% of applicants receive awards in any given round, meaning competition is genuinely intense regardless of alignment score.
+### Option A — YAML file (recommended)
+
+Place scoring inputs under any key in your `cde_profile.yaml`. They are loaded into `CDEProfile.extra` and passed to the scoring model automatically:
+
+```yaml
+# cde_profile.yaml — scoring inputs (any top-level keys not in CDEProfile fields
+# flow into CDEProfile.extra and are forwarded to WinProbabilityModel)
+products_below_market_pct: 0.55
+products_flexible_indicia_count: 6
+prior_award_count: 4
+years_in_operation: 8
+has_own_capital_at_risk: true
+pipeline_pct_identified: 0.92
+track_record_pipeline_alignment_pct: 0.85
+track_record_deployment_pct: 0.94
+has_third_party_validation: true
+lic_board_representation_pct: 0.44
+has_community_engagement_track_record: true
+unrelated_entities_pct: 0.95
+dbc_focus_years: 6
+dbc_dollar_volume_pct: 0.78
+```
+
+Then load and score normally — no extra code needed:
+
+```python
+cde = CDEProfile.from_yaml("cde_profile.yaml")
+app = Application(cde=cde, requested_allocation=65_000_000)
+app.add_pipeline(pipeline)
+score = app.score_win_probability()   # cde.extra passed automatically
+```
+
+See [`templates/cde_profile_sample.yaml`](https://github.com/Jaypatel1511/nmtc-application-builder/blob/main/templates/cde_profile_sample.yaml) and [`templates/pipeline_template.xlsx`](https://github.com/Jaypatel1511/nmtc-application-builder/blob/main/templates/pipeline_template.xlsx) for the full field list.
+
+### Option B — inline dict
+
+Pass `cde_attributes` directly to `WinProbabilityModel().score()` when calling the model layer directly:
+
+```python
+from nmtcapp.intelligence.win_probability import WinProbabilityModel
+from nmtcapp.intelligence.pipeline_analyzer import PipelineAnalyzer
+
+result = PipelineAnalyzer().analyze(pipeline)
+score = WinProbabilityModel().score(
+    result,
+    requested_allocation=65_000_000,
+    cde_attributes={
+        "products_below_market_pct": 0.55,
+        "prior_award_count": 4,
+        "years_in_operation": 8,
+        # ... other CDE-level inputs
+    }
+)
+```
+
+---
+
+## Graceful degradation
+
+When CDE-level inputs are absent, each affected sub-score defaults to 0 rather than raising an error. This means:
+
+- Missing `products_below_market_pct` and `products_flexible_indicia_count` → Product Flexibility scores 0/10
+- Missing track record fields → Track Record Strength and Alignment score 0/25
+- Missing governance fields → Community Accountability scores 0/10
+
+The aggregate score will be lower than the true CDE score, but the tool will not crash. The `score.tier_gating_notes` will explain which section minimums were not met.
+
+**Pipeline-derived fallbacks:** Some CDE-level inputs can be inferred from pipeline flags when not supplied directly:
+
+| CDE attribute | Pipeline fallback |
+|---|---|
+| `products_below_market_pct` | Fraction of QEI where `is_below_market_rate = True` |
+| `unrelated_entities_pct` | Fraction of QEI where `is_unrelated_entity = True` |
+| `pct_persistent_poverty` | From `distress_analysis` (requires `is_persistent_poverty` flag) |
+| `pct_us_territories` | From `distress_analysis` (requires `is_us_territory` flag) |
+
+---
+
+## Using the score to prioritize improvements
+
+The section breakdown is the most actionable output. To identify where to focus:
+
+```python
+bs = score.business_strategy
+co = score.community_outcomes
+pp = score.priority_points
+
+print(f"Business Strategy:   {bs['section_total']}/50  (HQ minimum: 40)")
+print(f"Community Outcomes:  {co['section_total']}/50  (HQ minimum: 40)")
+print(f"Priority Points:     {pp['section_total']}/10")
+
+# Sub-score drill-down: find the largest gaps
+sub_scores = {
+    "Product Flexibility (BS)":     (bs.get("product_flexibility", 0),    10),
+    "Pipeline Credibility (BS)":    (bs.get("pipeline_credibility", 0),   15),
+    "Track Record Strength (BS)":   (bs.get("track_record_strength", 0),  15),
+    "Track Record Alignment (BS)":  (bs.get("track_record_alignment", 0), 10),
+    "Higher Distress (CO)":         (co.get("higher_distress_targeting", 0), 15),
+    "Deep Distress (CO)":           (co.get("deep_distress_commitment", 0),  10),
+    "Special Targeting (CO)":       (co.get("special_targeting", 0),          5),
+    "Outcomes Quality (CO)":        (co.get("community_outcomes_quality", 0), 10),
+    "Accountability (CO)":          (co.get("community_accountability", 0),   10),
+}
+for name, (actual, max_pts) in sorted(sub_scores.items(), key=lambda x: x[1][0] / x[1][1]):
+    gap = max_pts - actual
+    print(f"  {name:<35} {actual:4.1f}/{max_pts}  (gap: {gap:.1f})")
+```
+
+Then use `app.recommendations()` for specific, quantified actions per gap. Each recommendation includes a `citation` field pointing to the relevant CDFI Fund Review Process section.
+
+---
+
+## Combining with recommendations and optimization
+
+```python
+# Get recommendations tied to the current score
+recs = app.recommendations()
+print(recs.summary())
+
+for r in recs.recommendations:
+    if r.priority in ("critical", "high"):
+        print(f"[{r.priority.upper()}] {r.category}: {r.finding}")
+        print(f"  Action:   {r.action}")
+        print(f"  Estimate: {r.quantified_improvement}")
+        if r.citation:
+            print(f"  Citation: {r.citation}")
+
+# Optimize project subset to maximize competitive alignment
+from nmtcapp.optimizer import OptimizationConstraints
+result = app.optimize_pipeline(
+    constraints=OptimizationConstraints(max_total_qei=65_000_000, min_states=5)
+)
+print(f"Score: {result.alignment_score_before*100:.0f} → {result.alignment_score_after*100:.0f}")
+```
+
+---
+
+## Phase 2 flags
+
+`score.phase2_flags` is a dict of boolean flags for qualitative factors that cannot be scored from pipeline data. These are informational only — they do not affect the Phase 1 aggregate score.
+
+```python
+for flag, value in score.phase2_flags.items():
+    status = "⚠️ " if value else "✓ "
+    print(f"{status} {flag.replace('_', ' ')}: {value}")
+```
+
+Common flags: `non_metro_commitment_risk`, `fee_structure_risk`, `prior_reporting_compliance_risk`, `capitalization_risk`. See [Methodology — Phase 2 considerations](../reference/methodology.md#phase-2-considerations-not-scored-by-this-tool) for details.

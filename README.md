@@ -18,8 +18,8 @@ CDEs spend months preparing NMTC allocation applications without knowing how the
 app = Application(cde=CDEProfile.sample(), requested_allocation=65_000_000)
 app.add_pipeline(Pipeline.from_csv("pipeline.csv"))
 score = app.score_win_probability()
-print(f"Alignment: {score.composite_score:.0f}/100 [{score.competitive_tier}]")
-# → Alignment: 66/100 [competitive]
+print(f"Alignment: {score.composite_score:.0f}/100 [{score.tier}]")
+# → Alignment: 90/100 [Highly Qualified]
 paths = app.generate("./drafts/")
 # → Word, Excel, PDF, and Markdown application package ready in ./drafts/
 ```
@@ -32,7 +32,7 @@ CDE teams preparing NMTC allocation applications work blind. They spend weeks ma
 
 ## The Solution
 
-`nmtc-application-builder` gives CDEs a programmatic intelligence layer built on five years of CDFI Fund public award data. Load your pipeline from CSV, run `analyze()`, and immediately see where you stand on every dimension the CDFI Fund scores: distress concentration, geographic diversity, sector mix, impact intensity, and pipeline quality. Get specific, numbered recommendations. Optimize your project subset automatically. Generate the Word, Excel, PDF, and Markdown drafts that go directly into your application package.
+`nmtc-application-builder` gives CDEs a programmatic intelligence layer aligned to the CDFI Fund's **published CY 2024-2025 Review Process** criteria. Load your pipeline from CSV, run `analyze()`, and immediately see where you stand on Business Strategy, Community Outcomes, and Priority Points — the three sections the CDFI Fund scores. Get specific, numbered recommendations with CDFI Fund citations. Optimize your project subset automatically. Generate the Word, Excel, PDF, and Markdown drafts that go directly into your application package.
 
 ---
 
@@ -134,7 +134,7 @@ When CDE Profile fields are missing, the Streamlit analyzer displays which sub-s
 - **Geographic diversity scoring** — State count, HHI concentration index, urban/rural split
 - **Sector mix analysis** — Shannon entropy, dominant sector, high-priority sector alignment
 - **Impact projection** — Jobs per $MM QEI benchmarked against historical winner distributions
-- **Win alignment scoring** — 5-dimensional score (0–100) against CY2020–2024 winner patterns
+- **CDFI Fund alignment scoring** — Business Strategy (0–50), Community Outcomes (0–50), Priority Points (0–10 bonus) against the published CY 2024-2025 review criteria; tier: Not Qualified / Highly Qualified / Top Tier
 - **Quantified recommendations** — Specific, numbered improvement actions per dimension with estimated score impact
 - **Pipeline optimizer** — Greedy + local-search selects the best project subset for your target budget
 - **Output generation** — Word, Excel, PDF, and Markdown application drafts in one call
@@ -155,7 +155,7 @@ The three example notebooks tell a complete story:
 |---|---|
 | [01_quickstart.ipynb](examples/01_quickstart.ipynb) | End-to-end workflow in 10 minutes |
 | [02_full_application_walkthrough.ipynb](examples/02_full_application_walkthrough.ipynb) | Complete document generation |
-| [03_intelligence_and_optimization.ipynb](examples/03_intelligence_and_optimization.ipynb) | **5.5 → 65.9 → 79.1/100** — weak→competitive pipeline transformation |
+| [03_intelligence_and_optimization.ipynb](examples/03_intelligence_and_optimization.ipynb) | **16 → 90 → 96/100** — Not Qualified → Highly Qualified → Top Tier |
 
 ---
 

@@ -59,7 +59,7 @@ The `[dev]` extra includes `pytest`, `pytest-cov`, `jupyter`, and all output/viz
 
 ```python
 import nmtcapp
-print(nmtcapp.__version__)        # "1.0.0"
+print(nmtcapp.__version__)        # prints the installed version
 
 from nmtcapp.core.pipeline import Pipeline
 print(Pipeline.sample(n=5))       # Pipeline(projects=5, total_qei=$...)

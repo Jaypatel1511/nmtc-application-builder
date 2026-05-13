@@ -469,7 +469,11 @@ def plot_sector_distribution(application: "Application", output_path: str) -> st
 # ---------------------------------------------------------------------------
 
 def plot_readiness_radar(application: "Application", output_path: str) -> str:
-    """Radar/spider chart showing the 5 win-alignment dimensions.
+    """Radar/spider chart showing the 3 CDFI Fund section scores.
+
+    Displays Business Strategy (0–50), Community Outcomes (0–50), and
+    Priority Points (0–10) normalized to 0–100, with Highly Qualified
+    threshold reference lines.
 
     Args:
         application: An Application instance (pipeline must be set).
@@ -486,43 +490,44 @@ def plot_readiness_radar(application: "Application", output_path: str) -> str:
     win_score = application.score_win_probability()
     dim_scores = win_score.dimensional_scores
     composite = win_score.composite_score
-    tier = win_score.competitive_tier
+    tier = win_score.tier  # "Top Tier" | "Highly Qualified" | "Not Qualified"
 
-    # Map internal dimension names → display labels
+    # Map internal section names → display labels.
+    # dimensional_scores normalizes all sections to 0–100:
+    #   business_strategy / community_outcomes: section_total / 50 * 100
+    #   priority_points: section_total / 10 * 100
     _DIM_MAP = [
-        ("distress_concentration", "Distress"),
-        ("geographic_diversity", "Geographic"),
-        ("impact_intensity", "Impact"),
-        ("sector_diversity", "Sector"),
-        ("pipeline_quality", "Pipeline"),
+        ("business_strategy",  "Business\nStrategy"),
+        ("community_outcomes", "Community\nOutcomes"),
+        ("priority_points",    "Priority\nPoints"),
     ]
 
     categories = [label for _, label in _DIM_MAP]
     pipeline_values = [dim_scores.get(key, 0.0) for key, _ in _DIM_MAP]
-    winner_benchmark = [75.0] * len(categories)  # competitive threshold
+    # HQ section minimums scaled to 0–100: BS 40/50=80, CO 40/50=80, PP no gating (7/10=70)
+    hq_benchmark = [80.0, 80.0, 70.0]
 
     N = len(categories)
     angles = [n / float(N) * 2 * np.pi for n in range(N)]
     angles += angles[:1]  # close the loop
 
     pipeline_vals_closed = pipeline_values + pipeline_values[:1]
-    benchmark_vals_closed = winner_benchmark + winner_benchmark[:1]
+    benchmark_vals_closed = hq_benchmark + hq_benchmark[:1]
 
     fig = plt.figure(figsize=(8, 8))
     fig.patch.set_facecolor("white")
     ax = fig.add_subplot(111, polar=True)
 
-    # Style the radar background
     ax.set_facecolor(_BG)
 
-    # Draw benchmark (winner threshold)
+    # Draw HQ threshold reference
     ax.plot(
         angles, benchmark_vals_closed,
-        color=_ACCENT, linewidth=1.8, linestyle="--", label="Winner Benchmark (75)",
+        color=_ACCENT, linewidth=1.8, linestyle="--", label="HQ Min Threshold",
     )
-    ax.fill(angles, benchmark_vals_closed, alpha=0.0)  # no fill for benchmark
+    ax.fill(angles, benchmark_vals_closed, alpha=0.0)
 
-    # Draw pipeline scores
+    # Draw section scores
     ax.plot(
         angles, pipeline_vals_closed,
         color=_PRIMARY, linewidth=2.2, linestyle="-", label=f"Your Pipeline ({composite:.0f}/100)",
@@ -539,22 +544,18 @@ def plot_readiness_radar(application: "Application", output_path: str) -> str:
             fontsize=8.5, color=_PRIMARY, fontweight="bold",
         )
 
-    # Category labels
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(categories, fontsize=11, color="#333333")
 
-    # Radial grid
     ax.set_rlim(0, 100)
     ax.set_rticks([25, 50, 75, 100])
     ax.set_yticklabels(["25", "50", "75", "100"], fontsize=7.5, color="#888888")
     ax.grid(color="#CCCCCC", linewidth=0.6)
 
-    # Tier color indicator
     tier_colors = {
-        "strong": _GREEN,
-        "competitive": _SECONDARY,
-        "marginal": _YELLOW,
-        "weak": _RED,
+        "Top Tier":         _GREEN,
+        "Highly Qualified": _SECONDARY,
+        "Not Qualified":    _RED,
     }
     tier_color = tier_colors.get(tier, _GRAY)
 
@@ -567,7 +568,7 @@ def plot_readiness_radar(application: "Application", output_path: str) -> str:
     )
 
     ax.set_title(
-        f"Win Alignment Radar — {composite:.0f}/100 [{tier.upper()}]",
+        f"CDFI Fund Section Score Radar — {composite:.0f}/100 [{tier}]",
         fontsize=13, fontweight="bold", color=tier_color, pad=20, y=1.08,
     )
 
