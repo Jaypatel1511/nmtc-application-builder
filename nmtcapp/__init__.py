@@ -37,7 +37,12 @@ Quick start::
     from nmtcapp.visualization import plot_readiness_radar
     plot_readiness_radar(app, "./radar.png")
 """
-__version__ = "1.0.0"
+try:
+    from importlib.metadata import version as _pkg_version, PackageNotFoundError as _PNF
+    __version__ = _pkg_version("nmtc-application-builder")
+    del _pkg_version, _PNF
+except Exception:
+    __version__ = "0.0.0.dev"
 __author__ = "Jay Patel"
 
 from nmtcapp.core.application import Application, ApplicationAnalysis
