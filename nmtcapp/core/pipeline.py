@@ -177,23 +177,34 @@ class Pipeline:
         if missing_cols:
             raise ValueError(f"Pipeline CSV missing required columns: {missing_cols}")
 
+        # Drop comment rows (template CSV includes # comment lines as documentation)
+        if "project_id" in df.columns:
+            df = df[~df["project_id"].astype(str).str.startswith("#")].reset_index(drop=True)
+
+        if len(df) == 0:
+            raise ValueError(
+                "No project rows found. The file contains only column headers or comments. "
+                "Please add your project data rows before uploading."
+            )
+
         projects = []
         for _, row in df.iterrows():
+            pid = _optional_str(row.get("project_id")) or "?"
             try:
                 project = PipelineProject(
-                    project_id=str(row["project_id"]),
-                    project_name=str(row["project_name"]),
-                    qalicb_name=str(row["qalicb_name"]),
-                    address=str(row["address"]),
-                    city=str(row["city"]),
-                    state=str(row["state"]),
-                    sector=str(row["sector"]),
-                    project_type=str(row["project_type"]),
-                    total_project_cost=float(row["total_project_cost"]),
-                    qei_request=float(row["qei_request"]),
-                    qlici_amount=float(row["qlici_amount"]),
-                    expected_jobs_created=int(row["expected_jobs_created"]),
-                    expected_jobs_retained=int(row.get("expected_jobs_retained", 0) or 0),
+                    project_id=_required_str(row["project_id"], "project_id"),
+                    project_name=_required_str(row["project_name"], "project_name"),
+                    qalicb_name=_required_str(row["qalicb_name"], "qalicb_name"),
+                    address=_required_str(row["address"], "address"),
+                    city=_required_str(row["city"], "city"),
+                    state=_required_str(row["state"], "state"),
+                    sector=_required_str(row["sector"], "sector"),
+                    project_type=_required_str(row["project_type"], "project_type"),
+                    total_project_cost=_required_float(row["total_project_cost"], "total_project_cost"),
+                    qei_request=_required_float(row["qei_request"], "qei_request"),
+                    qlici_amount=_required_float(row["qlici_amount"], "qlici_amount"),
+                    expected_jobs_created=_required_int(row["expected_jobs_created"], "expected_jobs_created"),
+                    expected_jobs_retained=_int_with_default(row.get("expected_jobs_retained"), 0),
                     expected_units_built=_optional_int(row.get("expected_units_built")),
                     expected_sq_ft=_optional_float(row.get("expected_sq_ft")),
                     closing_target_date=_optional_str(row.get("closing_target_date")),
@@ -210,7 +221,7 @@ class Pipeline:
                 )
                 projects.append(project)
             except (ValueError, KeyError) as e:
-                raise ValueError(f"Error parsing pipeline CSV row {row.get('project_id', '?')}: {e}")
+                raise ValueError(f"Error parsing pipeline CSV row {pid}: {e}")
 
         logger.info("Loaded %d projects from %s", len(projects), path)
         return cls(projects)
@@ -256,6 +267,53 @@ class Pipeline:
 # ---------------------------------------------------------------------------
 # Private helpers
 # ---------------------------------------------------------------------------
+
+def _required_str(val, field_name: str) -> str:
+    """Parse a required string field; raises ValueError with a user-friendly message if blank."""
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        raise ValueError(f"'{field_name}' is required but was left blank")
+    s = str(val).strip()
+    if not s or s.lower() == "nan":
+        raise ValueError(f"'{field_name}' is required but was left blank")
+    return s
+
+
+def _required_float(val, field_name: str) -> float:
+    """Parse a required float field; raises ValueError with a user-friendly message if blank."""
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        raise ValueError(f"'{field_name}' is required but was left blank")
+    try:
+        result = float(val)
+    except (ValueError, TypeError):
+        raise ValueError(f"'{field_name}' must be a number, got: {val!r}")
+    if pd.isna(result):
+        raise ValueError(f"'{field_name}' is required but was left blank")
+    return result
+
+
+def _required_int(val, field_name: str) -> int:
+    """Parse a required integer field; raises ValueError with a user-friendly message if blank."""
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        raise ValueError(f"'{field_name}' is required but was left blank")
+    try:
+        f = float(val)
+    except (ValueError, TypeError):
+        raise ValueError(f"'{field_name}' must be a whole number, got: {val!r}")
+    if pd.isna(f):
+        raise ValueError(f"'{field_name}' is required but was left blank")
+    return int(f)
+
+
+def _int_with_default(val, default: int = 0) -> int:
+    """Parse an optional integer, returning default when blank or missing."""
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        return default
+    try:
+        f = float(val)
+        return default if pd.isna(f) else int(f)
+    except (ValueError, TypeError):
+        return default
+
 
 def _optional_bool(val) -> Optional[bool]:
     """Parse Y/N/yes/no/true/false/1/0 strings and native booleans to Optional[bool]."""

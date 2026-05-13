@@ -50,6 +50,20 @@ Methodology realignment: scoring framework replaced with CDFI Fund's published C
 ### Added
 
 - `distress_breakdown` dict now includes both `pct_deep_or_severe` (combined) and `pct_deep` (deep-only) keys, supporting separate Deep Distress Commitment scoring
+
+**`Pipeline.from_csv()` crash-safety hardening**
+- Blank required numeric fields (`total_project_cost`, `qei_request`, `qlici_amount`, `expected_jobs_created`) now raise a friendly `ValueError("'field_name' is required but was left blank")` instead of a raw `cannot convert float NaN to integer` traceback
+- Blank required string fields (`project_id`, `state`, etc.) now raise a friendly error instead of silently producing `"nan"` string values
+- `expected_jobs_retained` left blank now defaults to 0 instead of crashing
+- Comment rows (lines where `project_id` starts with `#`) are silently skipped — uploading `pipeline_template.csv` (which contains inline documentation comments) no longer triggers a confusing parse error
+- Empty files / header-only files now raise: `"No project rows found. The file contains only column headers or comments. Please add your project data rows before uploading."`
+- Added `_required_str()`, `_required_float()`, `_required_int()`, `_int_with_default()` private helpers
+
+**Tests — `tests/test_csv_robustness.py`** (19 new tests)
+- `TestBlankRequiredNumericFields` (6): blank jobs_created, total_cost, qei, qlici, jobs_retained defaults, missing jobs_retained column
+- `TestBlankRequiredStringFields` (4): blank project_id, blank state, error includes row ID, bad row in multi-row file
+- `TestCommentRowsAndEmptyTemplates` (5): single comment skipped, multiple comments skipped, comment-only → no-data error, empty header-only → no-data error, actual `pipeline_template.csv` file triggers no-data error (not a raw crash)
+- `TestValidCsvStillParses` (4): good row, strong sample, weak sample, v1.0 CSV without flag columns
 - Sub-score formulas documented in `docs/reference/methodology.md` with explicit disclosure that within-section point weights are this tool's interpretation (the CDFI Fund does not publish exact sub-criterion point values)
 
 **Template v1.1 — `templates/pipeline_template.xlsx`**
@@ -91,7 +105,7 @@ Methodology realignment: scoring framework replaced with CDFI Fund's published C
 **Tests — `tests/test_template_fields.py`**
 - `test_template_has_all_methodology_fields`: 11 assertions verifying the xlsx has all 4 sheets with the correct columns, sample data, and scoring flags
 - `test_scoring_engine_inputs_match_template`: 5 assertions verifying the canonical scoring-engine attr key set matches the template, WinProbabilityModel reads all keys, distress analysis surfaces all pipeline-derived keys, and pipeline fallbacks work correctly for `below_market_rate` and `unrelated_entity`
-- 16 new tests; total suite: 618 passing (up from 602)
+- 16 new tests for template field alignment; total suite: 637 passing (up from 602)
 
 ---
 
