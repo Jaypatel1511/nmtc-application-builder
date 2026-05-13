@@ -52,6 +52,47 @@ Methodology realignment: scoring framework replaced with CDFI Fund's published C
 - `distress_breakdown` dict now includes both `pct_deep_or_severe` (combined) and `pct_deep` (deep-only) keys, supporting separate Deep Distress Commitment scoring
 - Sub-score formulas documented in `docs/reference/methodology.md` with explicit disclosure that within-section point weights are this tool's interpretation (the CDFI Fund does not publish exact sub-criterion point values)
 
+**Template v1.1 — `templates/pipeline_template.xlsx`**
+- Rebuilt as a 4-sheet Excel workbook: **CDE Profile**, **Pipeline**, **Instructions**, **Valid Values**
+- **CDE Profile sheet** (Sheet 1): 30 columns covering CDE identity + all CDE-level scoring inputs (Business Strategy, Community Outcomes, Priority Points, Phase 2 flags). One data row per CDE; Y/N, state, org-type, and application-round dropdowns.
+- **Pipeline sheet** (Sheet 2): 28 columns — all prior fields retained plus 7 new fields:
+  - `qalicb_name` — QALICB legal entity name (was synthesised automatically, now explicit)
+  - `closing_target_date` — target closing date (was in CSV template but missing from xlsx)
+  - `native_area` (Y/N) → `pct_native_area` → Community Outcomes Special Targeting sub-score
+  - `high_migration_rural` (Y/N) → `pct_high_migration_rural` → Special Targeting
+  - `us_territory` (Y/N) → `pct_us_territories` → Special Targeting
+  - `persistent_poverty` (Y/N) → `pct_persistent_poverty` → Special Targeting
+  - `below_market_rate` (Y/N) → `products_below_market_pct` → BS Product Flexibility sub-score
+  - `unrelated_entity` (Y/N) → `unrelated_entities_pct` → Priority Points Unrelated Entities
+  - `opportunity_zone` (Y/N) — informational
+- **Instructions sheet** (Sheet 3): field-by-field documentation, scoring framework summary, graceful-degradation table, methodology disclosure
+- **Valid Values sheet** (Sheet 4): dropdown source lists for all validated fields
+- Brand styling: navy `#1B438C` section banners, section color coding per category, frozen header rows, sample data rows
+
+**`PipelineProject` v1.1 — `nmtcapp/core/pipeline.py`**
+- 4 new optional boolean fields: `is_us_territory`, `is_persistent_poverty`, `is_below_market_rate`, `is_unrelated_entity`
+- `from_csv()` reads the new flag columns (`us_territory`, `persistent_poverty`, `below_market_rate`, `unrelated_entity`, `opportunity_zone`, `native_area`, `high_migration_rural`) with Y/N/yes/no/true/false/1/0 parsing via `_optional_bool()`
+- `to_dict()` includes all new flags
+
+**`analyze_distress_concentration()` v1.1 — `nmtcapp/intelligence/distress_analysis.py`**
+- Returns 4 new QEI-weighted percentage keys computed from per-project flags: `pct_us_territories`, `pct_persistent_poverty`, `pct_below_market_rate`, `pct_unrelated_entity`
+
+**`WinProbabilityModel` v1.1 — `nmtcapp/intelligence/win_probability.py`**
+- `_score_product_flexibility()`: falls back to pipeline-derived `pct_below_market_rate` when `products_below_market_pct` is absent from `cde_attributes`
+- `_score_special_targeting()`: reads `pct_persistent_poverty` and `pct_us_territories` from pipeline distress breakdown as fallback when not in `cde_attributes`
+- `_score_unrelated_entities()`: falls back to pipeline-derived `pct_unrelated_entity` when `unrelated_entities_pct` is absent from `cde_attributes`
+
+**Streamlit Pipeline Analyzer v1.1 — `streamlit_app/pages/1_Pipeline_Analyzer.py`**
+- Accepts v1.1 xlsx template: reads CDE Profile sheet with openpyxl (version-agnostic) and passes all 19 scoring attrs to the Win Alignment Scorer via `CDEProfile.extra`
+- Computes pipeline-derived CDE-level pcts from per-project flags during file parsing and merges into `cde_attributes`
+- Graceful degradation: when CDE Profile fields are absent, displays "not provided — sub-score defaulted to X" info panel before running analysis
+- `get_or_create_app()` gains optional `cde_extra` parameter for injecting user-supplied CDE attributes
+
+**Tests — `tests/test_template_fields.py`**
+- `test_template_has_all_methodology_fields`: 11 assertions verifying the xlsx has all 4 sheets with the correct columns, sample data, and scoring flags
+- `test_scoring_engine_inputs_match_template`: 5 assertions verifying the canonical scoring-engine attr key set matches the template, WinProbabilityModel reads all keys, distress analysis surfaces all pipeline-derived keys, and pipeline fallbacks work correctly for `below_market_rate` and `unrelated_entity`
+- 16 new tests; total suite: 618 passing (up from 602)
+
 ---
 
 ## [1.0.0] — 2025-05-09

@@ -46,6 +46,10 @@ def analyze_distress_concentration(pipeline: "Pipeline") -> dict:
     counts = {"deep": 0, "severe": 0, "lic": 0, "ineligible": 0, "unknown": 0}
     native_qei = 0.0
     hmr_qei = 0.0
+    us_territory_qei = 0.0
+    persistent_poverty_qei = 0.0
+    below_market_rate_qei = 0.0
+    unrelated_entity_qei = 0.0
 
     for p in projects:
         level = p.distress_level or "unknown"
@@ -57,6 +61,14 @@ def analyze_distress_concentration(pipeline: "Pipeline") -> dict:
             native_qei += p.qei_request
         if p.is_high_migration_rural:
             hmr_qei += p.qei_request
+        if p.is_us_territory:
+            us_territory_qei += p.qei_request
+        if p.is_persistent_poverty:
+            persistent_poverty_qei += p.qei_request
+        if p.is_below_market_rate:
+            below_market_rate_qei += p.qei_request
+        if p.is_unrelated_entity:
+            unrelated_entity_qei += p.qei_request
 
     pct_deep = buckets["deep"] / total_qei
     pct_severe = buckets["severe"] / total_qei
@@ -76,6 +88,10 @@ def analyze_distress_concentration(pipeline: "Pipeline") -> dict:
         "pct_non_lic": pct_non_lic,
         "pct_native_area": native_qei / total_qei,
         "pct_high_migration_rural": hmr_qei / total_qei,
+        "pct_us_territories": us_territory_qei / total_qei,
+        "pct_persistent_poverty": persistent_poverty_qei / total_qei,
+        "pct_below_market_rate": below_market_rate_qei / total_qei,
+        "pct_unrelated_entity": unrelated_entity_qei / total_qei,
         "pct_eligible": pct_eligible,
         "dollars_by_distress": {k: round(v) for k, v in buckets.items()},
         "project_count_by_distress": counts,
@@ -107,6 +123,10 @@ def _empty_distress_result() -> dict:
         "pct_non_lic": 0.0,
         "pct_native_area": 0.0,
         "pct_high_migration_rural": 0.0,
+        "pct_us_territories": 0.0,
+        "pct_persistent_poverty": 0.0,
+        "pct_below_market_rate": 0.0,
+        "pct_unrelated_entity": 0.0,
         "pct_eligible": 0.0,
         "dollars_by_distress": buckets,
         "project_count_by_distress": dict(buckets),

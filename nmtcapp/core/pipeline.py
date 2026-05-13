@@ -65,6 +65,11 @@ class PipelineProject:
     is_native_area: Optional[bool] = None
     is_high_migration_rural: Optional[bool] = None
     is_opportunity_zone: Optional[bool] = None
+    # v1.1 per-project flags — drive CDE-level scoring pcts automatically
+    is_us_territory: Optional[bool] = None        # project in US Territory → pct_us_territories
+    is_persistent_poverty: Optional[bool] = None  # tract is Persistent Poverty County
+    is_below_market_rate: Optional[bool] = None   # QLICI offered below market → products_below_market_pct
+    is_unrelated_entity: Optional[bool] = None    # QALICB is unrelated to CDE → unrelated_entities_pct
 
     def __post_init__(self) -> None:
         if self.total_project_cost <= 0:
@@ -118,6 +123,10 @@ class PipelineProject:
             "is_native_area": self.is_native_area,
             "is_high_migration_rural": self.is_high_migration_rural,
             "is_opportunity_zone": self.is_opportunity_zone,
+            "is_us_territory": self.is_us_territory,
+            "is_persistent_poverty": self.is_persistent_poverty,
+            "is_below_market_rate": self.is_below_market_rate,
+            "is_unrelated_entity": self.is_unrelated_entity,
         }
 
 
@@ -190,6 +199,14 @@ class Pipeline:
                     closing_target_date=_optional_str(row.get("closing_target_date")),
                     construction_start=_optional_str(row.get("construction_start")),
                     operations_start=_optional_str(row.get("operations_start")),
+                    # v1.1 per-project flags — accept Y/N/yes/no/true/false
+                    is_native_area=_optional_bool(row.get("native_area")),
+                    is_high_migration_rural=_optional_bool(row.get("high_migration_rural")),
+                    is_opportunity_zone=_optional_bool(row.get("opportunity_zone")),
+                    is_us_territory=_optional_bool(row.get("us_territory")),
+                    is_persistent_poverty=_optional_bool(row.get("persistent_poverty")),
+                    is_below_market_rate=_optional_bool(row.get("below_market_rate")),
+                    is_unrelated_entity=_optional_bool(row.get("unrelated_entity")),
                 )
                 projects.append(project)
             except (ValueError, KeyError) as e:
@@ -240,6 +257,20 @@ class Pipeline:
 # Private helpers
 # ---------------------------------------------------------------------------
 
+def _optional_bool(val) -> Optional[bool]:
+    """Parse Y/N/yes/no/true/false/1/0 strings and native booleans to Optional[bool]."""
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        return None
+    if isinstance(val, bool):
+        return val
+    s = str(val).strip().lower()
+    if s in ("y", "yes", "true", "1"):
+        return True
+    if s in ("n", "no", "false", "0"):
+        return False
+    return None
+
+
 def _optional_int(val) -> Optional[int]:
     if val is None or (isinstance(val, float) and pd.isna(val)):
         return None
@@ -279,6 +310,8 @@ _SAMPLE_PROJECTS: List[PipelineProject] = [
         closing_target_date="2025-09-30",
         census_tract="17031838200", is_nmtc_eligible=True, distress_level="deep",
         is_native_area=False, is_high_migration_rural=False, is_opportunity_zone=False,
+        is_us_territory=False, is_persistent_poverty=True, is_below_market_rate=True,
+        is_unrelated_entity=True,
     ),
     PipelineProject(
         project_id="PRJ-002", project_name="East Houston Charter Academy",
@@ -409,6 +442,8 @@ _SAMPLE_PROJECTS: List[PipelineProject] = [
         closing_target_date="2026-01-15",
         census_tract="04013118400", is_nmtc_eligible=True, distress_level="deep",
         is_native_area=True, is_high_migration_rural=False, is_opportunity_zone=False,
+        is_us_territory=False, is_persistent_poverty=True, is_below_market_rate=True,
+        is_unrelated_entity=True,
     ),
     PipelineProject(
         project_id="PRJ-015", project_name="Detroit Auto Parts Manufacturer",
@@ -439,6 +474,8 @@ _SAMPLE_PROJECTS: List[PipelineProject] = [
         closing_target_date="2025-11-30",
         census_tract="28065950100", is_nmtc_eligible=True, distress_level="deep",
         is_native_area=False, is_high_migration_rural=True, is_opportunity_zone=False,
+        is_us_territory=False, is_persistent_poverty=True, is_below_market_rate=True,
+        is_unrelated_entity=True,
     ),
     PipelineProject(
         project_id="PRJ-018", project_name="Kansas City Affordable Senior Housing",

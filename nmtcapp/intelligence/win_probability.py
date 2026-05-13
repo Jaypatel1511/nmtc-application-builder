@@ -236,7 +236,7 @@ class WinProbabilityModel:
         attrs = cde_attributes or {}
 
         # --- Section 1: Business Strategy (0–50) ---
-        pf = self._score_product_flexibility(attrs)
+        pf = self._score_product_flexibility(attrs, pipeline_result)
         pc = self._score_pipeline_credibility(pipeline_result, attrs)
         trs = self._score_track_record_strength(attrs)
         tra = self._score_track_record_alignment(attrs)
@@ -269,7 +269,7 @@ class WinProbabilityModel:
 
         # --- Priority Points (0–10) ---
         dbc = self._score_dbc_track_record(attrs)
-        ue  = self._score_unrelated_entities(attrs)
+        ue  = self._score_unrelated_entities(attrs, pipeline_result)
         pp_total = dbc + ue
 
         priority_points = {
@@ -303,8 +303,14 @@ class WinProbabilityModel:
     # Business Strategy sub-scorers
     # ------------------------------------------------------------------
 
-    def _score_product_flexibility(self, attrs: dict) -> int:
-        below_mkt = attrs.get("products_below_market_pct", 0.0)
+    def _score_product_flexibility(
+        self, attrs: dict, result: "PipelineAnalysisResult | None" = None
+    ) -> int:
+        # Prefer explicit CDE-level attr; fall back to pipeline-derived pct_below_market_rate
+        below_mkt = attrs.get("products_below_market_pct")
+        if below_mkt is None and result is not None:
+            below_mkt = result.distress_breakdown.get("pct_below_market_rate", 0.0)
+        below_mkt = below_mkt or 0.0
         indicia = attrs.get("products_flexible_indicia_count", 0)
         # Full credit if either threshold is met
         score_from_below_mkt = min(10.0, below_mkt / PRODUCT_FLEXIBILITY_BELOW_MARKET_PCT * 10)
@@ -365,12 +371,15 @@ class WinProbabilityModel:
         self, result: "PipelineAnalysisResult", attrs: dict
     ) -> int:
         d = result.distress_breakdown
+        # Prefer explicit CDE-level attrs; fall back to pipeline-derived pcts
+        pct_persistent = attrs.get("pct_persistent_poverty", d.get("pct_persistent_poverty", 0.0))
+        pct_territories = attrs.get("pct_us_territories", d.get("pct_us_territories", 0.0))
         # Check four qualifying categories; each 10%+ in a category = 1.25 pts (max 5)
         categories = [
             d.get("pct_native_area", 0.0),
             d.get("pct_high_migration_rural", 0.0),
-            attrs.get("pct_persistent_poverty", 0.0),
-            attrs.get("pct_us_territories", 0.0),
+            pct_persistent,
+            pct_territories,
         ]
         qualified = sum(1 for c in categories if c >= SPECIAL_TARGETING_BONUS_PCT)
         # Partial credit: weight by concentration in each category (up to 1.25 each)
@@ -407,8 +416,14 @@ class WinProbabilityModel:
         vol_score = min(2.5, vol_pct / DBC_VOLUME_PCT_MIN * 2.5)
         return _to_int(year_score + vol_score)
 
-    def _score_unrelated_entities(self, attrs: dict) -> int:
-        pct = attrs.get("unrelated_entities_pct", 0.0)
+    def _score_unrelated_entities(
+        self, attrs: dict, result: "PipelineAnalysisResult | None" = None
+    ) -> int:
+        # Prefer explicit CDE-level attr; fall back to pipeline-derived pct_unrelated_entity
+        pct = attrs.get("unrelated_entities_pct")
+        if pct is None and result is not None:
+            pct = result.distress_breakdown.get("pct_unrelated_entity", 0.0)
+        pct = pct or 0.0
         return _to_int(min(5.0, pct / UNRELATED_ENTITIES_MIN_PCT * 5.0))
 
     # ------------------------------------------------------------------

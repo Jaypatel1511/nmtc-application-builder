@@ -4,7 +4,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/nmtc-application-builder.svg)](https://pypi.org/project/nmtc-application-builder/)
 [![Python](https://img.shields.io/pypi/pyversions/nmtc-application-builder.svg)](https://pypi.org/project/nmtc-application-builder/)
-[![Tests](https://img.shields.io/badge/tests-544%20passing-brightgreen.svg)](https://github.com/Jaypatel1511/nmtc-application-builder/actions)
+[![Tests](https://img.shields.io/badge/tests-618%20passing-brightgreen.svg)](https://github.com/Jaypatel1511/nmtc-application-builder/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://jaypatel1511.github.io/nmtc-application-builder/)
 
@@ -86,9 +86,43 @@ jupyter notebook analysis.ipynb
 
 ---
 
+## Pipeline Template v1.1
+
+Download [`templates/pipeline_template.xlsx`](templates/pipeline_template.xlsx) for the recommended way to provide pipeline and CDE data to the Streamlit analyzer.
+
+### Template structure
+
+| Sheet | Purpose |
+|---|---|
+| **CDE Profile** | One row — 30 CDE-level scoring inputs (Business Strategy, Community Outcomes, Priority Points, Phase 2 flags) |
+| **Pipeline** | One row per project — 28 columns including all new v1.1 per-project flags |
+| **Instructions** | Field-by-field documentation, scoring formula summary, graceful-degradation notes |
+| **Valid Values** | Dropdown source lists (do not edit) |
+
+### New per-project flags (Pipeline sheet)
+
+These Y/N flags in the Pipeline sheet automatically compute CDE-level scoring inputs — you don't need to manually calculate percentages:
+
+| Column | Drives | Sub-score |
+|---|---|---|
+| `Native Area (Y/N)` | `pct_native_area` | CO Special Targeting |
+| `High Migration Rural (Y/N)` | `pct_high_migration_rural` | CO Special Targeting |
+| `US Territory (Y/N)` | `pct_us_territories` | CO Special Targeting |
+| `Persistent Poverty (Y/N)` | `pct_persistent_poverty` | CO Special Targeting |
+| `Below-Market Rate (Y/N)` | `products_below_market_pct` | BS Product Flexibility |
+| `Unrelated Entity (Y/N)` | `unrelated_entities_pct` | PP Unrelated Entities |
+
+If you also supply the CDE-level percentage in the CDE Profile sheet, it takes precedence over the computed value.
+
+### Graceful degradation
+
+When CDE Profile fields are missing, the Streamlit analyzer displays which sub-scores will use defaults and what those defaults are — so you can see exactly what data gaps are costing you points.
+
+---
+
 ## What It Does
 
-- **Pipeline ingestion** — Load from CSV or build programmatically; validates all required fields
+- **Pipeline ingestion** — Load from CSV or v1.1 xlsx template; validates all required fields
 - **NMTC eligibility enrichment** — Census tract lookup, distress level classification (deep / severe / LIC), opportunity zone and native area flags
 - **Distress concentration analysis** — Deep/severe QEI percentage vs. CDFI Fund competitive thresholds (target: ≥75%)
 - **Geographic diversity scoring** — State count, HHI concentration index, urban/rural split
@@ -135,7 +169,7 @@ nmtc-application-builder/
 │   └── cli.py              nmtcapp init / analyze / version
 ├── examples/               3 executed Jupyter notebooks + sample output
 ├── streamlit_app/          Interactive web demo (4 pages)
-├── templates/              pipeline_template.csv · cde_profile_template.yaml
+├── templates/              pipeline_template.xlsx (v1.1) · pipeline_template.csv · cde_profile_template.yaml
 └── docs/                   MkDocs documentation site
 ```
 

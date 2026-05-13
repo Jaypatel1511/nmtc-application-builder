@@ -53,6 +53,7 @@ VALID_SECTORS = [
 def get_or_create_app(
     pipeline: Pipeline | None = None,
     is_demo: bool | None = None,
+    cde_extra: dict | None = None,
 ) -> Application:
     """Return the shared Application object from session_state, creating if needed.
 
@@ -62,15 +63,27 @@ def get_or_create_app(
             supplied their own pipeline so the demo banner is suppressed.
             Defaults to ``True`` whenever no pipeline is provided (i.e., the
             sample pipeline is being used).
+        cde_extra: Optional dict of CDE-level scoring attributes (from the
+            CDE Profile sheet in an uploaded xlsx). Merged into CDEProfile.extra
+            so the Win Alignment Scorer automatically picks them up.
     """
     creating_new = "app" not in st.session_state or pipeline is not None
     if creating_new:
         cde = CDEProfile.sample()
+        if cde_extra:
+            cde.extra = {**cde.extra, **cde_extra}
         p = pipeline if pipeline is not None else Pipeline.sample(n=20)
         app = Application(cde=cde, requested_allocation=65_000_000, application_round="CY2025")
         app.add_pipeline(p)
         st.session_state["app"] = app
         st.session_state["is_demo_data"] = (is_demo if is_demo is not None else pipeline is None)
+    elif cde_extra and "app" in st.session_state:
+        # User re-supplied CDE data without re-uploading the pipeline — patch extra in place
+        st.session_state["app"].cde.extra = {
+            **st.session_state["app"].cde.extra, **cde_extra
+        }
+        if "is_demo_data" not in st.session_state:
+            st.session_state["is_demo_data"] = True
     elif "is_demo_data" not in st.session_state:
         st.session_state["is_demo_data"] = True
     return st.session_state["app"]
