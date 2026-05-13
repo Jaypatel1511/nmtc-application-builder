@@ -1,4 +1,12 @@
-project_id,project_name,qalicb_name,address,city,state,sector,project_type,total_project_cost,qei_request,qlici_amount,expected_jobs_created,expected_jobs_retained,expected_units_built,expected_sq_ft,closing_target_date
+project_id,project_name,qalicb_name,address,city,state,sector,project_type,total_project_cost,qei_request,qlici_amount,expected_jobs_created,expected_jobs_retained,expected_units_built,expected_sq_ft,closing_target_date,native_area,high_migration_rural,us_territory,persistent_poverty,below_market_rate,unrelated_entity,opportunity_zone,urban_rural,census_tract,minority_owned,women_owned,notes
 # VALID SECTORS: healthcare | affordable_housing | education | small_business | mixed_use | community_facility | clean_energy | other
 # VALID PROJECT TYPES: real_estate | operating_business | mixed_use
 # closing_target_date format: YYYY-MM-DD
+# v1.1 flags (Y/N, optional — blank = N = no credit for that category):
+#   native_area         → drives pct_native_area        → Community Outcomes Special Targeting
+#   high_migration_rural → drives pct_high_migration_rural → Community Outcomes Special Targeting
+#   us_territory        → drives pct_us_territories      → Community Outcomes Special Targeting
+#   persistent_poverty  → drives pct_persistent_poverty  → Community Outcomes Special Targeting
+#   below_market_rate   → drives products_below_market_pct → Business Strategy Product Flexibility
+#   unrelated_entity    → drives unrelated_entities_pct  → Priority Points Unrelated Entities
+#   opportunity_zone    → informational only (not scored)

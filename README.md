@@ -114,6 +114,12 @@ These Y/N flags in the Pipeline sheet automatically compute CDE-level scoring in
 
 If you also supply the CDE-level percentage in the CDE Profile sheet, it takes precedence over the computed value.
 
+### Default behaviour when flags are absent
+
+All six flags are **optional**. When a column is missing from the file, or a cell is blank, the flag defaults to `None`, which the scoring engine treats identically to `N` — the project contributes **zero QEI** to the relevant percentage. This is a conservative default: you will not be penalised for leaving a flag blank, but you also will not receive credit for that targeting category.
+
+> **Version requirement:** The Streamlit analyzer and `Pipeline.from_csv()` both accept v1.0 files (without the flag columns) and will score them correctly — but the Special Targeting sub-score, pipeline-derived Product Flexibility, and pipeline-derived Unrelated Entities will all default to 0 without warning. Use the v1.1 xlsx template or add the flag columns to your CSV to get accurate scores for those sub-criteria.
+
 ### Graceful degradation
 
 When CDE Profile fields are missing, the Streamlit analyzer displays which sub-scores will use defaults and what those defaults are — so you can see exactly what data gaps are costing you points.
