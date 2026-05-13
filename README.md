@@ -229,6 +229,26 @@ Full documentation at **[jaypatel1511.github.io/nmtc-application-builder](https:
 
 ---
 
+## Release process
+
+Use `scripts/release.sh` — never upload manually. The script enforces the full pipeline atomically:
+
+```bash
+bash scripts/release.sh
+```
+
+What it does, in order:
+1. **Runs the test suite** (`pytest -m "not wheel"`) — aborts on any failure
+2. **Clean build** — deletes `dist/`, `build/`, and egg-info, then runs `python -m build` to produce both wheel and sdist
+3. **`twine check`** — validates metadata; aborts if malformed
+4. **`twine upload --verbose`** — uploads to PyPI; aborts on non-zero exit
+5. **Polls PyPI** (`pip index versions`) until the new version appears (60s timeout) — this is the gate that catches silent upload failures
+6. **Updates `streamlit_app/requirements.txt`** and commits — only after PyPI confirms the version is live
+
+Before running: bump `version` in `pyproject.toml`. The script reads the version from there automatically.
+
+---
+
 ## Contributing
 
 Contributions welcome — bug fixes, additional data sources, visualization improvements, and documentation all help.
