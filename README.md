@@ -4,7 +4,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/nmtc-application-builder.svg)](https://pypi.org/project/nmtc-application-builder/)
 [![Python](https://img.shields.io/pypi/pyversions/nmtc-application-builder.svg)](https://pypi.org/project/nmtc-application-builder/)
-[![Tests](https://img.shields.io/badge/tests-637%20passing-brightgreen.svg)](https://github.com/Jaypatel1511/nmtc-application-builder/actions)
+[![Tests](https://img.shields.io/badge/tests-658%20passing-brightgreen.svg)](https://github.com/Jaypatel1511/nmtc-application-builder/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://jaypatel1511.github.io/nmtc-application-builder/)
 

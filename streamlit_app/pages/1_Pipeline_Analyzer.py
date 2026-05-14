@@ -9,9 +9,6 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-import io
-import tempfile
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
@@ -20,6 +17,7 @@ import streamlit as st
 from nmtcapp.core.application import Application
 from nmtcapp.core.cde import CDEProfile
 from nmtcapp.core.pipeline import Pipeline
+from nmtcapp.core.upload_handler import load_uploaded_pipeline
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from utils import (
@@ -66,7 +64,7 @@ with st.sidebar:
                 data=_f.read(),
                 file_name="nmtc_pipeline_template.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                help="Pre-formatted with dropdowns and 5 example rows. Edit, save as CSV, then upload.",
+                help="Pre-formatted with dropdowns and sample rows. Fill in your projects, save, and upload the .xlsx directly.",
                 use_container_width=True,
             )
 
@@ -83,11 +81,14 @@ with st.sidebar:
             type=["csv", "xlsx", "xls"],
         )
         st.caption(
-            "**Excel v1.1 template** (recommended): include 'CDE Profile' sheet for "
-            "full scoring. Pipeline sheet required columns: project_id, project_name, "
-            "state, city, sector, project_type, qei_millions, total_project_cost_millions, "
-            "jobs_created. New v1.1 flags: native_area, high_migration_rural, us_territory, "
-            "persistent_poverty, below_market_rate, unrelated_entity (all Y/N, optional)."
+            "**Excel v1.1 template** (recommended): upload the downloaded `.xlsx` file "
+            "directly — all column mapping is handled automatically. Include the "
+            "'CDE Profile' sheet for full scoring. "
+            "**CSV files**: use the snake_case column names from `pipeline_template.csv` "
+            "(project_id, project_name, qalicb_name, address, city, state, sector, "
+            "project_type, total_project_cost, qei_request, qlici_amount, "
+            "expected_jobs_created). Values must be raw dollars, not millions. "
+            "UTF-8 and Windows-1252 (Excel default) encodings are both accepted."
         )
 
     st.markdown("---")
@@ -103,185 +104,6 @@ with st.sidebar:
 @st.cache_data(show_spinner=False)
 def load_sample_pipeline(n: int = 20) -> Pipeline:
     return Pipeline.sample(n=n)
-
-
-def load_uploaded_pipeline(
-    file_bytes: bytes, filename: str
-) -> tuple[Pipeline, dict | None]:
-    """Parse an uploaded CSV or Excel file.
-
-    Returns:
-        (Pipeline, cde_extra_or_None) — cde_extra is populated when the file
-        contains a 'CDE Profile' sheet with v1.1 CDE-level scoring fields.
-    """
-    ext = filename.rsplit(".", 1)[-1].lower()
-    buf = io.BytesIO(file_bytes)
-
-    cde_extra: dict | None = None
-
-    if ext == "csv":
-        df = pd.read_csv(buf)
-    elif ext in ("xlsx", "xls"):
-        import openpyxl as _openpyxl
-        wb = _openpyxl.load_workbook(buf, data_only=True)
-        # Parse CDE Profile sheet first (openpyxl, version-agnostic)
-        if "CDE Profile" in wb.sheetnames:
-            cde_extra = _parse_cde_profile_from_wb(wb)
-        # Parse Pipeline sheet into DataFrame
-        buf.seek(0)
-        try:
-            df = pd.read_excel(buf, sheet_name="Pipeline", engine="openpyxl")
-        except Exception:
-            buf.seek(0)
-            df = pd.read_excel(buf, sheet_name=0, engine="openpyxl")
-    else:
-        raise ValueError(f"Unsupported file type: .{ext}")
-
-    # ── Column remapping ──────────────────────────────────────────────────────
-    for mil_col, raw_col in (
-        ("qei_millions", "qei_request"),
-        ("total_project_cost_millions", "total_project_cost"),
-    ):
-        if mil_col in df.columns:
-            df[mil_col] = pd.to_numeric(df[mil_col], errors="coerce").fillna(0) * 1_000_000
-            df = df.rename(columns={mil_col: raw_col})
-
-    for src, dst in (
-        ("jobs_created", "expected_jobs_created"),
-        ("jobs_retained", "expected_jobs_retained"),
-        ("affordable_units", "expected_units_built"),
-        ("commercial_sqft", "expected_sq_ft"),
-    ):
-        if src in df.columns:
-            df = df.rename(columns={src: dst})
-
-    # Synthesise missing required columns
-    if "qalicb_name" not in df.columns:
-        df["qalicb_name"] = df.get("project_name", "")
-    if "address" not in df.columns:
-        df["address"] = ""
-    if "qlici_amount" not in df.columns and "qei_request" in df.columns:
-        df["qlici_amount"] = df["qei_request"]
-
-    # ── Pipeline-derived CDE pcts ─────────────────────────────────────────────
-    # Compute CDE-level percentages from per-project Y/N flags when not
-    # already supplied in the CDE Profile sheet.
-    if "qei_request" in df.columns:
-        cde_extra = cde_extra or {}
-        total_qei = pd.to_numeric(df["qei_request"], errors="coerce").fillna(0).sum()
-        if total_qei > 0:
-            for flag_col, attr_key in (
-                ("below_market_rate", "products_below_market_pct"),
-                ("unrelated_entity",  "unrelated_entities_pct"),
-                ("us_territory",      "pct_us_territories"),
-                ("persistent_poverty","pct_persistent_poverty"),
-            ):
-                if flag_col in df.columns and attr_key not in cde_extra:
-                    flag_qei = (
-                        df[df[flag_col].astype(str).str.strip().str.upper() == "Y"][
-                            "qei_request"
-                        ]
-                        .pipe(pd.to_numeric, errors="coerce")
-                        .fillna(0)
-                        .sum()
-                    )
-                    cde_extra[attr_key] = round(flag_qei / total_qei, 4)
-
-    with tempfile.NamedTemporaryFile(suffix=".csv", delete=False, mode="w", newline="") as tmp:
-        df.to_csv(tmp, index=False)
-        tmp_path = tmp.name
-
-    return Pipeline.from_csv(tmp_path), cde_extra
-
-
-# CDE Profile field name → column header mapping (v1.1 template row 3)
-_CDE_FIELD_MAP = {
-    "CDE Name":                             "cde_name",
-    "CDE ID":                               "cde_id",
-    "EIN":                                  "ein",
-    "HQ State":                             "headquarters_state",
-    "Certification Date":                   "certification_date",
-    "Mission Statement":                    "mission",
-    "Website":                              "website",
-    "Org Type":                             "organization_type",
-    "Target Markets (states, comma-sep)":   "target_markets",
-    "Requested Allocation ($M)":            "requested_allocation_millions",
-    "Application Round":                    "application_round",
-    "Below-Market Rate Pct (0–1)*":    "products_below_market_pct",
-    "Flexible Product Indicia Count":       "products_flexible_indicia_count",
-    "Pipeline % Identified (0–1)":     "pipeline_pct_identified",
-    "Own Capital at Risk (Y/N)":            "has_own_capital_at_risk",
-    "Prior Award Count":                    "prior_award_count",
-    "Years in Operation":                   "years_in_operation",
-    "Track Record Pipeline Align (0–1)": "track_record_pipeline_alignment_pct",
-    "Track Record Deployment Pct (0–1)": "track_record_deployment_pct",
-    "Persistent Poverty Pct (0–1)*":   "pct_persistent_poverty",
-    "US Territories Pct (0–1)*":       "pct_us_territories",
-    "Quantified Outcomes (Y/N)":            "has_quantified_outcomes",
-    "Third-Party Validation (Y/N)":         "has_third_party_validation",
-    "LIC Board Representation (0–1)":  "lic_board_representation_pct",
-    "Community Engagement Track Record (Y/N)": "has_community_engagement_track_record",
-    "DBC Focus Years":                      "dbc_focus_years",
-    "DBC Dollar Volume Pct (0–1)*":    "dbc_dollar_volume_pct",
-    "Unrelated Entities Pct (0–1)*":   "unrelated_entities_pct",
-    "Favorable Fee Structure (Y/N/Unknown)": "has_favorable_fee_structure",
-    "Prior Reporting Issues (Y/N)":         "has_prior_reporting_issues",
-}
-
-_BOOL_FIELDS = {
-    "has_own_capital_at_risk", "has_quantified_outcomes", "has_third_party_validation",
-    "has_community_engagement_track_record", "has_prior_reporting_issues",
-    "has_favorable_fee_structure",
-}
-
-
-def _parse_cde_profile_from_wb(wb) -> dict | None:
-    """Extract CDE-level scoring attrs from an openpyxl workbook's 'CDE Profile' sheet.
-
-    Template layout: row 1 = title, row 2 = section banners, row 3 = field headers, row 4 = data.
-    """
-    try:
-        ws = wb["CDE Profile"]
-        # Row 3 headers, row 4 data (1-indexed in openpyxl)
-        headers = [ws.cell(3, c).value for c in range(1, ws.max_column + 1)]
-        data_row = [ws.cell(4, c).value for c in range(1, ws.max_column + 1)]
-    except Exception:
-        return None
-
-    result: dict = {}
-    for col_idx, header in enumerate(headers):
-        if header is None or (isinstance(header, float) and pd.isna(header)):
-            continue
-        header_str = str(header).strip()
-        key = _CDE_FIELD_MAP.get(header_str)
-        if key is None:
-            continue
-        val = data_row[col_idx] if col_idx < len(data_row) else None
-        if val is None or (isinstance(val, float) and pd.isna(val)):
-            continue
-        # Type coercion
-        if key in _BOOL_FIELDS:
-            val_str = str(val).strip().upper()
-            result[key] = val_str in ("Y", "YES", "TRUE", "1")
-        elif key in ("products_flexible_indicia_count", "prior_award_count",
-                     "years_in_operation", "dbc_focus_years"):
-            try:
-                result[key] = int(val)
-            except (ValueError, TypeError):
-                pass
-        elif key in ("products_below_market_pct", "pipeline_pct_identified",
-                     "track_record_pipeline_alignment_pct", "track_record_deployment_pct",
-                     "pct_persistent_poverty", "pct_us_territories",
-                     "lic_board_representation_pct", "dbc_dollar_volume_pct",
-                     "unrelated_entities_pct"):
-            try:
-                result[key] = float(val)
-            except (ValueError, TypeError):
-                pass
-        else:
-            result[key] = str(val).strip()
-
-    return result if result else None
 
 
 # ---------------------------------------------------------------------------

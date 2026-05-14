@@ -5,6 +5,69 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.1.3] — 2026-05-14
+
+Bug-fix release: xlsx upload, CSV encoding fallback, and column name alignment for the
+Pipeline Analyzer. The v1.1 template download-and-upload round trip now works end-to-end.
+
+### Fixed
+
+**Critical — xlsx upload broken (Bug 1)**
+- **`streamlit_app/pages/1_Pipeline_Analyzer.py` / `nmtcapp/core/upload_handler.py`** —
+  Uploading the v1.1 `.xlsx` template failed with `"Pipeline CSV missing required columns"`
+  because `pd.read_excel(..., sheet_name="Pipeline")` defaulted to `header=0`, reading
+  the title row ("Pipeline — NMTC Application Builder v1.1 | One row per project") as
+  the sole column header and leaving all 28 real columns unnamed.
+  Fixed by reading the Pipeline sheet via openpyxl directly (same pattern as CDE Profile
+  sheet), detecting the v1.1 3-row preamble (title / section banners / column headers)
+  by checking cell A1, and using row 3 as the header row.
+
+**Critical — column name drift between template and parser (Bug 3)**
+- The upload handler contained a dead alias mapping that expected column names
+  (`qei_millions`, `total_project_cost_millions`, `jobs_created`) that exist in neither
+  the xlsx template ("QEI ($M)", "Total Cost ($M)", "Jobs Created") nor the CSV files
+  (`qei_request`, `total_project_cost`, `expected_jobs_created`). This meant that even
+  after fixing Bug 1, a template upload would still fail column-name validation.
+  Fixed by adding `_XLSX_PIPELINE_COL_MAP` — a complete display-name → snake_case mapping
+  for all 28 Pipeline sheet columns — and multiplying the `QEI ($M)` / `Total Cost ($M)`
+  columns by 1,000,000 to convert from the template's human-readable millions to the
+  parser's raw-dollar convention.
+
+**High — CSV encoding failure on Windows-1252 files (Bug 2)**
+- `pd.read_csv()` defaulted to UTF-8, causing `"'utf-8' codec can't decode byte 0xd2"`
+  when users uploaded a CSV exported from Excel on Windows (default cp1252/Windows-1252
+  encoding). Fixed with a `utf-8 → utf-8-sig → cp1252 → latin-1` fallback chain; a
+  `logging.WARNING` is emitted when a non-UTF-8 encoding is used.
+
+### Changed
+
+- **`nmtcapp/core/upload_handler.py`** (new module) — `load_uploaded_pipeline()` and all
+  its helpers (`_read_pipeline_sheet_from_wb`, `_read_csv_with_encoding_fallback`,
+  `_parse_cde_profile_from_wb`, `_XLSX_PIPELINE_COL_MAP`) extracted from the Streamlit
+  page into this importable module so they can be unit-tested without a Streamlit runtime.
+
+- **Sidebar help text** — updated to reflect that the `.xlsx` template can be uploaded
+  directly (no "save as CSV" step), and that CSV files must use the snake_case column
+  names from `pipeline_template.csv` with raw dollar values (not millions). UTF-8 and
+  Windows-1252 encodings are both noted as accepted.
+
+- **Download button tooltip** — updated from "Edit, save as CSV, then upload" to
+  "Fill in your projects, save, and upload the .xlsx directly."
+
+### Added
+
+**Tests**
+- `tests/test_template_roundtrip.py` — 3 tests verifying the primary user journey:
+  (1) loading the v1.1 template, adding 3 data rows, saving as xlsx bytes, passing to
+  `load_uploaded_pipeline`, and asserting a `Pipeline` with 3 projects;
+  (2) correct QEI / cost / jobs values after $M → raw-dollar conversion;
+  (3) CDE Profile sheet parses to a non-empty dict without error.
+- `tests/test_csv_encoding.py` — 5 tests verifying that cp1252-encoded CSVs (smart
+  quotes, accented characters, byte 0xd2, trademark symbols) parse correctly, and that
+  UTF-8 and UTF-8-with-BOM files still work.
+
+---
+
 ## [1.1.2] — 2026-05-13
 
 Documentation and visualization correctness release: all user-visible references to the old 5-dimension model replaced with the current CDFI Fund CY 2024-2025 framework.
@@ -236,6 +299,7 @@ Initial development release (internal).
 
 ---
 
+[1.1.3]: https://github.com/Jaypatel1511/nmtc-application-builder/releases/tag/v1.1.3
 [1.0.0]: https://github.com/Jaypatel1511/nmtc-application-builder/releases/tag/v1.0.0
 [0.2.0]: https://github.com/Jaypatel1511/nmtc-application-builder/releases/tag/v0.2.0
 [0.1.0]: https://github.com/Jaypatel1511/nmtc-application-builder/releases/tag/v0.1.0
