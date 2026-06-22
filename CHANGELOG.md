@@ -5,6 +5,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.1.4] — 2026-06-22
+
+Release-infrastructure release. No functional or behavioral changes to the application.
+
+### Added
+- CI workflow (`.github/workflows/ci.yml`): runs the test suite on push/PR across Python 3.9–3.12.
+- Release workflow (`.github/workflows/release.yml`): tag-triggered, builds wheel + sdist,
+  tests the built wheel in a clean venv across 3.9–3.12, and publishes to PyPI via OIDC
+  Trusted Publisher (PEP 740 attestations). All actions SHA-pinned; a tomllib guard fails
+  the release if the git tag and pyproject version disagree.
+
+### Changed
+- `scripts/release.sh` no longer uploads to PyPI; publishing is CI-only. It now runs a
+  local pre-flight (tests + build) only.
+
+### Notes
+- 1.1.4 is the first release published via CI from a tagged commit. Earlier releases 1.1.0
+  and 1.1.3 were published pre-CI from a local working tree and have no corresponding git
+  tag; that historical gap is accepted and not reconstructed. Tagging discipline starts here.
+
+---
+
 ## [1.1.3] — 2026-05-14
 
 Bug-fix release: xlsx upload, CSV encoding fallback, and column name alignment for the
