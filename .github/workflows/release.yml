@@ -71,7 +71,7 @@ jobs:
           python -m venv /tmp/wheel_test_venv
           /tmp/wheel_test_venv/bin/pip install --upgrade pip
           WHEEL=$(ls dist/*.whl)
-          /tmp/wheel_test_venv/bin/pip install "${WHEEL}[dev]" streamlit
+          /tmp/wheel_test_venv/bin/pip install "${WHEEL}[dev]" streamlit plotly
       - name: Confirm installed version matches the tag
         run: |
           INSTALLED=$(/tmp/wheel_test_venv/bin/python -c "import nmtcapp; print(nmtcapp.__version__)")
