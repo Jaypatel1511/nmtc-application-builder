@@ -210,9 +210,35 @@ This library integrates six companion libraries built for the CDFI space:
 
 - **Not a win probability model.** Alignment score ≠ probability of receiving an allocation. The CDFI Fund does not publish rejected application data, so a calibrated probability model cannot be built from public information alone.
 - **Historical patterns, not current NOFA.** Benchmarks derive from CY2020–2024 award data. CDFI Fund priorities shift — always check the current NOFA for updated criteria.
-- **Approximate geographic data.** Pipeline maps use state centroids, not actual project addresses. Eligibility enrichment uses `nmtc-mapper` and falls back to embedded sample data when offline.
+- **Approximate geographic data.** Pipeline maps use state centroids, not actual project addresses. Eligibility enrichment uses `nmtc-mapper` (live CDFI Fund data only — see *Degraded mode* below; there is no offline fallback).
 - **Not a substitute for expert review.** Always have a qualified CDFI practitioner or attorney review application materials before submission.
 - **No investor or underwriting analysis.** This library covers competitive positioning, not deal structuring, investor sourcing, or legal compliance.
+
+---
+
+## Degraded mode & partial scores
+
+Eligibility enrichment uses live CDFI Fund data via `nmtc-mapper`. As of 1.1.5 there
+is **no offline fallback** — if that data cannot be loaded, the run degrades
+explicitly instead of substituting anything:
+
+- The pipeline is marked `eligibility_data_status = "unavailable"` (the underlying
+  error is kept in `eligibility_data_error`), and eligibility, distress, and census
+  tract fields stay `None` — **unverified, not ineligible**.
+- Every affected surface — analyzer summaries, readiness and alignment scores, the
+  Streamlit pages, and generated Word/PDF/Excel drafts — shows an "eligibility data
+  unavailable" banner at the top of the section. The app keeps working; it never
+  hard-blocks.
+- A project whose address cannot be geocoded gets `geocode_success = False` and a
+  "location could not be verified" marker. It keeps no tract and is never counted
+  as eligible *or* ineligible.
+
+**What a "partial" score means:** the score was computed *without* the
+eligibility-dependent components, and the label says exactly which — e.g. a readiness
+score of "72.4/100 (PARTIAL) — score computed without eligibility verification (4 of
+6 components)". Partial scores are comparable only to other partial scores, and no
+CDFI Fund tier is assigned from them. Restore data access (network + `nmtc-mapper`
+≥ 0.3.4) and re-run the analysis to get a full score.
 
 ---
 

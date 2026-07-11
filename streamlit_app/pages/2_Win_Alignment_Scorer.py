@@ -112,6 +112,15 @@ bs = score.business_strategy
 co = score.community_outcomes
 pp = score.priority_points
 
+_partial = getattr(score, "partial", False)
+if _partial:
+    st.error(
+        "**Eligibility data unavailable** — "
+        f"{getattr(score, 'eligibility_data_error', None) or 'reason unknown'}. "
+        f"{score.partial_note}. Higher Distress Targeting and Deep Distress "
+        "Commitment could not be assessed; no tier is assigned."
+    )
+
 # ---------------------------------------------------------------------------
 # Tier badge + top metrics
 # ---------------------------------------------------------------------------
@@ -122,15 +131,24 @@ tier_colors = {
 }
 tier_color = tier_colors.get(tier, NEUTRAL)
 
+_bs_max = bs.get("max_available", 50)
+_co_max = co.get("max_available", 50)
+_agg_max = _bs_max + _co_max
+_partial_tag = " (partial)" if _partial else ""
+
 col1, col2, col3, col4 = st.columns(4)
-col1.metric("Aggregate Base Score", f"{agg} / 100")
-col2.metric("With Priority Points", f"{agg_with_pp} / 110")
-col3.metric("Business Strategy", f"{bs['section_total']} / 50",
+col1.metric("Aggregate Base Score" + _partial_tag, f"{agg} / {_agg_max}")
+col2.metric("With Priority Points" + _partial_tag,
+            f"{agg_with_pp} / {_agg_max + pp.get('max_available', 10)}")
+col3.metric("Business Strategy", f"{bs['section_total']} / {_bs_max}",
             delta="✓ meets min" if bs['section_total'] >= HIGHLY_QUALIFIED_SECTION_MIN else "✗ below min",
             delta_color="normal" if bs['section_total'] >= HIGHLY_QUALIFIED_SECTION_MIN else "inverse")
-col4.metric("Community Outcomes", f"{co['section_total']} / 50",
-            delta="✓ meets min" if co['section_total'] >= HIGHLY_QUALIFIED_SECTION_MIN else "✗ below min",
-            delta_color="normal" if co['section_total'] >= HIGHLY_QUALIFIED_SECTION_MIN else "inverse")
+if _partial:
+    col4.metric("Community Outcomes (partial)", f"{co['section_total']} / {_co_max}")
+else:
+    col4.metric("Community Outcomes", f"{co['section_total']} / {_co_max}",
+                delta="✓ meets min" if co['section_total'] >= HIGHLY_QUALIFIED_SECTION_MIN else "✗ below min",
+                delta_color="normal" if co['section_total'] >= HIGHLY_QUALIFIED_SECTION_MIN else "inverse")
 
 # Tier badge
 st.markdown(
@@ -192,7 +210,9 @@ with left:
     co_maxes = [15, 10, 5, 10, 10]
 
     all_labels = [f"BS: {l}" for l in bs_labels] + [f"CO: {l}" for l in co_labels]
-    all_values = [bs.get(k, 0) for k in bs_keys] + [co.get(k, 0) for k in co_keys]
+    all_raw = [bs.get(k, 0) for k in bs_keys] + [co.get(k, 0) for k in co_keys]
+    # None = component excluded (eligibility data unavailable) — render as n/a
+    all_values = [0 if v is None else v for v in all_raw]
     all_maxes = bs_maxes + co_maxes
     all_colors = [NAVY] * len(bs_labels) + [BLUE] * len(co_labels)
 
@@ -207,7 +227,8 @@ with left:
         x=all_pcts,
         orientation="h",
         marker_color=all_colors,
-        text=[f"{v}/{m}" for v, m in zip(all_values, all_maxes)],
+        text=["n/a" if raw is None else f"{v}/{m}"
+              for raw, v, m in zip(all_raw, all_values, all_maxes)],
         textposition="outside",
         textfont=dict(color=TEXT_LIGHT, size=10),
         name="Score",
@@ -253,8 +274,9 @@ with right:
         mode="gauge+number",
         value=agg,
         domain={"x": [0, 1], "y": [0, 1]},
-        title={"text": "Aggregate Base Score", "font": {"size": 12, "color": TEXT_LIGHT}},
-        number={"suffix": " / 100", "font": {"size": 22, "color": TEXT_LIGHT}},
+        title={"text": "Aggregate Base Score" + (" (PARTIAL)" if _partial else ""),
+               "font": {"size": 12, "color": TEXT_LIGHT}},
+        number={"suffix": f" / {_agg_max}", "font": {"size": 22, "color": TEXT_LIGHT}},
         gauge={
             "axis": {
                 "range": [0, 100],
@@ -296,12 +318,22 @@ with right:
 
     # Section minimums status
     st.markdown("**Section minimum status**")
-    for section_name, section_total, threshold in [
-        ("Business Strategy", bs["section_total"], HIGHLY_QUALIFIED_SECTION_MIN),
-        ("Community Outcomes", co["section_total"], HIGHLY_QUALIFIED_SECTION_MIN),
-    ]:
-        icon = "✅" if section_total >= threshold else "❌"
-        st.markdown(f"{icon} **{section_name}:** {section_total}/50 (min {threshold})")
+    icon = "✅" if bs["section_total"] >= HIGHLY_QUALIFIED_SECTION_MIN else "❌"
+    st.markdown(
+        f"{icon} **Business Strategy:** {bs['section_total']}/{_bs_max} "
+        f"(min {HIGHLY_QUALIFIED_SECTION_MIN})"
+    )
+    if _partial:
+        st.markdown(
+            f"⚠️ **Community Outcomes:** {co['section_total']}/{_co_max} — "
+            "partial (eligibility data unavailable); minimum not assessed"
+        )
+    else:
+        icon = "✅" if co["section_total"] >= HIGHLY_QUALIFIED_SECTION_MIN else "❌"
+        st.markdown(
+            f"{icon} **Community Outcomes:** {co['section_total']}/{_co_max} "
+            f"(min {HIGHLY_QUALIFIED_SECTION_MIN})"
+        )
 
     # Priority Points
     st.markdown(f"**Priority Points:** {pp['section_total']}/10")
@@ -321,8 +353,8 @@ with st.expander("Scoring framework reference", expanded=False):
         f"| Business Strategy | Pipeline Credibility | 15 | {bs.get('pipeline_credibility', 0)} |\n"
         f"| Business Strategy | Track Record Strength | 15 | {bs.get('track_record_strength', 0)} |\n"
         f"| Business Strategy | Track Record Alignment | 10 | {bs.get('track_record_alignment', 0)} |\n"
-        f"| Community Outcomes | Higher Distress Targeting | 15 | {co.get('higher_distress_targeting', 0)} |\n"
-        f"| Community Outcomes | Deep Distress Commitment | 10 | {co.get('deep_distress_commitment', 0)} |\n"
+        f"| Community Outcomes | Higher Distress Targeting | 15 | {'n/a — eligibility data unavailable' if co.get('higher_distress_targeting') is None else co.get('higher_distress_targeting', 0)} |\n"
+        f"| Community Outcomes | Deep Distress Commitment | 10 | {'n/a — eligibility data unavailable' if co.get('deep_distress_commitment') is None else co.get('deep_distress_commitment', 0)} |\n"
         f"| Community Outcomes | Special Targeting | 5 | {co.get('special_targeting', 0)} |\n"
         f"| Community Outcomes | Outcomes Quality | 10 | {co.get('community_outcomes_quality', 0)} |\n"
         f"| Community Outcomes | Community Accountability | 10 | {co.get('community_accountability', 0)} |\n"

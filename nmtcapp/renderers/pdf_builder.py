@@ -496,16 +496,36 @@ class PDFApplicationBuilder:
 
         flowables = [Paragraph("Executive Summary", styles["h1"])]
 
-        summary_text = (
-            f"{app.cde.name} respectfully requests ${app.requested_allocation/1e6:.1f} million in "
-            f"New Markets Tax Credit allocation for {app.application_round}. Our "
-            f"{pr.total_projects}-project pipeline spans "
-            f"{pr.geographic_diversity.get('states_count', 0)} states, with "
-            f"{d.get('pct_deep_or_severe', 0):.0%} of QEI committed to deep and severely "
-            f"distressed census tracts — placing us in the "
-            f"{d.get('vs_historical_winners', 'competitive').replace('_', ' ')} tier of CDFI "
-            f"Fund applicants historically."
-        )
+        degraded = getattr(pr, "eligibility_data_status", "ok") != "ok"
+        if degraded:
+            flowables.append(Paragraph(
+                '<font color="#B00000"><b>ELIGIBILITY DATA UNAVAILABLE — '
+                f"{getattr(pr, 'eligibility_data_error', None) or 'reason unknown'}. "
+                "Census tract eligibility and distress figures could not be "
+                "verified and are excluded from this document. Do not submit "
+                "until eligibility data has been restored and re-verified.</b></font>",
+                styles["body"],
+            ))
+            flowables.append(Spacer(1, 8))
+            summary_text = (
+                f"{app.cde.name} respectfully requests ${app.requested_allocation/1e6:.1f} million in "
+                f"New Markets Tax Credit allocation for {app.application_round}. Our "
+                f"{pr.total_projects}-project pipeline spans "
+                f"{pr.geographic_diversity.get('states_count', 0)} states. Census tract "
+                "eligibility and distress concentration are unverified — eligibility "
+                "data was unavailable when this draft was generated."
+            )
+        else:
+            summary_text = (
+                f"{app.cde.name} respectfully requests ${app.requested_allocation/1e6:.1f} million in "
+                f"New Markets Tax Credit allocation for {app.application_round}. Our "
+                f"{pr.total_projects}-project pipeline spans "
+                f"{pr.geographic_diversity.get('states_count', 0)} states, with "
+                f"{d.get('pct_deep_or_severe', 0):.0%} of QEI committed to deep and severely "
+                f"distressed census tracts — placing us in the "
+                f"{d.get('vs_historical_winners', 'competitive').replace('_', ' ')} tier of CDFI "
+                f"Fund applicants historically."
+            )
         flowables.append(Paragraph(summary_text, styles["body"]))
         flowables.append(Spacer(1, 10))
 
@@ -516,8 +536,10 @@ class PDFApplicationBuilder:
             ["Total QEI Requested", f"${pr.total_qei_request:,.0f}"],
             ["Total Project Cost", f"${pr.total_project_cost:,.0f}"],
             ["States Represented", str(pr.geographic_diversity.get("states_count", 0))],
-            ["Deep/Severe Distress Concentration", f"{d.get('pct_deep_or_severe', 0):.0%}"],
-            ["NMTC Eligibility Rate", f"{pr.eligibility_pct:.0%}"],
+            ["Deep/Severe Distress Concentration",
+             "Unverified" if degraded else f"{d.get('pct_deep_or_severe', 0):.0%}"],
+            ["NMTC Eligibility Rate",
+             "Unverified" if degraded else f"{pr.eligibility_pct:.0%}"],
             ["Jobs to Be Created", f"{impact.get('total_jobs_created', 0):,}"],
             ["Affordable Units to Be Built", f"{impact.get('total_units_built', 0):,}"],
             ["Jobs per $1MM QEI", f"{impact.get('jobs_per_million_qei', 0):.1f}"],
@@ -535,11 +557,17 @@ class PDFApplicationBuilder:
             [
                 Paragraph(
                     f'<font color="{COLORS["accent"]}"><b>Grade {score.grade}</b></font><br/>'
-                    f'<font size="9">{score.overall_score:.1f}/100</font>',
+                    f'<font size="9">{score.overall_score:.1f}/100'
+                    + (" (PARTIAL)" if getattr(score, "partial", False) else "")
+                    + '</font>',
                     ParagraphStyle("grade", alignment=TA_CENTER, parent=styles["body"])
                 ),
                 Paragraph(
-                    "<br/>".join(
+                    (
+                        f'<font color="#B00000"><b>PARTIAL — {score.partial_note}</b></font><br/>'
+                        if getattr(score, "partial", False) else ""
+                    )
+                    + "<br/>".join(
                         f"<b>{k.replace('_', ' ').title()}:</b> {v:.0f}/100"
                         for k, v in score.component_scores.items()
                     ),

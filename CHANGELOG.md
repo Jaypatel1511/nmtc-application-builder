@@ -5,6 +5,54 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.1.5] — 2026-07-11
+
+Data-integrity release: the eligibility adapter no longer fabricates application content.
+
+### Disclosure
+
+The adapter previously substituted a hardcoded 20-tract table when live eligibility
+data failed to load, and assigned a fabricated deep-distress tract (17031838200) to
+projects whose geocoding failed. Both paths produced fabricated application content —
+eligibility, distress levels, and census tracts that did not come from the CDFI Fund
+dataset could appear in analyses, scores, and generated application documents without
+any indication that they were not real. If you generated drafts with 1.1.4 or earlier
+while offline or while the CDFI Fund download was failing, re-run them on 1.1.5.
+
+### Changed
+- **`nmtcapp/integrations/nmtc_mapper_adapter.py`** — full rewrite of the failure
+  semantics. The hardcoded fallback table is deleted. The adapter now catches only
+  typed `nmtcmapper.NMTCMapperError` failures and enters an explicit degraded mode:
+  `pipeline.eligibility_data_status = "unavailable"` with the underlying error
+  retained for display, and all eligibility fields left `None` (unverified).
+  Unexpected exceptions propagate. The `redirect_stdout` suppression around mapper
+  construction is removed (0.3.4's progress output is informative; its failures raise).
+- **Provenance check** — even on the happy path, a mapper whose `data_source` is not
+  `"cdfi_fund"` (e.g. `NMTCMapper.from_sample()`) is refused: sample data can never
+  flow into a real application.
+- **Geocode failures are per-project honest** — a project whose location cannot be
+  verified gets `geocode_success=False`, no census tract, eligibility fields `None`,
+  and an explicit "location could not be verified" marker. It is treated as
+  UNVERIFIED, never as ineligible and never given a substitute tract.
+- **Degraded scoring is explicit and partial** — when eligibility data is unavailable:
+  readiness scores exclude `eligibility_quality` and `distress_concentration` and are
+  labeled "score computed without eligibility verification (4 of 6 components)";
+  composite alignment scores exclude the distress component (4 of 5 components); the
+  CDFI Fund framework score excludes Higher Distress Targeting and Deep Distress
+  Commitment (25 of 100 base points) and assigns no tier. Analyzer summaries, the
+  Streamlit UI, and Word/PDF/Excel drafts all render an "eligibility data
+  unavailable" banner at the top of the affected section — nothing degrades silently.
+- Dependency floor raised: `nmtc-mapper>=0.3.4` (fails loud on data-load failure
+  instead of serving sample data).
+
+### Known Issues
+- Upstream nmtc-mapper 0.3.5 known issue: the geocoder swallows transport errors and
+  surfaces geocode failure as an "ineligible"-shaped result with
+  `geocode_success=False`. Mitigated on the flagship side: the adapter checks
+  `geocode_success` and treats those projects as unverified, not ineligible.
+
+---
+
 ## [1.1.4] — 2026-06-22
 
 Release-infrastructure release. No functional or behavioral changes to the application.

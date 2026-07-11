@@ -23,11 +23,17 @@ from nmtcapp.optimizer.constraints import OptimizationConstraints
 from nmtcapp.optimizer.objectives import (
     DEFAULT_WEIGHTS,
     composite_alignment_score,
+    eligibility_components_available,
     score_distress_alignment,
     score_geographic_alignment,
     score_impact_alignment,
     score_pipeline_quality,
     score_sector_alignment,
+)
+
+_PARTIAL_NOTE = (
+    "score computed without eligibility verification (4 of 5 components) — "
+    "eligibility data unavailable, distress alignment excluded"
 )
 
 if TYPE_CHECKING:
@@ -62,16 +68,28 @@ class OptimizationResult:
     dimensional_improvements: Dict[str, float]  # per-dimension delta
     iterations: int
     methodology_note: str = field(default=_METHODOLOGY)
+    # True when eligibility data was unverified: the distress component is
+    # excluded and alignment scores are PARTIAL (see partial_note).
+    score_is_partial: bool = False
+    partial_note: str = ""
 
     def summary(self) -> str:
         """Return a formatted optimization result report."""
-        lines = [
-            "=" * 68,
+        lines = ["=" * 68]
+        if self.score_is_partial:
+            lines.extend([
+                "  !! ELIGIBILITY DATA UNAVAILABLE !!",
+                f"  {self.partial_note}",
+                "=" * 68,
+            ])
+        lines += [
             "  PIPELINE OPTIMIZATION RESULT",
             f"  Projects selected:    {len(self.selected_projects)}",
             f"  Total QEI:            ${sum(p.qei_request for p in self.selected_projects):,.0f}",
-            f"  Alignment (before):   {self.alignment_score_before * 100:.1f} / 100",
-            f"  Alignment (after):    {self.alignment_score_after * 100:.1f} / 100",
+            f"  Alignment (before):   {self.alignment_score_before * 100:.1f} / 100"
+            + ("  (PARTIAL)" if self.score_is_partial else ""),
+            f"  Alignment (after):    {self.alignment_score_after * 100:.1f} / 100"
+            + ("  (PARTIAL)" if self.score_is_partial else ""),
             f"  Improvement:          {(self.alignment_score_after - self.alignment_score_before) * 100:+.1f} pts",
             f"  Constraints met:      {'Yes' if self.constraints_satisfied else 'No'}",
         ]
@@ -97,6 +115,8 @@ class OptimizationResult:
             "dimensional_improvements": self.dimensional_improvements,
             "iterations": self.iterations,
             "methodology_note": self.methodology_note,
+            "score_is_partial": self.score_is_partial,
+            "partial_note": self.partial_note,
         }
 
 
@@ -148,6 +168,7 @@ class PipelineOptimizer:
             result = PipelineOptimizer().optimize(pipeline, constraints, 55_000_000)
         """
         all_projects = list(pipeline)
+        eligibility_verified = eligibility_components_available(all_projects)
         score_before = composite_alignment_score(all_projects, requested_allocation, self.weights)
 
         pool = CandidatePool.from_pipeline(pipeline).filter(constraints)
@@ -186,15 +207,21 @@ class PipelineOptimizer:
                 score_after = score_before
                 logger.info("Optimizer: reverting to full pipeline (optimized subset scored lower)")
 
-        # Dimensional improvements
+        # Dimensional improvements — the distress dimension is only computed
+        # from verified eligibility data, never from unverified projects
         def _dims(projects):
-            return {
-                "distress": score_distress_alignment(projects, requested_allocation),
+            dims = {
                 "geographic": score_geographic_alignment(projects),
                 "impact": score_impact_alignment(projects, requested_allocation),
                 "sector": score_sector_alignment(projects),
-                "pipeline": score_pipeline_quality(projects, requested_allocation),
+                "pipeline": score_pipeline_quality(
+                    projects, requested_allocation,
+                    include_eligibility=eligibility_verified,
+                ),
             }
+            if eligibility_verified:
+                dims["distress"] = score_distress_alignment(projects, requested_allocation)
+            return dims
 
         dims_before = _dims(all_projects)
         dims_after = _dims(selected)
@@ -214,6 +241,8 @@ class PipelineOptimizer:
             infeasibility_reason=reason,
             dimensional_improvements={k: round(v, 4) for k, v in dimensional_improvements.items()},
             iterations=iters,
+            score_is_partial=not eligibility_verified,
+            partial_note="" if eligibility_verified else _PARTIAL_NOTE,
         )
 
     # ------------------------------------------------------------------
@@ -301,6 +330,7 @@ class PipelineOptimizer:
         score_before: float,
         reason: str,
     ) -> OptimizationResult:
+        eligibility_verified = eligibility_components_available(original)
         return OptimizationResult(
             selected_projects=original,
             objective_score=round(score_before, 4),
@@ -310,4 +340,6 @@ class PipelineOptimizer:
             infeasibility_reason=reason,
             dimensional_improvements={},
             iterations=0,
+            score_is_partial=not eligibility_verified,
+            partial_note="" if eligibility_verified else _PARTIAL_NOTE,
         )

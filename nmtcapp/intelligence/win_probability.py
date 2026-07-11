@@ -96,6 +96,12 @@ class WinProbabilityScore:
     competitive_tier: str = ""         # "strong" | "competitive" | "marginal" | "weak"
     peer_comparison: str = ""
     methodology_disclosure: str = field(default=_METHODOLOGY)
+    # Partial-score marker: True when eligibility data was unavailable — the
+    # distress-based Community Outcomes components are excluded (None), the
+    # aggregate covers only the available points, and no tier is assigned.
+    partial: bool = False
+    partial_note: str = ""
+    eligibility_data_error: str = ""
 
     def __post_init__(self) -> None:
         # Populate backward-compat fields from new structure
@@ -104,13 +110,16 @@ class WinProbabilityScore:
         if not self.dimensional_scores:
             self.dimensional_scores = {
                 "business_strategy": round(
-                    self.business_strategy.get("section_total", 0) / 50 * 100, 1
+                    self.business_strategy.get("section_total", 0)
+                    / self.business_strategy.get("max_available", 50) * 100, 1
                 ),
                 "community_outcomes": round(
-                    self.community_outcomes.get("section_total", 0) / 50 * 100, 1
+                    self.community_outcomes.get("section_total", 0)
+                    / self.community_outcomes.get("max_available", 50) * 100, 1
                 ),
                 "priority_points": round(
-                    self.priority_points.get("section_total", 0) / 10 * 100, 1
+                    self.priority_points.get("section_total", 0)
+                    / self.priority_points.get("max_available", 10) * 100, 1
                 ),
             }
         if not self.competitive_tier:
@@ -123,30 +132,49 @@ class WinProbabilityScore:
         bs = self.business_strategy
         co = self.community_outcomes
         pp = self.priority_points
-        lines = [
+
+        def _pts(section: dict, key: str) -> str:
+            val = section.get(key, 0)
+            return "n/a" if val is None else f"{val:2d} "
+
+        agg_denom = (
+            bs.get("max_available", 50) + co.get("max_available", 50)
+        )
+        lines = []
+        if self.partial:
+            lines.extend([
+                "!" * 70,
+                "  ELIGIBILITY DATA UNAVAILABLE",
+                f"  {self.eligibility_data_error or 'reason unknown'}",
+                f"  {self.partial_note}",
+                "!" * 70,
+            ])
+        lines += [
             "=" * 70,
             "  NMTC APPLICATION SCORE  (CDFI Fund CY 2024-2025 Framework)",
-            f"  Aggregate Base Score:    {self.aggregate_base_score} / 100",
-            f"  With Priority Points:    {self.aggregate_with_priority} / 110",
+            f"  Aggregate Base Score:    {self.aggregate_base_score} / {agg_denom}"
+            + ("  (PARTIAL)" if self.partial else ""),
+            f"  With Priority Points:    {self.aggregate_with_priority} / {agg_denom + pp.get('max_available', 10)}"
+            + ("  (PARTIAL)" if self.partial else ""),
             f"  Tier:                    {self.tier.upper()}",
             "=" * 70,
             "",
-            f"  BUSINESS STRATEGY:  {bs['section_total']:2d} / 50",
-            f"    Product Flexibility       {bs.get('product_flexibility', 0):2d} / 10",
-            f"    Pipeline Credibility      {bs.get('pipeline_credibility', 0):2d} / 15",
-            f"    Track Record Strength     {bs.get('track_record_strength', 0):2d} / 15",
-            f"    Track Record Alignment    {bs.get('track_record_alignment', 0):2d} / 10",
+            f"  BUSINESS STRATEGY:  {bs['section_total']:2d} / {bs.get('max_available', 50)}",
+            f"    Product Flexibility       {_pts(bs, 'product_flexibility')}/ 10",
+            f"    Pipeline Credibility      {_pts(bs, 'pipeline_credibility')}/ 15",
+            f"    Track Record Strength     {_pts(bs, 'track_record_strength')}/ 15",
+            f"    Track Record Alignment    {_pts(bs, 'track_record_alignment')}/ 10",
             "",
-            f"  COMMUNITY OUTCOMES: {co['section_total']:2d} / 50",
-            f"    Higher Distress Targeting {co.get('higher_distress_targeting', 0):2d} / 15",
-            f"    Deep Distress Commitment  {co.get('deep_distress_commitment', 0):2d} / 10",
-            f"    Special Targeting         {co.get('special_targeting', 0):2d} /  5",
-            f"    Community Outcomes Quality{co.get('community_outcomes_quality', 0):2d} / 10",
-            f"    Community Accountability  {co.get('community_accountability', 0):2d} / 10",
+            f"  COMMUNITY OUTCOMES: {co['section_total']:2d} / {co.get('max_available', 50)}",
+            f"    Higher Distress Targeting {_pts(co, 'higher_distress_targeting')}/ 15",
+            f"    Deep Distress Commitment  {_pts(co, 'deep_distress_commitment')}/ 10",
+            f"    Special Targeting         {_pts(co, 'special_targeting')}/  5",
+            f"    Community Outcomes Quality{_pts(co, 'community_outcomes_quality')}/ 10",
+            f"    Community Accountability  {_pts(co, 'community_accountability')}/ 10",
             "",
-            f"  PRIORITY POINTS:    {pp['section_total']:2d} / 10",
-            f"    DBC Track Record          {pp.get('dbc_track_record', 0):2d} /  5",
-            f"    Unrelated Entities        {pp.get('unrelated_entities', 0):2d} /  5",
+            f"  PRIORITY POINTS:    {pp['section_total']:2d} / {pp.get('max_available', 10)}",
+            f"    DBC Track Record          {_pts(pp, 'dbc_track_record')}/  5",
+            f"    Unrelated Entities        {_pts(pp, 'unrelated_entities')}/  5",
             "",
         ]
         if self.tier_gating_notes:
@@ -179,6 +207,9 @@ class WinProbabilityScore:
             "competitive_tier": self.competitive_tier,
             "peer_comparison": self.peer_comparison,
             "methodology_disclosure": self.methodology_disclosure,
+            "partial": self.partial,
+            "partial_note": self.partial_note,
+            "eligibility_data_error": self.eligibility_data_error,
         }
 
 
@@ -234,10 +265,13 @@ class WinProbabilityModel:
             :class:`WinProbabilityScore` with full CDFI Fund structure.
         """
         attrs = cde_attributes or {}
+        degraded = getattr(pipeline_result, "eligibility_data_status", "ok") != "ok"
 
         # --- Section 1: Business Strategy (0–50) ---
         pf = self._score_product_flexibility(attrs, pipeline_result)
-        pc = self._score_pipeline_credibility(pipeline_result, attrs)
+        pc = self._score_pipeline_credibility(
+            pipeline_result, attrs, skip_eligibility_penalty=degraded
+        )
         trs = self._score_track_record_strength(attrs)
         tra = self._score_track_record_alignment(attrs)
         bs_total = pf + pc + trs + tra
@@ -248,15 +282,22 @@ class WinProbabilityModel:
             "track_record_strength": trs,
             "track_record_alignment": tra,
             "section_total": bs_total,
+            "max_available": 50,
         }
 
         # --- Section 2: Community Outcomes (0–50) ---
-        hdt = self._score_higher_distress(pipeline_result)
-        ddc = self._score_deep_distress(pipeline_result)
+        # The tract-distress components require verified eligibility data.
+        # When it is unavailable they are None (excluded), never estimated.
+        if degraded:
+            hdt = None
+            ddc = None
+        else:
+            hdt = self._score_higher_distress(pipeline_result)
+            ddc = self._score_deep_distress(pipeline_result)
         st  = self._score_special_targeting(pipeline_result, attrs)
         coq = self._score_outcomes_quality(attrs)
         ca  = self._score_community_accountability(attrs)
-        co_total = hdt + ddc + st + coq + ca
+        co_total = (hdt or 0) + (ddc or 0) + st + coq + ca
 
         community_outcomes = {
             "higher_distress_targeting": hdt,
@@ -265,6 +306,7 @@ class WinProbabilityModel:
             "community_outcomes_quality": coq,
             "community_accountability": ca,
             "section_total": co_total,
+            "max_available": 25 if degraded else 50,
         }
 
         # --- Priority Points (0–10) ---
@@ -276,12 +318,28 @@ class WinProbabilityModel:
             "dbc_track_record": dbc,
             "unrelated_entities": ue,
             "section_total": pp_total,
+            "max_available": 10,
         }
 
         aggregate_base = bs_total + co_total
         aggregate_with_priority = aggregate_base + pp_total
 
-        tier, gating_notes = self._classify_tier(bs_total, co_total, aggregate_base)
+        partial_note = ""
+        if degraded:
+            # No tier: with 25 of 100 base points unavailable, classification
+            # against the 85/40 CDFI Fund thresholds would be meaningless.
+            tier = "Not Rated — eligibility data unavailable"
+            gating_notes = [
+                "Score computed without eligibility verification: Higher "
+                "Distress Targeting (15 pts) and Deep Distress Commitment "
+                "(10 pts) could not be assessed. No tier is assigned.",
+            ]
+            partial_note = (
+                "score computed without eligibility verification "
+                "(8 of 10 scored components; 25 of 100 base points unavailable)"
+            )
+        else:
+            tier, gating_notes = self._classify_tier(bs_total, co_total, aggregate_base)
         phase2_flags = self._build_phase2_flags(attrs, pipeline_result)
 
         baseline = get_overall_acceptance_rate(rounds=4)
@@ -297,6 +355,11 @@ class WinProbabilityModel:
             phase2_flags=phase2_flags,
             composite_score=float(aggregate_base),
             acceptance_rate_baseline=baseline,
+            partial=degraded,
+            partial_note=partial_note,
+            eligibility_data_error=(
+                getattr(pipeline_result, "eligibility_data_error", None) or ""
+            ) if degraded else "",
         )
 
     # ------------------------------------------------------------------
@@ -318,7 +381,8 @@ class WinProbabilityModel:
         return _to_int(max(score_from_below_mkt, score_from_indicia))
 
     def _score_pipeline_credibility(
-        self, result: "PipelineAnalysisResult", attrs: dict
+        self, result: "PipelineAnalysisResult", attrs: dict,
+        skip_eligibility_penalty: bool = False,
     ) -> int:
         identified_pct = attrs.get("pipeline_pct_identified", 0.65)
         # Piecewise: 100% → 15, 80% → 12, 60% → 9, <50% → proportional
@@ -330,8 +394,13 @@ class WinProbabilityModel:
             raw = 6.0 + (identified_pct - 0.40) / 0.20 * 3.0
         else:
             raw = identified_pct / 0.60 * 6.0
-        # Eligibility bonus: subtract up to 2 pts if eligibility rate is low
-        elig_penalty = max(0.0, (0.95 - result.eligibility_pct) * 20)
+        # Eligibility penalty: subtract up to 2 pts if eligibility rate is low.
+        # Skipped when eligibility data is unavailable — an unverified rate of
+        # 0% would otherwise zero the sub-score (a fabricated negative).
+        if skip_eligibility_penalty:
+            elig_penalty = 0.0
+        else:
+            elig_penalty = max(0.0, (0.95 - result.eligibility_pct) * 20)
         return _to_int(max(0.0, min(15.0, raw - elig_penalty)))
 
     def _score_track_record_strength(self, attrs: dict) -> int:
@@ -530,6 +599,12 @@ def _map_tier_legacy_from_score(score: float) -> str:
 def _build_peer_comparison(score: "WinProbabilityScore") -> str:
     tier = score.tier
     agg = score.aggregate_base_score
+    if score.partial:
+        return (
+            f"NOT RATED — eligibility data unavailable. {score.partial_note}. "
+            "Restore nmtc-mapper data access and re-score before drawing any "
+            "conclusions from this partial result."
+        )
     bs = score.business_strategy.get("section_total", 0)
     co = score.community_outcomes.get("section_total", 0)
     pp = score.priority_points.get("section_total", 0)

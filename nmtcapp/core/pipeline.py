@@ -70,6 +70,9 @@ class PipelineProject:
     is_persistent_poverty: Optional[bool] = None  # tract is Persistent Poverty County
     is_below_market_rate: Optional[bool] = None   # QLICI offered below market → products_below_market_pct
     is_unrelated_entity: Optional[bool] = None    # QALICB is unrelated to CDE → unrelated_entities_pct
+    # v1.1.5 — set by enrichment; False means the project location could not
+    # be verified, so eligibility fields stay None (unverified, NOT ineligible)
+    geocode_success: Optional[bool] = None
 
     def __post_init__(self) -> None:
         if self.total_project_cost <= 0:
@@ -99,6 +102,15 @@ class PipelineProject:
     def is_deep_distress(self) -> bool:
         return self.distress_level in ("deep", "severe")
 
+    @property
+    def eligibility_status(self) -> str:
+        """Human-readable eligibility verification status for output surfaces."""
+        if self.is_nmtc_eligible is not None:
+            return "verified"
+        if self.geocode_success is False:
+            return "unverified — location could not be verified"
+        return "unverified — eligibility data not available"
+
     def to_dict(self) -> dict:
         return {
             "project_id": self.project_id,
@@ -127,6 +139,8 @@ class PipelineProject:
             "is_persistent_poverty": self.is_persistent_poverty,
             "is_below_market_rate": self.is_below_market_rate,
             "is_unrelated_entity": self.is_unrelated_entity,
+            "geocode_success": self.geocode_success,
+            "eligibility_status": self.eligibility_status,
         }
 
 
@@ -143,6 +157,10 @@ class Pipeline:
 
     def __init__(self, projects: Optional[List[PipelineProject]] = None) -> None:
         self._projects: List[PipelineProject] = projects or []
+        # Set by enrich_pipeline_eligibility: "ok" when live CDFI Fund data
+        # was used, "unavailable" when it could not be loaded (fields stay None).
+        self.eligibility_data_status: str = "ok"
+        self.eligibility_data_error: Optional[str] = None
 
     def add(self, project: PipelineProject) -> None:
         """Add a single project to the pipeline."""

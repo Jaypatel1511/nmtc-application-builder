@@ -205,6 +205,22 @@ s = analysis.sector_analysis
 i = analysis.impact_summary
 rs = analysis.readiness_score
 
+_degraded = getattr(pr, "eligibility_data_status", "ok") != "ok"
+if _degraded:
+    st.error(
+        "**Eligibility data unavailable** — "
+        f"{getattr(pr, 'eligibility_data_error', None) or 'reason unknown'}. "
+        "Eligibility and distress figures are unverified, and the readiness "
+        "score is partial: computed without eligibility verification "
+        "(4 of 6 components)."
+    )
+elif getattr(pr, "unverified_project_ids", None):
+    st.warning(
+        f"**{len(pr.unverified_project_ids)} project(s) could not be "
+        "location-verified** and remain unverified (no census tract "
+        "assigned): " + ", ".join(pr.unverified_project_ids[:5])
+    )
+
 tabs = st.tabs(["Overview", "Distress", "Geographic", "Sector", "Impact"])
 
 # =============================================================================
@@ -222,8 +238,12 @@ with tabs[0]:
 
     c1.metric("Total projects", pr.total_projects)
     c2.metric("Total QEI requested", fmt_millions(total_qei))
-    c3.metric("Readiness score", f"{readiness:.1f} / 100", delta=grade)
-    c4.metric("NMTC-eligible", fmt_pct(eligible_pct))
+    c3.metric(
+        "Readiness score" + (" (partial)" if _degraded else ""),
+        f"{readiness:.1f} / 100",
+        delta=grade,
+    )
+    c4.metric("NMTC-eligible", "Unverified" if _degraded else fmt_pct(eligible_pct))
 
     st.markdown("---")
 

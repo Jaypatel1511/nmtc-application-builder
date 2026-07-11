@@ -24,8 +24,15 @@ def test_enrich_already_enriched_pipeline_is_noop(sample_pipeline):
     assert original_tracts == new_tracts
 
 
-def test_enrich_unenriched_pipeline_uses_fallback():
-    """Unenriched pipeline uses fallback data when nmtc-mapper raises."""
+def test_enrich_unenriched_pipeline_degrades_without_fabrication():
+    """Unenriched pipeline stays unverified when nmtc-mapper raises.
+
+    (v1.1.5: replaces the old fallback expectation — the adapter previously
+    substituted hardcoded sample data here, which fabricated application
+    content. See tests/integrations/test_no_fabrication.py.)
+    """
+    from nmtcmapper import NMTCMapperError
+
     project = PipelineProject(
         project_id="UN-001", project_name="Unenriched",
         qalicb_name="QALICB", address="100 Main", city="Chicago", state="IL",
@@ -36,12 +43,13 @@ def test_enrich_unenriched_pipeline_uses_fallback():
     pipeline = Pipeline([project])
 
     with patch("nmtcmapper.NMTCMapper",
-               side_effect=Exception("network error")):
+               side_effect=NMTCMapperError("network error")):
         result = enrich_pipeline_eligibility(pipeline)
 
     projects = list(result)
-    assert projects[0].is_nmtc_eligible is not None
-    assert projects[0].distress_level is not None
+    assert result.eligibility_data_status == "unavailable"
+    assert projects[0].is_nmtc_eligible is None
+    assert projects[0].distress_level is None
 
 
 def test_enrich_returns_pipeline_instance(sample_pipeline):

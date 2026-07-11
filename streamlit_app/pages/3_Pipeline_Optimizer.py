@@ -142,6 +142,12 @@ total_qei_selected = sum(p.qei_request for p in selected)
 # ---------------------------------------------------------------------------
 # Feasibility notice
 # ---------------------------------------------------------------------------
+if getattr(result, "score_is_partial", False):
+    st.error(
+        "**Eligibility data unavailable** — "
+        f"{getattr(result, 'partial_note', '') or 'alignment scores are partial'}. "
+        "Distress alignment is excluded from the scores below."
+    )
 if not result.constraints_satisfied:
     st.warning(
         f"⚠️ **Constraints not fully satisfied:** {result.infeasibility_reason}. "
@@ -155,10 +161,12 @@ else:
 # ---------------------------------------------------------------------------
 st.subheader("Score comparison")
 
+_partial_tag = " (partial)" if getattr(result, "score_is_partial", False) else ""
 c1, c2, c3, c4 = st.columns(4)
-c1.metric("Score before", f"{score_before:.1f} / 100", help="Full pipeline alignment score.")
+c1.metric("Score before" + _partial_tag, f"{score_before:.1f} / 100",
+          help="Full pipeline alignment score.")
 c2.metric(
-    "Score after",
+    "Score after" + _partial_tag,
     f"{score_after:.1f} / 100",
     delta=f"{delta:+.1f} pts",
     delta_color="normal" if delta >= 0 else "inverse",

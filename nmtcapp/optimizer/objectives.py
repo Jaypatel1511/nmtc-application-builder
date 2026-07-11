@@ -26,6 +26,20 @@ DEFAULT_WEIGHTS: Dict[str, float] = {
     "pipeline": 0.05,
 }
 
+# Components that consume verified eligibility data. When eligibility is
+# unverified they are excluded from the composite (never estimated).
+ELIGIBILITY_COMPONENTS = ("distress",)
+
+
+def eligibility_components_available(projects: List["PipelineProject"]) -> bool:
+    """True when every project carries verified eligibility data.
+
+    A distress-concentration claim over a pipeline containing unverified
+    projects is itself unverifiable, so the eligibility-dependent alignment
+    components are only computed when the whole set is verified.
+    """
+    return bool(projects) and all(p.is_nmtc_eligible is not None for p in projects)
+
 
 def score_distress_alignment(
     projects: List["PipelineProject"],
@@ -46,7 +60,7 @@ def score_distress_alignment(
         return 0.0
     deep_qei = sum(
         p.qei_request for p in projects
-        if getattr(p, "distress_level", "lic") in ("deep", "severe")
+        if p.distress_level in ("deep", "severe")
     )
     deep_pct = deep_qei / total_qei
     winner_p75 = WINNER_DISTRESS_PATTERNS["p75_pct_deep_or_severe"]
@@ -156,10 +170,14 @@ def score_sector_alignment(projects: List["PipelineProject"]) -> float:
 def score_pipeline_quality(
     projects: List["PipelineProject"],
     requested_allocation: float,
+    include_eligibility: bool = True,
 ) -> float:
     """Score overall pipeline quality (eligibility, project count, size fit).
 
-    Returns 0.0–1.0.
+    Returns 0.0–1.0. With ``include_eligibility=False`` (eligibility data
+    unverified) the eligibility sub-score is excluded and the remaining
+    sub-scores are renormalized — unverified is never counted as eligible
+    or ineligible.
 
     Example::
 
@@ -167,10 +185,6 @@ def score_pipeline_quality(
     """
     if not projects:
         return 0.0
-    eligible = sum(1 for p in projects if getattr(p, "is_nmtc_eligible", True))
-    elig_pct = eligible / len(projects)
-    winner_elig = WINNER_DISTRESS_PATTERNS["mean_pct_eligible"]
-    elig_score = min(1.0, elig_pct / winner_elig)
 
     n = len(projects)
     winner_median_n = WINNER_GEOGRAPHIC_PATTERNS["p50_projects"]
@@ -184,6 +198,14 @@ def score_pipeline_quality(
         size_score = 0.80
     else:
         size_score = 0.50
+
+    if not include_eligibility:
+        return count_score * 0.5 + size_score * 0.5
+
+    eligible = sum(1 for p in projects if p.is_nmtc_eligible is True)
+    elig_pct = eligible / len(projects)
+    winner_elig = WINNER_DISTRESS_PATTERNS["mean_pct_eligible"]
+    elig_score = min(1.0, elig_pct / winner_elig)
 
     return elig_score * 0.4 + count_score * 0.3 + size_score * 0.3
 
@@ -202,6 +224,10 @@ def composite_alignment_score(
 
     Returns:
         Float in [0, 1] where 1.0 is perfect historical winner alignment.
+        When any project lacks verified eligibility data, the eligibility
+        components (see ``ELIGIBILITY_COMPONENTS``) are excluded and the
+        remaining weights renormalized — the result is a PARTIAL score;
+        callers should label it via :func:`eligibility_components_available`.
 
     Example::
 
@@ -209,13 +235,17 @@ def composite_alignment_score(
         print(f"Composite: {score:.2f}")
     """
     w = weights or DEFAULT_WEIGHTS
+    include_eligibility = eligibility_components_available(projects)
     scores = {
-        "distress": score_distress_alignment(projects, requested_allocation),
         "geographic": score_geographic_alignment(projects),
         "impact": score_impact_alignment(projects, requested_allocation),
         "sector": score_sector_alignment(projects),
-        "pipeline": score_pipeline_quality(projects, requested_allocation),
+        "pipeline": score_pipeline_quality(
+            projects, requested_allocation, include_eligibility=include_eligibility
+        ),
     }
+    if include_eligibility:
+        scores["distress"] = score_distress_alignment(projects, requested_allocation)
     total_w = sum(w.get(k, 0.0) for k in scores)
     if total_w <= 0:
         return 0.0

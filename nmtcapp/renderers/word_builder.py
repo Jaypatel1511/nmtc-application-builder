@@ -213,16 +213,38 @@ class WordApplicationBuilder:
 
         add_styled_paragraph(doc, "Executive Summary", level=1, color_key="primary")
 
-        summary_text = (
-            f"{app.cde.name} requests ${app.requested_allocation/1e6:.1f} million in "
-            f"New Markets Tax Credit allocation for {app.application_round}. "
-            f"Our {pr.total_projects}-project pipeline spans "
-            f"{pr.geographic_diversity.get('states_count', 0)} states, with "
-            f"{distress.get('pct_deep_or_severe', 0):.0%} of QEI committed to deep and "
-            f"severely distressed census tracts — placing us in the "
-            f"{distress.get('vs_historical_winners', 'competitive').replace('_', ' ')} "
-            f"tier of CDFI Fund applicants historically."
-        )
+        degraded = getattr(pr, "eligibility_data_status", "ok") != "ok"
+        if degraded:
+            notice = doc.add_paragraph()
+            r = notice.add_run(
+                "ELIGIBILITY DATA UNAVAILABLE — "
+                f"{getattr(pr, 'eligibility_data_error', None) or 'reason unknown'}. "
+                "Census tract eligibility and distress figures could not be "
+                "verified and are excluded from this document. Do not submit "
+                "until eligibility data has been restored and re-verified."
+            )
+            r.font.bold = True
+            r.font.size = Pt(TYPOGRAPHY["size_body"])
+            r.font.color.rgb = RGBColor(0xB0, 0x00, 0x00)
+            summary_text = (
+                f"{app.cde.name} requests ${app.requested_allocation/1e6:.1f} million in "
+                f"New Markets Tax Credit allocation for {app.application_round}. "
+                f"Our {pr.total_projects}-project pipeline spans "
+                f"{pr.geographic_diversity.get('states_count', 0)} states. Census "
+                "tract eligibility and distress concentration are unverified — "
+                "eligibility data was unavailable when this draft was generated."
+            )
+        else:
+            summary_text = (
+                f"{app.cde.name} requests ${app.requested_allocation/1e6:.1f} million in "
+                f"New Markets Tax Credit allocation for {app.application_round}. "
+                f"Our {pr.total_projects}-project pipeline spans "
+                f"{pr.geographic_diversity.get('states_count', 0)} states, with "
+                f"{distress.get('pct_deep_or_severe', 0):.0%} of QEI committed to deep and "
+                f"severely distressed census tracts — placing us in the "
+                f"{distress.get('vs_historical_winners', 'competitive').replace('_', ' ')} "
+                f"tier of CDFI Fund applicants historically."
+            )
         p = doc.add_paragraph(summary_text)
         p.runs[0].font.size = Pt(TYPOGRAPHY["size_body"])
 
@@ -231,13 +253,15 @@ class WordApplicationBuilder:
         # Key metrics table
         impact = pr.aggregate_impact
         add_styled_paragraph(doc, "Key Metrics", level=2, color_key="secondary")
+        unverified = "Unverified — eligibility data unavailable"
         metrics_data = [
             ["Total QEI Requested", f"${pr.total_qei_request:,.0f}"],
             ["Total Project Cost", f"${pr.total_project_cost:,.0f}"],
             ["States Represented", str(pr.geographic_diversity.get("states_count", 0))],
             ["Deep/Severe Distress Concentration",
-             f"{distress.get('pct_deep_or_severe', 0):.0%}"],
-            ["NMTC Eligibility Rate", f"{pr.eligibility_pct:.0%}"],
+             unverified if degraded else f"{distress.get('pct_deep_or_severe', 0):.0%}"],
+            ["NMTC Eligibility Rate",
+             unverified if degraded else f"{pr.eligibility_pct:.0%}"],
             ["Jobs to Be Created", f"{impact.get('total_jobs_created', 0):,}"],
             ["Affordable Units to Be Built", f"{impact.get('total_units_built', 0):,}"],
             ["Jobs per $1MM QEI", f"{impact.get('jobs_per_million_qei', 0):.1f}"],
@@ -269,8 +293,13 @@ class WordApplicationBuilder:
         right = score_tbl.cell(0, 1)
         shade_cell(right, COLORS["bg_light"].lstrip("#"))
         p2 = right.paragraphs[0]
+        partial_line = ""
+        if getattr(score, "partial", False):
+            partial_line = f"PARTIAL — {score.partial_note}\n"
         r2 = p2.add_run(
-            f"Overall Score: {score.overall_score:.1f}/100\n" +
+            partial_line +
+            f"Overall Score: {score.overall_score:.1f}/100"
+            + ("  (PARTIAL)" if getattr(score, "partial", False) else "") + "\n" +
             "\n".join(
                 f"  {k.replace('_', ' ').title()}: {v:.0f}/100"
                 for k, v in score.component_scores.items()

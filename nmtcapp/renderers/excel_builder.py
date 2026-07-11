@@ -70,6 +70,7 @@ FMT_PCT = "0.0%"
 FMT_PCT0 = "0%"
 FMT_NUMBER = "#,##0"
 FMT_DECIMAL2 = "0.00"
+FMT_TEXT = "@"
 
 
 class ExcelApplicationBuilder:
@@ -151,15 +152,30 @@ class ExcelApplicationBuilder:
         ws["A2"].alignment = _center()
         ws.row_dimensions[2].height = 22
 
+        degraded = getattr(pr, "eligibility_data_status", "ok") != "ok"
         ws.merge_cells("A3:F3")
         ws["A3"] = (
             f"{app.application_round}  |  Prepared: {date.today().strftime('%B %d, %Y')}  |  "
-            f"Readiness Grade: {score.grade} ({score.overall_score:.1f}/100)"
+            f"Readiness Grade: {score.grade} ({score.overall_score:.1f}/100"
+            + (" PARTIAL)" if degraded else ")")
         )
         ws["A3"].font = _font(color="FFFFFF", size=9, italic=True)
         ws["A3"].fill = _fill(xl_color("accent"))
         ws["A3"].alignment = _center()
         ws.row_dimensions[3].height = 16
+
+        if degraded:
+            ws.merge_cells("A4:F4")
+            ws["A4"] = (
+                "ELIGIBILITY DATA UNAVAILABLE — "
+                f"{getattr(pr, 'eligibility_data_error', None) or 'reason unknown'}. "
+                "Eligibility/distress figures are unverified; readiness score is "
+                "partial (computed without eligibility verification)."
+            )
+            ws["A4"].font = _font(bold=True, color="FFFFFF", size=10)
+            ws["A4"].fill = _fill("B00000")
+            ws["A4"].alignment = _center()
+            ws.row_dimensions[4].height = 28
 
         # --- Key Metrics block (rows 5–14) ---
         ws["A5"] = "KEY APPLICATION METRICS"
@@ -174,8 +190,12 @@ class ExcelApplicationBuilder:
             ("Total Project Cost", pr.total_project_cost, FMT_CURRENCY, "secondary"),
             ("Number of Projects", pr.total_projects, FMT_NUMBER, "secondary"),
             ("States Represented", pr.geographic_diversity.get("states_count", 0), FMT_NUMBER, "secondary"),
-            ("NMTC Eligibility Rate", pr.eligibility_pct, FMT_PCT, None),
-            ("Deep/Severe Distress Concentration", distress.get("pct_deep_or_severe", 0), FMT_PCT, None),
+            ("NMTC Eligibility Rate",
+             "Unverified" if degraded else pr.eligibility_pct,
+             FMT_TEXT if degraded else FMT_PCT, None),
+            ("Deep/Severe Distress Concentration",
+             "Unverified" if degraded else distress.get("pct_deep_or_severe", 0),
+             FMT_TEXT if degraded else FMT_PCT, None),
             ("Total Jobs to Be Created", impact.get("total_jobs_created", 0), FMT_NUMBER, None),
             ("Jobs per $1MM QEI", impact.get("jobs_per_million_qei", 0), FMT_DECIMAL2, None),
         ]

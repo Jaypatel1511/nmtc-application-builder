@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from dataclasses import dataclass, field
+from typing import Optional, TYPE_CHECKING
 
 from nmtcapp.intelligence.distress_analysis import analyze_distress_concentration
 from nmtcapp.intelligence.geographic_analysis import analyze_geographic_diversity
@@ -36,6 +36,12 @@ class PipelineAnalysisResult:
     sector_mix: dict
     aggregate_impact: dict
     deal_economics_summary: dict
+    # "ok" when live CDFI Fund data enriched the pipeline; "unavailable" when
+    # it could not be loaded — eligibility figures are then unverified and
+    # scoring surfaces must exclude the eligibility component.
+    eligibility_data_status: str = "ok"
+    eligibility_data_error: Optional[str] = None
+    unverified_project_ids: list = field(default_factory=list)
 
     def summary(self) -> str:
         """Return a formatted multi-section text summary.
@@ -50,14 +56,37 @@ class PipelineAnalysisResult:
         i = self.aggregate_impact
         e = self.deal_economics_summary
 
-        lines = [
+        lines = []
+        if self.eligibility_data_status != "ok":
+            lines.extend([
+                "!" * 60,
+                "  ELIGIBILITY DATA UNAVAILABLE",
+                f"  {self.eligibility_data_error or 'reason unknown'}",
+                "  Eligibility and distress figures below are UNVERIFIED and",
+                "  excluded from scoring. Do not use for application content.",
+                "!" * 60,
+            ])
+        elif self.unverified_project_ids:
+            lines.extend([
+                "!" * 60,
+                f"  {len(self.unverified_project_ids)} project(s) could not be "
+                "location-verified and remain",
+                "  UNVERIFIED (no tract assigned): "
+                + ", ".join(self.unverified_project_ids[:5]),
+                "!" * 60,
+            ])
+        eligible_display = (
+            "unverified" if self.eligibility_data_status != "ok"
+            else f"{self.eligibility_pct:.0%}"
+        )
+        lines += [
             "=" * 60,
             "PIPELINE ANALYSIS SUMMARY",
             "=" * 60,
             f"  Projects:        {self.total_projects}",
             f"  Total QEI:       ${self.total_qei_request:>14,.0f}",
             f"  Total Cost:      ${self.total_project_cost:>14,.0f}",
-            f"  Eligible:        {self.eligibility_pct:.0%}",
+            f"  Eligible:        {eligible_display}",
             "",
             "── Distress Concentration ─────────────────────────────",
             f"  Deep/Severe:     {d.get('pct_deep_or_severe', 0):.0%}  "
@@ -109,6 +138,9 @@ class PipelineAnalysisResult:
             "sector_mix": self.sector_mix,
             "aggregate_impact": self.aggregate_impact,
             "deal_economics_summary": self.deal_economics_summary,
+            "eligibility_data_status": self.eligibility_data_status,
+            "eligibility_data_error": self.eligibility_data_error,
+            "unverified_project_ids": self.unverified_project_ids,
         }
 
 
@@ -153,7 +185,7 @@ class PipelineAnalyzer:
 
         total_qei = sum(p.qei_request for p in enriched)
         total_cost = sum(p.total_project_cost for p in enriched)
-        eligible_count = sum(1 for p in enriched if p.is_nmtc_eligible)
+        eligible_count = sum(1 for p in enriched if p.is_nmtc_eligible is True)
         eligibility_pct = eligible_count / len(enriched) if len(enriched) > 0 else 0.0
 
         return PipelineAnalysisResult(
@@ -166,6 +198,11 @@ class PipelineAnalyzer:
             sector_mix=sector,
             aggregate_impact=impact,
             deal_economics_summary=economics,
+            eligibility_data_status=getattr(enriched, "eligibility_data_status", "ok"),
+            eligibility_data_error=getattr(enriched, "eligibility_data_error", None),
+            unverified_project_ids=[
+                p.project_id for p in enriched if not p.is_enriched
+            ],
         )
 
     def _empty_result(self) -> PipelineAnalysisResult:

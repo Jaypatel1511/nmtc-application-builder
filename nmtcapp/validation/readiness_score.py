@@ -35,6 +35,11 @@ class ReadinessScore:
     top_strengths: List[str]
     top_weaknesses: List[str]
     recommendations: List[str]
+    # Partial-score marker: True when eligibility data was unavailable and the
+    # eligibility_quality / distress_concentration components were excluded.
+    partial: bool = False
+    partial_note: str = ""
+    eligibility_data_error: str = ""
 
     def summary(self) -> str:
         """Return a formatted readiness report.
@@ -44,10 +49,24 @@ class ReadinessScore:
             print(score.summary())
         """
         bar = _score_bar(self.overall_score)
-        lines = [
+        lines = []
+        if self.partial:
+            lines.extend([
+                "!" * 60,
+                "  ELIGIBILITY DATA UNAVAILABLE",
+                f"  {self.eligibility_data_error or 'reason unknown'}",
+                f"  {self.partial_note}",
+                "!" * 60,
+            ])
+        lines += [
             "=" * 60,
-            f"  APPLICATION READINESS SCORE: {self.overall_score:.1f}/100  [{self.grade}]",
+            f"  APPLICATION READINESS SCORE: {self.overall_score:.1f}/100  [{self.grade}]"
+            + ("  (PARTIAL)" if self.partial else ""),
             f"  {bar}",
+        ]
+        if self.partial:
+            lines.append(f"  {self.partial_note}")
+        lines += [
             "=" * 60,
             "",
             "Component Scores:",
@@ -78,6 +97,9 @@ class ReadinessScore:
             "top_strengths": self.top_strengths,
             "top_weaknesses": self.top_weaknesses,
             "recommendations": self.recommendations,
+            "partial": self.partial,
+            "partial_note": self.partial_note,
+            "eligibility_data_error": self.eligibility_data_error,
         }
 
 
@@ -101,12 +123,7 @@ def compute_readiness_score(
         print(score.grade)
     """
     weights = READINESS_SCORING_WEIGHTS
-
-    # --- Component: eligibility quality ---
-    eligibility_score = _eligibility_score(analysis_result)
-
-    # --- Component: distress concentration ---
-    distress_score = _distress_score(analysis_result)
+    degraded = getattr(analysis_result, "eligibility_data_status", "ok") != "ok"
 
     # --- Component: geographic diversity ---
     geo_score = _geo_score(analysis_result)
@@ -121,23 +138,39 @@ def compute_readiness_score(
     completeness_score = _completeness_score(analysis_result, validation_results)
 
     component_scores = {
-        "eligibility_quality":   round(eligibility_score, 1),
-        "distress_concentration": round(distress_score, 1),
         "geographic_diversity":  round(geo_score, 1),
         "impact_metrics":        round(impact_score, 1),
         "validation_pass_rate":  round(val_score, 1),
         "completeness":          round(completeness_score, 1),
     }
 
+    if not degraded:
+        # Eligibility-dependent components only exist when live data was used
+        component_scores = {
+            "eligibility_quality":   round(_eligibility_score(analysis_result), 1),
+            "distress_concentration": round(_distress_score(analysis_result), 1),
+            **component_scores,
+        }
+
+    # Weights renormalized over the computed components, so a degraded score
+    # is still 0–100 but over 4 of 6 components (and labeled as such).
+    active_weight = sum(weights[k] for k in component_scores)
     overall = sum(
-        component_scores[k] * weights[k] for k in weights
-    )
+        component_scores[k] * weights[k] for k in component_scores
+    ) / active_weight if active_weight > 0 else 0.0
     overall = min(100.0, max(0.0, round(overall, 1)))
 
     grade = _compute_grade(overall)
     strengths = _identify_strengths(component_scores)
     weaknesses = _identify_weaknesses(component_scores)
     recommendations = _build_recommendations(analysis_result, component_scores, validation_results)
+
+    partial_note = ""
+    if degraded:
+        partial_note = (
+            f"score computed without eligibility verification "
+            f"({len(component_scores)} of {len(weights)} components)"
+        )
 
     return ReadinessScore(
         overall_score=overall,
@@ -146,6 +179,9 @@ def compute_readiness_score(
         top_strengths=strengths,
         top_weaknesses=weaknesses,
         recommendations=recommendations,
+        partial=degraded,
+        partial_note=partial_note,
+        eligibility_data_error=getattr(analysis_result, "eligibility_data_error", None) or "",
     )
 
 
@@ -242,9 +278,9 @@ def _compute_grade(score: float) -> str:
 
 def _identify_strengths(scores: dict) -> List[str]:
     strengths = []
-    if scores["eligibility_quality"] >= 80:
+    if scores.get("eligibility_quality", 0) >= 80:
         strengths.append("High pipeline eligibility rate (≥80% score)")
-    if scores["distress_concentration"] >= 80:
+    if scores.get("distress_concentration", 0) >= 80:
         strengths.append("Strong deep/severe distress concentration")
     if scores["geographic_diversity"] >= 70:
         strengths.append("Good geographic diversity across multiple states")
@@ -257,13 +293,17 @@ def _identify_strengths(scores: dict) -> List[str]:
 
 def _identify_weaknesses(scores: dict) -> List[str]:
     weaknesses = []
-    if scores["distress_concentration"] < 60:
+    if "eligibility_quality" not in scores:
+        weaknesses.append(
+            "Eligibility data unavailable — tracts and distress levels unverified"
+        )
+    if scores.get("distress_concentration", 100) < 60:
         weaknesses.append("Distress concentration below competitive threshold")
     if scores["geographic_diversity"] < 50:
         weaknesses.append("Geographic footprint too narrow — add more states")
     if scores["impact_metrics"] < 50:
         weaknesses.append("Jobs/impact per million QEI below CDFI Fund average")
-    if scores["eligibility_quality"] < 80:
+    if scores.get("eligibility_quality", 100) < 80:
         weaknesses.append("Some projects may not be NMTC-eligible — verify tracts")
     if scores["validation_pass_rate"] < 70:
         weaknesses.append("Validation failures require resolution before submission")
@@ -279,7 +319,12 @@ def _build_recommendations(
     d = result.distress_breakdown
     g = result.geographic_diversity
 
-    if scores["distress_concentration"] < 75:
+    if "distress_concentration" not in scores:
+        recs.append(
+            "Restore eligibility data access (nmtc-mapper) and re-run the "
+            "analysis — eligibility and distress cannot be verified right now"
+        )
+    if scores.get("distress_concentration", 100) < 75:
         current = d.get("pct_deep_or_severe", 0)
         target = TARGET_DISTRESS_THRESHOLDS["target_deep_distress"]
         recs.append(
