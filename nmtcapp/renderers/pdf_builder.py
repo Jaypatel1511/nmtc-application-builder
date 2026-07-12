@@ -6,6 +6,10 @@ import os
 from datetime import date
 from typing import TYPE_CHECKING
 
+from nmtcapp.renderers._disclosure import (
+    is_partial_unverified, qualified_pct, unverified_banner,
+    unverified_qualifier,
+)
 from nmtcapp.renderers.styles import COLORS, TYPOGRAPHY, PAGE_LAYOUT, rl_hex
 from nmtcapp.sections import ALL_SECTIONS
 from nmtcapp.tables.distress_table import build_distress_table, build_distress_summary_table
@@ -445,7 +449,9 @@ class PDFApplicationBuilder:
             ["Application Round:", app.application_round],
             ["Requested NMTC Allocation:", f"${app.requested_allocation:,.0f}"],
             ["Preparation Date:", date.today().strftime("%B %d, %Y")],
-            ["Readiness Assessment:", f"Grade {score.grade} — {score.overall_score:.1f}/100"],
+            ["Readiness Assessment:",
+             f"Grade {score.grade} — {score.overall_score:.1f}/100"
+             + (" (PARTIAL)" if getattr(score, "partial", False) else "")],
         ]
         col_w = [usable_w * 0.45, usable_w * 0.55]
         det_tbl = Table(details, colWidths=col_w)
@@ -497,6 +503,7 @@ class PDFApplicationBuilder:
         flowables = [Paragraph("Executive Summary", styles["h1"])]
 
         degraded = getattr(pr, "eligibility_data_status", "ok") != "ok"
+        partial_unverified = is_partial_unverified(pr)
         if degraded:
             flowables.append(Paragraph(
                 '<font color="#B00000"><b>ELIGIBILITY DATA UNAVAILABLE — '
@@ -515,6 +522,23 @@ class PDFApplicationBuilder:
                 "eligibility and distress concentration are unverified — eligibility "
                 "data was unavailable when this draft was generated."
             )
+        elif partial_unverified:
+            flowables.append(Paragraph(
+                '<font color="#B00000"><b>UNVERIFIED PROJECT LOCATIONS — '
+                f"{unverified_banner(pr)}</b></font>",
+                styles["body"],
+            ))
+            flowables.append(Spacer(1, 8))
+            summary_text = (
+                f"{app.cde.name} respectfully requests ${app.requested_allocation/1e6:.1f} million in "
+                f"New Markets Tax Credit allocation for {app.application_round}. Our "
+                f"{pr.total_projects}-project pipeline spans "
+                f"{pr.geographic_diversity.get('states_count', 0)} states, with "
+                f"{d.get('pct_deep_or_severe', 0):.0%} of QEI "
+                f"{unverified_qualifier(pr)} committed to deep and severely "
+                "distressed census tracts — figures reflect location-verified "
+                "projects only."
+            )
         else:
             summary_text = (
                 f"{app.cde.name} respectfully requests ${app.requested_allocation/1e6:.1f} million in "
@@ -531,15 +555,21 @@ class PDFApplicationBuilder:
 
         # Key metrics table
         flowables.append(Paragraph("Key Metrics", styles["h2"]))
+        def _elig_metric(value: float) -> str:
+            if degraded:
+                return "Unverified"
+            if partial_unverified:
+                return qualified_pct(value, pr)
+            return f"{value:.0%}"
+
         metrics = [
             ["Metric", "Value"],
             ["Total QEI Requested", f"${pr.total_qei_request:,.0f}"],
             ["Total Project Cost", f"${pr.total_project_cost:,.0f}"],
             ["States Represented", str(pr.geographic_diversity.get("states_count", 0))],
             ["Deep/Severe Distress Concentration",
-             "Unverified" if degraded else f"{d.get('pct_deep_or_severe', 0):.0%}"],
-            ["NMTC Eligibility Rate",
-             "Unverified" if degraded else f"{pr.eligibility_pct:.0%}"],
+             _elig_metric(d.get("pct_deep_or_severe", 0))],
+            ["NMTC Eligibility Rate", _elig_metric(pr.eligibility_pct)],
             ["Jobs to Be Created", f"{impact.get('total_jobs_created', 0):,}"],
             ["Affordable Units to Be Built", f"{impact.get('total_units_built', 0):,}"],
             ["Jobs per $1MM QEI", f"{impact.get('jobs_per_million_qei', 0):.1f}"],

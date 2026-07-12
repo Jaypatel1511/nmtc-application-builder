@@ -13,6 +13,10 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Pt, RGBColor, Inches, Cm
 
+from nmtcapp.renderers._disclosure import (
+    is_partial_unverified, qualified_pct, unverified_banner,
+    unverified_qualifier,
+)
 from nmtcapp.renderers._word_helpers import (
     add_styled_paragraph, add_styled_table, shade_cell, _hex_to_rgb,
 )
@@ -167,7 +171,9 @@ class WordApplicationBuilder:
             ("Application Round:", app.application_round),
             ("Requested NMTC Allocation:", f"${app.requested_allocation:,.0f}"),
             ("Preparation Date:", date.today().strftime("%B %d, %Y")),
-            ("Readiness Assessment:", f"Grade {score.grade} — {score.overall_score:.1f}/100"),
+            ("Readiness Assessment:",
+             f"Grade {score.grade} — {score.overall_score:.1f}/100"
+             + (" (PARTIAL)" if getattr(score, "partial", False) else "")),
         ]
         for i, (label, value) in enumerate(details):
             label_cell = details_tbl.cell(i, 0)
@@ -214,6 +220,7 @@ class WordApplicationBuilder:
         add_styled_paragraph(doc, "Executive Summary", level=1, color_key="primary")
 
         degraded = getattr(pr, "eligibility_data_status", "ok") != "ok"
+        partial_unverified = is_partial_unverified(pr)
         if degraded:
             notice = doc.add_paragraph()
             r = notice.add_run(
@@ -233,6 +240,22 @@ class WordApplicationBuilder:
                 f"{pr.geographic_diversity.get('states_count', 0)} states. Census "
                 "tract eligibility and distress concentration are unverified — "
                 "eligibility data was unavailable when this draft was generated."
+            )
+        elif partial_unverified:
+            notice = doc.add_paragraph()
+            r = notice.add_run("UNVERIFIED PROJECT LOCATIONS — " + unverified_banner(pr))
+            r.font.bold = True
+            r.font.size = Pt(TYPOGRAPHY["size_body"])
+            r.font.color.rgb = RGBColor(0xB0, 0x00, 0x00)
+            summary_text = (
+                f"{app.cde.name} requests ${app.requested_allocation/1e6:.1f} million in "
+                f"New Markets Tax Credit allocation for {app.application_round}. "
+                f"Our {pr.total_projects}-project pipeline spans "
+                f"{pr.geographic_diversity.get('states_count', 0)} states, with "
+                f"{distress.get('pct_deep_or_severe', 0):.0%} of QEI "
+                f"{unverified_qualifier(pr)} committed to deep and severely "
+                "distressed census tracts — figures reflect location-verified "
+                "projects only."
             )
         else:
             summary_text = (
@@ -254,14 +277,21 @@ class WordApplicationBuilder:
         impact = pr.aggregate_impact
         add_styled_paragraph(doc, "Key Metrics", level=2, color_key="secondary")
         unverified = "Unverified — eligibility data unavailable"
+
+        def _elig_metric(value: float) -> str:
+            if degraded:
+                return unverified
+            if partial_unverified:
+                return qualified_pct(value, pr)
+            return f"{value:.0%}"
+
         metrics_data = [
             ["Total QEI Requested", f"${pr.total_qei_request:,.0f}"],
             ["Total Project Cost", f"${pr.total_project_cost:,.0f}"],
             ["States Represented", str(pr.geographic_diversity.get("states_count", 0))],
             ["Deep/Severe Distress Concentration",
-             unverified if degraded else f"{distress.get('pct_deep_or_severe', 0):.0%}"],
-            ["NMTC Eligibility Rate",
-             unverified if degraded else f"{pr.eligibility_pct:.0%}"],
+             _elig_metric(distress.get("pct_deep_or_severe", 0))],
+            ["NMTC Eligibility Rate", _elig_metric(pr.eligibility_pct)],
             ["Jobs to Be Created", f"{impact.get('total_jobs_created', 0):,}"],
             ["Affordable Units to Be Built", f"{impact.get('total_units_built', 0):,}"],
             ["Jobs per $1MM QEI", f"{impact.get('jobs_per_million_qei', 0):.1f}"],

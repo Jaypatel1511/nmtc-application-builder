@@ -69,14 +69,33 @@ def get_or_create_app(
     """
     creating_new = "app" not in st.session_state or pipeline is not None
     if creating_new:
-        cde = CDEProfile.sample()
+        effective_demo = is_demo if is_demo is not None else pipeline is None
+        if effective_demo:
+            cde = CDEProfile.sample()
+        else:
+            # User-supplied pipeline: NEUTRAL profile. The sample CDE's
+            # scoring attributes (3 prior awards, 76% track-record alignment,
+            # third-party validation, ...) must never influence an upload's
+            # framework score — page 1 discloses missing CDE fields as
+            # "defaulted to 0/False", and that must be literally true.
+            cde = CDEProfile(
+                name="(your CDE)",
+                cde_id="user-upload",
+                certification_date="",
+                mission="",
+                target_markets=[],
+                prior_awards=[],
+                contact={},
+                governance={},
+                extra={},
+            )
         if cde_extra:
             cde.extra = {**cde.extra, **cde_extra}
         p = pipeline if pipeline is not None else Pipeline.sample(n=20)
         app = Application(cde=cde, requested_allocation=65_000_000, application_round="CY2025")
         app.add_pipeline(p)
         st.session_state["app"] = app
-        st.session_state["is_demo_data"] = (is_demo if is_demo is not None else pipeline is None)
+        st.session_state["is_demo_data"] = effective_demo
     elif cde_extra and "app" in st.session_state:
         # User re-supplied CDE data without re-uploading the pipeline — patch extra in place
         st.session_state["app"].cde.extra = {

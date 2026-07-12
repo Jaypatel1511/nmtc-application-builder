@@ -214,6 +214,7 @@ def composite_alignment_score(
     projects: List["PipelineProject"],
     requested_allocation: float,
     weights: Optional[Dict[str, float]] = None,
+    include_eligibility: Optional[bool] = None,
 ) -> float:
     """Compute a weighted composite alignment score for a project set.
 
@@ -221,13 +222,19 @@ def composite_alignment_score(
         projects: List of candidate projects.
         requested_allocation: CDE's requested allocation in dollars.
         weights: Optional override for dimension weights. Default weights sum to 1.0.
+        include_eligibility: Component basis. ``None`` (default) auto-derives
+            it from *projects* via :func:`eligibility_components_available`.
+            Callers that compare scores across DIFFERENT project sets (e.g.
+            the optimizer's before/after) must compute the basis once from
+            the full input set and pass it explicitly, so every score shares
+            one component basis.
 
     Returns:
         Float in [0, 1] where 1.0 is perfect historical winner alignment.
-        When any project lacks verified eligibility data, the eligibility
-        components (see ``ELIGIBILITY_COMPONENTS``) are excluded and the
-        remaining weights renormalized — the result is a PARTIAL score;
-        callers should label it via :func:`eligibility_components_available`.
+        When the eligibility basis is excluded, the eligibility components
+        (see ``ELIGIBILITY_COMPONENTS``) are dropped and the remaining
+        weights renormalized — the result is a PARTIAL score; callers should
+        label it via :func:`eligibility_components_available`.
 
     Example::
 
@@ -235,7 +242,8 @@ def composite_alignment_score(
         print(f"Composite: {score:.2f}")
     """
     w = weights or DEFAULT_WEIGHTS
-    include_eligibility = eligibility_components_available(projects)
+    if include_eligibility is None:
+        include_eligibility = eligibility_components_available(projects)
     scores = {
         "geographic": score_geographic_alignment(projects),
         "impact": score_impact_alignment(projects, requested_allocation),

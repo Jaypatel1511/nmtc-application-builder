@@ -108,18 +108,19 @@ class WinProbabilityScore:
         if not self.composite_score:
             self.composite_score = float(self.aggregate_base_score)
         if not self.dimensional_scores:
+            # Divide by the FIXED structural maxima (50/50/10), never by
+            # max_available: in degraded mode Community Outcomes'
+            # max_available shrinks to 25, and dividing by it would inflate
+            # 20 earned points into 80.0 — the honest structural value is 40.0.
             self.dimensional_scores = {
                 "business_strategy": round(
-                    self.business_strategy.get("section_total", 0)
-                    / self.business_strategy.get("max_available", 50) * 100, 1
+                    self.business_strategy.get("section_total", 0) / 50 * 100, 1
                 ),
                 "community_outcomes": round(
-                    self.community_outcomes.get("section_total", 0)
-                    / self.community_outcomes.get("max_available", 50) * 100, 1
+                    self.community_outcomes.get("section_total", 0) / 50 * 100, 1
                 ),
                 "priority_points": round(
-                    self.priority_points.get("section_total", 0)
-                    / self.priority_points.get("max_available", 10) * 100, 1
+                    self.priority_points.get("section_total", 0) / 10 * 100, 1
                 ),
             }
         if not self.competitive_tier:

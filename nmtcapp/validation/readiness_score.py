@@ -51,13 +51,21 @@ class ReadinessScore:
         bar = _score_bar(self.overall_score)
         lines = []
         if self.partial:
-            lines.extend([
-                "!" * 60,
-                "  ELIGIBILITY DATA UNAVAILABLE",
-                f"  {self.eligibility_data_error or 'reason unknown'}",
-                f"  {self.partial_note}",
-                "!" * 60,
-            ])
+            if self.eligibility_data_error:
+                lines.extend([
+                    "!" * 60,
+                    "  ELIGIBILITY DATA UNAVAILABLE",
+                    f"  {self.eligibility_data_error}",
+                    f"  {self.partial_note}",
+                    "!" * 60,
+                ])
+            else:
+                lines.extend([
+                    "!" * 60,
+                    "  UNVERIFIED PROJECTS IN PIPELINE",
+                    f"  {self.partial_note}",
+                    "!" * 60,
+                ])
         lines += [
             "=" * 60,
             f"  APPLICATION READINESS SCORE: {self.overall_score:.1f}/100  [{self.grade}]"
@@ -124,6 +132,7 @@ def compute_readiness_score(
     """
     weights = READINESS_SCORING_WEIGHTS
     degraded = getattr(analysis_result, "eligibility_data_status", "ok") != "ok"
+    unverified_ids = list(getattr(analysis_result, "unverified_project_ids", []) or [])
 
     # --- Component: geographic diversity ---
     geo_score = _geo_score(analysis_result)
@@ -165,11 +174,21 @@ def compute_readiness_score(
     weaknesses = _identify_weaknesses(component_scores)
     recommendations = _build_recommendations(analysis_result, component_scores, validation_results)
 
+    # Partial marker: degraded (no eligibility data at all) OR any project
+    # left unverified — including ALL projects unverified while the pipeline
+    # status is still "ok" (the dataset loaded but nothing could be verified).
+    partial = degraded or bool(unverified_ids)
     partial_note = ""
     if degraded:
         partial_note = (
             f"score computed without eligibility verification "
             f"({len(component_scores)} of {len(weights)} components)"
+        )
+    elif unverified_ids:
+        partial_note = (
+            f"{len(unverified_ids)} projects unverified — locations could not "
+            "be verified; eligibility-dependent components reflect verified "
+            "projects only"
         )
 
     return ReadinessScore(
@@ -179,7 +198,7 @@ def compute_readiness_score(
         top_strengths=strengths,
         top_weaknesses=weaknesses,
         recommendations=recommendations,
-        partial=degraded,
+        partial=partial,
         partial_note=partial_note,
         eligibility_data_error=getattr(analysis_result, "eligibility_data_error", None) or "",
     )

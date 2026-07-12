@@ -468,12 +468,30 @@ def plot_sector_distribution(application: "Application", output_path: str) -> st
 # Task B.4: plot_readiness_radar
 # ---------------------------------------------------------------------------
 
+def _radar_labels(win_score) -> tuple:
+    """Title and series label for the readiness radar.
+
+    Partial scores (eligibility data unavailable) are labeled as such — a
+    partial radar must never present itself as a full assessment.
+    """
+    composite = win_score.composite_score
+    tier = win_score.tier
+    partial = getattr(win_score, "partial", False)
+    partial_tag = " (PARTIAL — eligibility data unavailable)" if partial else ""
+    title = f"CDFI Fund Section Score Radar — {composite:.0f}/100 [{tier}]{partial_tag}"
+    series_label = f"Your Pipeline ({composite:.0f}/100" + (
+        ", PARTIAL)" if partial else ")"
+    )
+    return title, series_label
+
+
 def plot_readiness_radar(application: "Application", output_path: str) -> str:
     """Radar/spider chart showing the 3 CDFI Fund section scores.
 
     Displays Business Strategy (0–50), Community Outcomes (0–50), and
     Priority Points (0–10) normalized to 0–100, with Highly Qualified
-    threshold reference lines.
+    threshold reference lines. Partial scores are labeled PARTIAL in the
+    title and legend.
 
     Args:
         application: An Application instance (pipeline must be set).
@@ -491,11 +509,13 @@ def plot_readiness_radar(application: "Application", output_path: str) -> str:
     dim_scores = win_score.dimensional_scores
     composite = win_score.composite_score
     tier = win_score.tier  # "Top Tier" | "Highly Qualified" | "Not Qualified"
+    title_text, series_label = _radar_labels(win_score)
 
     # Map internal section names → display labels.
-    # dimensional_scores normalizes all sections to 0–100:
-    #   business_strategy / community_outcomes: section_total / 50 * 100
-    #   priority_points: section_total / 10 * 100
+    # dimensional_scores normalizes every section to 0–100 against its FIXED
+    # structural maximum (business_strategy / community_outcomes: /50,
+    # priority_points: /10) — even in partial mode, where fewer points were
+    # assessable (a degraded CO 20/25 plots as 40, not 80).
     _DIM_MAP = [
         ("business_strategy",  "Business\nStrategy"),
         ("community_outcomes", "Community\nOutcomes"),
@@ -530,7 +550,7 @@ def plot_readiness_radar(application: "Application", output_path: str) -> str:
     # Draw section scores
     ax.plot(
         angles, pipeline_vals_closed,
-        color=_PRIMARY, linewidth=2.2, linestyle="-", label=f"Your Pipeline ({composite:.0f}/100)",
+        color=_PRIMARY, linewidth=2.2, linestyle="-", label=series_label,
     )
     ax.fill(angles, pipeline_vals_closed, color=_PRIMARY, alpha=0.15)
 
@@ -568,7 +588,7 @@ def plot_readiness_radar(application: "Application", output_path: str) -> str:
     )
 
     ax.set_title(
-        f"CDFI Fund Section Score Radar — {composite:.0f}/100 [{tier}]",
+        title_text,
         fontsize=13, fontweight="bold", color=tier_color, pad=20, y=1.08,
     )
 

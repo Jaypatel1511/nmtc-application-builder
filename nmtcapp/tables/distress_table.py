@@ -35,14 +35,16 @@ def build_distress_table(pipeline: "Pipeline") -> pd.DataFrame:
             "Project ID":                  p.project_id,
             "Project Name":                p.project_name,
             "City, State":                 f"{p.city}, {p.state}",
-            "Census Tract (GEOID)":        p.census_tract or "Pending Geocode",
+            "Census Tract (GEOID)":        p.census_tract or (
+                                               "Unverified" if p.geocode_success is False
+                                               else "Pending Geocode"),
             "NMTC Eligible":               "Yes" if p.is_nmtc_eligible else (
-                                               "No" if p.is_nmtc_eligible is False else "Pending"),
+                                               "No" if p.is_nmtc_eligible is False else "Unverified"),
             "Distress Level":              DISTRESS_DISPLAY.get(p.distress_level, "Not Assessed"),
-            "Severely Distressed Flag":    "Yes" if p.distress_level in ("deep", "severe") else "No",
-            "NMTC Native Area":            "Yes" if p.is_native_area else "No",
-            "High Migration Rural (HMR)":  "Yes" if p.is_high_migration_rural else "No",
-            "Opportunity Zone":            "Yes" if p.is_opportunity_zone else "No",
+            "Severely Distressed Flag":    _severely_distressed_flag(p),
+            "NMTC Native Area":            _flag(p.is_native_area),
+            "High Migration Rural (HMR)":  _flag(p.is_high_migration_rural),
+            "Opportunity Zone":            _flag(p.is_opportunity_zone),
             "Poverty Rate (%)":            _fmt_pct(p),
             "Median Family Income":        "See ACS",
             "Unemployment Rate (%)":       "See ACS",
@@ -91,8 +93,8 @@ def build_distress_summary_table(pipeline: "Pipeline") -> pd.DataFrame:
             "Project ID":           p.project_id,
             "Census Tract (GEOID)": p.census_tract or "Pending",
             "Distress Level":       DISTRESS_DISPLAY.get(p.distress_level, "Not Assessed"),
-            "Severely Distressed":  "Yes" if p.distress_level in ("deep", "severe") else "No",
-            "Native Area":          "Yes" if p.is_native_area else "No",
+            "Severely Distressed":  _severely_distressed_flag(p),
+            "Native Area":          _flag(p.is_native_area),
         })
     if not rows:
         return pd.DataFrame()
@@ -100,9 +102,25 @@ def build_distress_summary_table(pipeline: "Pipeline") -> pd.DataFrame:
 
 
 def _fmt_pct(p) -> str:
-    """Return formatted poverty rate if available via distress level proxy."""
-    if p.distress_level == "deep":
-        return "> 30%"
-    if p.distress_level in ("severe", "lic"):
-        return "> 20%"
+    """Poverty rate column: always "See ACS".
+
+    The per-row Data Source column cites the CDFI Fund eligibility table —
+    a figure inferred from the distress LABEL (">30%"/">20%") would be a
+    fabricated ACS statistic under that citation. Actual rates live in the
+    ACS source the row already points to.
+    """
     return "See ACS"
+
+
+def _flag(value) -> str:
+    """Render a tri-state eligibility flag: None is unverified, never 'No'."""
+    if value is None:
+        return "—"
+    return "Yes" if value else "No"
+
+
+def _severely_distressed_flag(p) -> str:
+    """Severely-distressed flag; an unenriched project is unverified."""
+    if p.distress_level is None:
+        return "Unverified"
+    return "Yes" if p.distress_level in ("deep", "severe") else "No"

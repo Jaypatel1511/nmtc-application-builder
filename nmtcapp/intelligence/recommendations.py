@@ -286,10 +286,36 @@ class RecommendationEngine:
         co = win_score.community_outcomes
         d = pipeline_result.distress_breakdown
 
-        # Higher Distress Targeting (15 pts)
+        # Partial score: the distress sub-scores are None (unassessable), so
+        # distress-gap recommendations would be built from unverified data.
+        # Emit the restore-data action instead — never fabricated targets.
         hdt = co.get("higher_distress_targeting", 0)
+        ddc = co.get("deep_distress_commitment", 0)
+        if hdt is None or ddc is None:
+            recs.append(Recommendation(
+                category="community_outcomes",
+                priority="critical",
+                finding=(
+                    "Higher Distress Targeting (15 pts) and Deep Distress "
+                    "Commitment (10 pts) could not be assessed — eligibility "
+                    "data is unavailable or projects are location-unverified."
+                ),
+                action=(
+                    "Restore nmtc-mapper eligibility data access and/or resolve "
+                    "project geocode failures, re-run the analysis, and re-score "
+                    "before acting on any distress-targeting changes."
+                ),
+                expected_impact=(
+                    "Unlocks assessment of the 25 base points currently excluded "
+                    "from the Community Outcomes section."
+                ),
+                quantified_improvement="Not quantifiable until eligibility data is verified.",
+                citation=f"{_SOURCE_DOC}, Section II.C.1 — Community Outcomes",
+            ))
+
+        # Higher Distress Targeting (15 pts) — tract-derived, skip when unassessable
         severe_pct = d.get("pct_deep_or_severe", 0.0)
-        if hdt < 12:
+        if hdt is not None and hdt < 12:
             gap_pp = round((0.85 - severe_pct) * 100)
             recs.append(Recommendation(
                 category="community_outcomes",
@@ -312,7 +338,7 @@ class RecommendationEngine:
                 quantified_improvement=f"Estimated +{15-hdt} points (Higher Distress: {hdt}/15 → 15/15).",
                 citation=f"{_SOURCE_DOC}, Section II.C.1 — Community Outcomes, Higher Distress Targeting",
             ))
-        elif hdt < 15:
+        elif hdt is not None and hdt < 15:
             recs.append(Recommendation(
                 category="community_outcomes",
                 priority="medium",
@@ -327,9 +353,8 @@ class RecommendationEngine:
                 citation=f"{_SOURCE_DOC}, Section II.C.1 — Community Outcomes, Higher Distress Targeting",
             ))
 
-        # Deep Distress Commitment (10 pts)
-        ddc = co.get("deep_distress_commitment", 0)
-        if ddc < 7:
+        # Deep Distress Commitment (10 pts) — tract-derived, skip when unassessable
+        if ddc is not None and ddc < 7:
             deep_pct = d.get("pct_deep", d.get("pct_deep_or_severe", 0.0) * 0.5)
             gap_pp = round((0.20 - deep_pct) * 100)
             recs.append(Recommendation(
@@ -350,9 +375,10 @@ class RecommendationEngine:
                 citation=f"{_SOURCE_DOC}, Section II.C.1 — Community Outcomes, Deep Distress Commitment",
             ))
 
-        # Special Targeting (5 pts)
+        # Special Targeting (5 pts) — derived from tract flags; skip when the
+        # tract data behind those flags is unverified (hdt/ddc unassessable)
         st = co.get("special_targeting", 0)
-        if st < 3:
+        if hdt is not None and ddc is not None and st < 3:
             recs.append(Recommendation(
                 category="community_outcomes",
                 priority="medium",

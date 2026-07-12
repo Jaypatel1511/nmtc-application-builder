@@ -157,9 +157,12 @@ class Pipeline:
 
     def __init__(self, projects: Optional[List[PipelineProject]] = None) -> None:
         self._projects: List[PipelineProject] = projects or []
-        # Set by enrich_pipeline_eligibility: "ok" when live CDFI Fund data
-        # was used, "unavailable" when it could not be loaded (fields stay None).
-        self.eligibility_data_status: str = "ok"
+        # Fail-closed default: a pipeline that never went through enrichment
+        # must read as degraded, not verified-complete. The adapter sets "ok"
+        # when live CDFI Fund data was used and "unavailable" when it could
+        # not be loaded (fields stay None); every consumer treats != "ok"
+        # as degraded.
+        self.eligibility_data_status: str = "unenriched"
         self.eligibility_data_error: Optional[str] = None
 
     def add(self, project: PipelineProject) -> None:
@@ -256,7 +259,12 @@ class Pipeline:
             pipeline = Pipeline.sample(n=20)
         """
         raw = _SAMPLE_PROJECTS[:n]
-        return cls(raw)
+        pipeline = cls(raw)
+        # The sample fixture ships pre-verified eligibility data for offline
+        # demos and tests — the one construction path that may claim "ok"
+        # without going through the adapter.
+        pipeline.eligibility_data_status = "ok"
+        return pipeline
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert the pipeline to a pandas DataFrame.

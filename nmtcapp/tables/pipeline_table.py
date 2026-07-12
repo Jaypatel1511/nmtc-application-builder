@@ -57,11 +57,11 @@ def build_pipeline_table(pipeline: "Pipeline", cde: "CDEProfile" = None) -> pd.D
             "State":                      p.state,
             "ZIP Code":                   "",
             "Census Tract (11-digit)":    p.census_tract or "",
-            "NMTC Eligible (Y/N)":        "Y" if p.is_nmtc_eligible else ("N" if p.is_nmtc_eligible is False else "TBD"),
+            "NMTC Eligible (Y/N)":        "Y" if p.is_nmtc_eligible else ("N" if p.is_nmtc_eligible is False else "Unverified"),
             "Distress Level":             DISTRESS_DISPLAY.get(p.distress_level, "Not Assessed"),
-            "NMTC Native Area (Y/N)":     "Y" if p.is_native_area else "N",
-            "High Migration Rural (Y/N)": "Y" if p.is_high_migration_rural else "N",
-            "Opportunity Zone (Y/N)":     "Y" if p.is_opportunity_zone else "N",
+            "NMTC Native Area (Y/N)":     _yn_flag(p.is_native_area),
+            "High Migration Rural (Y/N)": _yn_flag(p.is_high_migration_rural),
+            "Opportunity Zone (Y/N)":     _yn_flag(p.is_opportunity_zone),
             "Sector (NAICS)":             SECTOR_NAICS.get(p.sector, p.sector),
             "Project Type":               p.project_type.replace("_", " ").title(),
             "Total Project Cost ($)":     p.total_project_cost,
@@ -92,6 +92,13 @@ def build_pipeline_table(pipeline: "Pipeline", cde: "CDEProfile" = None) -> pd.D
     totals = _build_totals_row(df)
     df = pd.concat([df, pd.DataFrame([totals])], ignore_index=True)
     return df
+
+
+def _yn_flag(value) -> str:
+    """Render a tri-state Y/N flag: None is unverified, never 'N'."""
+    if value is None:
+        return "—"
+    return "Y" if value else "N"
 
 
 def _build_totals_row(df: pd.DataFrame) -> dict:

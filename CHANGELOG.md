@@ -39,9 +39,38 @@ while offline or while the CDFI Fund download was failing, re-run them on 1.1.5.
   labeled "score computed without eligibility verification (4 of 6 components)";
   composite alignment scores exclude the distress component (4 of 5 components); the
   CDFI Fund framework score excludes Higher Distress Targeting and Deep Distress
-  Commitment (25 of 100 base points) and assigns no tier. Analyzer summaries, the
-  Streamlit UI, and Word/PDF/Excel drafts all render an "eligibility data
-  unavailable" banner at the top of the affected section — nothing degrades silently.
+  Commitment (25 of 100 base points) and assigns no tier.
+- **Degradation disclosure — exactly these surfaces** (both full-unavailable AND
+  partial-unverified, where individual projects failed location verification):
+  all four export formats (Word, PDF, Excel, Markdown) render a banner naming the
+  unverified project IDs, with inline per-metric qualifiers ("67% (2 of 6
+  unverified)" in the same cell/line as the figure); the pipeline analyzer summary;
+  the `ReadinessScore` object (`partial=True` with a distinct unverified note —
+  including when ALL projects are unverified while the dataset loaded fine); and the
+  Streamlit pages (analyzer banner, scorer/optimizer partial tags, partial-labeled
+  radar). Section A/B narratives render degraded phrasing instead of asserting
+  unverified "N% of QEI" figures as fact, and the Markdown methodology note never
+  cites a data source that did not load. A never-enriched pipeline defaults to
+  `eligibility_data_status="unenriched"` (fail-closed), not "ok".
+- **Optimizer before/after on one component basis** — the with/without-eligibility
+  basis is computed once from the full input set and shared by every scoring call
+  (before, greedy ranking, local search, after). Previously a mixed pipeline scored
+  "before" without the distress component but an all-verified "after" subset with
+  it, so the reported improvement was measured across two different scales.
+- **`dimensional_scores` on fixed structural maxima** — section scores normalize
+  against 50/50/10 regardless of a degraded `max_available`, so a degraded Community
+  Outcomes 20/25 reads 40.0 (points earned of the structural section), not 80.0.
+- **Uploads previously scored against sample CDE attributes while claiming
+  zero-defaults** — uploaded pipelines scored against `CDEProfile.sample()`
+  attributes (3 prior awards, 76% track-record alignment, third-party validation, …)
+  while the analyzer page told upload users that missing CDE fields were "defaulted
+  to 0/False". Uploads now get a neutral profile (no prior awards, empty scoring
+  attributes), making that disclosure literally true; the sample profile is demo-only.
+- **Tables never fabricate or downgrade** — the distress table's poverty-rate column
+  is "See ACS" unconditionally (no more ">30%"/">20%" figures inferred from the
+  distress label under a CDFI Fund data-source citation); unverified tri-state flags
+  (native area, HMR, opportunity zone, severely-distressed) render "—"/"Unverified",
+  never "No"/"N".
 - Dependency floor raised: `nmtc-mapper>=0.3.4` (fails loud on data-load failure
   instead of serving sample data).
 
@@ -50,6 +79,12 @@ while offline or while the CDFI Fund download was failing, re-run them on 1.1.5.
   surfaces geocode failure as an "ineligible"-shaped result with
   `geocode_success=False`. Mitigated on the flagship side: the adapter checks
   `geocode_success` and treats those projects as unverified, not ineligible.
+- Deferred to 1.1.6: the distress breakdown's non-LIC bucket absorbs unverified
+  projects (unverified counts in denominators; distinct unverified bucket pending);
+  sample-data provenance and shared sample instances (`Pipeline.sample()` /
+  `CDEProfile.sample()` return pre-verified fixtures marked "ok" and share module
+  state; n=25 sampling); Streamlit AppTest coverage for the page-level banners and
+  partial tags.
 
 ---
 

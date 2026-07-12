@@ -6,6 +6,9 @@ import os
 from datetime import date
 from typing import TYPE_CHECKING
 
+from nmtcapp.renderers._disclosure import (
+    is_partial_unverified, qualified_pct, unverified_banner,
+)
 from nmtcapp.renderers.styles import COLORS, TYPOGRAPHY, TABLE_STYLES, xl_color
 from nmtcapp.tables.distress_table import build_distress_table
 from nmtcapp.tables.geographic_table import build_geographic_table
@@ -153,11 +156,12 @@ class ExcelApplicationBuilder:
         ws.row_dimensions[2].height = 22
 
         degraded = getattr(pr, "eligibility_data_status", "ok") != "ok"
+        partial_unverified = is_partial_unverified(pr)
         ws.merge_cells("A3:F3")
         ws["A3"] = (
             f"{app.application_round}  |  Prepared: {date.today().strftime('%B %d, %Y')}  |  "
             f"Readiness Grade: {score.grade} ({score.overall_score:.1f}/100"
-            + (" PARTIAL)" if degraded else ")")
+            + (" PARTIAL)" if getattr(score, "partial", False) else ")")
         )
         ws["A3"].font = _font(color="FFFFFF", size=9, italic=True)
         ws["A3"].fill = _fill(xl_color("accent"))
@@ -172,6 +176,13 @@ class ExcelApplicationBuilder:
                 "Eligibility/distress figures are unverified; readiness score is "
                 "partial (computed without eligibility verification)."
             )
+            ws["A4"].font = _font(bold=True, color="FFFFFF", size=10)
+            ws["A4"].fill = _fill("B00000")
+            ws["A4"].alignment = _center()
+            ws.row_dimensions[4].height = 28
+        elif partial_unverified:
+            ws.merge_cells("A4:F4")
+            ws["A4"] = "UNVERIFIED PROJECT LOCATIONS — " + unverified_banner(pr)
             ws["A4"].font = _font(bold=True, color="FFFFFF", size=10)
             ws["A4"].fill = _fill("B00000")
             ws["A4"].alignment = _center()
@@ -191,11 +202,16 @@ class ExcelApplicationBuilder:
             ("Number of Projects", pr.total_projects, FMT_NUMBER, "secondary"),
             ("States Represented", pr.geographic_diversity.get("states_count", 0), FMT_NUMBER, "secondary"),
             ("NMTC Eligibility Rate",
-             "Unverified" if degraded else pr.eligibility_pct,
-             FMT_TEXT if degraded else FMT_PCT, None),
+             ("Unverified" if degraded
+              else qualified_pct(pr.eligibility_pct, pr) if partial_unverified
+              else pr.eligibility_pct),
+             FMT_TEXT if (degraded or partial_unverified) else FMT_PCT, None),
             ("Deep/Severe Distress Concentration",
-             "Unverified" if degraded else distress.get("pct_deep_or_severe", 0),
-             FMT_TEXT if degraded else FMT_PCT, None),
+             ("Unverified" if degraded
+              else qualified_pct(distress.get("pct_deep_or_severe", 0), pr)
+              if partial_unverified
+              else distress.get("pct_deep_or_severe", 0)),
+             FMT_TEXT if (degraded or partial_unverified) else FMT_PCT, None),
             ("Total Jobs to Be Created", impact.get("total_jobs_created", 0), FMT_NUMBER, None),
             ("Jobs per $1MM QEI", impact.get("jobs_per_million_qei", 0), FMT_DECIMAL2, None),
         ]

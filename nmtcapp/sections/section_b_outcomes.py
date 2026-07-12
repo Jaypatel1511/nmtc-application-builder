@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from nmtcapp.renderers._disclosure import is_partial_unverified, unverified_qualifier
 from nmtcapp.sections.base import SectionGenerator, _placeholder
 
 if TYPE_CHECKING:
@@ -52,18 +53,31 @@ class SectionBCommunityOutcomes(SectionGenerator):
             f"({impact.get('vs_historical_benchmarks', 'N/A').replace('_', ' ')} vs. CDFI Fund historical average)\n\n"
         ) + _placeholder(self.section_id, 500)
 
-        # Distress commitments
+        # Distress commitments — tract-dependent figures may only be asserted
+        # as fact when fully verified; otherwise they carry inline qualifiers
+        # (or an explicit Unverified marker when no data loaded at all).
         deep_pct = distress.get("pct_deep_or_severe", 0.0)
         native_pct = distress.get("pct_native_area", 0.0)
         hmr_pct = distress.get("pct_high_migration_rural", 0.0)
+
+        degraded = getattr(pr, "eligibility_data_status", "ok") != "ok"
+        partial_unverified = is_partial_unverified(pr)
+
+        def _tract_pct(value: float) -> str:
+            if degraded:
+                return "Unverified — eligibility data unavailable"
+            if partial_unverified:
+                return f"{value:.1%} {unverified_qualifier(pr)}"
+            return f"{value:.1%}"
+
         distress_commitments = {
-            "QEI in Deep/Severely Distressed Tracts": f"{deep_pct:.1%}",
-            "QEI in LIC (Standard Eligible) Tracts": f"{distress.get('pct_lic', 0):.1%}",
-            "QEI in NMTC Native Areas": f"{native_pct:.1%}",
-            "QEI in High Migration Rural (HMR) Tracts": f"{hmr_pct:.1%}",
+            "QEI in Deep/Severely Distressed Tracts": _tract_pct(deep_pct),
+            "QEI in LIC (Standard Eligible) Tracts": _tract_pct(distress.get("pct_lic", 0)),
+            "QEI in NMTC Native Areas": _tract_pct(native_pct),
+            "QEI in High Migration Rural (HMR) Tracts": _tract_pct(hmr_pct),
             "CDFI Fund Competitive Minimum (Deep/Severe)": "50.0%",
             "CDFI Fund Target (Deep/Severe)": "75.0%",
-            f"{application.cde.name} Commitment (Deep/Severe)": f"{deep_pct:.1%}",
+            f"{application.cde.name} Commitment (Deep/Severe)": _tract_pct(deep_pct),
         }
 
         community_need = (

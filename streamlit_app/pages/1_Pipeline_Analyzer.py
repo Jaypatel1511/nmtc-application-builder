@@ -4,6 +4,8 @@ IMPORTANT: do not use `i` as a loop variable anywhere in this file.
 `i` is reserved for `i = analysis.impact_summary` (a dict) used in Tab 4.
 Use `idx` for all enumerate indexes.
 """
+from __future__ import annotations
+
 import sys
 import os
 

@@ -202,7 +202,12 @@ if dim_improvements:
     win_score_session = st.session_state.get("win_score")
     if win_score_session and hasattr(win_score_session, "dimensional_scores"):
         prior_dim_scores = win_score_session.dimensional_scores
-        # dimensional_scores normalizes all sections to 0–100; denormalize for display
+        # dimensional_scores normalizes each section to 0–100 against its
+        # FIXED structural maximum (50/50/10, even in partial mode), so
+        # denormalizing with these caps recovers the earned points.
+        _ws_partial_tag = (
+            " (partial)" if getattr(win_score_session, "partial", False) else ""
+        )
         section_map = [
             ("business_strategy",  "Business Strategy",  50),
             ("community_outcomes", "Community Outcomes", 50),
@@ -211,7 +216,7 @@ if dim_improvements:
         sec_cols = st.columns(3)
         for col, (k, lbl, cap) in zip(sec_cols, section_map):
             raw_val = prior_dim_scores.get(k, 0.0) / 100 * cap
-            col.metric(f"{lbl} (before)", f"{raw_val:.0f} / {cap}")
+            col.metric(f"{lbl} (before)" + _ws_partial_tag, f"{raw_val:.0f} / {cap}")
 
     # Dimension delta chart — optimizer objective improvements (always shown)
     fig_dims = go.Figure()

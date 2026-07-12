@@ -168,8 +168,15 @@ class PipelineOptimizer:
             result = PipelineOptimizer().optimize(pipeline, constraints, 55_000_000)
         """
         all_projects = list(pipeline)
+        # Component basis is fixed ONCE from the full input set and shared by
+        # every scoring call below — before, greedy per-project ranking,
+        # local search, and after. Scoring the before on one basis and the
+        # after on another would make the reported improvement meaningless.
         eligibility_verified = eligibility_components_available(all_projects)
-        score_before = composite_alignment_score(all_projects, requested_allocation, self.weights)
+        score_before = composite_alignment_score(
+            all_projects, requested_allocation, self.weights,
+            include_eligibility=eligibility_verified,
+        )
 
         pool = CandidatePool.from_pipeline(pipeline).filter(constraints)
         candidates = pool.projects
@@ -182,7 +189,9 @@ class PipelineOptimizer:
         logger.info("Optimizer starting: %d candidates, max_iter=%d", len(candidates), self.max_iterations)
 
         # --- Phase 1: Greedy construction ---
-        selected = self._greedy_construct(candidates, constraints, requested_allocation)
+        selected = self._greedy_construct(
+            candidates, constraints, requested_allocation, eligibility_verified
+        )
 
         if not selected:
             return self._infeasible_result(
@@ -191,12 +200,18 @@ class PipelineOptimizer:
             )
 
         # --- Phase 2: Swap-based local search ---
-        selected, iters = self._local_search(selected, candidates, constraints, requested_allocation)
+        selected, iters = self._local_search(
+            selected, candidates, constraints, requested_allocation,
+            eligibility_verified,
+        )
 
         # Check feasibility
         ok, reason = constraints.is_feasible(selected)
 
-        score_after = composite_alignment_score(selected, requested_allocation, self.weights)
+        score_after = composite_alignment_score(
+            selected, requested_allocation, self.weights,
+            include_eligibility=eligibility_verified,
+        )
 
         # No-regression guarantee: if the optimizer produced a worse result than the
         # original full pipeline, try using all_projects when they fit the constraints.
@@ -254,10 +269,18 @@ class PipelineOptimizer:
         candidates: List["PipelineProject"],
         constraints: OptimizationConstraints,
         requested_allocation: float,
+        include_eligibility: bool,
     ) -> List["PipelineProject"]:
-        """Greedy construction: add projects in descending per-project score order."""
+        """Greedy construction: add projects in descending per-project score order.
+
+        Per-project ranking uses the shared basis so verified and unverified
+        candidates compete on the same scale.
+        """
         def _per_project_score(p: "PipelineProject") -> float:
-            return composite_alignment_score([p], requested_allocation, self.weights)
+            return composite_alignment_score(
+                [p], requested_allocation, self.weights,
+                include_eligibility=include_eligibility,
+            )
 
         ranked = sorted(candidates, key=_per_project_score, reverse=True)
         selected: List["PipelineProject"] = []
@@ -292,10 +315,14 @@ class PipelineOptimizer:
         candidates: List["PipelineProject"],
         constraints: OptimizationConstraints,
         requested_allocation: float,
+        include_eligibility: bool,
     ) -> tuple[List["PipelineProject"], int]:
         """Swap-based local search: try replacing one project at a time."""
         not_selected = [p for p in candidates if p not in selected]
-        best_score = composite_alignment_score(selected, requested_allocation, self.weights)
+        best_score = composite_alignment_score(
+            selected, requested_allocation, self.weights,
+            include_eligibility=include_eligibility,
+        )
         iters = 0
 
         for _ in range(self.max_iterations):
@@ -309,7 +336,10 @@ class PipelineOptimizer:
                         continue
                     if total_qei < constraints.min_total_qei and len(candidate_set) < constraints.min_projects:
                         continue
-                    new_score = composite_alignment_score(candidate_set, requested_allocation, self.weights)
+                    new_score = composite_alignment_score(
+                        candidate_set, requested_allocation, self.weights,
+                        include_eligibility=include_eligibility,
+                    )
                     if new_score > best_score + 1e-6:
                         selected = candidate_set
                         not_selected = [p for p in candidates if p not in selected]
