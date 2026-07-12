@@ -64,6 +64,7 @@ dev = [
     "openpyxl>=3.0.9",
     "reportlab>=4.0.0",
     "matplotlib>=3.7",
+    "pypdf>=4.0",
 ]
 
 [project.urls]
