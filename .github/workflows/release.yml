@@ -111,7 +111,7 @@ jobs:
           python -m venv /tmp/wheel_test_venv
           /tmp/wheel_test_venv/bin/pip install --upgrade pip
           WHEEL=$(ls dist/*.whl)
-          /tmp/wheel_test_venv/bin/pip install "${WHEEL}[dev]" streamlit plotly
+          /tmp/wheel_test_venv/bin/pip install "${WHEEL}[dev]"
       - name: Confirm installed version matches the tag
         run: |
           INSTALLED=$(/tmp/wheel_test_venv/bin/python -c "import nmtcapp; print(nmtcapp.__version__)")
@@ -211,11 +211,12 @@ jobs:
           python -m venv "${RUNNER_TEMP}/sdist-venv"
           VPY="${RUNNER_TEMP}/sdist-venv/bin/python"
           "${VPY}" -m pip install --upgrade pip
-          # streamlit and plotly are installed explicitly rather than via [dev]
-          # because they are not in any declared extra, even though four shipped
-          # test modules import them. ci.yml does the same thing for the same
-          # reason; this mirrors it deliberately rather than silently diverging.
-          "${VPY}" -m pip install "${SDIST}[dev]" streamlit plotly
+          # [dev] is the single source of truth for test tooling, streamlit and
+          # plotly included. No trailing package suffix here, in ci.yml, or in
+          # test-wheel: a suffix would let the workflows drift from the declared
+          # metadata, which is how those two packages went undeclared for as
+          # long as they did.
+          "${VPY}" -m pip install "${SDIST}[dev]"
 
           # Run from a directory containing ONLY what the sdist shipped, and NOT
           # ./nmtcapp. Running from ${SRC} itself would put the unpacked source

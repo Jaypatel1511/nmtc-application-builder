@@ -65,6 +65,19 @@ dev = [
     "reportlab>=4.0.0",
     "matplotlib>=3.7",
     "pypdf>=4.0",
+    # Required by tests/test_streamlit_chart_smoke.py (plotly, via
+    # streamlit_app/chart_style.py) and tests/test_streamlit_upload_profile.py
+    # (streamlit, via streamlit_app/utils.py). Nothing under nmtcapp/ imports
+    # either, so these are test tooling, not runtime dependencies.
+    #
+    # Floors are set by the newest API the code actually calls, verified against
+    # the released distributions rather than copied from a lockfile:
+    #   streamlit  st.navigation and st.Page (streamlit_app/app.py:165-172) are
+    #              both exported first in 1.36.0; 1.35.0 has neither.
+    #   plotly     fig.add_vline (pages/3_Pipeline_Optimizer.py:237) first
+    #              appears in 4.12.0; 4.11.0 has no such method.
+    "streamlit>=1.36.0",
+    "plotly>=4.12.0",
 ]
 
 [project.urls]
