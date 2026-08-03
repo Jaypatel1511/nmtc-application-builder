@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [ main ]
 
+# Least privilege. CI only reads the repo: it checks out, installs, and runs the
+# suite. No job here comments, pushes, uploads, or publishes, so nothing needs a
+# write scope and nothing needs OIDC. Publishing lives entirely in release.yml,
+# which scopes id-token: write to the publish job alone.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest

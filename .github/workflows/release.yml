@@ -89,8 +89,13 @@ jobs:
           # level. Tarball entries are "<name>-<version>/tests/..."; stripping the
           # first path component makes the two lists directly comparable.
           find tests -name 'test_*.py' | sed 's|^|/|' | sort > "${RUNNER_TEMP}/repo-tests.txt"
+          # grep exits 1 on no-match and 2 on error: tolerate 1 so a tarball with
+          # zero test modules reaches the emptiness check below, which is what
+          # produces the real message; let 2 kill the step here. Unguarded, a
+          # no-match killed this step under `pipefail` with no output at all.
           tar tzf "${SDIST}" | sed 's|^[^/]*||' \
-            | grep -E '^/tests/(.*/)?test_[^/]*\.py$' | sort > "${RUNNER_TEMP}/sdist-tests.txt"
+            | { grep -E '^/tests/(.*/)?test_[^/]*\.py$' || test $? -eq 1; } \
+            | sort > "${RUNNER_TEMP}/sdist-tests.txt"
 
           echo "test modules in checkout : $(wc -l < "${RUNNER_TEMP}/repo-tests.txt")"
           echo "test modules in sdist    : $(wc -l < "${RUNNER_TEMP}/sdist-tests.txt")"
@@ -297,7 +302,12 @@ jobs:
         run: |
           set -euo pipefail
           SDIST="$(ls dist/*.tar.gz)"
-          SHIPPED="$(tar tzf "${SDIST}" | grep -cE '/tests/(.*/)?test_[^/]*\.py$' || true)"
+          # grep exits 1 on no-match and 2 on error: tolerate 1 so SHIPPED is "0"
+          # and the emptiness check below produces the real message; let 2 abort.
+          # Was `|| true`, which swallowed 2 as well: SHIPPED became empty, the
+          # `-eq 0` test then errored instead of returning true, its branch was
+          # skipped, and the step exited 0 -- the gate PASSED on a broken grep.
+          SHIPPED="$(tar tzf "${SDIST}" | grep -cE '/tests/(.*/)?test_[^/]*\.py$' || test $? -eq 1)"
           echo "test modules in sdist: ${SHIPPED}"
           # This job deliberately has NO checkout, so it cannot compare the
           # tarball against the repository — that comparison lives in `build`,
