@@ -36,9 +36,14 @@
 # the one a maintainer builds by hand looks fine. Verified: the file list of the
 # 1.1.5 sdist on PyPI is identical to a fresh-clone build.
 #
-# Fifth instance of this defect in the portfolio: sbic-tracker, oz-tracker,
-# cdfi-fund-tracker and nmtc-mapper all hit it first. The fix was written four
-# times and propagated nowhere, so this change is paired with a `test-sdist` job
+# EIGHTH instance of this defect in the portfolio: sbic-tracker, oz-tracker,
+# cdfi-fund-tracker and nmtc-mapper hit it first, then cdfi-benchmark,
+# hmda-analyzer and cdfi-data as five, six and seven. This repo is the last of
+# a four-repo sweep, and the only one where the build-side test-module count
+# assertion fires at all -- see the note on that step in release.yml. (Do not
+# copy this ordinal forward unchanged -- four files all claiming to be the
+# fifth is how the count stops being evidence.) The fix was written four times
+# and propagated nowhere, so this change is paired with a `test-sdist` job
 # in release.yml that unpacks the built tarball and runs ITS suite. The
 # MANIFEST.in is only what makes that job pass; the job is what stops this from
 # silently regressing. Packaging that is never installed from is packaging that

@@ -5,13 +5,23 @@ on:
     tags:
       - 'v*'
 
+# Least privilege by default. Without this block GITHUB_TOKEN in every job
+# inherits the repository-default scopes, which on a permissive default is
+# read/write across contents, issues, packages and more -- handed to
+# verify-version, build and test-wheel, none of which write anything.
+# The publish job below overrides this with the single elevated scope it
+# genuinely needs (id-token: write, for OIDC trusted publishing); that override
+# is job-scoped, so it does not widen anything else.
+permissions:
+  contents: read
+
 jobs:
   verify-version:
     name: Guard — tag must match pyproject.toml
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: '3.12'
       - name: Check tag equals pyproject.toml version
@@ -33,8 +43,8 @@ jobs:
     needs: verify-version
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: '3.11'
       - name: Install build toolchain
@@ -51,6 +61,24 @@ jobs:
       # "the tarball contains every test module the repository has", which needs
       # no threshold. On this repo that distinction is not academic: the suite is
       # mostly nested, and the pre-MANIFEST.in tarball shipped 14 of 50 modules.
+      #
+      # WHAT THIS STEP DOES NOT CERTIFY -- read this before "simplifying" the
+      # pipeline down to this one count, and note that this repo is the ONLY
+      # one in the sweep where it fires at all. It compares test_*.py names
+      # ONLY, and setuptools' legacy sdist default ALREADY matches
+      # tests/test*.py. So on a flat suite it passes against a completely
+      # broken MANIFEST.in. Verified across the sweep on pre-fix tarballs:
+      # cdfi-benchmark 5/5 PASS, hmda-analyzer 8/8 PASS, cdfi-data 4/4 PASS,
+      # nmtc-mapper 14/14 PASS -- all four green with tests/conftest.py absent
+      # from the tarball. Only this repo failed, 14 of 50, and only because 36
+      # of its modules sit below tests/ where the default pattern reaches
+      # nothing. Flatten this suite and this step goes quiet.
+      #
+      # It cannot see conftest.py go missing in ANY repo, this one included:
+      # conftest.py is not a test_*.py. Same for templates/ and streamlit_app/.
+      # The check actually doing the work is the required-files loop in
+      # test-sdist. Delete that loop and keep this count, and the release gate
+      # certifies nothing about the files whose absence broke 1.1.5.
       - name: Assert the sdist ships every test module in the checkout
         shell: bash
         run: |
@@ -82,7 +110,7 @@ jobs:
           echo "sdist ships every test module in the checkout"
 
       - name: Upload dist artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: dist
           path: dist/
@@ -97,12 +125,12 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Download dist artifact
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: dist
           path: dist/
@@ -151,11 +179,11 @@ jobs:
     steps:
       # NOTE: deliberately NO actions/checkout. If the checkout is absent, it
       # cannot leak into the thing under test.
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Download dist artifact
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: dist
           path: dist/
@@ -258,8 +286,11 @@ jobs:
           # operation, not something the tarball's own suite should attempt.
           # --strict-markers so a missing ini file fails loudly instead of
           # silently deselecting nothing.
+          # --junitxml so the NEXT step can count what actually executed. The
+          # module-count check alone cannot: see the note there.
           "${VPY}" -m pytest tests -m "not wheel" --tb=short --no-header \
-            --import-mode=importlib --strict-markers
+            --import-mode=importlib --strict-markers \
+            --junitxml="${RUNNER_TEMP}/sdist-junit.xml"
 
       - name: Assert the sdist suite is not silently truncated
         shell: bash
@@ -279,6 +310,54 @@ jobs:
             exit 1
           fi
 
+          # The check above counts MODULES SHIPPED. It never counts EXECUTIONS,
+          # and those are different numbers: a suite where every test skips or
+          # is deselected exits 0 while shipping every module it should.
+          #   2 skipped in 0.00s     -> pytest exit code 0
+          #   1 deselected in 0.00s  -> pytest exit code 0
+          # This repo passes `-m "not wheel"`, so it is directly exposed: widen
+          # that expression, or re-mark the suite `wheel`, and every test is
+          # deselected while the module count stays untouched and every gate
+          # stays green. That is the same vacuity class as an empty parametrize,
+          # at job scale -- and this repo already carries a live instance of the
+          # small-scale version, see empty_parameter_set_mark in pyproject.toml.
+          #
+          # FLOOR DERIVATION -- not a number picked to be safe. The rule is
+          # HALF of what the suite genuinely runs today, rounded down to a
+          # round number. Measured on this tarball: 708 tests executed under
+          # this job's exact invocation (1 more is `wheel` and deselected, and
+          # is correctly NOT counted toward the floor). Half is 354, so the
+          # floor is 350.
+          #
+          # Half, deliberately: the rejected `-lt 14` threshold sat at the
+          # exact count shipping that day, so deleting one test module failed
+          # the job with a packaging error for a deliberate source change.
+          # This one has 358 tests of headroom -- you would have to delete more
+          # than half the suite before it complains, while total deselection
+          # lands at 0 and trips it immediately. It would also catch the
+          # narrower regression this repo is actually prone to: the 36 nested
+          # modules failing to ship takes the run far below 350.
+          FLOOR=350
+          EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
+          import sys, xml.etree.ElementTree as ET
+          root = ET.parse(sys.argv[1]).getroot()
+          suites = root.findall("testsuite") if root.tag == "testsuites" else [root]
+          total = sum(int(s.get("tests", 0)) for s in suites)
+          skipped = sum(int(s.get("skipped", 0)) for s in suites)
+          # Deselected tests never appear in the report at all, so they are
+          # absent from `total` -- which is exactly what makes this catch them.
+          print(total - skipped)
+          PY
+          )"
+          echo "tests actually executed: ${EXECUTED}  (floor ${FLOOR})"
+          if [ "${EXECUTED}" -lt "${FLOOR}" ]; then
+            echo "::error::the sdist suite executed only ${EXECUTED} tests, below the floor of ${FLOOR}."
+            echo "::error::Shipping every test module is not the same as running them. Check for a"
+            echo "::error::marker change or an -m expression that deselected the suite. If the suite"
+            echo "::error::genuinely shrank by more than half, re-derive FLOOR from the new count."
+            exit 1
+          fi
+
   publish:
     name: Publish to PyPI
     needs: [verify-version, build, test-wheel, test-sdist]
@@ -290,7 +369,7 @@ jobs:
       id-token: write
     steps:
       - name: Download dist artifact
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4.3.0
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: dist
           path: dist/

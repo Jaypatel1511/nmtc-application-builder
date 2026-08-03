@@ -94,6 +94,20 @@ python_functions = ["test_*"]
 markers = [
     "wheel: slow end-to-end wheel build + install test (deselect with '-m not wheel')",
 ]
+# A parametrized test whose argument list comes out EMPTY is silently marked
+# skipped by default, and a skip exits 0. That is the same vacuity class the
+# release gates exist to close: the test reports success while asserting
+# nothing. fail_at_collect turns "Empty parameter set in 'test_x'" into a
+# collection ERROR, so a generator that stops finding inputs fails loudly
+# instead of quietly certifying nothing.
+#
+# This repo has a live instance, which is why it is not a theoretical setting:
+# tests/test_streamlit_page_py39.py::test_pep604_annotations_require_future_import
+# parametrizes over _streamlit_modules(). Where streamlit_app/ is absent -- a
+# wheel-only install, since the wheel does not carry it -- that list is empty
+# and the test SKIPPED rather than passing, so the py39 guard silently stopped
+# guarding. Under fail_at_collect that same install errors at collection.
+empty_parameter_set_mark = "fail_at_collect"
 
 [tool.setuptools.packages.find]
 where = ["."]
