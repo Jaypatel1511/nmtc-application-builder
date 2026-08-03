@@ -41,6 +41,46 @@ jobs:
         run: pip install build
       - name: Build
         run: python -m build
+
+      # This assertion lives HERE, not in test-sdist, because `build` is the only
+      # job holding both the checkout and the tarball. It is an exact set
+      # comparison rather than a magic number: a `-lt N` threshold pinned to the
+      # count shipping that day fails the job with "check MANIFEST.in" when
+      # someone legitimately deletes or merges a test module -- blaming packaging
+      # for a deliberate source change. The invariant that actually matters is
+      # "the tarball contains every test module the repository has", which needs
+      # no threshold. On this repo that distinction is not academic: the suite is
+      # mostly nested, and the pre-MANIFEST.in tarball shipped 14 of 50 modules.
+      - name: Assert the sdist ships every test module in the checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDIST="$(ls dist/*.tar.gz)"
+          # Compare on paths relative to the sdist/checkout root, so nested test
+          # packages (tests/<subdir>/test_*.py) are covered too, not just the top
+          # level. Tarball entries are "<name>-<version>/tests/..."; stripping the
+          # first path component makes the two lists directly comparable.
+          find tests -name 'test_*.py' | sed 's|^|/|' | sort > "${RUNNER_TEMP}/repo-tests.txt"
+          tar tzf "${SDIST}" | sed 's|^[^/]*||' \
+            | grep -E '^/tests/(.*/)?test_[^/]*\.py$' | sort > "${RUNNER_TEMP}/sdist-tests.txt"
+
+          echo "test modules in checkout : $(wc -l < "${RUNNER_TEMP}/repo-tests.txt")"
+          echo "test modules in sdist    : $(wc -l < "${RUNNER_TEMP}/sdist-tests.txt")"
+
+          if [ ! -s "${RUNNER_TEMP}/sdist-tests.txt" ]; then
+            echo "::error::sdist ships no test modules at all — MANIFEST.in matches nothing"
+            exit 1
+          fi
+
+          MISSING="$(comm -23 "${RUNNER_TEMP}/repo-tests.txt" "${RUNNER_TEMP}/sdist-tests.txt")"
+          if [ -n "${MISSING}" ]; then
+            echo "::error::sdist is missing test modules that exist in the checkout:"
+            echo "${MISSING}"
+            echo "::error::Fix MANIFEST.in (recursive-include tests *.py)."
+            exit 1
+          fi
+          echo "sdist ships every test module in the checkout"
+
       - name: Upload dist artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
         with:
@@ -85,9 +125,162 @@ jobs:
         run: |
           /tmp/wheel_test_venv/bin/pytest tests/ -m "not wheel" -v --tb=short --no-header --import-mode=importlib
 
+  # Test the built SDIST, running the suite THAT SHIPPED INSIDE IT.
+  #
+  # This job exists because test-wheel cannot catch a broken sdist: it runs
+  # `pytest tests/` against the git checkout, so the tarball could ship zero
+  # tests and every gate would still be green. That is close to what was
+  # happening here. setuptools' legacy sdist default matches only
+  # tests/test*.py, which on this repo matched 14 of 50 test modules (the suite
+  # is mostly nested) and neither conftest.py nor __init__.py. The 14 that did
+  # ship could not run: installing the published 1.1.5 sdist and running its own
+  # tests/ interrupts at collection and executes ZERO tests, because four
+  # modules import from streamlit_app/ and others read templates/, neither of
+  # which the tarball carried. Every gate was green, because no gate ever
+  # installed the sdist. A gate must consume the artifact it certifies.
+  #
+  # Nothing in this job comes from the repository.
+  test-sdist:
+    name: Test sdist — Python ${{ matrix.python-version }}
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    steps:
+      # NOTE: deliberately NO actions/checkout. If the checkout is absent, it
+      # cannot leak into the thing under test.
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5.6.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Download dist artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4.3.0
+        with:
+          name: dist
+          path: dist/
+      - name: Unpack the sdist, install it, and run its own suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDIST="$(ls dist/*.tar.gz)"
+          echo "sdist under test: ${SDIST}"
+
+          WORK="${RUNNER_TEMP}/sdist-work"
+          mkdir -p "${WORK}"
+          tar xzf "${SDIST}" -C "${WORK}"
+          SRC="$(find "${WORK}" -maxdepth 1 -mindepth 1 -type d)"
+          echo "--- files the sdist actually contains ---"
+          tar tzf "${SDIST}"
+
+          # Fail with a sentence, not with a collection abort. Each path here is
+          # something the SHIPPED SUITE reads, and each was missing before
+          # MANIFEST.in existed:
+          #   tests/conftest.py            nine fixtures, used by 30 nested modules
+          #   tests/__init__.py            makes tests/ a package
+          #   templates/pipeline_template.xlsx  read by test_template_* directly
+          #   streamlit_app/chart_style.py  imported by test_streamlit_chart_smoke
+          #   streamlit_app/utils.py        imported by test_streamlit_upload_profile
+          #
+          # The hint names the directive that covers the path that is actually
+          # missing. A single "recursive-include tests *.py" hint would send
+          # whoever hits a templates/ or streamlit_app/ failure to the wrong line.
+          for required in tests/conftest.py tests/__init__.py README.md pyproject.toml \
+                          templates/pipeline_template.xlsx templates/cde_profile_sample.yaml \
+                          streamlit_app/chart_style.py streamlit_app/utils.py; do
+            if [ ! -f "${SRC}/${required}" ]; then
+              case "${required}" in
+                tests/*)         HINT="recursive-include tests *.py" ;;
+                templates/*)     HINT="recursive-include templates *.yaml *.csv *.xlsx" ;;
+                streamlit_app/*) HINT="recursive-include streamlit_app *.py *.txt *.md" ;;
+                *)               HINT="include ${required}" ;;
+              esac
+              echo "::error::sdist is missing ${required} — check MANIFEST.in (${HINT})"
+              exit 1
+            fi
+          done
+
+          # The nested test packages are the majority of this suite. Assert at
+          # least one of them arrived, so a MANIFEST.in that somehow matched only
+          # the top level cannot pass as complete.
+          if [ ! -f "${SRC}/tests/intelligence/test_pipeline_analyzer.py" ]; then
+            echo "::error::sdist carries no nested test packages — 36 of 50 test modules live under tests/<subdir>/"
+            exit 1
+          fi
+
+          python -m venv "${RUNNER_TEMP}/sdist-venv"
+          VPY="${RUNNER_TEMP}/sdist-venv/bin/python"
+          "${VPY}" -m pip install --upgrade pip
+          # streamlit and plotly are installed explicitly rather than via [dev]
+          # because they are not in any declared extra, even though four shipped
+          # test modules import them. ci.yml does the same thing for the same
+          # reason; this mirrors it deliberately rather than silently diverging.
+          "${VPY}" -m pip install "${SDIST}[dev]" streamlit plotly
+
+          # Run from a directory containing ONLY what the sdist shipped, and NOT
+          # ./nmtcapp. Running from ${SRC} itself would put the unpacked source
+          # tree on sys.path and silently test that instead. tests/, templates/
+          # and streamlit_app/ all come FROM THE TARBALL — this job has no
+          # checkout to take them from, which is the whole point.
+          TESTDIR="${RUNNER_TEMP}/sdist-tests"
+          mkdir -p "${TESTDIR}"
+          cp -R "${SRC}/tests" "${TESTDIR}/tests"
+          cp -R "${SRC}/templates" "${TESTDIR}/templates"
+          cp -R "${SRC}/streamlit_app" "${TESTDIR}/streamlit_app"
+          cp "${SRC}/README.md" "${TESTDIR}/README.md"
+          # pyproject.toml comes from the tarball too, because it carries
+          # [tool.pytest.ini_options] where the `wheel` marker is registered.
+          # That marker is what `-m "not wheel"` deselects on, so without the ini
+          # file the run emits PytestUnknownMarkWarning, deselects nothing, and
+          # --strict-markers turns it into a collection error.
+          cp "${SRC}/pyproject.toml" "${TESTDIR}/pyproject.toml"
+          cd "${TESTDIR}"
+
+          ORIGIN="$("${VPY}" -c 'import nmtcapp; print(nmtcapp.__file__)')"
+          echo "import resolved to    : ${ORIGIN}"
+          case "${ORIGIN}" in
+            *"/site-packages/"*) ;;
+            *) echo "::error::import nmtcapp resolved to '${ORIGIN}', not the installed sdist"; exit 1 ;;
+          esac
+
+          INSTALLED="$("${VPY}" -c 'import nmtcapp; print(nmtcapp.__version__)')"
+          EXPECTED="${GITHUB_REF_NAME#v}"
+          echo "installed __version__ : ${INSTALLED}"
+          echo "expected (from tag)   : ${EXPECTED}"
+          if [ "${INSTALLED}" != "${EXPECTED}" ]; then
+            echo "::error::Installed sdist reports '${INSTALLED}', expected '${EXPECTED}'"
+            exit 1
+          fi
+
+          # -m "not wheel" matches ci.yml and test-wheel: test_wheel_completeness
+          # shells out to build a wheel from the project root, which is a repo
+          # operation, not something the tarball's own suite should attempt.
+          # --strict-markers so a missing ini file fails loudly instead of
+          # silently deselecting nothing.
+          "${VPY}" -m pytest tests -m "not wheel" --tb=short --no-header \
+            --import-mode=importlib --strict-markers
+
+      - name: Assert the sdist suite is not silently truncated
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDIST="$(ls dist/*.tar.gz)"
+          SHIPPED="$(tar tzf "${SDIST}" | grep -cE '/tests/(.*/)?test_[^/]*\.py$' || true)"
+          echo "test modules in sdist: ${SHIPPED}"
+          # This job deliberately has NO checkout, so it cannot compare the
+          # tarball against the repository — that comparison lives in `build`,
+          # which holds both. What this job CAN assert with nothing but the
+          # tarball is that MANIFEST.in did not match nothing at all, which is
+          # the failure that would otherwise let the suite "pass" by running
+          # zero tests. Deliberately not an absolute threshold.
+          if [ "${SHIPPED}" -eq 0 ]; then
+            echo "::error::sdist ships no test modules at all — MANIFEST.in matches nothing"
+            exit 1
+          fi
+
   publish:
     name: Publish to PyPI
-    needs: [verify-version, build, test-wheel]
+    needs: [verify-version, build, test-wheel, test-sdist]
     runs-on: ubuntu-latest
     environment:
       name: pypi

@@ -1,0 +1,73 @@
+# Why this file exists — measured on this repo, not inherited.
+#
+# setuptools' legacy sdist default matches only `tests/test*.py`. On this repo
+# that is a much larger hole than the name suggests, because the suite is mostly
+# nested: the pattern matches nothing below `tests/`, so the sdist shipped
+# **14 of 50 test modules** — every module under tests/core/, tests/data/,
+# tests/integrations/, tests/intelligence/, tests/optimizer/, tests/renderers/,
+# tests/sections/, tests/tables/, tests/validation/ and tests/visualization/ was
+# silently dropped, along with tests/conftest.py and tests/__init__.py. 72% of
+# the suite was missing from the tarball.
+#
+# The 14 that did ship could not run either. Installing the published 1.1.5
+# sdist and running its own tests/ interrupts at collection with 2 errors and
+# executes ZERO tests, because four modules import from `streamlit_app/`
+# (resolved as `os.path.dirname(os.path.dirname(__file__))`) which the tarball
+# did not carry. Ignoring those four leaves 39 passed / 6 failed / 12 errors,
+# the failures and errors all being tests that read `templates/` — also absent.
+#
+# So this file has to ship three things, not one:
+#   tests/        the whole suite, nested packages included
+#   templates/    read by test_sample_yaml_score, test_template_fields,
+#                 test_template_roundtrip and test_csv_robustness
+#   streamlit_app/  imported by the four test_streamlit_* modules
+#
+# A note on the conftest fixtures, because it is easy to get backwards: the nine
+# fixtures in tests/conftest.py are referenced by ZERO of the 14 top-level test
+# modules and by 30 of the 36 nested ones. They are not dead code — they are
+# used exclusively by the part of the suite that was never shipped. (Two of the
+# nine, passing_validation and failing_validation, do have no references
+# anywhere; that is a source question, not a packaging one.)
+#
+# This reproduces ONLY from a clean checkout. A local `python -m build` in a
+# working tree that already has `nmtc_application_builder.egg-info/` reuses the
+# stale SOURCES.txt and produces a CORRECT sdist. Since `*.egg-info/` is
+# gitignored, CI never has that seed — so the artifact CI ships is broken while
+# the one a maintainer builds by hand looks fine. Verified: the file list of the
+# 1.1.5 sdist on PyPI is identical to a fresh-clone build.
+#
+# Fifth instance of this defect in the portfolio: sbic-tracker, oz-tracker,
+# cdfi-fund-tracker and nmtc-mapper all hit it first. The fix was written four
+# times and propagated nowhere, so this change is paired with a `test-sdist` job
+# in release.yml that unpacks the built tarball and runs ITS suite. The
+# MANIFEST.in is only what makes that job pass; the job is what stops this from
+# silently regressing. Packaging that is never installed from is packaging that
+# is never verified.
+recursive-include tests *.py
+
+include README.md
+include CHANGELOG.md
+include CONTRIBUTING.md
+include CODE_OF_CONDUCT.md
+include CITATION.cff
+include pyproject.toml
+
+# Data files the shipped suite reads. Not documentation — remove these and
+# test_template_fields, test_template_roundtrip, test_csv_robustness and
+# test_sample_yaml_score all fail inside the tarball.
+recursive-include templates *.yaml *.csv *.xlsx
+
+# Imported by the four test_streamlit_* modules, which put the repo root and
+# streamlit_app/ on sys.path and then `import chart_style` / `import utils`.
+# Without this the sdist suite does not merely fail, it ABORTS at collection.
+recursive-include streamlit_app *.py *.txt *.md
+
+# Repo artifacts, not part of the distributed source: the built docs site, the
+# mkdocs config that generates it, one-off scripts, and the example notebooks.
+prune site
+prune docs
+prune examples
+prune scripts
+
+global-exclude *.pyc
+global-exclude __pycache__/*
