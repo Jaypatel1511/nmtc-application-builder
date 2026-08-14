@@ -438,13 +438,25 @@ class TestBackwardCompat:
 
     def test_competitive_tier_is_legacy_string(self, sample_pipeline_result):
         score = WinProbabilityModel().score(sample_pipeline_result, 55_000_000)
-        assert score.competitive_tier in ("strong", "competitive", "marginal", "weak")
+        assert score.competitive_tier in ("strong", "competitive", "marginal", "weak", "not_rated")
 
     def test_tier_to_competitive_tier_mapping(self):
         from nmtcapp.intelligence.win_probability import _map_tier_legacy
         assert _map_tier_legacy("Top Tier") == "strong"
         assert _map_tier_legacy("Highly Qualified") == "competitive"
         assert _map_tier_legacy("Not Qualified") == "weak"
+
+    def test_degraded_sentinel_does_not_manufacture_a_rating(self):
+        """The withheld-tier sentinel must not map to a real rating.
+
+        In degraded mode the scorer deliberately assigns no tier. Mapping the
+        sentinel through a "marginal" default manufactured the rating the
+        scorer had refused to give.
+        """
+        from nmtcapp.intelligence.win_probability import _map_tier_legacy
+        sentinel = "Not Rated — eligibility data unavailable"
+        assert _map_tier_legacy(sentinel) == "not_rated"
+        assert _map_tier_legacy(sentinel) != "marginal"
 
     def test_acceptance_rate_baseline_plausible(self, sample_pipeline_result):
         score = WinProbabilityModel().score(sample_pipeline_result, 55_000_000)

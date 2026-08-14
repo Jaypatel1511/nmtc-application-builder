@@ -1,4 +1,6 @@
 """Shared test fixtures."""
+import os
+
 import pytest
 
 from nmtcapp.core.application import Application, ApplicationAnalysis
@@ -7,6 +9,19 @@ from nmtcapp.core.pipeline import Pipeline, PipelineProject
 from nmtcapp.intelligence.pipeline_analyzer import PipelineAnalysisResult
 from nmtcapp.validation.readiness_score import compute_readiness_score
 from nmtcapp.data.schema import ValidationResult
+
+
+def templates_dir() -> str:
+    """Absolute path to the packaged templates directory.
+
+    Resolved from the INSTALLED nmtcapp package, not from the repo root.
+    Templates moved into nmtcapp/templates/ in 1.2.0 so the wheel would
+    carry them; resolving them as package data is also what lets the sdist
+    test job run against the tarball, whose test directory deliberately
+    contains no ``nmtcapp/`` tree to shadow the installed package.
+    """
+    import nmtcapp
+    return os.path.join(os.path.dirname(nmtcapp.__file__), "templates")
 
 
 @pytest.fixture

@@ -11,11 +11,35 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# No length figure appears here, deliberately.
+#
+# Through 1.1.5 this string ended "Word limit for this section: {limit} words",
+# with the limit passed per SUBSECTION — so Section A printed 3000, 500, 400
+# and 400 as four different limits "for this section" against a declared
+# word_limit of 3000, and the four sum to 4300. B printed 1400 against 2500,
+# C 1100 against 2000. None of the numbers was sourced.
+#
+# They were also the wrong unit: the CY 2024-2025 application enforces a
+# CHARACTER limit per question, not a word limit per section. This tool does
+# not encode the real limits — the CY 2026 Application Materials are
+# unpublished — so it must not state one. A CDE writing to an invented budget
+# over-writes and is truncated at submission.
 _PLACEHOLDER = (
-    "\n\n[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. "
-    "CDFI Fund reviewers score on specificity, evidence, and alignment with community need. "
-    "Word limit for this section: {limit} words.]\n\n"
+    "\n\n[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific "
+    "information. CDFI Fund reviewers score on specificity, evidence, and "
+    "alignment with community need. Length is governed by the limit printed on "
+    "the published application form for this question, which this tool does not "
+    "encode — check the form, not this draft.]\n\n"
 )
+
+# Marker for any claim this tool cannot substantiate from the CDE's own inputs.
+#
+# Deliberately a visible bracketed placeholder rather than a softened sentence.
+# A shortened but still-assertive paragraph reads as finished, so a reader gets
+# no signal that anything is missing, and the next contributor who adds a
+# sentence has no rule to violate. A bracketed placeholder makes an unfinished
+# application LOOK unfinished.
+_CDE_TODO = "[CDE TO COMPLETE: {what}]"
 
 
 class SectionGenerator(ABC):
@@ -108,5 +132,81 @@ def _content_to_markdown(content: dict) -> str:
     return "\n".join(lines)
 
 
-def _placeholder(section_id: str, limit: int) -> str:
-    return _PLACEHOLDER.format(limit=limit)
+def _placeholder() -> str:
+    """The narrative placeholder text.
+
+    Took ``(section_id, limit)`` through 1.1.5. ``section_id`` was never used —
+    the format string said "this section" regardless of which section called
+    it — and ``limit`` printed an unsourced word budget. Both are gone rather
+    than left as ignored parameters, so a caller cannot pass a number that goes
+    nowhere and read the call site as though it did something.
+    """
+    return _PLACEHOLDER
+
+
+def _cde_todo(what: str) -> str:
+    """Bracketed placeholder naming what the CDE must supply.
+
+    Use wherever the tool would otherwise assert something it cannot derive
+    from the CDE's own inputs. ``what`` should name the required evidence,
+    not hedge the missing claim.
+
+    Example::
+
+        _cde_todo("State your compliance history over prior allocations.")
+    """
+    return _CDE_TODO.format(what=what)
+
+
+def _compliance_statement(cde) -> str:
+    """Compliance-history text derived only from what the CDE supplied.
+
+    ``has_prior_reporting_issues`` is collected from the CDE's own profile
+    (upload column "Prior Reporting Issues (Y/N)"). Three states, three
+    outcomes — and note the field is NARROWER than a clean compliance
+    history, so even a declared ``False`` does not license a blanket "zero
+    violations or defaults" claim. That broader assertion is always the
+    CDE's to make.
+
+    Shared by Sections C and E, which both previously asserted a clean
+    record unconditionally — including for a CDE that had declared the
+    opposite in its own profile.
+
+    Example::
+
+        body = _compliance_statement(application.cde)
+    """
+    declared = getattr(cde, "extra", {}).get("has_prior_reporting_issues")
+
+    if declared is True:
+        # The CDE declared prior reporting issues. Emit no clean-history
+        # claim of any kind — the earlier unconditional text asserted the
+        # opposite of what the CDE told us.
+        return _cde_todo(
+            "Your CDE profile declares prior reporting issues. Describe them "
+            "directly: what occurred, over which allocation(s), how each was "
+            "resolved, and what controls now prevent recurrence. Do not omit "
+            "this — the CDFI Fund holds prior compliance records, and an "
+            "unexplained gap reads worse than a disclosed and remediated issue."
+        )
+
+    if declared is False:
+        return (
+            "Per this CDE's own profile declaration, no prior NMTC reporting "
+            "issues have been recorded.\n\n"
+            + _cde_todo(
+                "State the CDE's full compliance and performance history over "
+                "its prior allocations — recapture or reduction events, "
+                "defaults, cures, and material findings. The profile field "
+                "above covers reporting issues only and is not by itself a "
+                "representation about defaults or compliance violations."
+            )
+        )
+
+    return _cde_todo(
+        "State the CDE's compliance and performance history over its prior "
+        "allocations — reporting issues, recapture or reduction events, "
+        "defaults, cures, and material findings. This tool has no compliance "
+        "record for your CDE; supply 'has_prior_reporting_issues' in your CDE "
+        "profile and document the full history here."
+    )

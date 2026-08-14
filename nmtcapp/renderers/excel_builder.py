@@ -14,6 +14,7 @@ from nmtcapp.tables.distress_table import build_distress_table
 from nmtcapp.tables.geographic_table import build_geographic_table
 from nmtcapp.tables.impact_table import build_impact_table
 from nmtcapp.tables.investor_table import build_investor_table
+from nmtcapp.tables.investor_table import INVESTOR_TABLE_TITLE
 from nmtcapp.tables.pipeline_table import build_pipeline_table
 from nmtcapp.tables.track_record_table import build_track_record_table
 
@@ -570,7 +571,7 @@ class ExcelApplicationBuilder:
         df = build_investor_table(self.application)
         self._write_df_to_sheet(
             wb, "Investor Commitments", df,
-            title="Section D: Investor Commitments (Scaffold)",
+            title=INVESTOR_TABLE_TITLE,
             currency_cols=["Commitment Amount ($)", "NMTCs Allocated ($)"],
             freeze_col=1,
         )

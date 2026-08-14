@@ -6,7 +6,6 @@ import pytest
 from nmtcapp.core.cde import CDEProfile
 from nmtcapp.core.pipeline import Pipeline, PipelineProject
 from nmtcapp.integrations.cdfidata_adapter import cde_track_record
-from nmtcapp.integrations.hmda_adapter import community_need_documentation
 from nmtcapp.integrations.impact_adapter import build_impact_portfolio
 from nmtcapp.integrations.nmtc_calc_adapter import compute_pipeline_economics
 from nmtcapp.integrations.nmtc_mapper_adapter import enrich_pipeline_eligibility
@@ -91,21 +90,6 @@ def test_compute_pipeline_economics_empty_pipeline():
 def test_compute_pipeline_economics_net_subsidy_positive(sample_pipeline):
     result = compute_pipeline_economics(sample_pipeline)
     assert result["total_net_subsidy"] > 0
-
-
-# ---------------------------------------------------------------------------
-# hmda_adapter
-# ---------------------------------------------------------------------------
-
-def test_community_need_documentation_returns_dict(sample_pipeline):
-    result = community_need_documentation(sample_pipeline)
-    assert isinstance(result, dict)
-
-
-def test_community_need_documentation_has_narrative(sample_pipeline):
-    result = community_need_documentation(sample_pipeline)
-    assert "narrative_summary" in result
-    assert len(result["narrative_summary"]) > 50
 
 
 # ---------------------------------------------------------------------------

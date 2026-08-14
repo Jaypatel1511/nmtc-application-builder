@@ -23,14 +23,24 @@ DISTRESS_LEVELS = {
 }
 
 # ---------------------------------------------------------------------------
-# Competitive thresholds — derived from CDFI Fund published award data
-# Applications with ≥75% QEI in deep/severe tracts historically score in
-# the top quartile on the "Community Need" criterion.
+# HOUSE HEURISTICS — NOT CDFI Fund figures. Do not attribute them to the Fund
+# and do not print them in a submitted document under the Fund's name.
+#
+# These two values are internal scoring bands used by readiness_score.py and
+# eligibility_check.py to grade a pipeline against itself. They do not appear
+# in any CDFI Fund publication. The Fund's published threshold on distress
+# targeting is SEVERE_DISTRESS_MIN_PCT (0.85) in
+# nmtcapp/data/benchmark_thresholds.py, sourced to the CY 2024-2025 NMTC
+# Allocation Application Review Process — use that one for anything a CDE
+# submits, and cite the round it belongs to.
+#
+# (A prior release printed 50%/75% in Section B labelled "CDFI Fund
+# Competitive Minimum" and "CDFI Fund Target", understating the published
+# 85% bar by ten points under the Fund's name. Hence this header.)
 # ---------------------------------------------------------------------------
 TARGET_DISTRESS_THRESHOLDS = {
-    "min_deep_distress":   0.50,   # minimum to be competitive
-    "target_deep_distress": 0.75,  # target for top-tier applications
-    "max_non_lic":          0.10,  # hard ceiling for non-LIC QEI
+    "min_deep_distress":   0.50,   # house heuristic: internal scoring band
+    "target_deep_distress": 0.75,  # house heuristic: internal scoring band
 }
 
 # CDFI Fund historically prefers applicants serving ≥3 states.

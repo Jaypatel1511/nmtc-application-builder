@@ -4,7 +4,12 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from nmtcapp.sections.base import SectionGenerator, _placeholder
+from nmtcapp.sections.base import (
+    SectionGenerator,
+    _cde_todo,
+    _compliance_statement,
+    _placeholder,
+)
 
 if TYPE_CHECKING:
     from nmtcapp.core.application import Application, ApplicationAnalysis
@@ -38,10 +43,9 @@ class SectionCManagementCapacity(SectionGenerator):
             f"{cde.name} was certified as a Community Development Entity by the CDFI Fund "
             f"on {cde.certification_date}. Since certification, the organization has received "
             f"{len(cde.prior_awards)} NMTC allocation awards totaling ${total_prior:,.0f}, "
-            f"with {fully_deployed} rounds fully deployed within 18 months of award.\n\n"
-            f"Our track record demonstrates consistent execution across multiple states and "
-            f"sectors, with zero compliance violations or performance defaults to date.\n\n"
-        ) + _placeholder(self.section_id, 400)
+            f"of which {fully_deployed} are recorded as fully deployed.\n\n"
+            + _compliance_statement(cde) + "\n\n"
+        ) + _placeholder()
 
         governance_summary = {
             "Board Members": board.get("board_members", "N/A"),
@@ -54,15 +58,28 @@ class SectionCManagementCapacity(SectionGenerator):
             "Rounds Fully Deployed": fully_deployed,
         }
 
+        # The underwriting steps are the CDE's own internal controls. This tool
+        # has no field for any of them, so it cannot describe them — and the
+        # numbered list here previously asserted five specific ones for every
+        # CDE, including step 2's "HMDA disparity review", a capability the
+        # package removed with the HMDA adapter in this same release. A CDE
+        # that submitted this told the Fund, in the subsection where management
+        # capacity is scored, that it ran a review it does not run.
+        #
+        # Steps 1 and 5 are not safe either: this tool geocodes, the CDE may
+        # not, and nothing here knows whether a CDE conducts annual site visits.
         underwriting = (
-            f"{cde.name} maintains a rigorous underwriting process calibrated to NMTC compliance "
-            f"requirements and community development mission:\n\n"
-            f"  1. Initial Screening: NMTC eligibility verification via geocoding + ACS tract data\n"
-            f"  2. Community Impact Assessment: Jobs/unit projections and HMDA disparity review\n"
-            f"  3. Financial Underwriting: DSCR analysis, leverage review, sponsor capacity check\n"
-            f"  4. Investment Committee Approval: Requires {board.get('board_members', 'full board')} vote\n"
-            f"  5. Compliance Monitoring: Annual site visits + CDFI Fund reporting throughout 7-year compliance period\n\n"
-        ) + _placeholder(self.section_id, 300)
+            _cde_todo(
+                "Describe your CDE's underwriting process end to end — initial "
+                "screening and how eligibility is established, impact "
+                "assessment, financial underwriting and credit criteria, your "
+                "investment committee's composition and approval threshold, "
+                "and your compliance-monitoring practice over the seven-year "
+                "period. This tool holds none of these: your CDE profile "
+                "records a board headcount, which is not an approval rule, and "
+                "nothing in it describes a control you actually operate."
+            ) + "\n\n"
+        ) + _placeholder()
 
         return {
             "section_id": self.section_id,
@@ -77,6 +94,6 @@ class SectionCManagementCapacity(SectionGenerator):
                 {"heading": "Underwriting Process and Internal Controls",
                  "body": underwriting, "type": "narrative"},
                 {"heading": "Key Personnel and Qualifications",
-                 "body": _placeholder(self.section_id, 400), "type": "narrative"},
+                 "body": _placeholder(), "type": "narrative"},
             ],
         }

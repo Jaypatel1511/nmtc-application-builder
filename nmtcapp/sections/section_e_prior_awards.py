@@ -4,7 +4,11 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from nmtcapp.sections.base import SectionGenerator, _placeholder
+from nmtcapp.sections.base import (
+    SectionGenerator,
+    _compliance_statement,
+    _placeholder,
+)
 
 if TYPE_CHECKING:
     from nmtcapp.core.application import Application, ApplicationAnalysis
@@ -49,11 +53,12 @@ class SectionEPriorAwards(SectionGenerator):
         )
 
         summary = (
-            f"{cde.name} has successfully deployed {fully_deployed} of {len(awards)} prior NMTC "
-            f"allocation awards totaling ${total_prior:,.0f}. All compliance obligations have been "
-            f"met; no compliance events or repayments have occurred.\n\n"
-            f"The deployment history table below provides details on each prior award, including "
-            f"states served, sectors financed, and outcomes achieved.\n\n"
+            f"{cde.name} has {len(awards)} prior NMTC allocation awards totaling "
+            f"${total_prior:,.0f}, of which {fully_deployed} are recorded in the CDE "
+            f"profile as fully deployed.\n\n"
+            + _compliance_statement(cde) + "\n\n"
+            + f"The deployment history table below provides details on each prior award, "
+            f"including states served, sectors financed, and outcomes achieved.\n\n"
         )
 
         award_details = []
@@ -70,7 +75,7 @@ class SectionEPriorAwards(SectionGenerator):
 
         outcomes = (
             f"Outcomes across all {len(awards)} prior awards:\n\n"
-        ) + _placeholder(self.section_id, 400)
+        ) + _placeholder()
 
         return {
             "section_id": self.section_id,

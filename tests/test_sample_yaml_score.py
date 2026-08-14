@@ -8,7 +8,9 @@ from pathlib import Path
 from nmtcapp import Application, Pipeline
 from nmtcapp.core.cde import CDEProfile
 
-YAML_PATH = Path(__file__).parent.parent / "templates" / "cde_profile_sample.yaml"
+from tests.conftest import templates_dir as _templates_dir
+
+YAML_PATH = Path(_templates_dir()) / "cde_profile_sample.yaml"
 TOLERANCE = 2
 
 # Documented in cde_profile_sample.yaml calibration comment block
@@ -21,7 +23,10 @@ DOCUMENTED = {
 
 
 def _make_score():
-    cde = CDEProfile.from_yaml(str(YAML_PATH))
+    # allow_sample: this test's whole subject IS the shipped sample file.
+    # from_yaml refuses sample identity by default (1.2.0) so a CDE cannot
+    # submit it as their own — see nmtcapp/core/sample_identity.py.
+    cde = CDEProfile.from_yaml(str(YAML_PATH), allow_sample=True)
     app = Application(cde=cde, requested_allocation=65_000_000)
     app.add_pipeline(Pipeline.sample(n=20))
     return app.score_win_probability()

@@ -5,6 +5,267 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.2.0] — 2026-08-14
+
+Integrity release: the section generators no longer write fabricated statistics,
+fabricated CDFI Fund attributions, or false compliance assertions into documents a
+CDE submits to a federal agency. Packaging is fixed so `nmtcapp init` works for
+users who installed from PyPI.
+
+**Minor, not patch.** Three changes here break a caller, and a version string is
+where a pinned user sees that — not a CHANGELOG they may never open. See Breaking.
+
+### Breaking
+
+1. **`community_need_documentation` is removed from the public API.** It was
+   exported in `nmtcapp.integrations.__all__`. There is no deprecation shim: a stub
+   that raises is still an importable name for a function whose only behaviour was
+   fabrication. Community need is now the CDE's to document — Section B emits a
+   `[CDE TO COMPLETE: ...]` placeholder. Callers must delete the import.
+2. **`nmtcapp analyze <csv>` now exits 2 where it previously ran.** It requires
+   `--cde <path>` and `--requested-allocation <dollars>`. A scripted caller relying
+   on the old bare form breaks and must pass both flags, or `--demo` to keep running
+   against the shipped fictional profile (labelled DEMO MODE on every screen).
+   The old behaviour silently scored the user's real pipeline against a fictional
+   CDE and an invented $55,000,000.
+3. **Native-area rendering changes from `N` to `—` for undeclared projects.** With
+   the mapper read deleted (see below), a geocoded project whose pipeline sheet has
+   no `native_area` value now keeps `is_native_area = None`, so
+   `tables/pipeline_table.py` renders `—` and `tables/distress_table.py` renders
+   `—` where both previously rendered `N`/`No`. That is the honest value: nothing
+   ever determined it. **Aggregate counts are unaffected** — `distress_analysis.py`
+   and `tables/geographic_table.py` both test `if p.is_native_area:`, and `None`
+   and `False` are equally falsy. The one count that *does* change is a correction:
+   a CDE who declared `native_area = Y` previously had that overwritten with `False`
+   and is now counted. Verified by execution, not reasoning.
+
+Templates also relocate into the package (`nmtcapp/templates/`); anything reading
+them from the repo root must update its path.
+
+### Disclosure
+
+1.1.5 removed fabrication from the eligibility **adapter**. It did not touch the
+**section generators**, which are the part that produces the submitted text. Drafts
+generated with 1.1.5 or earlier could contain, with no indication that any of it was
+invented:
+
+- An HMDA lending-disparity paragraph in Section B asserting denial rates "exceed 30%"
+  with "racial disparities of 2.3×", cited to "HMDA 5-year data, 2018–2022". No HMDA
+  call was made on that path; both figures were string literals and the citation was
+  for data never fetched. The accompanying tract count was `len()` of a five-key
+  bucket dict, so it read "5 census tracts" for every pipeline of every size.
+- Two distress thresholds printed under the CDFI Fund's name — "CDFI Fund Competitive
+  Minimum 50.0%" and "CDFI Fund Target 75.0%". Neither appears in any CDFI Fund
+  publication. The published CY 2024-2025 bar for full Community Outcomes credit is
+  **85%** (Application FAQ #79), a value this package already held correctly in
+  `benchmark_thresholds.SEVERE_DISTRESS_MIN_PCT` while printing the wrong one.
+- Unconditional clean-compliance claims in Sections C and E ("zero compliance
+  violations or performance defaults to date"; "All compliance obligations have been
+  met"). These were emitted **even for a CDE whose own profile declared prior
+  reporting issues** — the field was collected from the user and consulted by no
+  section generator.
+- Section D labelling the pipeline QEI total as the amount requested, so one document
+  carried the CDE's real request on its cover page and a different figure in Section D.
+
+**If you generated drafts with 1.1.5 or earlier, re-generate them on 1.2.0 and review
+Section B, C, D and E before submitting.**
+
+**Two things will look different on a re-generated draft even though nothing about
+your pipeline changed:**
+
+- **Your Opportunity Zone column may change from "No" to "—".** nmtc-mapper 0.5.0
+  made `is_opportunity_zone` `True`-or-`None`: the OZ designation list is
+  2010-tract-based while the eligibility table and geocoder are 2020-basis, so a
+  non-match and a genuine non-designation are the same observation and cannot be
+  told apart. The old "No" was a confident negative the data never supported. This
+  happens with **no action on your part** — the dependency floor `>=0.4.2` resolves
+  to 0.5.0 on a fresh install. A project you declared as an OZ in your own upload
+  keeps its "Yes"; only tool-determined values move. Eligible-tract counts and
+  distress verdicts are unchanged between 0.4.3 and 0.5.0 — verified across all
+  85,395 rows of the eligibility table.
+- **Section A no longer carries a "Historical Distress Rank" row, and the executive
+  summary no longer places you in a "tier" of past applicants.** See below.
+
+### Changed — fabrication removed
+
+Any claim the tool cannot substantiate from the CDE's own inputs is now an explicit
+`[CDE TO COMPLETE: ...]` placeholder naming the evidence required, rather than a
+softened assertion. An unfinished application must look unfinished.
+
+- **`sections/section_b_outcomes.py`** — the HMDA community-need paragraph is replaced
+  by a placeholder containing no percentage, no ratio and no citation. The two
+  fabricated CDFI Fund threshold rows are replaced by a single row sourced from
+  `benchmark_thresholds.SEVERE_DISTRESS_MIN_PCT` and explicitly labelled CY 2024-2025
+  (the CY 2026 NOAA is unpublished, so nothing is presented as a CY 2026 requirement).
+- **`sections/section_c_management.py`, `section_e_prior_awards.py`** — compliance
+  history now derives from the CDE-supplied `has_prior_reporting_issues` via the shared
+  `sections/base._compliance_statement`. Where the CDE declared issues, the text
+  contains no clean-history claim at all; where unsupplied, a placeholder. The field is
+  narrower than a clean compliance record, so even a declared `False` yields only the
+  narrow statement plus a placeholder for the full history. The fabricated "within 18
+  months of award" deployment figure (a `# Rough heuristic` in `cdfidata_adapter`) is
+  dropped. "Requires {board_members} vote" — which rendered a board headcount as an
+  investment-committee approval threshold, e.g. "Requires 9 vote" — is now a placeholder.
+- **`sections/section_d_capitalization.py`** — "Allocation Requested" renders
+  `application.requested_allocation`; the pipeline total appears as a separate
+  "Total Pipeline QEI" row. Investor-relationship and investor-count assertions become
+  placeholders. `$0.83`, `2.5%`, `0.39` and `0.80` are sourced from
+  `schema.NMTC_PROGRAM_CONSTRAINTS` and labelled market assumptions, not CDFI Fund
+  parameters.
+- **`sections/section_a_business.py`, `renderers/word_builder.py`,
+  `renderers/pdf_builder.py`** — three further surfaces labelled the pipeline QEI total
+  "Total QEI Requested"; all now read "Total Pipeline QEI". These were found by the new
+  gate, not by reading.
+- **`data/schema.py`** — `TARGET_DISTRESS_THRESHOLDS` loses its "derived from CDFI Fund
+  published award data" header and is relabelled as house heuristics. The keys are
+  retained because five call sites across `readiness_score.py`, `eligibility_check.py`
+  and `distress_analysis.py` consume them as internal scoring bands. `max_non_lic`
+  (0.10) is **deleted** — it had zero consumers and the statutory rule is the
+  substantially-all test, not a 10% non-LIC ceiling.
+
+### Fixed — `analyze` was broken at the declared dependency floor
+
+- **`integrations/nmtc_mapper_adapter.py` no longer reads
+  `EligibilityResult.is_nmtc_native_area`.** nmtc-mapper 0.5.0 removed that field,
+  and `nmtc-mapper>=0.4.2` resolves directly to 0.5.0, so every geocodable project
+  raised `AttributeError` and `nmtcapp analyze` failed outright on any real pipeline
+  CSV. Measured across clean installs: the field is **present at 0.4.2 and 0.4.3,
+  gone at 0.5.0**.
+
+  Deleting the read is not a compatibility patch — it fixes a live defect at *every*
+  version. `PipelineProject.is_native_area` is the **CDE's own declaration**, read
+  from the `native_area` CSV column (column 17 of the shipped template) and the
+  "Native Area (Y/N)" upload column. At 0.4.2/0.4.3 the mapper's field existed but
+  was **always `False`**, so enrichment overwrote a CDE's correctly-supplied `True`
+  with a fabricated negative. This is the third instance of the package discarding a
+  user's own column (`urban_rural` in `intelligence/geographic_analysis.py` is
+  another). The floor stays `>=0.4.2`; **no upper cap is added**.
+- **Enrichment no longer erases a CDE declaration with an indeterminate value.**
+  `is_high_migration_rural` and `is_opportunity_zone` are *also* CDE-supplied CSV
+  columns. 0.5.0 made `is_opportunity_zone` `True`-or-`None` on **every** path (the
+  designation list is 2010-tract-based while the eligibility table and geocoder are
+  2020-basis, so a non-match and a genuine non-designation are indistinguishable),
+  and turned the distress/non-metro booleans tri-state on its indeterminate
+  branches. A straight assignment would have overwritten a CDE's correct `True` with
+  `None`. The adapter now prefers the determinate value.
+- **Not affected, checked:** this package never reads `poverty_rate`, `ami_ratio`,
+  `unemployment_rate` or `tract_found` off a result, so 0.5.0's `None`-vs-`NaN`
+  two-kinds-of-missing change on those fields is unreachable here.
+  `NMTCMapper.data_source == "cdfi_fund"` and
+  `check_address(address) -> EligibilityResult` are unchanged at 0.5.0, so the
+  provenance check and the call site survive.
+
+### Changed — unverified data no longer renders as a confident negative
+
+- **`tables/impact_table.py`** — `None` rendered as "No" for Native Area, HMR and OZ,
+  and as "Pending" for Distress Level. This was the third of three tables; the fix
+  applied to the other two in 1.1.5 was described as general but was not. Now matches
+  `distress_table._flag` and `pipeline_table._yn_flag`.
+- **`tables/distress_table.py`** — the per-row "Data Source" and "ACS Vintage" columns
+  stamped the CDFI Fund citation on **every** row, including rows whose eligibility was
+  never determined. Unenriched rows now say so.
+- **`renderers/word_builder.py`, `renderers/pdf_builder.py`** — the methodology
+  appendix asserted "CDFI Fund NMTC Eligibility Table … 2016–2020 ACS 5-Year Estimates"
+  unconditionally, including on runs where the download failed. Both now branch on
+  eligibility status, as `markdown_builder` already did.
+- **`validation/eligibility_check.py`** — the eligible-QEI percentage counted `None` as
+  ineligible, reporting "Only 0% of QEI is in eligible tracts" on a pipeline where
+  nothing had been verified. It now uses `is True`/`is None`, reports against a
+  verified-QEI denominator with the unverified share named, and emits an explicit
+  "could not be verified" warning when nothing was checked.
+- **`intelligence/win_probability.py`** — `_map_tier_legacy` mapped the withheld
+  sentinel "Not Rated — eligibility data unavailable" through a `"marginal"` default,
+  manufacturing the rating the scorer deliberately refused to assign. The default is
+  now `"not_rated"`.
+- **`intelligence/recommendations.py`** — `_overall_assessment` had no partial guard
+  (unlike `_build_peer_comparison`) and printed a "Not Qualified (n/100)" verdict with
+  hardcoded `/50` and `/100` denominators on degraded runs where 25 of 100 base points
+  were unavailable.
+
+### Changed — CLI
+
+- **`nmtcapp analyze`** now requires `--cde <path>` and `--requested-allocation
+  <dollars>` and **refuses** (exit 2) without them. It previously substituted
+  `CDEProfile.sample()` and an invented $55,000,000, silently scoring the user's real
+  pipeline against a fictional CDE and producing ratios against a number nobody
+  entered. 1.1.5 fixed this for the Streamlit upload path and left the CLI behind.
+  `--demo` runs on the shipped fictional profile and labels every screen as a demo.
+
+### Fixed — packaging
+
+- **`nmtcapp init` now works from a wheel.** Templates moved from the repo root to
+  `nmtcapp/templates/` and are declared as `[tool.setuptools.package-data]`.
+  `pyproject.toml` previously declared no package data, and `MANIFEST.in` governs only
+  the sdist, so **no wheel ever published by this project contained the templates** and
+  `nmtcapp init` failed with "Cannot locate the templates directory" for every user who
+  installed from PyPI — the on-ramp `README.md` advertises. `_get_templates_dir` is now
+  a single `importlib.resources` lookup. Verified end to end: built wheel, installed
+  into a clean venv, ran `nmtcapp init`.
+- **`README.md`** — the pipeline-template link was relative and 404'd in the PyPI long
+  description; it is now absolute to GitHub.
+
+### Removed
+
+- **`integrations/hmda_adapter.py` and `community_need_documentation`** — removed
+  entirely, with the `hmda-analyzer` dependency. The adapter could not reach real HMDA
+  data by any code path: the *success* branch called `hmdaanalyzer.load_sample()`
+  (synthetic data), and `generate_disparity_report()` returns a `str` in every published
+  version — verified against the installed 0.3.0, whose signature is annotated `-> str`
+  — so the `.get()` raised `AttributeError` into a bare `except` that supplied the
+  literals `0.28` and `2.1`. `_build_narrative` rendered those literals as application
+  prose. Nothing in the document-generation path consumed it. Option (a), rewiring it to
+  `load_from_api`, was rejected: it would rebuild the tool-generated community-need
+  narrative that this release deliberately hands back to the CDE. **This removes a
+  public API symbol in a patch release** — a deliberate exception, because the symbol's
+  only output was fabricated.
+- **`cra-scraper`** — dependency and its two documentation references removed. Zero
+  imports repo-wide, in any release; declared and never used.
+
+### Dependencies
+
+- `nmtc-mapper>=0.3.4` → **`>=0.4.2`**. 0.3.4 was the *import* floor (first version
+  exporting `NMTCMapperError`, `EligibilityDownloadError`, `data_source`). 0.4.2 is the
+  *correctness* floor: 0.3.1–0.4.1 report 168 census tracts as not NMTC-eligible when
+  they statutorily are, and 0.4.2's loader moves 35,167 → 35,335 eligible of the same
+  85,395 tracts — a delta of exactly 168, re-verified against the installed 0.4.2.
+- `requires-python = ">=3.9"` is unchanged.
+
+All floor changes are tightenings that **do not move the resolved set on a fresh
+install today**; no working environment changes as a result of this release.
+
+### Testing
+
+- **New gate `tests/test_no_fabricated_output.py`** — generates a complete application
+  in all four formats (markdown, docx, xlsx, pdf) under two pipelines (fully enriched,
+  and every eligibility field `None`), extracts the text **back out of the PDF and DOCX**
+  and asserts none of the removed fabrications appear. Asserting against the rendered
+  artifact rather than the source is deliberate: a gate that greps `.py` files cannot see
+  a fabrication reintroduced through a different string. The denylist is parametrized, so
+  `empty_parameter_set_mark = fail_at_collect` turns an emptied list into a collection
+  **error** rather than a silent pass — verified by emptying it. Each removed fabrication
+  was reintroduced one at a time and the gate confirmed red in all four formats on both
+  pipelines before being reverted.
+- **New contract gate `tests/integrations/test_mapper_contract.py`** — introspects the
+  **installed** nmtc-mapper and asserts every attribute the adapter reads off an
+  `EligibilityResult` or an `NMTCMapper` actually exists. The attribute list is
+  derived from the adapter source by AST walk, never hand-copied, and an empty
+  derivation is a collection **error**.
+
+  This gate exists because the whole suite stayed green while `analyze` was broken:
+  the test doubles in `test_no_fabrication.py` and `test_partial_unverified_exports.py`
+  constructed `is_nmtc_native_area=False` themselves, so **the tests validated the
+  mock, not the library**, and `test_no_fabricated_output.py` renders from
+  pre-enriched pipelines and never touches a real `EligibilityResult`. Those three
+  doubles no longer construct the dropped field. Proven in the failing direction:
+  reading a removed field, reading a bogus mapper attribute, an emptied derivation,
+  and re-assigning `project.is_native_area` each turn it red.
+- `tests/integrations/test_no_fabrication.py` extended to assert the HMDA adapter stays
+  removed and that neither `hmda-analyzer` nor `cra-scraper` is re-declared.
+- Suite: **709 → 861 tests, all passing.** `release.yml`'s `FLOOR` re-derived from the
+  new count by its own documented rule (half of 860 executed, rounded down): 350 → 430.
+
+---
+
 ## [1.1.5] — 2026-07-11
 
 Data-integrity release: the eligibility adapter no longer fabricates application content.
@@ -79,7 +340,7 @@ while offline or while the CDFI Fund download was failing, re-run them on 1.1.5.
   surfaces geocode failure as an "ineligible"-shaped result with
   `geocode_success=False`. Mitigated on the flagship side: the adapter checks
   `geocode_success` and treats those projects as unverified, not ineligible.
-- Deferred to 1.1.6: the distress breakdown's non-LIC bucket absorbs unverified
+- Deferred to a later release: the distress breakdown's non-LIC bucket absorbs unverified
   projects (unverified counts in denominators; distinct unverified bucket pending);
   sample-data provenance and shared sample instances (`Pipeline.sample()` /
   `CDEProfile.sample()` return pre-verified fixtures marked "ok" and share module

@@ -36,7 +36,7 @@ class TestApplicationScoreWinProbability:
 
     def test_competitive_tier_is_valid(self, sample_application):
         score = sample_application.score_win_probability()
-        assert score.competitive_tier in ("strong", "competitive", "marginal", "weak")
+        assert score.competitive_tier in ("strong", "competitive", "marginal", "weak", "not_rated")
 
     def test_no_pipeline_raises(self):
         from nmtcapp.core.cde import CDEProfile

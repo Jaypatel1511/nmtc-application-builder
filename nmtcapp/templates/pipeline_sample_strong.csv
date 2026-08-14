@@ -1,3 +1,6 @@
+# SAMPLE — FICTIONAL DATA. Every project, QALICB, address and figure below is
+# invented. Do NOT submit these rows as your own pipeline. Start from
+# pipeline_template.csv (or pipeline_template.xlsx), which is blank.
 project_id,project_name,qalicb_name,address,city,state,sector,project_type,total_project_cost,qei_request,qlici_amount,expected_jobs_created,expected_jobs_retained,expected_units_built,expected_sq_ft,closing_target_date,native_area,high_migration_rural,us_territory,persistent_poverty,below_market_rate,unrelated_entity,opportunity_zone,urban_rural,census_tract,minority_owned,women_owned,notes
 PRJ-S001,Southside Community Health Center,Southside HC QALICB LLC,3400 S Michigan Ave,Chicago,IL,healthcare,real_estate,12500000,8500000,8500000,52,18,,24000,2025-09-30,N,N,N,Y,Y,Y,N,urban,17031838200,N,N,
 PRJ-S002,East Houston Charter Academy,East Houston Academy QALICB LLC,5200 Lawndale St,Houston,TX,education,real_estate,9800000,7000000,7000000,38,22,,,2025-12-15,N,N,N,Y,Y,Y,Y,urban,48201223400,N,N,

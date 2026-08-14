@@ -55,19 +55,18 @@ This is the critical limitation that prevents computation of true win probabilit
 
 ## Integration libraries (open source, third party)
 
-The library wraps five community-developed Python libraries:
+The library wraps four community-developed Python libraries:
 
 | Library | What it does | Used for |
 |---------|--------------|---------|
 | `nmtc-mapper` | Census tract lookup and NMTC eligibility determination | Enriching `PipelineProject.is_nmtc_eligible` and `distress_level` |
 | `nmtc-calc` | NMTC deal economics computation (credits, investor equity, CDE fees) | `deal_economics_summary` in `ApplicationAnalysis` |
-| `hmda-analyzer` | HMDA (Home Mortgage Disclosure Act) data integration | Community lending context for Section B |
 | `cdfidata` | CDFI Fund certified entity data | CDE track record and peer data |
 | `impact-ledger` | Impact metrics aggregation and benchmarking | Jobs and community outcome standardization |
 
 ---
 
-## The 17-library open source stack
+## The open source stack
 
 NMTC Application Builder is built on these open source libraries:
 
@@ -76,12 +75,10 @@ NMTC Application Builder is built on these open source libraries:
 - `numpy >= 1.21` — Numerical operations in scoring and statistics
 
 **CDFI/NMTC domain:**
-- `nmtc-mapper >= 0.3.0` — Census tract eligibility
+- `nmtc-mapper >= 0.4.2` — Census tract eligibility
 - `nmtc-calc >= 0.1.0` — NMTC deal economics
-- `hmda-analyzer >= 0.1.0` — HMDA lending data
 - `cdfidata >= 0.1.7` — CDFI Fund data
 - `impact-ledger >= 0.2.0` — Impact measurement
-- `cra-scraper >= 0.1.0` — Community Reinvestment Act data
 
 **Configuration:**
 - `pyyaml >= 6.0` — YAML configuration loading for CDE profiles

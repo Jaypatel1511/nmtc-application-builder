@@ -58,6 +58,22 @@ class PipelineProject:
     construction_start: Optional[str] = None
     operations_start: Optional[str] = None
 
+    # ── CDE-DECLARED, read from the upload ────────────────────────────────
+    # The shipped v1.1 xlsx template collects both of these — "Census Tract
+    # (11-digit)" (col 24) and "Distress Level" (col 15, with a validated
+    # dropdown) — and upload_handler maps both. Through 1.1.5 from_csv read
+    # NEITHER, so everything a CDE typed into those two columns was written to
+    # a temp CSV and silently dropped on the floor.
+    #
+    # They are deliberately SEPARATE fields from the tool-verified
+    # census_tract / distress_level below, not the same field pre-seeded.
+    # Merging them would mean a CDE's self-certification and a CDFI Fund
+    # lookup shared one slot, so enrichment would have to overwrite one with
+    # the other and the rendered value could not say which it was. Keeping two
+    # fields makes the provenance structural rather than a convention.
+    declared_census_tract: Optional[str] = None
+    declared_distress_level: Optional[str] = None
+
     # Populated by analyze() — do not set manually
     census_tract: Optional[str] = None
     is_nmtc_eligible: Optional[bool] = None
@@ -101,6 +117,38 @@ class PipelineProject:
     @property
     def is_deep_distress(self) -> bool:
         return self.distress_level in ("deep", "severe")
+
+    def tract_display(self) -> str:
+        """Census tract with its provenance, never bare.
+
+        A tool-verified GEOID and a GEOID the CDE typed into the template are
+        different kinds of fact and must not render identically — the row that
+        carries them also carries a "CDFI Fund NMTC Eligibility Table"
+        citation, and a CDE-declared tract was never checked against that
+        table or against the project address.
+
+        Example::
+
+            p.tract_display()   # '17031838200 (CDE-declared, not verified)'
+        """
+        if self.census_tract:
+            return str(self.census_tract)
+        if self.declared_census_tract:
+            return f"{self.declared_census_tract} (CDE-declared, not verified)"
+        return "—"
+
+    def distress_display(self) -> str:
+        """Distress level with its provenance, never bare.
+
+        The CDE's declared level is shown when the tool has no verified one,
+        so the upload is not silently discarded — but it is labelled, because
+        self-certification is not a CDFI Fund determination.
+        """
+        if self.distress_level:
+            return str(self.distress_level)
+        if self.declared_distress_level:
+            return f"{self.declared_distress_level} (CDE-declared, not verified)"
+        return "—"
 
     @property
     def eligibility_status(self) -> str:
@@ -187,8 +235,26 @@ class Pipeline:
             "total_project_cost", "qei_request", "qlici_amount",
             "expected_jobs_created",
         }
+        # Skip LEADING '#' lines before the header row. The shipped sample CSVs
+        # carry their fictional-data notice at the top, where a human reads it
+        # first; pandas would otherwise take that notice as the header and
+        # fail with a tokenizing error. Comment rows BELOW the header are
+        # dropped separately a few lines down — pipeline_template.csv puts its
+        # field documentation there. `comment="#"` is deliberately not used:
+        # it would truncate any notes cell containing a '#'.
         try:
-            df = pd.read_csv(path)
+            with open(path, "r", encoding="utf-8-sig", errors="replace") as fh:
+                skip = 0
+                for line in fh:
+                    if line.lstrip().startswith("#"):
+                        skip += 1
+                    else:
+                        break
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Pipeline CSV not found: {path}")
+
+        try:
+            df = pd.read_csv(path, skiprows=skip)
         except FileNotFoundError:
             raise FileNotFoundError(f"Pipeline CSV not found: {path}")
         except Exception as e:
@@ -232,6 +298,10 @@ class Pipeline:
                     construction_start=_optional_str(row.get("construction_start")),
                     operations_start=_optional_str(row.get("operations_start")),
                     # v1.1 per-project flags — accept Y/N/yes/no/true/false
+                    # CDE-declared columns — present in the shipped template
+                    # and dropped entirely until 1.2.0.
+                    declared_census_tract=_optional_str(row.get("census_tract")),
+                    declared_distress_level=_optional_str(row.get("distress_level")),
                     is_native_area=_optional_bool(row.get("native_area")),
                     is_high_migration_rural=_optional_bool(row.get("high_migration_rural")),
                     is_opportunity_zone=_optional_bool(row.get("opportunity_zone")),

@@ -18,34 +18,36 @@ from pathlib import Path
 
 
 def _get_templates_dir() -> Path:
-    """Locate the templates directory relative to the installed package or source tree."""
-    # 1. Try relative to this file (works in editable installs and source trees)
-    here = Path(__file__).parent
-    candidate = here.parent / "templates"
+    """Locate the packaged templates directory.
+
+    Templates live INSIDE the package (``nmtcapp/templates/``) and are
+    declared as package data, so one lookup answers for every install kind:
+    wheel, sdist, editable and source tree alike.
+
+    They used to sit at the repo root, which no wheel ever carried —
+    ``pyproject.toml`` declared no ``package-data``, and ``MANIFEST.in``
+    only governs the sdist. All three of the old strategies resolved to
+    ``site-packages/templates``, so ``nmtcapp init`` failed for every user
+    who installed from PyPI. Keeping them in the package also avoids
+    installing a generic top-level ``templates/`` into site-packages, where
+    it would collide with any other distribution doing the same.
+    """
+    import importlib.resources as pkg_resources
+
+    if hasattr(pkg_resources, "files"):  # Python 3.9+
+        candidate = Path(str(pkg_resources.files("nmtcapp") / "templates"))
+        if candidate.is_dir():
+            return candidate
+
+    # Fallback for exotic loaders: templates sit beside this module.
+    candidate = Path(__file__).parent / "templates"
     if candidate.is_dir():
         return candidate
 
-    # 2. Try importlib.resources (works for installed packages with package_data)
-    try:
-        import importlib.resources as pkg_resources
-        # Python 3.9+ path
-        if hasattr(pkg_resources, "files"):
-            ref = pkg_resources.files("nmtcapp") / ".." / "templates"
-            resolved = Path(str(ref)).resolve()
-            if resolved.is_dir():
-                return resolved
-    except Exception:
-        pass
-
-    # 3. Fallback: templates alongside the package root
-    root = Path(__file__).parent.parent
-    candidate2 = root / "templates"
-    if candidate2.is_dir():
-        return candidate2
-
     raise FileNotFoundError(
-        "Cannot locate the templates directory. "
-        "If you installed from source, ensure you are running from the repo root."
+        "Cannot locate the packaged templates directory (nmtcapp/templates). "
+        "This indicates a broken installation — please reinstall "
+        "nmtc-application-builder, or report this with your install method."
     )
 
 
@@ -173,34 +175,80 @@ def cmd_init(args: argparse.Namespace) -> int:
     print("Next steps:")
     print(f"  1. Edit {directory}/cde_profile.yaml with your CDE details")
     print(f"  2. Fill in {directory}/pipeline.csv with your project pipeline")
-    print(f"     (see templates/pipeline_sample_strong.csv for examples)")
+    print(f"     (a filled-in example ships at {templates_dir}/pipeline_sample_strong.csv)")
     print(f"  3. Open {directory}/analysis.ipynb in Jupyter to run your analysis")
-    print(f"  4. Or run: nmtcapp analyze {directory}/pipeline.csv")
+    print(f"  4. Or run: nmtcapp analyze {directory}/pipeline.csv \\")
+    print(f"               --cde {directory}/cde_profile.yaml \\")
+    print(f"               --requested-allocation <dollars>")
     return 0
 
 
 def cmd_analyze(args: argparse.Namespace) -> int:
-    """Load a pipeline CSV and print the analysis summary."""
+    """Load a pipeline CSV and print the analysis summary.
+
+    Refuses to run without a CDE profile and a requested allocation. Scoring
+    a real pipeline against a fictional CDE and an invented $55MM request —
+    which is what this command used to do silently — produces advice about a
+    CDE that does not exist and ratios against a number nobody entered.
+    """
     csv_path = args.csv
 
     if not os.path.exists(csv_path):
         print(f"ERROR: Pipeline CSV not found: {csv_path}", file=sys.stderr)
         return 1
 
+    if not args.demo and (args.cde is None or args.requested_allocation is None):
+        print(
+            "ERROR: analyze requires your own CDE profile and requested allocation.\n"
+            "\n"
+            "  nmtcapp analyze <csv> --cde cde_profile.yaml "
+            "--requested-allocation 55000000\n"
+            "\n"
+            "`nmtcapp init <dir>` scaffolds a cde_profile.yaml to fill in.\n"
+            "\n"
+            "To see the tool run end to end on fictional data instead, pass "
+            "--demo. Demo output is labelled as such on every screen and must "
+            "not be used for a real application.",
+            file=sys.stderr,
+        )
+        return 2
+
     try:
         from nmtcapp.core.pipeline import Pipeline
+        from nmtcapp.core.sample_identity import SampleDataError
         from nmtcapp.core.cde import CDEProfile
         from nmtcapp.core.application import Application
 
         pipeline = Pipeline.from_csv(csv_path)
-        cde = CDEProfile.sample()
-        app = Application(cde=cde, requested_allocation=55_000_000)
+
+        if args.demo:
+            cde = CDEProfile.sample()
+            requested = (
+                args.requested_allocation
+                if args.requested_allocation is not None
+                else 55_000_000
+            )
+            _print_demo_banner(cde, requested)
+        else:
+            # Not allow_sample: `analyze` is the real-application path.
+            # Someone running the shipped sample wants --demo, which
+            # labels every screen.
+            cde = CDEProfile.from_yaml(args.cde)
+            requested = args.requested_allocation
+
+        app = Application(cde=cde, requested_allocation=requested)
         app.add_pipeline(pipeline)
         analysis = app.analyze()
         analysis.summary()
+
+        if args.demo:
+            _print_demo_banner(cde, requested)
     except FileNotFoundError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
+    except SampleDataError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
     except ValueError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
@@ -209,6 +257,18 @@ def cmd_analyze(args: argparse.Namespace) -> int:
         return 1
 
     return 0
+
+
+def _print_demo_banner(cde, requested: float) -> None:
+    """Label demo output on every screen, above and below the summary."""
+    print("=" * 72)
+    print("  DEMO MODE — FICTIONAL CDE. NOT YOUR DATA.")
+    print(f"  CDE:       {cde.name} (sample profile shipped with this package)")
+    print(f"  Requested: ${requested:,.0f} (illustrative figure, not your request)")
+    print("  Every CDE-level score, ratio and recommendation below refers to")
+    print("  this fictional CDE. Re-run with --cde and --requested-allocation")
+    print("  for results about your own application.")
+    print("=" * 72)
 
 
 def cmd_version(args: argparse.Namespace) -> int:
@@ -264,15 +324,40 @@ def _build_parser() -> argparse.ArgumentParser:
         "analyze",
         help="Run pipeline analysis on a CSV file and print a summary",
         description=(
-            "Loads the pipeline from <csv>, creates an Application with a sample "
-            "CDE profile and $55M requested allocation, runs analyze(), and prints "
-            "the full analysis summary to stdout."
+            "Loads the pipeline from <csv> together with YOUR CDE profile and "
+            "requested allocation, runs analyze(), and prints the full analysis "
+            "summary to stdout.\n\n"
+            "--cde and --requested-allocation are both required: CDE-level "
+            "scores, peer ratios and recommendations are meaningless against "
+            "someone else's CDE. Use --demo to run on the shipped fictional "
+            "profile instead; that output is labelled as a demo throughout."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     analyze_parser.add_argument(
         "csv",
         help="Path to a pipeline CSV file (must have required columns)",
+    )
+    analyze_parser.add_argument(
+        "--cde",
+        metavar="PATH",
+        default=None,
+        help="Path to your CDE profile YAML (as scaffolded by `nmtcapp init`)",
+    )
+    analyze_parser.add_argument(
+        "--requested-allocation",
+        metavar="DOLLARS",
+        type=float,
+        default=None,
+        help="Allocation amount you are requesting, in dollars (e.g. 55000000)",
+    )
+    analyze_parser.add_argument(
+        "--demo",
+        action="store_true",
+        help=(
+            "Run on the shipped fictional CDE profile. Output is labelled "
+            "DEMO MODE and must not be used for a real application."
+        ),
     )
 
     # version subcommand

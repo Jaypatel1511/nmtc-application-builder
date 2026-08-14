@@ -139,7 +139,7 @@ app.add_pipeline(pipeline)
 score = app.score_win_probability()   # cde.extra passed automatically
 ```
 
-See [`templates/cde_profile_sample.yaml`](https://github.com/Jaypatel1511/nmtc-application-builder/blob/main/templates/cde_profile_sample.yaml) and [`templates/pipeline_template.xlsx`](https://github.com/Jaypatel1511/nmtc-application-builder/blob/main/templates/pipeline_template.xlsx) for the full field list.
+See [`nmtcapp/templates/cde_profile_sample.yaml`](https://github.com/Jaypatel1511/nmtc-application-builder/blob/main/nmtcapp/templates/cde_profile_sample.yaml) and [`nmtcapp/templates/pipeline_template.xlsx`](https://github.com/Jaypatel1511/nmtc-application-builder/blob/main/nmtcapp/templates/pipeline_template.xlsx) for the full field list.
 
 ### Option B — inline dict
 

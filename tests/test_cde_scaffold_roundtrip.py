@@ -1,0 +1,144 @@
+"""Gate: the scaffold `nmtcapp init` writes must load in the tool that wrote it.
+
+1.2.0's second stated goal was making `nmtcapp init` work from a wheel. It did
+write the files — and the cde_profile.yaml it wrote could not be loaded by
+CDEProfile.from_yaml under any completion, because the two disagreed on
+VOCABULARY, not just coverage:
+
+    scaffold offered        loader required
+    ----------------        ---------------
+    mission_statement       mission
+    service_area_states     target_markets
+    (absent)                certification_date, contact, governance
+
+Every `nmtcapp analyze --cde <the file init just wrote>` exited 1 with a raw
+Python set difference. A CDE could not guess the real names from the error or
+from the file.
+
+These tests run the real `nmtcapp init`, fill every field the scaffold offers
+with a plausible value, and assert the loader accepts it — so the two can never
+drift apart again without a red build.
+"""
+from __future__ import annotations
+
+import os
+import subprocess
+import sys
+
+import pytest
+import yaml
+
+from nmtcapp.core.cde import CDEProfile
+
+
+def _init(tmp_path) -> str:
+    """Run `nmtcapp init` into tmp_path and return the scaffold path."""
+    target = os.path.join(str(tmp_path), "proj")
+    result = subprocess.run(
+        [sys.executable, "-m", "nmtcapp.cli", "init", target],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, (
+        f"nmtcapp init exited {result.returncode}\n{result.stdout}\n{result.stderr}"
+    )
+    path = os.path.join(target, "cde_profile.yaml")
+    assert os.path.exists(path), f"init did not write {path}"
+    return path
+
+
+# Plausible values for every REQUIRED key. Keyed by the name the scaffold uses,
+# which must also be the name the loader reads — that identity is the point.
+_FILLED = {
+    "name": "Testville Community Capital CDE, LLC",
+    "cde_id": "CDE-2025-001",
+    "certification_date": "2025-01-15",
+    "mission": "Deploy NMTC capital into distressed communities in Testville.",
+    "target_markets": ["Illinois", "Ohio"],
+    "prior_awards": [
+        {"year": 2021, "amount": 40_000_000, "deployment_status": "fully_deployed",
+         "states": ["IL"], "sectors": ["healthcare"]},
+    ],
+    "contact": {"name": "Pat Doe", "title": "CEO", "email": "pat@testville.org"},
+    "governance": {"board_members": 7, "community_representatives": 3},
+}
+
+
+def test_scaffold_is_blank(tmp_path):
+    """Nothing in the scaffold may be pre-filled with someone else's data."""
+    data = yaml.safe_load(open(_init(tmp_path), encoding="utf-8"))
+    filled = {k: v for k, v in (data or {}).items() if v not in ("", [], {}, None)}
+    assert not filled, (
+        f"the init scaffold ships pre-filled values: {filled}. A CDE that "
+        "leaves a field alone must not inherit anyone else's answer."
+    )
+
+
+def test_filled_scaffold_loads(tmp_path):
+    """Fill every field the scaffold offers; from_yaml must accept it."""
+    path = _init(tmp_path)
+    data = yaml.safe_load(open(path, encoding="utf-8")) or {}
+
+    unknown = set(_FILLED) - set(data)
+    assert not unknown, (
+        f"the scaffold does not offer required key(s) {sorted(unknown)}. A CDE "
+        "cannot supply a field the scaffold never mentions — this is the "
+        "vocabulary mismatch that made every `nmtcapp analyze` exit 1."
+    )
+
+    data.update(_FILLED)
+    with open(path, "w", encoding="utf-8") as fh:
+        yaml.safe_dump(data, fh)
+
+    cde = CDEProfile.from_yaml(path)
+    assert cde.name == _FILLED["name"]
+    assert cde.target_markets == _FILLED["target_markets"]
+    assert cde.governance["board_members"] == 7
+
+
+def test_unfilled_scaffold_names_what_to_complete(tmp_path):
+    """An empty scaffold must fail with guidance, not a set-difference dump."""
+    path = _init(tmp_path)
+    with pytest.raises(ValueError) as exc:
+        CDEProfile.from_yaml(path)
+    msg = str(exc.value)
+
+    assert "{" not in msg, (
+        f"the error is still a raw Python container dump:\n{msg}"
+    )
+    for key, hint in (
+        ("certification_date", "YYYY-MM-DD"),
+        ("contact", "email"),
+        ("governance", "board"),
+    ):
+        assert key in msg, f"the error does not name the missing key {key!r}:\n{msg}"
+        assert hint in msg, f"the error names {key!r} but not what to put in it:\n{msg}"
+
+
+def test_analyze_accepts_the_filled_scaffold(tmp_path):
+    """End to end: init -> fill -> analyze must exit 0.
+
+    This is the path the init banner prints as step 4. It exited 1 in 1.2.0.
+    """
+    path = _init(tmp_path)
+    data = yaml.safe_load(open(path, encoding="utf-8")) or {}
+    data.update(_FILLED)
+    with open(path, "w", encoding="utf-8") as fh:
+        yaml.safe_dump(data, fh)
+
+    csv_path = os.path.join(os.path.dirname(path), "pipeline.csv")
+    with open(csv_path, "a", encoding="utf-8") as fh:
+        fh.write(
+            "P1,Elm Clinic,Elm LLC,3400 S Michigan Ave,Chicago,IL,healthcare,"
+            "real_estate,12500000,8500000,8500000,52,18,,24000,2026-09-30,"
+            "N,N,N,N,Y,Y,N,urban,17031838200,N,N,\n"
+        )
+
+    result = subprocess.run(
+        [sys.executable, "-m", "nmtcapp.cli", "analyze", csv_path,
+         "--cde", path, "--requested-allocation", "8500000"],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, (
+        f"analyze on the tool's own scaffold exited {result.returncode}\n"
+        f"{result.stdout}\n{result.stderr}"
+    )

@@ -1,3 +1,6 @@
+# SAMPLE — FICTIONAL DATA. Every project, QALICB, address and figure below is
+# invented. Do NOT submit these rows as your own pipeline. Start from
+# pipeline_template.csv (or pipeline_template.xlsx), which is blank.
 project_id,project_name,qalicb_name,address,city,state,sector,project_type,total_project_cost,qei_request,qlici_amount,expected_jobs_created,expected_jobs_retained,expected_units_built,expected_sq_ft,closing_target_date,native_area,high_migration_rural,us_territory,persistent_poverty,below_market_rate,unrelated_entity,opportunity_zone,urban_rural,census_tract,minority_owned,women_owned,notes
 PRJ-W001,Springfield Community Center,Springfield CF QALICB LLC,100 Main St,Springfield,IL,community_facility,real_estate,7500000,5500000,5500000,8,3,,,2025-10-31,N,N,N,N,N,N,N,urban,17167010100,N,N,
 PRJ-W002,Rockford Neighborhood Center,Rockford CF QALICB LLC,220 E State St,Rockford,IL,community_facility,real_estate,6800000,5000000,5000000,7,2,,,2025-11-30,N,N,N,N,N,N,N,urban,17201010100,N,N,

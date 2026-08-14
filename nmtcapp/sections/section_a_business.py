@@ -70,34 +70,30 @@ class SectionABusinessStrategy(SectionGenerator):
             f"{distress_clause}. "
             f"Our pipeline focuses on {dominant_sector.replace('_', ' ')} and complementary "
             f"high-impact sectors in markets where conventional capital is systematically absent."
-        ) + _placeholder(self.section_id, self.word_limit)
+        ) + _placeholder()
 
         target_markets_body = (
             f"Primary geographic targets: {states_str}.\n\n"
             f"{cde.name}'s mission — \"{cde.mission[:200]}...\" — guides our market selection "
             f"toward persistent-poverty counties and high-migration rural communities where "
             f"NMTC leverage is greatest.\n\n"
-        ) + _placeholder(self.section_id, 500)
+        ) + _placeholder()
 
         if degraded:
             deep_pct_display = "Unverified — eligibility data unavailable"
-            distress_rank_display = "Unverified — eligibility data unavailable"
         elif partial_unverified:
             deep_pct_display = qualified_pct(deep_pct, pr)
-            distress_rank_display = distress.get("vs_historical_winners", "N/A").replace("_", " ").title()
         else:
             deep_pct_display = f"{deep_pct:.0%}"
-            distress_rank_display = distress.get("vs_historical_winners", "N/A").replace("_", " ").title()
 
         pipeline_overview = {
             "Total Projects in Pipeline": total_projects,
-            "Total QEI Requested ($)": f"${total_qei:,.0f}",
+            "Total Pipeline QEI ($)": f"${total_qei:,.0f}",
             "States Represented": len(states),
             "% QEI in Deep/Severe Distress": deep_pct_display,
             "Dominant Sector": dominant_sector.replace("_", " ").title(),
             "Total Jobs to Be Created": pr.aggregate_impact.get("total_jobs_created", "N/A"),
             "Sector Diversity Score": f"{sector.get('sector_diversity_score', 0):.1f}/100",
-            "Historical Distress Rank": distress_rank_display,
         }
 
         if degraded:
@@ -123,7 +119,7 @@ class SectionABusinessStrategy(SectionGenerator):
             f"the first tranche of transactions within 12 months of award announcement. "
             f"All {total_projects} projects have completed preliminary underwriting review.\n\n"
             f"{deployment_distress_line}\n\n"
-        ) + _placeholder(self.section_id, 400)
+        ) + _placeholder()
 
         return {
             "section_id": self.section_id,
@@ -138,6 +134,6 @@ class SectionABusinessStrategy(SectionGenerator):
                 {"heading": "QEI Deployment Strategy and Timeline",
                  "body": deployment_strategy, "type": "narrative"},
                 {"heading": "Competitive Differentiation",
-                 "body": _placeholder(self.section_id, 400), "type": "narrative"},
+                 "body": _placeholder(), "type": "narrative"},
             ],
         }

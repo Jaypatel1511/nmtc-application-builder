@@ -94,7 +94,6 @@ class PipelineAnalysisResult:
             f"  LIC:             {d.get('pct_lic', 0):.0%}",
             f"  Non-LIC:         {d.get('pct_non_lic', 0):.0%}",
             f"  Native Area:     {d.get('pct_native_area', 0):.0%}",
-            f"  Historical Rank: {d.get('vs_historical_winners', 'N/A')}",
             "",
             "── Geographic Diversity ────────────────────────────────",
             f"  States:          {g.get('states_count', 0)}",

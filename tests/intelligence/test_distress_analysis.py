@@ -78,14 +78,23 @@ def test_native_area_pct():
     assert result["pct_native_area"] == pytest.approx(0.40)
 
 
-def test_vs_historical_winners_strong():
-    projects = [_make_project(f"P{i}", 1_000_000, "deep") for i in range(9)]
-    projects.append(_make_project("P9", 1_000_000, "lic"))
-    result = analyze_distress_concentration(Pipeline(projects))
-    assert result["vs_historical_winners"] in ("top_quartile", "competitive")
+def test_no_winner_percentile_field_is_published():
+    """`vs_historical_winners` was deleted in 1.2.0 and must not return.
 
-
-def test_vs_historical_winners_weak():
-    projects = [_make_project(f"P{i}", 1_000_000, "ineligible") for i in range(5)]
-    result = analyze_distress_concentration(Pipeline(projects))
-    assert result["vs_historical_winners"] == "uncompetitive"
+    It ranked a CDE against "historical winning applications" off a hardcoded
+    threshold ladder, with no distribution of winners loaded anywhere and none
+    published by the CDFI Fund. It reached the first paragraph of every
+    generated application. A field that can never be substantiated must not
+    exist, so that its absence cannot be read as meaningful.
+    """
+    strong = analyze_distress_concentration(Pipeline(
+        [_make_project(f"P{i}", 1_000_000, "deep") for i in range(9)]
+        + [_make_project("P9", 1_000_000, "lic")]))
+    weak = analyze_distress_concentration(Pipeline(
+        [_make_project(f"P{i}", 1_000_000, "ineligible") for i in range(5)]))
+    empty = analyze_distress_concentration(Pipeline([]))
+    for name, result in (("strong", strong), ("weak", weak), ("empty", empty)):
+        assert "vs_historical_winners" not in result, (
+            f"the {name} pipeline republished vs_historical_winners — a "
+            "percentile claim against a population this package never loads"
+        )

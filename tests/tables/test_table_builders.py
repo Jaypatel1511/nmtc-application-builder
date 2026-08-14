@@ -184,14 +184,31 @@ class TestInvestorTable:
         last = str(df.iloc[-1].iloc[0]).upper()
         assert "TOTAL" in last
 
-    def test_amounts_sum_to_total(self, df):
+    def test_no_dollar_amount_is_asserted(self, df):
+        """Inverted in 1.2.0: there is no arithmetic here to check any more.
+
+        This test used to assert the investor rows summed to the totals row —
+        internally consistent arithmetic over figures the tool invented. The
+        rows were two made-up investors split 70/30 of (pipeline QEI x 0.39 x
+        $0.83), rendered next to "Primary CRA-motivated investor; term sheet
+        pending" while Section D's own narrative said the tool "cannot attest
+        to any relationship, to investor motivation, or to how many investors
+        will participate". The numbers were consistent and entirely fictional.
+
+        Every cell is now a placeholder, so the correct assertion is that no
+        cell contains a number at all.
+        """
         commit_col = next(c for c in df.columns if "Commitment Amount" in c)
-        data_rows = df.iloc[:-1]
-        total_row = df.iloc[-1]
-        # Sum of investor rows should equal totals row
-        total_from_sum = pd.to_numeric(data_rows[commit_col], errors="coerce").sum()
-        total_from_row = pd.to_numeric(total_row[commit_col], errors="coerce")
-        assert abs(total_from_sum - total_from_row) < 1
+        for value in df[commit_col]:
+            text = str(value)
+            assert not any(ch.isdigit() for ch in text), (
+                f"the investor commitment column contains a figure ({text!r}). "
+                "This tool holds no investor data and must not derive a "
+                "commitment amount from pipeline QEI."
+            )
+        assert any("CDE TO COMPLETE" in str(v) for v in df[commit_col]), (
+            "the commitment column carries no [CDE TO COMPLETE] marker"
+        )
 
     def test_no_pipeline_returns_empty(self):
         from nmtcapp.tables.investor_table import build_investor_table

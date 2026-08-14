@@ -98,19 +98,30 @@ def analyze_distress_concentration(pipeline: "Pipeline") -> dict:
         "total_qei": total_qei,
         "meets_min_threshold": pct_deep_or_severe >= min_threshold,
         "meets_target_threshold": pct_deep_or_severe >= target_threshold,
-        "vs_historical_winners": _assess_vs_winners(pct_deep_or_severe),
     }
 
 
-def _assess_vs_winners(pct_deep_or_severe: float) -> str:
-    """Qualitative benchmark against historical winning applications."""
-    if pct_deep_or_severe >= 0.85:
-        return "top_quartile"
-    if pct_deep_or_severe >= 0.75:
-        return "competitive"
-    if pct_deep_or_severe >= 0.50:
-        return "below_average"
-    return "uncompetitive"
+# ``vs_historical_winners`` / ``_assess_vs_winners`` were REMOVED in 1.2.0.
+#
+# The function read only the CDE's own pct_deep_or_severe and returned
+# "top_quartile" / "competitive" / "below_average" / "uncompetitive" off a
+# hardcoded threshold ladder. No distribution of historical applicants was
+# ever loaded, and none is published — the CDFI Fund publishes a commitment
+# threshold, not a winner percentile curve. Its ladder (0.85/0.75/0.50) also
+# disagreed with WINNER_PATTERN_THRESHOLDS (0.75/0.50/0.25) in the same
+# package.
+#
+# It reached the first paragraph a reviewer reads: "placing us in the top
+# quartile tier of CDFI Fund applicants historically" (Word/PDF), "ranking in
+# the top quartile tier of historical NMTC applications" (Markdown), and
+# "Historical Distress Rank: Top Quartile" in Section A's overview table.
+#
+# Deleted rather than hedged, for the same reason nmtc-mapper dropped
+# is_nmtc_native_area: a value that can never be obtained must not exist as a
+# field, because a consumer then reads the absence of a positive as meaningful.
+# All three renderers defaulted the missing key to 'competitive', which
+# manufactured a tier out of no data at all — deleting the field deletes that
+# default too.
 
 
 def _empty_distress_result() -> dict:
@@ -133,5 +144,4 @@ def _empty_distress_result() -> dict:
         "total_qei": 0.0,
         "meets_min_threshold": False,
         "meets_target_threshold": False,
-        "vs_historical_winners": "uncompetitive",
     }

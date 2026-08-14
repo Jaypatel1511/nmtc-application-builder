@@ -211,7 +211,7 @@ jobs:
           # MANIFEST.in existed:
           #   tests/conftest.py            nine fixtures, used by 30 nested modules
           #   tests/__init__.py            makes tests/ a package
-          #   templates/pipeline_template.xlsx  read by test_template_* directly
+          #   nmtcapp/templates/pipeline_template.xlsx  read by test_template_* directly
           #   streamlit_app/chart_style.py  imported by test_streamlit_chart_smoke
           #   streamlit_app/utils.py        imported by test_streamlit_upload_profile
           #
@@ -219,12 +219,12 @@ jobs:
           # missing. A single "recursive-include tests *.py" hint would send
           # whoever hits a templates/ or streamlit_app/ failure to the wrong line.
           for required in tests/conftest.py tests/__init__.py README.md pyproject.toml \
-                          templates/pipeline_template.xlsx templates/cde_profile_sample.yaml \
+                          nmtcapp/templates/pipeline_template.xlsx nmtcapp/templates/cde_profile_sample.yaml \
                           streamlit_app/chart_style.py streamlit_app/utils.py; do
             if [ ! -f "${SRC}/${required}" ]; then
               case "${required}" in
                 tests/*)         HINT="recursive-include tests *.py" ;;
-                templates/*)     HINT="recursive-include templates *.yaml *.csv *.xlsx" ;;
+                nmtcapp/templates/*) HINT="[tool.setuptools.package-data] nmtcapp + recursive-include nmtcapp/templates *.yaml *.csv *.xlsx" ;;
                 streamlit_app/*) HINT="recursive-include streamlit_app *.py *.txt *.md" ;;
                 *)               HINT="include ${required}" ;;
               esac
@@ -253,13 +253,20 @@ jobs:
 
           # Run from a directory containing ONLY what the sdist shipped, and NOT
           # ./nmtcapp. Running from ${SRC} itself would put the unpacked source
-          # tree on sys.path and silently test that instead. tests/, templates/
-          # and streamlit_app/ all come FROM THE TARBALL — this job has no
-          # checkout to take them from, which is the whole point.
+          # tree on sys.path and silently test that instead. tests/ and
+          # streamlit_app/ come FROM THE TARBALL — this job has no checkout to
+          # take them from, which is the whole point.
+          #
+          # templates/ is deliberately NOT copied. Since 1.2.0 it lives inside
+          # the package as nmtcapp/templates/ and the tests resolve it through
+          # the INSTALLED package (tests/conftest.py::templates_dir). Copying it
+          # here would mean creating ${TESTDIR}/nmtcapp/, and a bare nmtcapp/
+          # directory in the working directory shadows the installed package as
+          # a namespace package — turning this job into a test of the tarball's
+          # own source tree, the exact failure the paragraph above guards.
           TESTDIR="${RUNNER_TEMP}/sdist-tests"
           mkdir -p "${TESTDIR}"
           cp -R "${SRC}/tests" "${TESTDIR}/tests"
-          cp -R "${SRC}/templates" "${TESTDIR}/templates"
           cp -R "${SRC}/streamlit_app" "${TESTDIR}/streamlit_app"
           cp "${SRC}/README.md" "${TESTDIR}/README.md"
           # pyproject.toml comes from the tarball too, because it carries
@@ -334,20 +341,43 @@ jobs:
           #
           # FLOOR DERIVATION -- not a number picked to be safe. The rule is
           # HALF of what the suite genuinely runs today, rounded down to a
-          # round number. Measured on this tarball: 708 tests executed under
-          # this job's exact invocation (1 more is `wheel` and deselected, and
-          # is correctly NOT counted toward the floor). Half is 354, so the
-          # floor is 350.
+          # round number. RE-MEASURED for 1.2.0: 885 tests executed under this
+          # job's exact invocation (1 more is `wheel` and deselected, and is
+          # correctly NOT counted toward the floor). Half is 442.5, rounded
+          # down to a round number: 440.
+          #
+          # The jump from 350 is not drift. 1.2.0 adds:
+          #   151  test_no_fabricated_output.py -- 18 denylist entries x 4
+          #        rendered formats x 2 pipelines (144), plus the size and
+          #        well-formedness guards, the placeholder-presence checks and
+          #        the source-citation check. (An earlier version of this
+          #        comment said "17 entries" and gave 150; the list has 18 and
+          #        the file runs 151. The count is now pinned in the test as
+          #        EXPECTED_DENYLIST_SIZE rather than described here.)
+          #     5  test_invariant_output.py -- the invariance gate. Few tests,
+          #        but it renders 4 disjoint scenarios x 4 formats and is the
+          #        gate that catches a fabrication nobody listed in advance.
+          #    14  test_mapper_contract.py
+          #     4  test_cde_scaffold_roundtrip.py
+          # and removes the two HMDA adapter tests with the adapter itself.
+          # Recount before changing this line again; a floor copied forward
+          # from a previous release stops being evidence.
+          #
+          # KNOWN SLACK, stated rather than implied: 440 leaves 445 tests of
+          # headroom. It catches the regression this repo is prone to (the 36
+          # nested modules failing to ship drops the run to 238), and total
+          # deselection lands at 0. It would NOT catch losing tests/sections/
+          # + tests/tables/ + tests/validation/ together.
           #
           # Half, deliberately: the rejected `-lt 14` threshold sat at the
           # exact count shipping that day, so deleting one test module failed
           # the job with a packaging error for a deliberate source change.
-          # This one has 358 tests of headroom -- you would have to delete more
+          # This one has 445 tests of headroom -- you would have to delete more
           # than half the suite before it complains, while total deselection
           # lands at 0 and trips it immediately. It would also catch the
           # narrower regression this repo is actually prone to: the 36 nested
-          # modules failing to ship takes the run far below 350.
-          FLOOR=350
+          # modules failing to ship takes the run far below 440.
+          FLOOR=440
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()

@@ -10,6 +10,43 @@ import yaml
 logger = logging.getLogger(__name__)
 
 
+# Human-readable description of every field ``from_yaml`` requires, keyed by
+# the YAML key. Used to build the error a CDE actually sees: 1.1.5 printed a
+# raw Python set difference ("missing required fields: {'contact',
+# 'governance', ...}"), which names the keys but not what to put in them, and
+# gave no hint that the shipped scaffold used DIFFERENT names for two of them.
+_FIELD_GUIDANCE = {
+    "name": "your CDE's full legal name",
+    "cde_id": "your CDFI Fund CDE certification ID, e.g. CDE-2025-001",
+    "certification_date": "the date your CDE was certified, as YYYY-MM-DD",
+    "mission": "your CDE's mission statement, one or two sentences",
+    "target_markets": "the states or markets you deploy into, as a YAML list",
+    "prior_awards": "prior NMTC allocations, as a YAML list (use [] if none)",
+    "contact": "a mapping with at least name and email",
+    "governance": "a mapping describing your board, e.g. board_members: 7",
+}
+
+
+def _missing_fields_message(path: str, missing: set, data: dict) -> str:
+    """Name what the CDE must complete, in the order the scaffold lists it."""
+    lines = [
+        f"CDE profile {path} is missing {len(missing)} required "
+        f"field{'s' if len(missing) != 1 else ''}:",
+        "",
+    ]
+    for key in _FIELD_GUIDANCE:
+        if key in missing:
+            lines.append(f"  {key}: <{_FIELD_GUIDANCE[key]}>")
+    for key in sorted(missing - set(_FIELD_GUIDANCE)):
+        lines.append(f"  {key}: <required>")
+    lines += [
+        "",
+        "Add each key at the top level of the file. "
+        "`nmtcapp init <dir>` writes a scaffold with every one of them.",
+    ]
+    return "\n".join(lines)
+
+
 @dataclass
 class CDEProfile:
     """Complete profile of a Community Development Entity applying for NMTC allocation.
@@ -49,10 +86,14 @@ class CDEProfile:
             raise ValueError("CDEProfile.prior_awards must be a list")
 
     @classmethod
-    def from_yaml(cls, path: str) -> "CDEProfile":
+    def from_yaml(cls, path: str, allow_sample: bool = False) -> "CDEProfile":
         """Load a CDEProfile from a YAML file.
 
-        The YAML file should have keys matching CDEProfile field names.
+        The YAML file should have keys matching CDEProfile field names; the
+        shipped ``cde_profile_template.yaml`` uses exactly those names.
+
+        Refuses a file carrying the shipped sample CDE's identity unless
+        ``allow_sample=True`` — see :mod:`nmtcapp.core.sample_identity`.
 
         Example::
 
@@ -66,11 +107,41 @@ class CDEProfile:
         except yaml.YAMLError as e:
             raise ValueError(f"Invalid YAML in CDE profile {path}: {e}")
 
+        if not isinstance(data, dict):
+            raise ValueError(
+                f"CDE profile {path} did not parse to a mapping of fields. "
+                "Expected a YAML file with top-level keys such as 'name' and "
+                "'cde_id'."
+            )
+
         required = {"name", "cde_id", "certification_date", "mission",
                     "target_markets", "prior_awards", "contact", "governance"}
-        missing = required - set(data.keys())
+        # A key present but left blank is NOT completed. The scaffold ships
+        # every required key with an empty value, so an untouched scaffold has
+        # no absent keys at all — checking only for absence let it through to
+        # __post_init__, which said "CDEProfile.name must not be empty" and
+        # named exactly one of the eight things still to do.
+        #
+        # prior_awards is the one exception: [] is a real answer, meaning a
+        # first-time applicant with no prior allocation.
+        blank_is_answer = {"prior_awards"}
+        missing = {
+            key for key in required
+            if key not in data
+            or (key not in blank_is_answer and data.get(key) in ("", [], {}, None))
+        }
         if missing:
-            raise ValueError(f"CDE YAML missing required fields: {missing}")
+            raise ValueError(_missing_fields_message(path, missing, data))
+
+        # Refuse shipped sample identity before anything is scored or rendered.
+        if not allow_sample:
+            from nmtcapp.core.sample_identity import assert_not_sample_identity
+            assert_not_sample_identity(
+                name=data.get("name"),
+                cde_id=data.get("cde_id"),
+                ein=data.get("ein"),
+                source=path,
+            )
 
         known_keys = {
             "name", "cde_id", "certification_date", "mission",

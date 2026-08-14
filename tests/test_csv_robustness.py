@@ -16,6 +16,8 @@ import tempfile
 import pytest
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(__file__))
+
+from tests.conftest import templates_dir as _templates_dir
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
@@ -238,7 +240,7 @@ class TestCommentRowsAndEmptyTemplates:
 
     def test_template_csv_file_skips_comments_and_parses_ok(self):
         """The actual pipeline_template.csv (comments-only) raises a friendly no-data error."""
-        template_path = os.path.join(_REPO_ROOT, "templates", "pipeline_template.csv")
+        template_path = os.path.join(_templates_dir(), "pipeline_template.csv")
         if not os.path.exists(template_path):
             pytest.skip("pipeline_template.csv not found")
         with pytest.raises(ValueError) as exc_info:
@@ -268,7 +270,7 @@ class TestValidCsvStillParses:
 
     def test_sample_strong_csv_parses(self):
         """pipeline_sample_strong.csv must parse without errors after the fix."""
-        path = os.path.join(_REPO_ROOT, "templates", "pipeline_sample_strong.csv")
+        path = os.path.join(_templates_dir(), "pipeline_sample_strong.csv")
         if not os.path.exists(path):
             pytest.skip("pipeline_sample_strong.csv not found")
         pipeline = Pipeline.from_csv(path)
@@ -276,7 +278,7 @@ class TestValidCsvStillParses:
 
     def test_sample_weak_csv_parses(self):
         """pipeline_sample_weak.csv must parse without errors after the fix."""
-        path = os.path.join(_REPO_ROOT, "templates", "pipeline_sample_weak.csv")
+        path = os.path.join(_templates_dir(), "pipeline_sample_weak.csv")
         if not os.path.exists(path):
             pytest.skip("pipeline_sample_weak.csv not found")
         pipeline = Pipeline.from_csv(path)

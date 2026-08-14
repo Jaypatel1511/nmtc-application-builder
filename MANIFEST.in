@@ -50,6 +50,15 @@
 # is never verified.
 recursive-include tests *.py
 
+# tests/invariant_allowlist.txt — the reviewed allowlist for the invariance
+# gate. NOT a .py file, so `recursive-include tests *.py` missed it, and the
+# sdist shipped test_invariant_output.py with no allowlist to read: 3 failed
+# inside the tarball while the same suite was green in the repo. Caught by the
+# test-sdist job, which is the whole reason that job exists. The gate fails
+# closed on a missing allowlist rather than passing vacuously, which is why
+# this showed up as a red build and not as silence.
+recursive-include tests *.txt
+
 include README.md
 include CHANGELOG.md
 include CONTRIBUTING.md
@@ -60,7 +69,13 @@ include pyproject.toml
 # Data files the shipped suite reads. Not documentation — remove these and
 # test_template_fields, test_template_roundtrip, test_csv_robustness and
 # test_sample_yaml_score all fail inside the tarball.
-recursive-include templates *.yaml *.csv *.xlsx
+#
+# 1.2.0 moved these from the repo root into nmtcapp/templates/ and declared
+# them as [tool.setuptools.package-data]. That is what puts them in the
+# WHEEL, which this file never governed — the sdist was always fine, so the
+# `nmtcapp init` failure reproduced only for pip users. This line is kept so
+# the sdist carries them explicitly rather than relying on package-data.
+recursive-include nmtcapp/templates *.yaml *.csv *.xlsx
 
 # Imported by the four test_streamlit_* modules, which put the repo root and
 # streamlit_app/ on sys.path and then `import chart_style` / `import utils`.
