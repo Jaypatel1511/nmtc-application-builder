@@ -4,7 +4,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from nmtcapp.data.schema import IMPACT_BENCHMARKS
 
 if TYPE_CHECKING:
     from nmtcapp.core.pipeline import Pipeline
@@ -26,7 +25,6 @@ def aggregate_impact(pipeline: "Pipeline") -> dict:
     - ``qei_per_job`` – QEI dollars per job created
     - ``jobs_per_million_qei`` – jobs created per $1MM QEI
     - ``projects_with_units`` – count of housing projects
-    - ``vs_historical_benchmarks`` – label vs CDFI Fund data
 
     Example::
 
@@ -61,20 +59,36 @@ def aggregate_impact(pipeline: "Pipeline") -> dict:
         "qei_per_job": round(qei_per_job),
         "jobs_per_million_qei": round(jobs_per_million, 2),
         "projects_with_units": projects_with_units,
-        "vs_historical_benchmarks": _benchmark_label(jobs_per_million, cost_per_job),
     }
 
 
-def _benchmark_label(jobs_per_million: float, cost_per_job: float) -> str:
-    avg = IMPACT_BENCHMARKS["jobs_per_million_qei_avg"]
-    high = IMPACT_BENCHMARKS["jobs_per_million_qei_high"]
-    if jobs_per_million >= high:
-        return "top_quartile"
-    if jobs_per_million >= avg:
-        return "above_average"
-    if jobs_per_million >= IMPACT_BENCHMARKS["jobs_per_million_qei_low"]:
-        return "average"
-    return "below_average"
+# ``vs_historical_benchmarks`` / ``_benchmark_label`` were REMOVED in 1.2.0.
+# Third instance of the same shape, after distress_analysis._assess_vs_winners
+# and sector_analysis._assess_vs_winners — and the only one that reached a
+# submitted document. It rendered into Section B, the scored Community
+# Outcomes section:
+#
+#     • 7.0 jobs per $1MM of QEI deployed (average vs. CDFI Fund historical
+#       average)
+#
+# Two independent reasons, either sufficient:
+#
+# 1. A THRESHOLD CANNOT YIELD A QUARTILE. The function returned the literal
+#    "top_quartile" from a single >= comparison against one number. No
+#    distribution of anything is loaded. That is the reasoning that removed
+#    _assess_vs_winners, and it holds whatever the number turns out to be.
+#
+# 2. PROVENANCE. IMPACT_BENCHMARKS (data/schema.py) carries a section comment,
+#    not a citation, and this package's own historical_awards.py says its
+#    winner-pattern figures are approximations because application-level
+#    microdata is not public.
+#
+# _empty_impact_result() also returned "below_average" for a pipeline with zero
+# projects — a tier assigned where nothing was measured.
+#
+# jobs_per_million_qei itself is KEPT. It is computed from the CDE's own inputs
+# and is a fact about this pipeline. Only the comparative label goes: Section B
+# now reports the number without ranking it.
 
 
 def _empty_impact_result() -> dict:
@@ -90,5 +104,4 @@ def _empty_impact_result() -> dict:
         "qei_per_job": 0.0,
         "jobs_per_million_qei": 0.0,
         "projects_with_units": 0,
-        "vs_historical_benchmarks": "below_average",
     }

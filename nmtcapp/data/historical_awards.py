@@ -4,6 +4,29 @@ Embedded historical CDFI Fund NMTC allocation data.
 All figures are derived from public CDFI Fund disclosures:
   - Annual NMTC Award Announcements (cdfifund.gov/programs-training/programs/new-markets-tax-credit)
   - CDFI Fund NMTC Program Annual Report (FY2018-FY2023)
+      ^^ THIS PUBLICATION DOES NOT EXIST. Established by primary-source pass in
+      1.2.0 and left in place only because correcting the values here is out of
+      scope for that release. The NMTC "annual report" is OMB collection
+      1559-0027, filed TO the Fund through CIIS and explicitly not published;
+      the Fund's real series is the NMTC Public Data Release Summary Report,
+      cumulative FY2003-FY2023. There is no FY2018-FY2023 span and no published
+      jobs-per-QEI figure in any denominator.
+
+      FOUR "Source: CDFI Fund Annual Reports" comments below (on
+      WINNER_DISTRESS_PATTERNS, WINNER_GEOGRAPHIC_PATTERNS,
+      WINNER_SECTOR_PATTERNS and WINNER_IMPACT_BENCHMARKS) cite the same
+      non-existent series, one of them naming a table inside it. Every value
+      under them is unsourced.
+
+      NOT SHIP-BLOCKING FOR 1.2.0, and the reason is narrow: none of these
+      constants reaches a rendered application. Verified by generating all four
+      formats and grepping — zero hits for "winner", "p75" or
+      "HISTORICAL NMTC WINNERS". They feed intelligence/benchmarks.py,
+      intelligence/pattern_analysis.py (whose compare_to_winners returns
+      literal "above_winner_p75" labels), optimizer/objectives.py and the
+      Streamlit pages. The moment any of that reaches a generated document this
+      becomes the same defect as the impact-benchmark citation withdrawn in
+      1.2.0. See nmtcapp/data/schema.py for the full finding.
   - CDFI Fund NOFA documents (published annually for each allocation round)
 
 NOTE ON DATA QUALITY: Application-level microdata for non-winners is NOT publicly

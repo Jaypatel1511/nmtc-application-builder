@@ -86,6 +86,66 @@ your pipeline changed:**
 - **Section A no longer carries a "Historical Distress Rank" row, and the executive
   summary no longer places you in a "tier" of past applicants.** See below.
 
+### Corrected attribution — a cited publication that does not exist
+
+Through 1.1.5 and until late in 1.2.0, every generated application's methodology
+note carried:
+
+> IMPACT BENCHMARKS: CDFI Fund Annual Reports, FY2018–FY2023. Average jobs per
+> $1MM QEI: 12.0 FTE. Top quartile: ≥20.0 FTE per $1MM.
+
+**There is no such publication, and no such figure.** A primary-source pass
+established four independent grounds, any one of them fatal:
+
+1. **The cited series does not exist.** The NMTC "annual report" is OMB
+   collection 1559-0027 — the Awardee/Allocatee Annual Report (Institution
+   Level Report + Transaction Level Report) that allocatees *file to* the CDFI
+   Fund through CIIS. Its OMB supporting statement states that the confidential
+   and proprietary information it collects will not be published. The Fund's
+   actual NMTC publication series is the *NMTC Public Data Release … Summary
+   Report*, which is cumulative FY2003–FY2023 — not a set of annual reports,
+   and not an FY2018–FY2023 span.
+2. **No jobs-per-dollar figure is published, in any denominator.** The Fund
+   reports job counts and dollar counts separately and never divides them.
+3. **No distribution is published**, so labelling 20.0 a "top quartile"
+   asserted a population percentile nothing supports — the same
+   threshold-is-not-a-percentile error that removed three comparative labels
+   elsewhere in this release.
+4. **The span is impossible even in principle.** Actual job figures stop at
+   FY2020 activity; FY2021–FY2023 in the current data release are projections.
+
+The three rendered methodology notes (Markdown, Word, PDF) now state that
+5 / 12 / 20 FTE per $1MM QEI are **this tool's own screening bands**, that the
+CDFI Fund publishes no jobs-per-QEI benchmark, and that they are not a federal
+figure and must not be cited as one — the same treatment given the ≥75%
+deep-distress band, so the two read as one policy. Two further assertions of a
+"CDFI Fund average" (in the readiness score's strengths and recommendations)
+are relabelled the same way, and "top quartile" is gone as a label for the 20.0
+band.
+
+**The numbers were not re-cited.** Two derivations land near 12.0 and both are
+traps: the plausible ones count transient construction FTEs, which is not what
+a reader of "12 FTE per $1MM" assumes, and the one published per-dollar figure
+in the record converts to roughly half of 12.0 with 12.0 sitting on its
+best-case endpoint. All are derived, not published. Substituting one would
+relocate the error rather than fix it. `jobs_per_million_qei_low/avg/high`
+survive unchanged as house bands — `validation/readiness_score._impact_score`
+is their only reader, and that score already declares itself an unsourced house
+heuristic on the face of every methodology note.
+
+`data/schema.py`'s module header also claimed "Historical NMTC allocation award
+analysis FY2018–FY2023" as a source. Same phantom span; removed.
+
+**How this was found, because the mechanism matters more than the instance.**
+The attribution gate added earlier in this release did not catch it — it
+*recorded* it. Six allowlist entries were marked `PROVENANCE UNVERIFIED` and
+queued rather than approved, which is what turned an invisible fabricated
+citation into a question one research pass could settle. That is the gate
+working as designed. Those six entries are now gone rather than downgraded: the
+claims were withdrawn, so the clauses no longer render. Three surviving entries
+carry a new `DOCUMENT RETRIEVABLE, CONTENT NOT LOCATED` marker — the weaker
+sibling of the same defect, queued the same way.
+
 ### Changed — fabrication removed
 
 Any claim the tool cannot substantiate from the CDE's own inputs is now an explicit

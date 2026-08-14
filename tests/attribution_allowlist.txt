@@ -1,0 +1,41 @@
+# Attribution allowlist — every rendered clause that credits an authority or
+# asserts a rank, across the four disjoint scenarios in
+# tests/test_invariant_output.py, in all four formats.
+#
+# Format:  KIND | citation | normalised clause (digits collapsed to N)
+#
+#   CITED    a document, and a year / round / section. The gate additionally
+#            requires a digit in the citation, so "CDFI Fund guidance" alone
+#            will not pass — a year, section or number must appear.
+#   HOUSE    this tool's own judgement. The gate does NOT require a digit, but
+#            the RENDERED text must say so on its face; an allowlist entry
+#            claiming HOUSE while the document reads as a Fund figure is the
+#            defect, not the fix.
+#   PLACEHO  inside bracketed [CDE TO COMPLETE] / [NARRATIVE PLACEHOLDER]
+#            guidance — marked on its face as instruction, not assertion
+#   LABEL    a bare column or row label containing a trigger word
+#
+# NO ENTRY IS MARKED "PROVENANCE UNVERIFIED" ANY MORE, AND THAT IS THE POINT.
+# Six were, in the first version of this file. A primary-source pass on those
+# six established that the publication they cited — a "CDFI Fund NMTC Program
+# Annual Report, FY2018-FY2023" — DOES NOT EXIST, that the Fund publishes no
+# jobs-per-QEI figure in any denominator, and that no distribution exists to
+# make 20.0 a "top quartile". The rendered text was relabelled as this tool's
+# own screening bands, so those six clauses no longer render at all and their
+# entries are gone. They were not re-cited and not downgraded to HOUSE — the
+# claims were withdrawn. See nmtcapp/data/schema.py.
+#
+# Three entries below now read DOCUMENT RETRIEVABLE, CONTENT NOT LOCATED. That
+# is the weaker sibling of the same defect: the document exists and can be
+# fetched, but nobody has confirmed the specific figure inside it. Treat that
+# marker the way PROVENANCE UNVERIFIED was treated — as a queue, not approval.
+
+CITED | CY 2024-2025 NMTC Allocation Application Review Process (retrievable, URL above) plus CDFI Fund NMTC Program guidance at https://www.cdfifund.gov/nmtc. DOCUMENT RETRIEVABLE, CONTENT NOT LOCATED: nobody has confirmed the deep-distress definition appears in either at this wording. | (source: cdfi fund nmtc program guidance and the nmtc allocation application review process.
+PLACEHO | Wrapped continuation of the [NARRATIVE PLACEHOLDER] block. Reclassified from CITED in 1.2.0: it is guidance addressed to the CDE about what to write, not a figure, and the claim about reviewer emphasis was never located in a Fund document. N2 misses it only because the PDF extractor wraps the line away from its opening bracket. | cdfi fund reviewers score on specificity, evidence, and alignment with
+CITED | CY 2024-2025 NMTC Allocation Application Review Process, FAQ #79 — 'at least 85 percent of QLICIs (in terms of aggregate dollar amounts) in areas of higher distress'. Retrievable: https://www.cdfifund.gov/system/files/2025-12/CY_2024_25_NMTC_Program_Review_Process.pdf. Document AND figure verified against the primary source. | cdfi fund severe distress threshold (cy N-N)
+CITED | CY 2024-2025 NMTC Allocation Application Review Process, FAQ #79 — 'at least 85 percent of QLICIs (in terms of aggregate dollar amounts) in areas of higher distress'. Retrievable: https://www.cdfifund.gov/system/files/2025-12/CY_2024_25_NMTC_Program_Review_Process.pdf. Document AND figure verified against the primary source. | cdfi fund severe distress threshold (cy N-N):** N% — full community outcomes credit (cy N-N nmtc allocation application review process;
+PLACEHO | Wrapped tail of INVESTOR_TABLE_NOTE, a [CDE TO COMPLETE] block. Names the Fund as the audience a CDE must defend a row to. | cdfi fund, and delete any row you cannot.] (see attachment: investor commitments table)
+CITED | CY 2024-2025 NMTC Allocation Application Review Process, plus CDFI Fund NMTC Program guidance. DOCUMENT RETRIEVABLE, CONTENT NOT LOCATED — the >30% poverty / >1.5x unemployment thresholds were not confirmed inside either document. Queued with the constant-provenance audit. | distress levels: deep distress = poverty rate >N% or unemployment >N× national average.
+PLACEHO | Inside the has_prior_reporting_issues [CDE TO COMPLETE] block. A statement about the Fund's own recordkeeping, in guidance addressed to the CDE, not a figure in the CDE's voice. | do not omit this — the cdfi fund holds prior
+LABEL | Column header in the Section B distress-documentation table. Names an ACS field; the value beneath it renders 'See ACS'. Claims nothing. | median family income
+CITED | CY 2024-2025 NMTC Allocation Application Review Process — wrapped continuation of the distress-definitions note above. Same CONTENT NOT LOCATED caveat. | national average.

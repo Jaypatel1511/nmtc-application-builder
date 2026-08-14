@@ -626,15 +626,13 @@ with tabs[4]:
     total_jobs = i.get("total_jobs_created", 0)
     total_retained = i.get("total_jobs_retained", 0)
     jpm = i.get("jobs_per_million_qei", 0.0)
-    benchmark_label = i.get("vs_historical_benchmarks", "N/A")
     total_units = i.get("total_units_built", 0)
     total_sqft = i.get("total_sq_ft", 0.0)
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3 = st.columns(3)
     c1.metric("Total jobs created", f"{total_jobs:,}")
     c2.metric("Jobs retained", f"{total_retained:,}")
     c3.metric("Jobs per $1MM QEI", f"{jpm:.1f}")
-    c4.metric("Benchmark tier", benchmark_label)
 
     if total_units:
         st.metric("Affordable housing units", f"{total_units:,}")
@@ -690,7 +688,6 @@ with tabs[4]:
         if total_sqft:
             st.markdown(f"- Commercial sq ft: **{total_sqft:,.0f}**")
         st.markdown(f"- Jobs / $1MM QEI: **{jpm:.1f}**")
-        st.markdown(f"- Historical benchmark: **{benchmark_label}**")
 
         # --- G: Deal economics waterfall ---
         econ = analysis.deal_economics

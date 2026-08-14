@@ -304,7 +304,15 @@ def _identify_strengths(scores: dict) -> List[str]:
     if scores["geographic_diversity"] >= 70:
         strengths.append("Good geographic diversity across multiple states")
     if scores["impact_metrics"] >= 70:
-        strengths.append("Above-average jobs/impact per million QEI")
+        # NOT "Above-average". That claimed a comparison against an external
+        # average — IMPACT_BENCHMARKS["jobs_per_million_qei_avg"], a constant
+        # whose provenance is a section comment, not a citation. Same defect
+        # as impact_aggregator._benchmark_label, one layer up, and it rendered
+        # into the Key Strengths list on the first page. The threshold here is
+        # this tool's own, so the line now says so.
+        strengths.append(
+            "Jobs and units per $1MM QEI clear this tool's impact-score threshold"
+        )
     if scores["validation_pass_rate"] >= 90:
         strengths.append("Clean validation — no blocking issues")
     return strengths[:3] or ["Pipeline established with initial projects"]
@@ -321,7 +329,9 @@ def _identify_weaknesses(scores: dict) -> List[str]:
     if scores["geographic_diversity"] < 50:
         weaknesses.append("Geographic footprint too narrow — add more states")
     if scores["impact_metrics"] < 50:
-        weaknesses.append("Jobs/impact per million QEI below CDFI Fund average")
+        weaknesses.append(
+            "Jobs and units per $1MM QEI below this tool's impact-score band"
+        )
     if scores.get("eligibility_quality", 100) < 80:
         weaknesses.append("Some projects may not be NMTC-eligible — verify tracts")
     if scores["validation_pass_rate"] < 70:
@@ -353,12 +363,14 @@ def _build_recommendations(
     if scores["geographic_diversity"] < 60:
         recs.append(
             f"Expand geographic footprint — currently {g.get('states_count', 0)} states. "
-            f"Target ≥{MIN_GEOGRAPHIC_DIVERSITY + 2} states for competitive score"
+            f"Target ≥{MIN_GEOGRAPHIC_DIVERSITY + 2} states to raise this "
+            f"tool's geographic-diversity sub-score"
         )
     if scores["impact_metrics"] < 60:
         recs.append(
             "Add operating business projects (manufacturing, healthcare) to improve "
-            "jobs-per-million-QEI metric above CDFI Fund average of 12"
+            "jobs-per-million-QEI metric above this tool's 12 FTE screening "
+            "band (a house band, not a CDFI Fund figure)"
         )
     for vr in validation_results:
         for issue in vr.issues[:1]:

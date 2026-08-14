@@ -3,8 +3,16 @@ Constants, enums, and shared data structures for NMTC application analysis.
 
 Sources:
   - CDFI Fund NMTC Program guidance (https://www.cdfifund.gov/nmtc)
-  - Historical NMTC allocation award analysis FY2018–FY2023
-  - CDFI Fund NMTC Application scoring criteria (published NOFA)
+  - CDFI Fund NMTC Allocation Application Review Process, CY 2024-2025
+
+NOT a source, and removed in 1.2.0: "Historical NMTC allocation award analysis
+FY2018-FY2023". There is no such publication and no such span. See the note on
+IMPACT_BENCHMARKS below.
+
+Constants in this file whose provenance is a comment rather than a verified
+extraction are marked "HOUSE BAND". Auditing each one against a primary source
+is queued work; what 1.2.0 fixes is that none of them is presented to a CDE as
+a federal figure.
 """
 from __future__ import annotations
 
@@ -77,15 +85,57 @@ READINESS_SCORING_WEIGHTS = {
 }
 
 # ---------------------------------------------------------------------------
-# Impact benchmarks — CDFI Fund historical TLR / annual report data
+# Impact screening bands — HOUSE BANDS. NOT a CDFI Fund benchmark.
+#
+# A primary-source pass in 1.2.0 established that the citation these numbers
+# used to carry named a publication that does not exist. Recorded here so it
+# cannot be re-cited by someone who assumes the earlier comment was checked:
+#
+#   1. THE CITED PUBLICATION DOES NOT EXIST. There is no "CDFI Fund NMTC
+#      Program Annual Report" series. The NMTC "annual report" is OMB
+#      collection 1559-0027 — the Awardee/Allocatee Annual Report (Institution
+#      Level Report + Transaction Level Report) that allocatees FILE TO the
+#      Fund through CIIS, and whose OMB supporting statement says the
+#      confidential and proprietary information it collects will not be
+#      published. The Fund's actual publication series is the NMTC Public Data
+#      Release ... Summary Report, which is cumulative FY2003-FY2023 — not a
+#      set of annual reports, and not an FY2018-FY2023 span.
+#
+#   2. NO JOBS-PER-DOLLAR FIGURE IS PUBLISHED, IN ANY DENOMINATOR. The Fund
+#      reports job counts and dollar counts separately and never divides them.
+#      The only official per-dollar figure in the record is the 2013 Urban
+#      Institute evaluation's tax-credits-per-permanent-job range, from a
+#      149-project pre-2010 subsample: different numerator, different
+#      denominator, inverted direction, different era.
+#
+#   3. NO DISTRIBUTION IS PUBLISHED, so calling 20.0 a "top quartile" asserted
+#      a population percentile nothing supports — the same
+#      threshold-is-not-a-percentile error that removed _assess_vs_winners,
+#      sector_analysis's twin, and impact_aggregator._benchmark_label.
+#
+#   4. THE SPAN IS IMPOSSIBLE. Actual job figures stop at FY2020 activity;
+#      FY2021-FY2023 in the current release are projections. There were no
+#      FY2018-FY2023 actuals to average.
+#
+# DO NOT "FIX" THIS BY RE-CITING. Two derivations land near 12.0 and both are
+# traps — the plausible ones count transient construction FTEs, which is not
+# what a reader of "12 FTE per $1MM" assumes, and the Urban Institute range
+# converts to roughly half of 12.0 with 12.0 sitting on its best-case endpoint.
+# All of them are DERIVED, not published. Substituting one relocates the error.
+#
+# What these three numbers ARE: this tool's own screening bands, used by
+# validation/readiness_score._impact_score — its only reader — to place a
+# pipeline on a 0-100 impact component of a score that already declares itself
+# an unsourced house heuristic on the face of every rendered methodology note.
+# Relabelling makes the two consistent. Deleting the constant would mean
+# redesigning a scored component, which is next release's work.
+#
+# cost_per_job_low/avg/high were removed in 1.2.0: zero consumers repo-wide.
 # ---------------------------------------------------------------------------
 IMPACT_BENCHMARKS = {
     "jobs_per_million_qei_low":  5.0,
     "jobs_per_million_qei_avg":  12.0,
     "jobs_per_million_qei_high": 20.0,
-    "cost_per_job_low":          50_000,
-    "cost_per_job_avg":          80_000,
-    "cost_per_job_high":         250_000,
 }
 
 # Required fields for a project to be considered complete

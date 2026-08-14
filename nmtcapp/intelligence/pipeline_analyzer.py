@@ -114,7 +114,6 @@ class PipelineAnalysisResult:
             f"  Units Built:     {i.get('total_units_built', 0):,}",
             f"  Sq Ft:           {i.get('total_sq_ft', 0):,.0f}",
             f"  Jobs/$MM QEI:    {i.get('jobs_per_million_qei', 0):.1f}",
-            f"  Benchmark:       {i.get('vs_historical_benchmarks', 'N/A')}",
             "",
             "── Deal Economics ──────────────────────────────────────",
             f"  Total NMTCs:     ${e.get('total_nmtcs', 0):>14,.0f}",
