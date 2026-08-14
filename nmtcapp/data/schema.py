@@ -77,15 +77,38 @@ READINESS_SCORING_WEIGHTS = {
 }
 
 # ---------------------------------------------------------------------------
-# Impact benchmarks — CDFI Fund historical TLR / annual report data
+# Impact benchmarks
+#
+# PROVENANCE IS A COMMENT, NOT A CITATION. The header here used to read
+# "CDFI Fund historical TLR / annual report data" and that was the whole of the
+# sourcing — no report, no year, no table, no URL. This package's own
+# historical_awards.py header states that its winner-pattern figures are
+# approximations because application-level microdata is not public, and the
+# same caveat applies to these.
+#
+# In 1.2.0 the only comparative LABEL derived from these numbers was deleted
+# (intelligence/impact_aggregator._benchmark_label — it returned the literal
+# "top_quartile" from a single >= against one of them). What survives:
+#
+#   jobs_per_million_qei_low/avg/high — read by validation/readiness_score
+#       ._impact_score, whose output is already declared an UNSOURCED HOUSE
+#       HEURISTIC on the face of every rendered methodology note. Kept, because
+#       re-sourcing a constant that is still in use is the next release's work,
+#       not this one's.
+#
+#   cost_per_job_low/avg/high — REMOVED. Confirmed zero consumers anywhere in
+#       nmtcapp/, streamlit_app/ or tests/ (they were also the unused second
+#       argument to _benchmark_label). A dead, uncited benchmark constant is
+#       exactly the raw material the deleted label was built from.
+#
+# The rendered methodology note cites "CDFI Fund Annual Reports, FY2018–FY2023"
+# for the surviving three. That citation is recorded, not verified — see
+# tests/attribution_allowlist.txt.
 # ---------------------------------------------------------------------------
 IMPACT_BENCHMARKS = {
     "jobs_per_million_qei_low":  5.0,
     "jobs_per_million_qei_avg":  12.0,
     "jobs_per_million_qei_high": 20.0,
-    "cost_per_job_low":          50_000,
-    "cost_per_job_avg":          80_000,
-    "cost_per_job_high":         250_000,
 }
 
 # Required fields for a project to be considered complete

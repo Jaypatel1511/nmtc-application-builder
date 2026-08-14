@@ -341,9 +341,9 @@ jobs:
           #
           # FLOOR DERIVATION -- not a number picked to be safe. The rule is
           # HALF of what the suite genuinely runs today, rounded down to a
-          # round number. RE-MEASURED for 1.2.0: 885 tests executed under this
+          # round number. RE-MEASURED for 1.2.0: 894 tests executed under this
           # job's exact invocation (1 more is `wheel` and deselected, and is
-          # correctly NOT counted toward the floor). Half is 442.5, rounded
+          # correctly NOT counted toward the floor). Half is 447, rounded
           # down to a round number: 440.
           #
           # The jump from 350 is not drift. 1.2.0 adds:
@@ -357,6 +357,10 @@ jobs:
           #     5  test_invariant_output.py -- the invariance gate. Few tests,
           #        but it renders 4 disjoint scenarios x 4 formats and is the
           #        gate that catches a fabrication nobody listed in advance.
+          #     5  test_attributed_claims.py -- the attribution gate. Catches
+          #        the class the invariance gate cannot: a claim that VARIES
+          #        with input and is still unsupportable.
+          #     4  test_no_committed_generated_artifacts.py
           #    14  test_mapper_contract.py
           #     4  test_cde_scaffold_roundtrip.py
           # and removes the two HMDA adapter tests with the adapter itself.
@@ -372,7 +376,7 @@ jobs:
           # Half, deliberately: the rejected `-lt 14` threshold sat at the
           # exact count shipping that day, so deleting one test module failed
           # the job with a packaging error for a deliberate source change.
-          # This one has 445 tests of headroom -- you would have to delete more
+          # This one has 454 tests of headroom -- you would have to delete more
           # than half the suite before it complains, while total deselection
           # lands at 0 and trips it immediately. It would also catch the
           # narrower regression this repo is actually prone to: the 36 nested

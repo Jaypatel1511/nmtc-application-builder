@@ -493,7 +493,7 @@ class WordApplicationBuilder:
             "yet published.)\n\n"
             "DEAL ECONOMICS: Computed using nmtc-calc library. Standard leveraged NMTC structure "
             "with credit price $0.83/credit, CDE fee 2.5% of QEI, 7-year compliance period.\n\n"
-            "IMPACT BENCHMARKS: CDFI Fund Annual Reports, CY2018–CY2023. "
+            "IMPACT BENCHMARKS: CDFI Fund Annual Reports, FY2018–FY2023. "
             "Average jobs per $1MM QEI: 12.0 FTE. Top quartile: ≥20.0 FTE per $1MM.\n\n"
             "READINESS SCORE: An UNSOURCED HOUSE HEURISTIC of this tool "
             "(eligibility 25%, distress concentration 25%, geographic diversity "

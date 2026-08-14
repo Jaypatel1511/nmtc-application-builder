@@ -50,8 +50,11 @@ class SectionBCommunityOutcomes(SectionGenerator):
             f"  • {jobs_retained:,} existing jobs retained\n"
             f"  • {units:,} affordable or mixed-income housing units developed\n"
             f"  • {int(sqft):,} sq ft of community facility / commercial space\n"
-            f"  • {jpm:.1f} jobs per $1MM of QEI deployed "
-            f"({impact.get('vs_historical_benchmarks', 'N/A').replace('_', ' ')} vs. CDFI Fund historical average)\n\n"
+            # The number, unranked. This line used to append
+            # "(average vs. CDFI Fund historical average)" from a threshold
+            # comparison that loaded no distribution — see the note in
+            # intelligence/impact_aggregator.py.
+            f"  • {jpm:.1f} jobs per $1MM of QEI deployed\n\n"
         ) + _placeholder()
 
         # Distress commitments — tract-dependent figures may only be asserted

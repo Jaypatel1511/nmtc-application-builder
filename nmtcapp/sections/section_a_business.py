@@ -100,18 +100,21 @@ class SectionABusinessStrategy(SectionGenerator):
             deployment_distress_line = (
                 "QEI deployment strategy: deep/severe distress commitment "
                 "unverified — eligibility data unavailable; re-verify before "
-                "asserting a commitment level (CDFI Fund target: ≥75%)."
+                "asserting a commitment level. (This tool's own internal "
+                "scoring band is ≥75%; it is not a CDFI Fund threshold.)"
             )
         elif partial_unverified:
             deployment_distress_line = (
                 f"QEI deployment strategy: {deep_pct:.0%} of QEI "
                 f"{unverified_qualifier(pr)} committed to deep/severe distress "
-                "tracts (CDFI Fund target: ≥75%)."
+                "tracts. (This tool's own internal scoring band is ≥75%; it "
+                "is not a CDFI Fund threshold.)"
             )
         else:
             deployment_distress_line = (
                 f"QEI deployment strategy: {deep_pct:.0%} of QEI "
-                "committed to deep/severe distress tracts (CDFI Fund target: ≥75%)."
+                "committed to deep/severe distress tracts. (This tool's own "
+                "internal scoring band is ≥75%; it is not a CDFI Fund threshold.)"
             )
 
         deployment_strategy = (

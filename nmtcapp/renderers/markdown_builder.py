@@ -169,7 +169,8 @@ class MarkdownApplicationBuilder:
             + banner + summary +
             f"**Application Readiness Score: {score.overall_score:.1f}/100 "
             f"(Grade {score.grade}){partial_tag}**\n\n"
-            f"**Key Strengths:**\n" +
+            f"**Key Strengths** (this tool's own assessment against its own "
+            f"thresholds — not a CDFI Fund evaluation)**:**\n" +
             "\n".join(f"- {s}" for s in score.top_strengths) +
             f"\n\n**Recommended Improvements Before Submission:**\n" +
             "\n".join(f"- {r}" for r in score.recommendations[:3])

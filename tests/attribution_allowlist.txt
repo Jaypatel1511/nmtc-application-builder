@@ -1,0 +1,38 @@
+# Attribution allowlist — every rendered clause that credits an authority or
+# asserts a rank, across the four disjoint scenarios in
+# tests/test_invariant_output.py, in all four formats.
+#
+# Format:  KIND | citation | normalised clause (digits collapsed to N)
+#
+#   CITED    a document, and a year / round / section
+#   HOUSE    this tool's own judgement; the RENDERED text must say so on its face
+#   PLACEHO  inside bracketed [CDE TO COMPLETE] / [NARRATIVE PLACEHOLDER]
+#            guidance — marked on its face as instruction, not assertion
+#   LABEL    a bare column or row label containing a trigger word
+#
+# A CITATION HERE IS RECORDED, NOT VERIFIED. Nobody on this pass opened the
+# CDFI Fund Annual Reports to confirm that 12.0 FTE per $1MM appears in them.
+# What this list enforces is that a claim cannot reach a CDE's federal filing
+# without somebody having had to write down where it came from — and that a
+# figure this tool invented cannot be dressed as the Fund's. Auditing each
+# source document is the next release's work; the entries below marked
+# "provenance unverified" are the queue for it.
+#
+# THIS LIST SHOULD STAY SMALL. If it grows, the question is why the tool is
+# citing more authorities, not how to approve them faster.
+
+CITED | CDFI Fund NMTC Program guidance and the CY 2024-2025 NMTC Allocation Application Review Process — both named in the rendered line itself. | (source: cdfi fund nmtc program guidance and the nmtc allocation application review process.
+CITED | CDFI Fund NMTC Program Annual Reports, FY2018-FY2023 — the same 12.0 figure restated inside a recommendation. PROVENANCE UNVERIFIED. | add operating business projects (manufacturing, healthcare) to improve jobs-per-million-qei metric above cdfi fund average of N
+CITED | CDFI Fund NMTC Program Annual Reports, FY2018-FY2023 — wrapped continuation of the impact-benchmark note. PROVENANCE UNVERIFIED. | average jobs
+CITED | CDFI Fund NMTC Program Annual Reports, FY2018-FY2023 — the 12.0 FTE per $1MM figure. PROVENANCE UNVERIFIED. | average jobs per $Nmm qei: N fte.
+CITED | CY 2024-2025 NMTC Allocation Application Review Process — the scored criteria for the two evaluated sections. | cdfi fund reviewers score on specificity, evidence, and alignment with
+CITED | CY 2024-2025 NMTC Allocation Application Review Process, FAQ #79 — 'at least 85 percent of QLICIs (in terms of aggregate dollar amounts) in areas of higher distress'. The round is named in the rendered line, which also states the CY 2026 NOAA is unpublished. | cdfi fund severe distress threshold (cy N-N)
+CITED | CY 2024-2025 NMTC Allocation Application Review Process, FAQ #79 — 'at least 85 percent of QLICIs (in terms of aggregate dollar amounts) in areas of higher distress'. The round is named in the rendered line, which also states the CY 2026 NOAA is unpublished. | cdfi fund severe distress threshold (cy N-N):** N% — full community outcomes credit (cy N-N nmtc allocation application review process;
+PLACEHO | Wrapped tail of INVESTOR_TABLE_NOTE, a [CDE TO COMPLETE] block. Names the Fund as the audience a CDE must defend a row to. | cdfi fund, and delete any row you cannot.] (see attachment: investor commitments table)
+CITED | CY 2024-2025 NMTC Allocation Application Review Process, plus CDFI Fund NMTC Program guidance — the LIC and deep-distress definitions. Both named in-line in the same sentence. | distress levels: deep distress = poverty rate >N% or unemployment >N× national average.
+PLACEHO | Inside the has_prior_reporting_issues [CDE TO COMPLETE] block. A statement about the Fund's own recordkeeping, in guidance addressed to the CDE, not a figure in the CDE's voice. | do not omit this — the cdfi fund holds prior
+CITED | CDFI Fund NMTC Program Annual Reports, FY2018-FY2023. PROVENANCE UNVERIFIED: the underlying IMPACT_BENCHMARKS constant in data/schema.py carries a section comment, not an extraction. Queued for the constant-provenance audit. | impact benchmarks: cdfi fund annual reports fyN–fyN
+CITED | CDFI Fund NMTC Program Annual Reports, FY2018-FY2023. PROVENANCE UNVERIFIED: the underlying IMPACT_BENCHMARKS constant in data/schema.py carries a section comment, not an extraction. Queued for the constant-provenance audit. | impact benchmarks: cdfi fund annual reports, fyN–fyN
+LABEL | Column header in the Section B distress-documentation table. Names an ACS field; the value beneath it renders 'See ACS'. Claims nothing. | median family income
+CITED | CY 2024-2025 NMTC Allocation Application Review Process — wrapped continuation of the distress-definitions note above. | national average.
+CITED | CDFI Fund NMTC Program Annual Reports, FY2018-FY2023 — describes the upper band of the Fund's own reported range. NOT a rank of this CDE. PROVENANCE UNVERIFIED. | top quartile: ≥N fte per $Nmm.

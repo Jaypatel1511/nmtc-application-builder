@@ -68,8 +68,27 @@ def test_units_and_sqft_aggregation():
     assert result["total_sq_ft"] == 15_000
 
 
-def test_vs_historical_benchmarks_above_average():
-    # 20 jobs/$MM QEI = top quartile threshold
-    projects = [_make_project("P1", 5_000_000, 8_000_000, 100)]
-    result = aggregate_impact(Pipeline(projects))
-    assert result["vs_historical_benchmarks"] == "top_quartile"
+def test_no_comparative_benchmark_label_is_published():
+    """`vs_historical_benchmarks` was deleted in 1.2.0 and must not return.
+
+    Third instance of the winner-tier shape, and the only one that reached a
+    submitted document — it rendered into Section B, the scored Community
+    Outcomes section, as "(average vs. CDFI Fund historical average)". The
+    label came from a single >= against one number: a threshold cannot yield a
+    quartile, and no distribution is loaded anywhere.
+
+    The underlying figure is kept and asserted below; only the ranking goes.
+    """
+    # 100 jobs on $5MM QEI = 20 jobs/$MM, the old "top quartile" threshold.
+    result = aggregate_impact(Pipeline([_make_project("P1", 5_000_000, 8_000_000, 100)]))
+    assert "vs_historical_benchmarks" not in result, (
+        "a comparative benchmark tier is being published again"
+    )
+    assert result["jobs_per_million_qei"] == 20.0, (
+        "the computed figure must survive — it is derived from the CDE's own "
+        "inputs; it was only the ranking of it that was unsupportable"
+    )
+    empty = aggregate_impact(Pipeline([]))
+    assert "vs_historical_benchmarks" not in empty, (
+        "the empty-pipeline result assigned a tier where nothing was measured"
+    )

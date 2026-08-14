@@ -702,7 +702,7 @@ class PDFApplicationBuilder:
             "average. Severe distress = LIC plus additional qualifying factors.<br/><br/>"
             "DEAL ECONOMICS: nmtc-calc library, standard leveraged structure. "
             "Credit price $0.83/credit, CDE fee 2.5% of QEI, 7-year compliance period.<br/><br/>"
-            "IMPACT BENCHMARKS: CDFI Fund Annual Reports, CY2018–CY2023. "
+            "IMPACT BENCHMARKS: CDFI Fund Annual Reports, FY2018–FY2023. "
             "Average jobs per $1MM QEI: 12.0 FTE. Top quartile: ≥20.0 FTE per $1MM.<br/><br/>"
             "READINESS SCORE: An UNSOURCED HOUSE HEURISTIC of this tool "
             "(eligibility 25%, distress 25%, geographic 15%, impact 20%, "
