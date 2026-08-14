@@ -40,6 +40,26 @@ import pytest
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 
+# This gate is about what the REPOSITORY distributes, so it needs a git
+# checkout. Inside an unpacked sdist there is no repository and no examples/
+# (MANIFEST.in prunes it), so the question is not merely unanswerable there —
+# it is not the sdist's question. Skip explicitly rather than fail.
+#
+# The skip is safe to trust because its condition is unambiguous and cannot
+# occur in the repo, and because release.yml's FLOOR counts executed tests with
+# skips subtracted: four tests silently skipping in CI shows up as a lower
+# number, not as green.
+_IN_GIT_CHECKOUT = (REPO_ROOT / ".git").exists()
+
+pytestmark = pytest.mark.skipif(
+    not _IN_GIT_CHECKOUT,
+    reason=(
+        "not a git checkout (this is an unpacked sdist or an installed tree). "
+        "This gate asks what the repository has committed; there is no "
+        "repository here, and MANIFEST.in prunes examples/ from the tarball."
+    ),
+)
+
 # Extensions a rendered application is produced in. A file with one of these
 # under version control is, by definition, output somebody committed.
 RENDERED_SUFFIXES = {".docx", ".pdf"}
