@@ -85,7 +85,7 @@ def _geocode_failed_result(address: str) -> SimpleNamespace:
     return SimpleNamespace(
         address=address, tract_id=None, geocode_success=False,
         nmtc_eligible=False, distress_level="ineligible",
-        is_nmtc_native_area=False, is_high_migration_rural=False,
+        is_high_migration_rural=False,
         is_opportunity_zone=False,
     )
 
@@ -224,3 +224,44 @@ def test_unexpected_exception_propagates():
     with patch("nmtcmapper.NMTCMapper", side_effect=RuntimeError("boom")):
         with pytest.raises(RuntimeError, match="boom"):
             enrich_pipeline_eligibility(pipeline)
+
+
+# ---------------------------------------------------------------------------
+# 7. The HMDA adapter stays removed (1.1.6)
+#
+# It could not reach real HMDA data by any code path — the success branch
+# called hmdaanalyzer.load_sample() (synthetic), and generate_disparity_report()
+# returns a str in every published version, so the .get() raised and the
+# module-level literals 0.28 / 2.1 became "application prose". It is gone; a
+# silent reappearance must fail here rather than in a CDE's filing.
+# ---------------------------------------------------------------------------
+
+def test_hmda_adapter_module_is_gone():
+    import importlib
+
+    with pytest.raises(ImportError):
+        importlib.import_module("nmtcapp.integrations.hmda_adapter")
+
+
+def test_community_need_documentation_is_not_exported():
+    import nmtcapp.integrations as integrations
+
+    assert not hasattr(integrations, "community_need_documentation"), (
+        "the HMDA community-need adapter is exported again — it published "
+        "hardcoded disparity literals as application narrative"
+    )
+    assert "community_need_documentation" not in integrations.__all__
+
+
+def test_hmda_analyzer_is_not_a_declared_dependency():
+    """The dependency goes with the adapter, rather than having its floor raised."""
+    import importlib.metadata as md
+
+    requires = md.requires("nmtc-application-builder") or []
+    names = [r.split(";")[0].strip().lower() for r in requires]
+    assert not any(n.startswith("hmda-analyzer") for n in names), (
+        f"hmda-analyzer is declared again: {names}"
+    )
+    assert not any(n.startswith("cra-scraper") for n in names), (
+        f"cra-scraper is declared again (it has never had a single import): {names}"
+    )

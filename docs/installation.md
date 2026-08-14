@@ -15,7 +15,7 @@ The core package installs the intelligence engine, pipeline analysis, validation
 pip install nmtc-application-builder
 ```
 
-The core install includes: `pandas`, `numpy`, `pyyaml`, and the five integration libraries (`nmtc-mapper`, `nmtc-calc`, `hmda-analyzer`, `cdfidata`, `impact-ledger`).
+The core install includes: `pandas`, `numpy`, `pyyaml`, and the four integration libraries (`nmtc-mapper`, `nmtc-calc`, `cdfidata`, `impact-ledger`).
 
 ---
 

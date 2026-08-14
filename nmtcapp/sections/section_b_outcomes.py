@@ -4,8 +4,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from nmtcapp.data.benchmark_thresholds import SEVERE_DISTRESS_MIN_PCT
 from nmtcapp.renderers._disclosure import is_partial_unverified, unverified_qualifier
-from nmtcapp.sections.base import SectionGenerator, _placeholder
+from nmtcapp.sections.base import SectionGenerator, _cde_todo, _placeholder
 
 if TYPE_CHECKING:
     from nmtcapp.core.application import Application, ApplicationAnalysis
@@ -16,8 +17,8 @@ logger = logging.getLogger(__name__)
 class SectionBCommunityOutcomes(SectionGenerator):
     """Generates Section B: Community Outcomes content.
 
-    Pulls from impact aggregation, distress analysis, and HMDA community
-    need data.
+    Pulls from impact aggregation and distress analysis. Community need is
+    not generated: it is emitted as a placeholder for the CDE to document.
 
     Example::
 
@@ -75,18 +76,29 @@ class SectionBCommunityOutcomes(SectionGenerator):
             "QEI in LIC (Standard Eligible) Tracts": _tract_pct(distress.get("pct_lic", 0)),
             "QEI in NMTC Native Areas": _tract_pct(native_pct),
             "QEI in High Migration Rural (HMR) Tracts": _tract_pct(hmr_pct),
-            "CDFI Fund Competitive Minimum (Deep/Severe)": "50.0%",
-            "CDFI Fund Target (Deep/Severe)": "75.0%",
+            "CDFI Fund Severe Distress Threshold (CY 2024-2025)":
+                f"{SEVERE_DISTRESS_MIN_PCT:.0%} — full Community Outcomes credit "
+                "(CY 2024-2025 NMTC Allocation Application Review Process; "
+                "the CY 2026 NOAA is not yet published)",
             f"{application.cde.name} Commitment (Deep/Severe)": _tract_pct(deep_pct),
         }
 
+        # This tool does not retrieve, compute or verify any community-need
+        # statistic. Every figure here must come from a source the CDE can
+        # produce on request, so the whole subsection is the CDE's to write.
         community_need = (
-            f"HMDA mortgage lending data confirms severe unmet capital need across "
-            f"{application.cde.name}'s target markets. In the {len(distress.get('dollars_by_distress', {}))} "
-            f"census tracts where our pipeline projects are located, average loan denial rates "
-            f"exceed 30%, with racial disparities of 2.3× for minority applicants relative to "
-            f"white applicants (HMDA 5-year data, 2018–2022). NMTC capital is uniquely positioned "
-            f"to bridge this gap through below-market QLICI financing.\n\n"
+            _cde_todo(
+                "Document unmet capital need in the markets this pipeline serves. "
+                "Supply the underlying evidence and cite each source by name, "
+                "publisher and vintage — for example credit-access or lending "
+                "data for your tracts, unemployment and poverty measures, "
+                "business closures or disinvestment history, and community "
+                "input gathered by your CDE. "
+                "nmtc-application-builder does not compute, retrieve or verify "
+                "community-need statistics of any kind, and supplies no figure "
+                "for this subsection. No number may be entered here without a "
+                "citation the CDE controls and can defend to the CDFI Fund."
+            ) + "\n\n"
         ) + _placeholder(self.section_id, 400)
 
         return {

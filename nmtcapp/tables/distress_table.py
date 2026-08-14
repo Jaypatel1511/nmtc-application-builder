@@ -48,8 +48,8 @@ def build_distress_table(pipeline: "Pipeline") -> pd.DataFrame:
             "Poverty Rate (%)":            _fmt_pct(p),
             "Median Family Income":        "See ACS",
             "Unemployment Rate (%)":       "See ACS",
-            "Data Source":                 _ELIGIBILITY_SOURCE,
-            "ACS Vintage":                 _ACS_YEAR,
+            "Data Source":                 _row_source(p),
+            "ACS Vintage":                 _row_vintage(p),
         })
 
     if not rows:
@@ -110,6 +110,25 @@ def _fmt_pct(p) -> str:
     ACS source the row already points to.
     """
     return "See ACS"
+
+
+def _row_source(p) -> str:
+    """Cite the eligibility source only on rows that actually carry its data.
+
+    Stamping every row with the CDFI Fund citation put a source attribution
+    on rows whose eligibility was never determined — including whole tables
+    produced on a run where the download failed.
+    """
+    if not p.is_enriched:
+        return "Unverified — no eligibility data loaded for this project"
+    return _ELIGIBILITY_SOURCE
+
+
+def _row_vintage(p) -> str:
+    """ACS vintage, or an explicit dash where no ACS data was used."""
+    if not p.is_enriched:
+        return "—"
+    return _ACS_YEAR
 
 
 def _flag(value) -> str:

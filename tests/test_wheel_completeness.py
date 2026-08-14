@@ -28,7 +28,6 @@ PUBLIC_MODULES = [
     "nmtcapp.data.schema",
     "nmtcapp.integrations",
     "nmtcapp.integrations.cdfidata_adapter",
-    "nmtcapp.integrations.hmda_adapter",
     "nmtcapp.integrations.impact_adapter",
     "nmtcapp.integrations.nmtc_calc_adapter",
     "nmtcapp.integrations.nmtc_mapper_adapter",

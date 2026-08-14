@@ -135,7 +135,7 @@ The `Pipeline.from_csv()` class method reads a CSV file with columns matching `P
 pipeline = Pipeline.from_csv("my_pipeline.csv")
 ```
 
-A template CSV is available at `templates/pipeline_template.csv` in the repository. A sample strong pipeline is at `templates/pipeline_sample_strong.csv`.
+A template CSV is available at `nmtcapp/templates/pipeline_template.csv` in the repository. A sample strong pipeline is at `nmtcapp/templates/pipeline_sample_strong.csv`.
 
 **Example CSV structure (abbreviated):**
 

@@ -4,7 +4,12 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from nmtcapp.sections.base import SectionGenerator, _placeholder
+from nmtcapp.sections.base import (
+    SectionGenerator,
+    _cde_todo,
+    _compliance_statement,
+    _placeholder,
+)
 
 if TYPE_CHECKING:
     from nmtcapp.core.application import Application, ApplicationAnalysis
@@ -38,9 +43,8 @@ class SectionCManagementCapacity(SectionGenerator):
             f"{cde.name} was certified as a Community Development Entity by the CDFI Fund "
             f"on {cde.certification_date}. Since certification, the organization has received "
             f"{len(cde.prior_awards)} NMTC allocation awards totaling ${total_prior:,.0f}, "
-            f"with {fully_deployed} rounds fully deployed within 18 months of award.\n\n"
-            f"Our track record demonstrates consistent execution across multiple states and "
-            f"sectors, with zero compliance violations or performance defaults to date.\n\n"
+            f"of which {fully_deployed} are recorded as fully deployed.\n\n"
+            + _compliance_statement(cde) + "\n\n"
         ) + _placeholder(self.section_id, 400)
 
         governance_summary = {
@@ -60,7 +64,13 @@ class SectionCManagementCapacity(SectionGenerator):
             f"  1. Initial Screening: NMTC eligibility verification via geocoding + ACS tract data\n"
             f"  2. Community Impact Assessment: Jobs/unit projections and HMDA disparity review\n"
             f"  3. Financial Underwriting: DSCR analysis, leverage review, sponsor capacity check\n"
-            f"  4. Investment Committee Approval: Requires {board.get('board_members', 'full board')} vote\n"
+            f"  4. Investment Committee Approval: "
+            + _cde_todo(
+                "State your investment committee's approval threshold "
+                "(e.g. majority of members present, unanimous consent, or a "
+                "named quorum). This tool has no such field — the CDE profile "
+                "records a board headcount, which is not an approval rule."
+            ) + "\n"
             f"  5. Compliance Monitoring: Annual site visits + CDFI Fund reporting throughout 7-year compliance period\n\n"
         ) + _placeholder(self.section_id, 300)
 

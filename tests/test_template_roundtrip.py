@@ -19,12 +19,14 @@ import openpyxl
 import pytest
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(__file__))
+
+from tests.conftest import templates_dir as _templates_dir
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
 from nmtcapp.core.upload_handler import load_uploaded_pipeline
 
-_TEMPLATE_PATH = os.path.join(_REPO_ROOT, "templates", "pipeline_template.xlsx")
+_TEMPLATE_PATH = os.path.join(_templates_dir(), "pipeline_template.xlsx")
 
 # ---------------------------------------------------------------------------
 # 3 test rows — match the Pipeline sheet's column order (row 3 headers):

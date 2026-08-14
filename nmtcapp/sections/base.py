@@ -17,6 +17,15 @@ _PLACEHOLDER = (
     "Word limit for this section: {limit} words.]\n\n"
 )
 
+# Marker for any claim this tool cannot substantiate from the CDE's own inputs.
+#
+# Deliberately a visible bracketed placeholder rather than a softened sentence.
+# A shortened but still-assertive paragraph reads as finished, so a reader gets
+# no signal that anything is missing, and the next contributor who adds a
+# sentence has no rule to violate. A bracketed placeholder makes an unfinished
+# application LOOK unfinished.
+_CDE_TODO = "[CDE TO COMPLETE: {what}]"
+
 
 class SectionGenerator(ABC):
     """Base class for all NMTC application section generators.
@@ -110,3 +119,71 @@ def _content_to_markdown(content: dict) -> str:
 
 def _placeholder(section_id: str, limit: int) -> str:
     return _PLACEHOLDER.format(limit=limit)
+
+
+def _cde_todo(what: str) -> str:
+    """Bracketed placeholder naming what the CDE must supply.
+
+    Use wherever the tool would otherwise assert something it cannot derive
+    from the CDE's own inputs. ``what`` should name the required evidence,
+    not hedge the missing claim.
+
+    Example::
+
+        _cde_todo("State your compliance history over prior allocations.")
+    """
+    return _CDE_TODO.format(what=what)
+
+
+def _compliance_statement(cde) -> str:
+    """Compliance-history text derived only from what the CDE supplied.
+
+    ``has_prior_reporting_issues`` is collected from the CDE's own profile
+    (upload column "Prior Reporting Issues (Y/N)"). Three states, three
+    outcomes — and note the field is NARROWER than a clean compliance
+    history, so even a declared ``False`` does not license a blanket "zero
+    violations or defaults" claim. That broader assertion is always the
+    CDE's to make.
+
+    Shared by Sections C and E, which both previously asserted a clean
+    record unconditionally — including for a CDE that had declared the
+    opposite in its own profile.
+
+    Example::
+
+        body = _compliance_statement(application.cde)
+    """
+    declared = getattr(cde, "extra", {}).get("has_prior_reporting_issues")
+
+    if declared is True:
+        # The CDE declared prior reporting issues. Emit no clean-history
+        # claim of any kind — the earlier unconditional text asserted the
+        # opposite of what the CDE told us.
+        return _cde_todo(
+            "Your CDE profile declares prior reporting issues. Describe them "
+            "directly: what occurred, over which allocation(s), how each was "
+            "resolved, and what controls now prevent recurrence. Do not omit "
+            "this — the CDFI Fund holds prior compliance records, and an "
+            "unexplained gap reads worse than a disclosed and remediated issue."
+        )
+
+    if declared is False:
+        return (
+            "Per this CDE's own profile declaration, no prior NMTC reporting "
+            "issues have been recorded.\n\n"
+            + _cde_todo(
+                "State the CDE's full compliance and performance history over "
+                "its prior allocations — recapture or reduction events, "
+                "defaults, cures, and material findings. The profile field "
+                "above covers reporting issues only and is not by itself a "
+                "representation about defaults or compliance violations."
+            )
+        )
+
+    return _cde_todo(
+        "State the CDE's compliance and performance history over its prior "
+        "allocations — reporting issues, recapture or reduction events, "
+        "defaults, cures, and material findings. This tool has no compliance "
+        "record for your CDE; supply 'has_prior_reporting_issues' in your CDE "
+        "profile and document the full history here."
+    )

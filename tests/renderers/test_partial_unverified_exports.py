@@ -53,7 +53,7 @@ def _ok_result(address: str, tract: str, distress: str) -> SimpleNamespace:
     return SimpleNamespace(
         address=address, tract_id=tract, geocode_success=True,
         nmtc_eligible=True, distress_level=distress,
-        is_nmtc_native_area=False, is_high_migration_rural=False,
+        is_high_migration_rural=False,
         is_opportunity_zone=False,
     )
 
@@ -62,7 +62,7 @@ def _geocode_failed(address: str) -> SimpleNamespace:
     return SimpleNamespace(
         address=address, tract_id=None, geocode_success=False,
         nmtc_eligible=False, distress_level="ineligible",
-        is_nmtc_native_area=False, is_high_migration_rural=False,
+        is_high_migration_rural=False,
         is_opportunity_zone=False,
     )
 

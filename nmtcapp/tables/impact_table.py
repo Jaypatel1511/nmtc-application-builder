@@ -6,10 +6,24 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
+from nmtcapp.renderers.styles import DISTRESS_DISPLAY
+
 if TYPE_CHECKING:
     from nmtcapp.core.pipeline import Pipeline
 
 logger = logging.getLogger(__name__)
+
+
+def _flag(value) -> str:
+    """Render a tri-state eligibility flag: None is unverified, never 'No'.
+
+    Matches ``tables/distress_table._flag`` and ``tables/pipeline_table._yn_flag``.
+    This third table was missed when the other two were fixed, so the Section B
+    impact appendix kept rendering "we could not check" as an affirmative "No".
+    """
+    if value is None:
+        return "—"
+    return "Yes" if value else "No"
 
 
 def build_impact_summary_table(pipeline: "Pipeline") -> pd.DataFrame:
@@ -35,7 +49,7 @@ def build_impact_summary_table(pipeline: "Pipeline") -> pd.DataFrame:
             "Jobs Created":      p.expected_jobs_created,
             "QEI ($)":           p.qei_request,
             "Cost per Job ($)":  round(cost_per_job),
-            "Distress Level":    p.distress_level or "Pending",
+            "Distress Level":    DISTRESS_DISPLAY.get(p.distress_level, "Not Assessed"),
         })
     if not rows:
         return pd.DataFrame()
@@ -86,10 +100,10 @@ def build_impact_table(pipeline: "Pipeline") -> pd.DataFrame:
             "QEI per Job ($)":       round(qei_per_job),
             "Affordable Units":      p.expected_units_built if p.expected_units_built else 0,
             "Commercial Sq Ft":      int(p.expected_sq_ft) if p.expected_sq_ft else 0,
-            "Distress Level":        p.distress_level or "Pending",
-            "Native Area":           "Yes" if p.is_native_area else "No",
-            "HMR":                   "Yes" if p.is_high_migration_rural else "No",
-            "OZ":                    "Yes" if p.is_opportunity_zone else "No",
+            "Distress Level":        DISTRESS_DISPLAY.get(p.distress_level, "Not Assessed"),
+            "Native Area":           _flag(p.is_native_area),
+            "HMR":                   _flag(p.is_high_migration_rural),
+            "OZ":                    _flag(p.is_opportunity_zone),
         })
 
     if not rows:

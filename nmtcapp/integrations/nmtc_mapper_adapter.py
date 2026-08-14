@@ -33,10 +33,13 @@ def enrich_pipeline_eligibility(pipeline: "Pipeline") -> "Pipeline":
     - ``census_tract``
     - ``is_nmtc_eligible``
     - ``distress_level``
-    - ``is_native_area``
     - ``is_high_migration_rural``
     - ``is_opportunity_zone``
     - ``geocode_success``
+
+    ``is_native_area`` is NOT populated here. It is supplied by the CDE via
+    the ``native_area`` CSV column / "Native Area (Y/N)" upload column, and
+    enrichment must not overwrite it.
 
     Example::
 
@@ -124,6 +127,53 @@ def _enrich_via_api(projects, mapper, mapper_error: type) -> None:
         project.census_tract = result.tract_id
         project.is_nmtc_eligible = result.nmtc_eligible
         project.distress_level = result.distress_level
-        project.is_native_area = result.is_nmtc_native_area
-        project.is_high_migration_rural = result.is_high_migration_rural
-        project.is_opportunity_zone = result.is_opportunity_zone
+        # is_native_area is deliberately NOT set from the mapper result.
+        #
+        # It is the CDE's own declaration: PipelineProject.is_native_area
+        # (core/pipeline.py) is read from the CSV column `native_area`
+        # (pipeline.py) and from the "Native Area (Y/N)" upload column
+        # (core/upload_handler.py) — column 17 of the shipped template.
+        #
+        # nmtc-mapper never determined it. At 0.4.2/0.4.3 EligibilityResult
+        # carried is_nmtc_native_area but it was ALWAYS False, so this
+        # assignment overwrote a CDE's correctly-supplied True with a
+        # fabricated negative. 0.5.0 dropped the field outright, which turned
+        # the same line into an AttributeError that failed every geocodable
+        # project. Deleting the read fixes both: the CDE's declaration stands,
+        # and an undeclared project stays None (unverified) rather than False.
+
+        # Both of these are ALSO CDE-supplied CSV columns
+        # (`high_migration_rural`, `opportunity_zone`), so a mapper result that
+        # could not determine them must not erase what the CDE declared.
+        #
+        # nmtc-mapper 0.5.0 made this reachable: is_opportunity_zone is now
+        # True-or-None on EVERY path (the designation list is 2010-tract-based
+        # while this table and geocoder are 2020-basis, so a non-match and a
+        # genuine non-designation are indistinguishable), and the distress /
+        # non-metro booleans go None on its indeterminate branches. A straight
+        # assignment would overwrite a CDE's correct True with None — the same
+        # defect as the native-area read dropped above, in the other direction.
+        project.is_high_migration_rural = _prefer_determinate(
+            result.is_high_migration_rural, project.is_high_migration_rural
+        )
+        project.is_opportunity_zone = _prefer_determinate(
+            result.is_opportunity_zone, project.is_opportunity_zone
+        )
+
+
+def _prefer_determinate(mapper_value, declared):
+    """Return the mapper's value unless it is indeterminate.
+
+    Enrichment may correct a CDE's declaration, but it may not erase one:
+    a ``None`` from the mapper means "could not determine", which is strictly
+    less information than what the CDE supplied on its own pipeline sheet.
+
+    Example::
+
+        _prefer_determinate(None, True)   # -> True  (CDE declaration kept)
+        _prefer_determinate(False, True)  # -> False (mapper determined it)
+        _prefer_determinate(None, None)   # -> None  (nobody knows)
+    """
+    if mapper_value is None:
+        return declared
+    return mapper_value

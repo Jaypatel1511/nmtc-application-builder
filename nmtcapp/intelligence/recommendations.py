@@ -618,6 +618,20 @@ class RecommendationEngine:
                 "Analysis complete. Review recommendations below to improve "
                 "alignment with the CDFI Fund's CY 2024-2025 Review Process criteria."
             )
+        # Partial guard, mirroring win_probability._build_peer_comparison.
+        # Without it a degraded run fell through to the "Not Qualified" branch
+        # and printed a verdict like "Not Qualified (65/100) — Community
+        # Outcomes 40/50 < 40" against /50 and /100 denominators that were
+        # never available: 25 of the 100 base points could not be scored.
+        if getattr(win_score, "partial", False):
+            return (
+                "NOT RATED — eligibility data unavailable. "
+                f"{getattr(win_score, 'partial_note', '')}. "
+                "No qualification verdict can be given from a partial score. "
+                "Restore nmtc-mapper data access and re-run before drawing any "
+                "conclusion about competitiveness."
+            )
+
         tier = win_score.tier
         agg = win_score.aggregate_base_score
         bs = win_score.business_strategy.get("section_total", 0)

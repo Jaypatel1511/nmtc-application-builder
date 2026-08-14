@@ -93,7 +93,10 @@ class WinProbabilityScore:
     composite_score: float = 0.0       # = aggregate_base_score (float for old API compat)
     dimensional_scores: dict = field(default_factory=dict)  # section totals mapped to 0–100
     acceptance_rate_baseline: float = 0.34
-    competitive_tier: str = ""         # "strong" | "competitive" | "marginal" | "weak"
+    # "strong" | "competitive" | "marginal" | "weak" | "not_rated"
+    # "not_rated" is the degraded state: no tier was assigned because
+    # eligibility data was unavailable. It is not a low rating.
+    competitive_tier: str = ""
     peer_comparison: str = ""
     methodology_disclosure: str = field(default=_METHODOLOGY)
     # Partial-score marker: True when eligibility data was unavailable — the
@@ -580,11 +583,19 @@ def _to_int(value: float) -> int:
 
 
 def _map_tier_legacy(tier: str) -> str:
+    """Map a tier label to the legacy ``competitive_tier`` vocabulary.
+
+    The default is "not_rated", NOT "marginal". In degraded mode ``tier`` is
+    the sentinel "Not Rated — eligibility data unavailable", deliberately
+    withheld because 25 of 100 base points could not be assessed. Defaulting
+    an unmapped label to "marginal" manufactured exactly the rating the
+    scoring code had refused to assign.
+    """
     return {
         "Top Tier": "strong",
         "Highly Qualified": "competitive",
         "Not Qualified": "weak",
-    }.get(tier, "marginal")
+    }.get(tier, "not_rated")
 
 
 def _map_tier_legacy_from_score(score: float) -> str:

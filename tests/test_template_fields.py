@@ -2,7 +2,7 @@
 
 Two tests:
   test_template_has_all_methodology_fields
-    Load templates/pipeline_template.xlsx and verify that every field the
+    Load nmtcapp/templates/pipeline_template.xlsx and verify that every field the
     scoring engine needs is present in the correct sheet.
 
   test_scoring_engine_inputs_match_template
@@ -16,6 +16,8 @@ import os
 import sys
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(__file__))
+
+from tests.conftest import templates_dir as _templates_dir
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
@@ -107,7 +109,7 @@ SCORING_ENGINE_ATTRS_KEYS = {
 # Fixtures
 # ---------------------------------------------------------------------------
 
-_TEMPLATE_PATH = os.path.join(_REPO_ROOT, "templates", "pipeline_template.xlsx")
+_TEMPLATE_PATH = os.path.join(_templates_dir(), "pipeline_template.xlsx")
 
 
 @pytest.fixture(scope="module")

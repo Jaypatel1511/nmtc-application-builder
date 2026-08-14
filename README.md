@@ -88,7 +88,7 @@ jupyter notebook analysis.ipynb
 
 ## Pipeline Template v1.1
 
-Download [`templates/pipeline_template.xlsx`](templates/pipeline_template.xlsx) for the recommended way to provide pipeline and CDE data to the Streamlit analyzer.
+Download [`nmtcapp/templates/pipeline_template.xlsx`](https://github.com/Jaypatel1511/nmtc-application-builder/blob/main/nmtcapp/templates/pipeline_template.xlsx) for the recommended way to provide pipeline and CDE data to the Streamlit analyzer.
 
 ### Template structure
 
@@ -172,10 +172,10 @@ nmtc-application-builder/
 │   ├── visualization/      pipeline maps · distress heatmap · radar · alignment charts
 │   ├── renderers/          Word · Excel · PDF · Markdown builders
 │   ├── data/               historical awards · benchmark thresholds · schema
+│   ├── templates/          pipeline_template.xlsx (v1.1) · pipeline_template.csv · cde_profile_template.yaml
 │   └── cli.py              nmtcapp init / analyze / version
 ├── examples/               3 executed Jupyter notebooks + sample output
 ├── streamlit_app/          Interactive web demo (4 pages)
-├── templates/              pipeline_template.xlsx (v1.1) · pipeline_template.csv · cde_profile_template.yaml
 └── docs/                   MkDocs documentation site
 ```
 
@@ -189,8 +189,6 @@ This library integrates six companion libraries built for the CDFI space:
 | `nmtc-calc` | NMTC leveraged deal economics (QEI → NMTCs → investor equity) |
 | `cdfidata` | CDFI Fund TLR/CLR/Awards ETL and dataset loader |
 | `impact-ledger` | Portfolio-level impact tracking by sector |
-| `hmda-analyzer` | HMDA CRA assessment data integration |
-| `cra-scraper` | Community Reinvestment Act data extraction |
 
 ---
 

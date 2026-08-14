@@ -91,7 +91,7 @@ class SectionABusinessStrategy(SectionGenerator):
 
         pipeline_overview = {
             "Total Projects in Pipeline": total_projects,
-            "Total QEI Requested ($)": f"${total_qei:,.0f}",
+            "Total Pipeline QEI ($)": f"${total_qei:,.0f}",
             "States Represented": len(states),
             "% QEI in Deep/Severe Distress": deep_pct_display,
             "Dominant Sector": dominant_sector.replace("_", " ").title(),

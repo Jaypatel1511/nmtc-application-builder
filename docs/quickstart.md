@@ -38,7 +38,7 @@ cde = CDEProfile.from_yaml("my_cde.yaml")
 pipeline = Pipeline.from_csv("my_pipeline.csv")
 ```
 
-See `templates/cde_profile_template.yaml` and `templates/pipeline_template.csv` in the repository for the expected column structure.
+See `nmtcapp/templates/cde_profile_template.yaml` and `nmtcapp/templates/pipeline_template.csv` in the repository for the expected column structure.
 
 ---
 

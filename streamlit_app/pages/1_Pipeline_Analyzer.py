@@ -52,7 +52,7 @@ st.markdown("---")
 # Sidebar — data source selection
 # ---------------------------------------------------------------------------
 _TEMPLATE_PATH = os.path.join(
-    os.path.dirname(__file__), "..", "..", "templates", "pipeline_template.xlsx"
+    os.path.dirname(__file__), "..", "..", "nmtcapp", "templates", "pipeline_template.xlsx"
 )
 
 with st.sidebar:
