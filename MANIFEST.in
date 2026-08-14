@@ -50,6 +50,15 @@
 # is never verified.
 recursive-include tests *.py
 
+# tests/invariant_allowlist.txt — the reviewed allowlist for the invariance
+# gate. NOT a .py file, so `recursive-include tests *.py` missed it, and the
+# sdist shipped test_invariant_output.py with no allowlist to read: 3 failed
+# inside the tarball while the same suite was green in the repo. Caught by the
+# test-sdist job, which is the whole reason that job exists. The gate fails
+# closed on a missing allowlist rather than passing vacuously, which is why
+# this showed up as a red build and not as silence.
+recursive-include tests *.txt
+
 include README.md
 include CHANGELOG.md
 include CONTRIBUTING.md
