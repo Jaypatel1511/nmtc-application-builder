@@ -4,7 +4,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from nmtcapp.data.schema import IMPACT_BENCHMARKS
 
 if TYPE_CHECKING:
     from nmtcapp.core.pipeline import Pipeline

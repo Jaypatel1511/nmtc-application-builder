@@ -107,6 +107,16 @@ _DISCLAIMERS = (
     "this tool's impact-score threshold",
     "it is not a cdfi fund threshold",
     "this tool's own internal scoring band",
+    # Added in 1.2.0 with the F28 relabel. These clauses name the CDFI Fund in
+    # order to say the figure is NOT theirs — the paradigm case for N1. If they
+    # counted as matches, the gate would penalise the disclosure that fixed the
+    # defect and reward going quiet instead.
+    "publishes no jobs-per-qei benchmark",
+    "not a cdfi fund figure",
+    "no band here is a percentile",
+    "these are not a federal figure",
+    "this tool's own bands",
+    "this tool's own bands (",
 )
 
 # N2. Placeholder text is the ABSENCE of a claim. A [CDE TO COMPLETE] block

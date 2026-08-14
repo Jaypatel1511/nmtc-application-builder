@@ -329,7 +329,9 @@ def _identify_weaknesses(scores: dict) -> List[str]:
     if scores["geographic_diversity"] < 50:
         weaknesses.append("Geographic footprint too narrow — add more states")
     if scores["impact_metrics"] < 50:
-        weaknesses.append("Jobs/impact per million QEI below CDFI Fund average")
+        weaknesses.append(
+            "Jobs and units per $1MM QEI below this tool's impact-score band"
+        )
     if scores.get("eligibility_quality", 100) < 80:
         weaknesses.append("Some projects may not be NMTC-eligible — verify tracts")
     if scores["validation_pass_rate"] < 70:
@@ -367,7 +369,8 @@ def _build_recommendations(
     if scores["impact_metrics"] < 60:
         recs.append(
             "Add operating business projects (manufacturing, healthcare) to improve "
-            "jobs-per-million-QEI metric above CDFI Fund average of 12"
+            "jobs-per-million-QEI metric above this tool's 12 FTE screening "
+            "band (a house band, not a CDFI Fund figure)"
         )
     for vr in validation_results:
         for issue in vr.issues[:1]:
