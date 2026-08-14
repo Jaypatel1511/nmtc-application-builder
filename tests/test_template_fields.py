@@ -184,22 +184,60 @@ class TestTemplateHasAllMethodologyFields:
         assert "Closing Target Date" in pipeline_headers, \
             "Pipeline sheet must have 'Closing Target Date' column."
 
-    def test_cde_profile_has_sample_data(self, template_wb):
-        """Row 4 (data row) must be non-empty in CDE Profile sheet."""
+    def test_cde_profile_is_blank(self, template_wb):
+        """The CDE Profile data row must be EMPTY. Inverted in 1.2.0.
+
+        This test used to assert the opposite — "row 4 must be non-empty" —
+        and so encoded the defect. The template shipped pre-filled with
+        Riverbend Community Capital CDE, LLC, CDE-2018-0117, EIN 82-1234567
+        and eighteen scoring attributes, and Streamlit served it as "Download
+        blank template (Excel)". A CDE that filled in only the Pipeline sheet
+        uploaded Riverbend's identity, and Riverbend's
+        has_prior_reporting_issues=False rendered into a federal filing as
+        "Per this CDE's own profile declaration, no prior NMTC reporting
+        issues have been recorded."
+
+        Populated example data lives in pipeline_sample.xlsx.
+        """
         ws = template_wb["CDE Profile"]
-        data_values = [ws.cell(4, c).value for c in range(1, ws.max_column + 1)]
-        non_empty = [v for v in data_values if v is not None]
-        assert len(non_empty) >= 10, (
-            f"CDE Profile sample data row appears empty (only {len(non_empty)} non-null cells)."
+        filled = [ws.cell(4, c).value for c in range(1, ws.max_column + 1)]
+        non_empty = [v for v in filled if v is not None]
+        assert not non_empty, (
+            f"pipeline_template.xlsx ships {len(non_empty)} pre-filled CDE "
+            f"Profile cell(s): {non_empty[:5]}. A file named *_template.* must "
+            "be blank in every field a CDE is expected to supply."
         )
 
-    def test_pipeline_has_sample_data(self, template_wb):
-        """At least one data row must exist in the Pipeline sheet."""
+    def test_pipeline_is_blank(self, template_wb):
+        """The Pipeline sheet must ship no example rows, for the same reason."""
         ws = template_wb["Pipeline"]
-        row4 = [ws.cell(4, c).value for c in range(1, ws.max_column + 1)]
-        non_empty = [v for v in row4 if v is not None]
-        assert len(non_empty) >= 5, (
-            "Pipeline sample data row is empty — template should ship with example rows."
+        filled = []
+        for r in range(4, ws.max_row + 1):
+            filled += [v for v in (ws.cell(r, c).value
+                                   for c in range(1, ws.max_column + 1))
+                       if v is not None]
+        assert not filled, (
+            f"pipeline_template.xlsx ships {len(filled)} pre-filled project "
+            f"cell(s): {filled[:5]}. Example rows belong in pipeline_sample.xlsx."
+        )
+
+    def test_sample_workbook_exists_and_is_labelled(self):
+        """The populated workbook survives, but says on its face that it is fake."""
+        import openpyxl
+        path = os.path.join(_templates_dir(), "pipeline_sample.xlsx")
+        assert os.path.exists(path), (
+            "pipeline_sample.xlsx is missing — blanking the template must not "
+            "delete the worked example, only separate it."
+        )
+        wb = openpyxl.load_workbook(path)
+        for sheet in ("CDE Profile", "Pipeline"):
+            banner = str(wb[sheet]["A1"].value or "")
+            assert "SAMPLE" in banner.upper() and "FICTIONAL" in banner.upper(), (
+                f"{sheet}!A1 of pipeline_sample.xlsx does not announce itself as "
+                f"fictional sample data. Got: {banner!r}"
+            )
+        assert [c.value for c in wb["CDE Profile"][4] if c.value is not None], (
+            "pipeline_sample.xlsx should still carry its worked example"
         )
 
 

@@ -1,4 +1,4 @@
-# ``community_need_documentation`` (hmda_adapter) was REMOVED in 1.1.6.
+# ``community_need_documentation`` (hmda_adapter) was REMOVED in 1.2.0.
 #
 # It could not reach real HMDA data by any code path: the success branch
 # called hmdaanalyzer.load_sample() — synthetic data — and the disparity
@@ -7,7 +7,7 @@
 # a .get(). It rendered those literals as application prose. Nothing in the
 # document-generation path consumed it; Section B fabricated its own copy of
 # the same claim, which is also gone. Community need is now the CDE's to
-# document, as a bracketed placeholder. See CHANGELOG 1.1.6.
+# document, as a bracketed placeholder. See CHANGELOG 1.2.0.
 from nmtcapp.integrations.cdfidata_adapter import cde_track_record
 from nmtcapp.integrations.impact_adapter import build_impact_portfolio
 from nmtcapp.integrations.nmtc_calc_adapter import compute_pipeline_economics

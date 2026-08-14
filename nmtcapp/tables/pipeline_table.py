@@ -19,6 +19,18 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
+def _tract_cell(p) -> str:
+    """Census tract, or the CDE's declared tract labelled as such."""
+    from nmtcapp.tables.distress_table import _tract_cell as _t
+    return _t(p)
+
+
+def _distress_cell(p) -> str:
+    """Distress level, or the CDE's declared level labelled as such."""
+    from nmtcapp.tables.distress_table import _distress_cell as _d
+    return _d(p)
+
 # Standard credit price for estimated investor equity
 _CREDIT_PRICE = 0.83
 _CREDIT_RATE = 0.39
@@ -56,9 +68,9 @@ def build_pipeline_table(pipeline: "Pipeline", cde: "CDEProfile" = None) -> pd.D
             "City":                       p.city,
             "State":                      p.state,
             "ZIP Code":                   "",
-            "Census Tract (11-digit)":    p.census_tract or "",
+            "Census Tract (11-digit)":    _tract_cell(p),
             "NMTC Eligible (Y/N)":        "Y" if p.is_nmtc_eligible else ("N" if p.is_nmtc_eligible is False else "Unverified"),
-            "Distress Level":             DISTRESS_DISPLAY.get(p.distress_level, "Not Assessed"),
+            "Distress Level":             _distress_cell(p),
             "NMTC Native Area (Y/N)":     _yn_flag(p.is_native_area),
             "High Migration Rural (Y/N)": _yn_flag(p.is_high_migration_rural),
             "Opportunity Zone (Y/N)":     _yn_flag(p.is_opportunity_zone),
@@ -137,7 +149,7 @@ def build_pipeline_summary_table(pipeline: "Pipeline") -> pd.DataFrame:
             "Project ID":          p.project_id,
             "Project Name":        name,
             "State":               p.state,
-            "Distress Level":      DISTRESS_DISPLAY.get(p.distress_level, "Not Assessed"),
+            "Distress Level":      _distress_cell(p),
             "QEI Request ($)":     p.qei_request,
             "Total Project Cost ($)": p.total_project_cost,
         })

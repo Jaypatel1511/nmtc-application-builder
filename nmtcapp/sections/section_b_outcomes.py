@@ -52,7 +52,7 @@ class SectionBCommunityOutcomes(SectionGenerator):
             f"  • {int(sqft):,} sq ft of community facility / commercial space\n"
             f"  • {jpm:.1f} jobs per $1MM of QEI deployed "
             f"({impact.get('vs_historical_benchmarks', 'N/A').replace('_', ' ')} vs. CDFI Fund historical average)\n\n"
-        ) + _placeholder(self.section_id, 500)
+        ) + _placeholder()
 
         # Distress commitments — tract-dependent figures may only be asserted
         # as fact when fully verified; otherwise they carry inline qualifiers
@@ -99,7 +99,7 @@ class SectionBCommunityOutcomes(SectionGenerator):
                 "for this subsection. No number may be entered here without a "
                 "citation the CDE controls and can defend to the CDFI Fund."
             ) + "\n\n"
-        ) + _placeholder(self.section_id, 400)
+        ) + _placeholder()
 
         return {
             "section_id": self.section_id,
@@ -114,6 +114,6 @@ class SectionBCommunityOutcomes(SectionGenerator):
                 {"heading": "Per-Project Impact Detail",
                  "body": "(See Attachment: Impact Projections Table)", "type": "table_ref"},
                 {"heading": "Long-Term Community Impact Strategy",
-                 "body": _placeholder(self.section_id, 500), "type": "narrative"},
+                 "body": _placeholder(), "type": "narrative"},
             ],
         }

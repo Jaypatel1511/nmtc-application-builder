@@ -45,26 +45,73 @@ _RESULT_VAR = "result"   # bound from mapper.check_address(...)
 _MAPPER_VAR = "mapper"   # bound from NMTCMapper()
 
 
-def _derive_reads(var_name: str) -> set:
-    """Attribute names read off ``var_name`` anywhere in the adapter.
+def _alias_names(tree: ast.AST, var_name: str) -> set:
+    """Local names bound to ``var_name`` by simple assignment, transitively.
 
-    Catches both plain attribute access (``result.tract_id``) and the
-    defensive ``getattr(mapper, "data_source", None)`` form the adapter uses
-    for its provenance check.
+    THE HOLE THIS CLOSES, reproduced before it was fixed: the derivation used
+    to match only attribute access whose base was literally the Name
+    ``result``. One intermediate binding defeated it —
+
+        r = result
+        project.is_us_territory = r.is_nmtc_native_area
+
+    — and that passed the contract test (12 passed) and the denylist gate
+    (151 passed) while ``enrich_pipeline_eligibility`` raised the exact
+    AttributeError this file exists to catch. Aliased reads of
+    ``is_native_area`` specifically were still caught, but only by the
+    field-specific regex in test_native_area_is_not_read_from_the_mapper —
+    protection for one field, not for the contract.
+
+    Also resolves ``for x in (result,)`` and walrus bindings. It does NOT
+    follow a result passed as an argument into another function; see
+    test_derivation_boundary_is_documented below.
+
+    Example::
+
+        # r = result  ->  {'result', 'r'}
+    """
+    names = {var_name}
+    # Iterate to a fixed point so r = result; q = r resolves both.
+    for _ in range(8):
+        before = len(names)
+        for node in ast.walk(tree):
+            value = getattr(node, "value", None)
+            targets = []
+            if isinstance(node, ast.Assign):
+                targets = node.targets
+            elif isinstance(node, (ast.AnnAssign, ast.NamedExpr)):
+                targets = [node.target]
+            if targets and isinstance(value, ast.Name) and value.id in names:
+                for t in targets:
+                    if isinstance(t, ast.Name):
+                        names.add(t.id)
+        if len(names) == before:
+            break
+    return names
+
+
+def _derive_reads(var_name: str) -> set:
+    """Attribute names read off ``var_name`` — or any local alias of it.
+
+    Catches plain attribute access (``result.tract_id``), the defensive
+    ``getattr(mapper, "data_source", None)`` form the adapter uses for its
+    provenance check, f-string interpolations (ast.walk descends into
+    FormattedValue), and reads through a local alias (see _alias_names).
     """
     tree = ast.parse(_ADAPTER_SOURCE.read_text(encoding="utf-8"))
+    names = _alias_names(tree, var_name)
     found = set()
 
     for node in ast.walk(tree):
-        # result.tract_id  /  mapper.check_address
+        # result.tract_id  /  mapper.check_address  /  r.tract_id
         if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
-            if node.value.id == var_name:
+            if node.value.id in names:
                 found.add(node.attr)
         # getattr(mapper, "data_source", None)
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
             if node.func.id == "getattr" and len(node.args) >= 2:
                 target, attr = node.args[0], node.args[1]
-                if (isinstance(target, ast.Name) and target.id == var_name
+                if (isinstance(target, ast.Name) and target.id in names
                         and isinstance(attr, ast.Constant)
                         and isinstance(attr.value, str)):
                     found.add(attr.value)
@@ -165,4 +212,51 @@ def test_native_area_is_not_read_from_the_mapper():
         "enrichment assigns project.is_native_area again — that field is "
         "supplied by the CDE (CSV column 'native_area' / upload column "
         "'Native Area (Y/N)') and must not be overwritten"
+    )
+
+
+def test_alias_reads_are_derived():
+    """A read through a local alias must be visible to the derivation.
+
+    Guards the fix for the hole described in _alias_names. Without it,
+    `r = result; r.<field>` is invisible and a removed upstream field passes
+    every gate while analyze raises AttributeError on the first real project.
+    """
+    tree = ast.parse(
+        "def f(result):\n"
+        "    r = result\n"
+        "    q = r\n"
+        "    return q.some_removed_field\n"
+    )
+    assert "r" in _alias_names(tree, "result")
+    assert "q" in _alias_names(tree, "result"), "transitive aliases not resolved"
+
+
+def test_derivation_boundary_is_documented():
+    """State what the AST walk still cannot see, rather than implying it sees all.
+
+    NOT covered: a result passed as an ARGUMENT into another function, which
+    then reads an attribute off its own parameter —
+
+        def _na(res): return res.is_nmtc_native_area   # invisible here
+
+    That is currently unreachable: nmtc_mapper_adapter.py is the only module
+    in the package that touches nmtcmapper, and it defines no such helper.
+    This test pins that premise, so the boundary becomes false loudly rather
+    than silently if someone adds one.
+    """
+    import pathlib
+    import nmtcapp
+
+    root = pathlib.Path(nmtcapp.__file__).parent
+    touching = sorted(
+        str(p.relative_to(root))
+        for p in root.rglob("*.py")
+        if "nmtcmapper" in p.read_text(encoding="utf-8")
+    )
+    assert touching == ["integrations/nmtc_mapper_adapter.py"], (
+        f"another module now touches nmtc-mapper: {touching}. This contract "
+        "test only introspects the adapter, and its AST walk cannot follow a "
+        "result passed into a helper. Extend the derivation to cover the new "
+        "module, or bring the read back into the adapter."
     )

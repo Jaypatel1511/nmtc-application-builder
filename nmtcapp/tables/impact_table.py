@@ -14,6 +14,18 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _tract_cell(p) -> str:
+    """Census tract, or the CDE's declared tract labelled as such."""
+    from nmtcapp.tables.distress_table import _tract_cell as _t
+    return _t(p)
+
+
+def _distress_cell(p) -> str:
+    """Distress level, or the CDE's declared level labelled as such."""
+    from nmtcapp.tables.distress_table import _distress_cell as _d
+    return _d(p)
+
+
 def _flag(value) -> str:
     """Render a tri-state eligibility flag: None is unverified, never 'No'.
 
@@ -49,7 +61,7 @@ def build_impact_summary_table(pipeline: "Pipeline") -> pd.DataFrame:
             "Jobs Created":      p.expected_jobs_created,
             "QEI ($)":           p.qei_request,
             "Cost per Job ($)":  round(cost_per_job),
-            "Distress Level":    DISTRESS_DISPLAY.get(p.distress_level, "Not Assessed"),
+            "Distress Level":    _distress_cell(p),
         })
     if not rows:
         return pd.DataFrame()
@@ -100,7 +112,7 @@ def build_impact_table(pipeline: "Pipeline") -> pd.DataFrame:
             "QEI per Job ($)":       round(qei_per_job),
             "Affordable Units":      p.expected_units_built if p.expected_units_built else 0,
             "Commercial Sq Ft":      int(p.expected_sq_ft) if p.expected_sq_ft else 0,
-            "Distress Level":        DISTRESS_DISPLAY.get(p.distress_level, "Not Assessed"),
+            "Distress Level":        _distress_cell(p),
             "Native Area":           _flag(p.is_native_area),
             "HMR":                   _flag(p.is_high_migration_rural),
             "OZ":                    _flag(p.is_opportunity_zone),

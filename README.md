@@ -147,7 +147,12 @@ When CDE Profile fields are missing, the Streamlit analyzer displays which sub-s
 
 ## Sample Output Gallery
 
-Generated outputs are in [`examples/sample_output/`](examples/sample_output/) — Word, Excel, PDF, and Markdown for a realistic sample CDE application.
+Sample output — Word, Excel, PDF and Markdown for a fictional CDE — is generated at
+docs-build time and published at
+[Sample Output](https://jaypatel1511.github.io/nmtc-application-builder/sample-output/).
+It is deliberately **not** committed: the four files that used to live in
+`examples/sample_output/` went stale and kept serving fabricated statistics that had
+already been removed from the generator. Run `mkdocs build` to produce them locally.
 
 The three example notebooks tell a complete story:
 

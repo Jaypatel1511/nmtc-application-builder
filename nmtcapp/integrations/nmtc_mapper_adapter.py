@@ -52,8 +52,31 @@ def enrich_pipeline_eligibility(pipeline: "Pipeline") -> "Pipeline":
         return pipeline
 
     # If all projects already enriched (e.g. Pipeline.sample()), skip API call.
+    #
+    # This branch used to return without touching eligibility_data_status,
+    # which Pipeline.__init__ sets to "unenriched". Every downstream surface
+    # tests `status != "ok"`, so a fully pre-enriched pipeline rendered the
+    # whole application behind "ELIGIBILITY DATA UNAVAILABLE — reason unknown"
+    # — a false statement, and "reason unknown" was literally true only
+    # because the code never recorded one.
+    #
+    # The status is now explicit AND distinct from "ok". These values did not
+    # come from a live CDFI Fund lookup in this run, so claiming "ok" would
+    # assert a provenance the run cannot support; downstream treats any
+    # non-"ok" status as degraded, which is the conservative direction.
     if all(p.is_enriched for p in projects):
         logger.debug("Pipeline already enriched — skipping nmtc-mapper call")
+        # Only fill in a status that was never set. Pipeline.sample() stamps
+        # "ok" at construction and documents itself as the one path allowed to
+        # vouch for its own provenance (core/pipeline.py) — clobbering that
+        # would push every offline demo and fixture into degraded mode.
+        if pipeline.eligibility_data_status == "unenriched":
+            pipeline.eligibility_data_status = "pre_enriched"
+            pipeline.eligibility_data_error = (
+                "every project arrived with eligibility already populated, so "
+                "no CDFI Fund lookup was performed in this run — these values "
+                "were supplied by the caller and are not tool-verified"
+            )
         return pipeline
 
     from nmtcmapper import NMTCMapper, NMTCMapperError
@@ -123,10 +146,38 @@ def _enrich_via_api(projects, mapper, mapper_error: type) -> None:
             )
             project.geocode_success = False
             continue
+
+        # tract_found is the SECOND indeterminate branch, and the adapter did
+        # not read it until 1.2.0. The address geocodes, so geocode_success is
+        # True, but the resulting GEOID is absent from the CDFI Fund's 85,395-
+        # row universe — a 2010/2020 vintage mismatch or a bad id. nmtc-mapper
+        # 0.5.0 returns nmtc_eligible=None and the STRING sentinel
+        # distress_level="unknown" there.
+        #
+        # Copying that sentinel wrote "unknown" over the tool-verified distress
+        # field as though it were a determination. _prefer_determinate could
+        # not have caught it either: it tests `is None`, and "unknown" is a
+        # non-empty string, so it passes straight through. Verified by
+        # execution: _prefer_determinate("unknown", "deep") -> "unknown".
+        #
+        # The right reading of "no row was read for this tract" is the same as
+        # a geocode miss: UNVERIFIED. Leave every eligibility field None.
+        if not getattr(result, "tract_found", True):
+            logger.warning(
+                "Project %s geocoded to tract %s, which is absent from the "
+                "CDFI Fund eligibility table — leaving eligibility unverified "
+                "rather than recording an indeterminate verdict",
+                project.project_id, result.tract_id,
+            )
+            project.geocode_success = True
+            continue
+
         project.geocode_success = True
         project.census_tract = result.tract_id
         project.is_nmtc_eligible = result.nmtc_eligible
-        project.distress_level = result.distress_level
+        # Defence in depth: never store an indeterminate distress sentinel as
+        # though it were a verdict, whatever branch produced it.
+        project.distress_level = _determinate_distress(result.distress_level)
         # is_native_area is deliberately NOT set from the mapper result.
         #
         # It is the CDE's own declaration: PipelineProject.is_native_area
@@ -159,6 +210,29 @@ def _enrich_via_api(projects, mapper, mapper_error: type) -> None:
         project.is_opportunity_zone = _prefer_determinate(
             result.is_opportunity_zone, project.is_opportunity_zone
         )
+
+
+_INDETERMINATE_DISTRESS = frozenset({"unknown", "unavailable", "", "none"})
+
+
+def _determinate_distress(value):
+    """Return a distress level, or ``None`` if the value means "we don't know".
+
+    nmtc-mapper signals indeterminacy on this field with the STRING "unknown",
+    not with ``None``. Stored verbatim it renders as a distress level, and any
+    ``is None`` guard downstream — including ``_prefer_determinate`` — misses
+    it entirely.
+
+    Example::
+
+        _determinate_distress("deep")     # -> "deep"
+        _determinate_distress("unknown")  # -> None
+    """
+    if value is None:
+        return None
+    if str(value).strip().lower() in _INDETERMINATE_DISTRESS:
+        return None
+    return value
 
 
 def _prefer_determinate(mapper_value, declared):

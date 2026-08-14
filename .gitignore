@@ -8,3 +8,7 @@ build/
 *.ipynb_checkpoints/
 .DS_Store
 site/
+
+# Generated sample output — produced at docs-build time, never committed.
+# See docs/hooks/generate_sample_output.py.
+examples/sample_output/

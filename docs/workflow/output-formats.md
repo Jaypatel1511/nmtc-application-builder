@@ -146,7 +146,9 @@ The Markdown document follows the same structure as the Word and PDF outputs —
 - Web publishing (renders natively on GitHub)
 - Conversion to other formats via Pandoc
 
-The `examples/sample_output/` directory in the repository contains a complete sample Markdown output for review.
+A complete sample in all four formats is generated fresh on every docs build and
+published at [Sample Output](../sample-output/). It is not committed to the
+repository, so it cannot drift from what the current code produces.
 
 ---
 

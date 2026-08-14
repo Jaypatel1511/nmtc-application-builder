@@ -546,9 +546,7 @@ class PDFApplicationBuilder:
                 f"{pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states, with "
                 f"{d.get('pct_deep_or_severe', 0):.0%} of QEI committed to deep and severely "
-                f"distressed census tracts — placing us in the "
-                f"{d.get('vs_historical_winners', 'competitive').replace('_', ' ')} tier of CDFI "
-                f"Fund applicants historically."
+                f"distressed census tracts."
             )
         flowables.append(Paragraph(summary_text, styles["body"]))
         flowables.append(Spacer(1, 10))
@@ -706,8 +704,12 @@ class PDFApplicationBuilder:
             "Credit price $0.83/credit, CDE fee 2.5% of QEI, 7-year compliance period.<br/><br/>"
             "IMPACT BENCHMARKS: CDFI Fund Annual Reports, CY2018–CY2023. "
             "Average jobs per $1MM QEI: 12.0 FTE. Top quartile: ≥20.0 FTE per $1MM.<br/><br/>"
-            "READINESS SCORE: Weighted model (eligibility 25%, distress 25%, geographic 15%, "
-            "impact 20%, validation 10%, completeness 5%)."
+            "READINESS SCORE: An UNSOURCED HOUSE HEURISTIC of this tool "
+            "(eligibility 25%, distress 25%, geographic 15%, impact 20%, "
+            "validation 10%, completeness 5%). The weights are this tool's own "
+            "judgement; they are not calibrated against award data, the CDFI "
+            "Fund publishes no such weighting, and the score does not predict "
+            "an award outcome."
         )
         flowables.append(Paragraph(text, styles["body"]))
         return flowables

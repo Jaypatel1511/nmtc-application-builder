@@ -37,7 +37,7 @@ dependencies = [
     "nmtc-calc>=0.1.0",
     "cdfidata>=0.1.7",
     "impact-ledger>=0.2.0",
-    # hmda-analyzer and cra-scraper were REMOVED in 1.1.6.
+    # hmda-analyzer and cra-scraper were REMOVED in 1.2.0.
     #   hmda-analyzer  its only consumer, integrations/hmda_adapter.py, could
     #                  not reach real HMDA data by any code path and published
     #                  hardcoded disparity literals as application prose. The

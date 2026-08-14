@@ -11,28 +11,57 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Placeholder investor roster — a real application would populate this from
-# the CDE's investor pipeline. This scaffold shows the expected structure.
+# Blank investor rows — a FORM for the CDE to complete, not a roster.
+#
+# Through 1.1.5 this list asserted two investors with a type, a CRA
+# obligation of "Yes", a "Prospective" commitment status, a credit price, and
+# the note "Primary CRA-motivated investor; term sheet pending" — while
+# Section D's own narrative said, in the same document, that this tool
+# "cannot attest to any relationship, to investor motivation, or to how many
+# investors will participate". The dollar columns were computed off the CDE's
+# real pipeline QEI, so they read as real commitments. "Term sheet pending" is
+# a representation to a federal agency about financing that does not exist.
+#
+# Every cell the tool cannot substantiate is now a bracketed placeholder. Two
+# rows are kept only so the form has the shape a reviewer expects; the row
+# count is not a claim either, which is what INVESTOR_TABLE_NOTE says.
+_TODO = "[CDE TO COMPLETE]"
+
 _PLACEHOLDER_INVESTORS = [
     {
-        "Investor Name": "[Lead Bank Investor — TBD]",
-        "Investor Type": "Commercial Bank (CRA)",
-        "CRA Obligation": "Yes",
-        "Commitment Amount ($)": None,  # populated from QEI split
-        "Commitment Status": "Prospective",
-        "Credit Price ($/credit)": 0.83,
-        "Notes": "Primary CRA-motivated investor; term sheet pending",
+        "Investor Name": "[CDE TO COMPLETE: investor name]",
+        "Investor Type": _TODO,
+        "CRA Obligation": _TODO,
+        "Commitment Amount ($)": _TODO,
+        "Commitment Status": _TODO,
+        "Credit Price ($/credit)": _TODO,
+        "Notes": _TODO,
     },
     {
-        "Investor Name": "[Insurance Company Investor — TBD]",
-        "Investor Type": "Insurance Company",
-        "CRA Obligation": "No",
-        "Commitment Amount ($)": None,
-        "Commitment Status": "Prospective",
-        "Credit Price ($/credit)": 0.82,
-        "Notes": "Non-CRA motivated; relationship investor",
+        "Investor Name": "[CDE TO COMPLETE: investor name]",
+        "Investor Type": _TODO,
+        "CRA Obligation": _TODO,
+        "Commitment Amount ($)": _TODO,
+        "Commitment Status": _TODO,
+        "Credit Price ($/credit)": _TODO,
+        "Notes": _TODO,
     },
 ]
+
+# Rendered on every surface that shows this table, so the four output formats
+# describe it identically. 1.1.5 titled the Excel sheet "(Scaffold)", gave the
+# Word heading no qualifier at all, and had Markdown and PDF omit the table and
+# print "(See Attachment: Investor Commitments Table)" — three behaviours
+# across four surfaces for the same content.
+INVESTOR_TABLE_TITLE = "Section D: Investor Commitments"
+
+INVESTOR_TABLE_NOTE = (
+    "[CDE TO COMPLETE: This table is a blank form. nmtc-application-builder "
+    "holds no investor data for your CDE and supplies no figure in it — not a "
+    "name, a type, a CRA obligation, a commitment amount, a credit price or a "
+    "status, and not the number of rows. Add one row per investor you can "
+    "name and defend to the CDFI Fund, and delete any row you cannot.]"
+)
 
 
 def build_investor_identification_table(application: "Application") -> pd.DataFrame:
@@ -66,34 +95,35 @@ def build_investor_commitment_table(application: "Application") -> pd.DataFrame:
     pipeline = application.pipeline
     if pipeline is None:
         return pd.DataFrame()
-    total_qei = sum(p.qei_request for p in pipeline)
-    total_nmtcs = total_qei * 0.39
-    total_equity = total_nmtcs * 0.83
-    splits = [0.70, 0.30]
-    rows = []
-    for i, tmpl in enumerate(_PLACEHOLDER_INVESTORS):
-        rows.append({
-            "Investor Name":          tmpl["Investor Name"],
-            "Commitment Amount ($)":  round(total_equity * splits[i]),
-            "NMTCs Allocated ($)":    round(total_nmtcs * splits[i]),
+    # No dollar column is derived from pipeline QEI here. A 70/30 split across
+    # two invented investors at $0.83/credit produced figures that looked like
+    # commitments because they were computed off the CDE's real numbers.
+    rows = [
+        {
+            "Investor Name":           tmpl["Investor Name"],
+            "Commitment Amount ($)":   tmpl["Commitment Amount ($)"],
+            "NMTCs Allocated ($)":     _TODO,
             "Credit Price ($/credit)": tmpl["Credit Price ($/credit)"],
-            "Notes":                  tmpl["Notes"],
-        })
+            "Notes":                   tmpl["Notes"],
+        }
+        for tmpl in _PLACEHOLDER_INVESTORS
+    ]
     rows.append({
-        "Investor Name":         "TOTALS",
-        "Commitment Amount ($)": round(total_equity),
-        "NMTCs Allocated ($)":   round(total_nmtcs),
+        "Investor Name":           "TOTALS",
+        "Commitment Amount ($)":   _TODO,
+        "NMTCs Allocated ($)":     _TODO,
         "Credit Price ($/credit)": "",
-        "Notes":                 f"Based on ${total_qei:,.0f} QEI at $0.83/credit",
+        "Notes":                   INVESTOR_TABLE_NOTE,
     })
     return pd.DataFrame(rows)
 
 
 def build_investor_table(application: "Application") -> pd.DataFrame:
-    """Build the Section D investor commitments table.
+    """Build the Section D investor commitments form.
 
-    Provides a scaffold for the CDE's investor lineup with estimated
-    commitment amounts based on total QEI requested.
+    Every cell is a bracketed placeholder. This tool holds no investor data
+    and derives no commitment amount from pipeline QEI — see the module
+    comment for what this used to assert.
 
     Example::
 
@@ -103,29 +133,21 @@ def build_investor_table(application: "Application") -> pd.DataFrame:
     if pipeline is None:
         return pd.DataFrame()
 
-    total_qei = sum(p.qei_request for p in pipeline)
-    total_nmtcs = total_qei * 0.39
-    total_equity = total_nmtcs * 0.83
-
-    # Estimate split: 70% lead bank, 30% second investor
     rows = []
-    splits = [0.70, 0.30]
-    for i, tmpl in enumerate(_PLACEHOLDER_INVESTORS):
+    for tmpl in _PLACEHOLDER_INVESTORS:
         row = dict(tmpl)
-        row["Commitment Amount ($)"] = round(total_equity * splits[i])
-        row["NMTCs Allocated ($)"] = round(total_nmtcs * splits[i])
+        row["NMTCs Allocated ($)"] = _TODO
         rows.append(row)
 
-    # Totals row
     rows.append({
         "Investor Name": "TOTALS",
         "Investor Type": "",
         "CRA Obligation": "",
-        "Commitment Amount ($)": round(total_equity),
-        "NMTCs Allocated ($)": round(total_nmtcs),
+        "Commitment Amount ($)": _TODO,
+        "NMTCs Allocated ($)": _TODO,
         "Commitment Status": "",
         "Credit Price ($/credit)": "",
-        "Notes": f"Based on ${total_qei:,.0f} total QEI at $0.83/credit",
+        "Notes": INVESTOR_TABLE_NOTE,
     })
 
     return pd.DataFrame(rows)

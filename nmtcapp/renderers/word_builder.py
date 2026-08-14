@@ -264,9 +264,7 @@ class WordApplicationBuilder:
                 f"Our {pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states, with "
                 f"{distress.get('pct_deep_or_severe', 0):.0%} of QEI committed to deep and "
-                f"severely distressed census tracts — placing us in the "
-                f"{distress.get('vs_historical_winners', 'competitive').replace('_', ' ')} "
-                f"tier of CDFI Fund applicants historically."
+                f"severely distressed census tracts."
             )
         p = doc.add_paragraph(summary_text)
         p.runs[0].font.size = Pt(TYPOGRAPHY["size_body"])
@@ -413,8 +411,12 @@ class WordApplicationBuilder:
 
     def _build_investor_section(self, doc: Document) -> None:
         """Add the investor table split into identification + commitment detail."""
-        add_styled_paragraph(doc, "Section D: Investor Commitments", level=2,
+        from nmtcapp.tables.investor_table import (
+            INVESTOR_TABLE_NOTE, INVESTOR_TABLE_TITLE,
+        )
+        add_styled_paragraph(doc, INVESTOR_TABLE_TITLE, level=2,
                               color_key="secondary")
+        doc.add_paragraph(INVESTOR_TABLE_NOTE)
         id_df = build_investor_identification_table(self.application)
         commit_df = build_investor_commitment_table(self.application)
         if not id_df.empty:
@@ -485,15 +487,20 @@ class WordApplicationBuilder:
             f"{self._eligibility_source_line()}\n\n"
             "DISTRESS LEVELS: Deep distress = poverty rate >30% or unemployment >1.5× national "
             "average. Severe distress = LIC plus additional qualifying factors. "
-            "(Source: CDFI Fund NMTC Program guidance, NOFA 2024.)\n\n"
+            "(Source: CDFI Fund NMTC Program guidance and the NMTC Allocation "
+            "Application Review Process. NMTC rounds are announced by a NOAA — "
+            "Notice of Allocation Availability — and the CY 2026 NOAA is not "
+            "yet published.)\n\n"
             "DEAL ECONOMICS: Computed using nmtc-calc library. Standard leveraged NMTC structure "
             "with credit price $0.83/credit, CDE fee 2.5% of QEI, 7-year compliance period.\n\n"
             "IMPACT BENCHMARKS: CDFI Fund Annual Reports, CY2018–CY2023. "
             "Average jobs per $1MM QEI: 12.0 FTE. Top quartile: ≥20.0 FTE per $1MM.\n\n"
-            "READINESS SCORE: Proprietary weighted model (eligibility 25%, distress "
-            "concentration 25%, geographic diversity 15%, impact metrics 20%, "
-            "validation 10%, completeness 5%) calibrated against historical CDFI Fund "
-            "award patterns."
+            "READINESS SCORE: An UNSOURCED HOUSE HEURISTIC of this tool "
+            "(eligibility 25%, distress concentration 25%, geographic diversity "
+            "15%, impact metrics 20%, validation 10%, completeness 5%). The "
+            "weights are this tool's own judgement; they are not calibrated "
+            "against award data, the CDFI Fund publishes no such weighting, and "
+            "the score does not predict an award outcome."
         )
         p.runs[0].font.size = Pt(TYPOGRAPHY["size_body"])
 

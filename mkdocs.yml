@@ -49,6 +49,13 @@ markdown_extensions:
 plugins:
   - search
 
+# Generates the sample application into <site>/sample-output/ at build
+# time. It is NOT committed: examples/sample_output/ carried four
+# generated files that went nine months stale and shipped the complete
+# 1.1.5 fabrication set inside a 1.2.0 branch. See the hook's docstring.
+hooks:
+  - docs/hooks/generate_sample_output.py
+
 extra:
   social:
     - icon: fontawesome/brands/github

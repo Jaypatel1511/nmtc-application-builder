@@ -50,6 +50,43 @@ VALID_SECTORS = [
 ]
 
 
+# Identity keys parsed off an uploaded "CDE Profile" sheet. These describe WHO
+# the CDE is; they must never reach a CDEProfile built for someone else's
+# upload, and none of them feeds a score.
+_IDENTITY_KEYS = frozenset({
+    "cde_name", "cde_id", "ein", "headquarters_state", "certification_date",
+    "mission", "website", "organization_type", "target_markets",
+    "requested_allocation_millions", "application_round",
+})
+
+
+def _scoring_attrs_only(cde_extra: dict, is_demo: bool) -> dict:
+    """Strip identity keys and blanks from a parsed CDE Profile sheet.
+
+    Refuses outright if the sheet carries the shipped sample CDE's identity —
+    an unedited template upload — because everything else on that sheet is
+    then the sample's too. Demo mode is exempt: it is running the sample on
+    purpose and labels every screen as fictional.
+
+    Example::
+
+        _scoring_attrs_only({"cde_name": "X", "dbc_focus_years": 4}, False)
+        # -> {"dbc_focus_years": 4}
+    """
+    if not is_demo:
+        from nmtcapp.core.sample_identity import assert_not_sample_identity
+        assert_not_sample_identity(
+            name=cde_extra.get("cde_name"),
+            cde_id=cde_extra.get("cde_id"),
+            ein=cde_extra.get("ein"),
+            source="the uploaded CDE Profile sheet",
+        )
+    return {
+        k: v for k, v in cde_extra.items()
+        if k not in _IDENTITY_KEYS and v not in ("", [], {}, None)
+    }
+
+
 def get_or_create_app(
     pipeline: Pipeline | None = None,
     is_demo: bool | None = None,
@@ -90,6 +127,20 @@ def get_or_create_app(
                 extra={},
             )
         if cde_extra:
+            # IDENTITY NEVER MERGES. The neutral profile above exists so an
+            # upload's framework score cannot inherit the sample CDE's
+            # attributes — and through 1.1.5 this merge handed them straight
+            # back, because the shipped "blank template" carried Riverbend's
+            # identity and all eighteen scoring attributes in its CDE Profile
+            # sheet. A CDE that filled in only the Pipeline sheet was scored as
+            # Riverbend, and Riverbend's has_prior_reporting_issues=False
+            # rendered as "Per this CDE's own profile declaration, no prior
+            # NMTC reporting issues have been recorded."
+            #
+            # Only genuinely-supplied SCORING attributes may merge. Identity
+            # keys are dropped, and anything blank is dropped too so an
+            # untouched cell cannot register as an answer.
+            cde_extra = _scoring_attrs_only(cde_extra, effective_demo)
             cde.extra = {**cde.extra, **cde_extra}
         p = pipeline if pipeline is not None else Pipeline.sample(n=20)
         app = Application(cde=cde, requested_allocation=65_000_000, application_round="CY2025")
@@ -99,7 +150,8 @@ def get_or_create_app(
     elif cde_extra and "app" in st.session_state:
         # User re-supplied CDE data without re-uploading the pipeline — patch extra in place
         st.session_state["app"].cde.extra = {
-            **st.session_state["app"].cde.extra, **cde_extra
+            **st.session_state["app"].cde.extra,
+            **_scoring_attrs_only(cde_extra, st.session_state.get("is_demo_data", True)),
         }
         if "is_demo_data" not in st.session_state:
             st.session_state["is_demo_data"] = True

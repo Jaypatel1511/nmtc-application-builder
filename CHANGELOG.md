@@ -67,8 +67,24 @@ invented:
 - Section D labelling the pipeline QEI total as the amount requested, so one document
   carried the CDE's real request on its cover page and a different figure in Section D.
 
-**If you generated drafts with 1.1.5 or earlier, re-generate them on 1.1.6 and review
+**If you generated drafts with 1.1.5 or earlier, re-generate them on 1.2.0 and review
 Section B, C, D and E before submitting.**
+
+**Two things will look different on a re-generated draft even though nothing about
+your pipeline changed:**
+
+- **Your Opportunity Zone column may change from "No" to "—".** nmtc-mapper 0.5.0
+  made `is_opportunity_zone` `True`-or-`None`: the OZ designation list is
+  2010-tract-based while the eligibility table and geocoder are 2020-basis, so a
+  non-match and a genuine non-designation are the same observation and cannot be
+  told apart. The old "No" was a confident negative the data never supported. This
+  happens with **no action on your part** — the dependency floor `>=0.4.2` resolves
+  to 0.5.0 on a fresh install. A project you declared as an OZ in your own upload
+  keeps its "Yes"; only tool-determined values move. Eligible-tract counts and
+  distress verdicts are unchanged between 0.4.3 and 0.5.0 — verified across all
+  85,395 rows of the eligibility table.
+- **Section A no longer carries a "Historical Distress Rank" row, and the executive
+  summary no longer places you in a "tier" of past applicants.** See below.
 
 ### Changed — fabrication removed
 
@@ -324,7 +340,7 @@ while offline or while the CDFI Fund download was failing, re-run them on 1.1.5.
   surfaces geocode failure as an "ineligible"-shaped result with
   `geocode_success=False`. Mitigated on the flagship side: the adapter checks
   `geocode_success` and treats those projects as unverified, not ineligible.
-- Deferred to 1.1.6: the distress breakdown's non-LIC bucket absorbs unverified
+- Deferred to a later release: the distress breakdown's non-LIC bucket absorbs unverified
   projects (unverified counts in denominators; distinct unverified bucket pending);
   sample-data provenance and shared sample instances (`Pipeline.sample()` /
   `CDEProfile.sample()` return pre-verified fixtures marked "ok" and share module

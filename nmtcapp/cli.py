@@ -215,6 +215,7 @@ def cmd_analyze(args: argparse.Namespace) -> int:
 
     try:
         from nmtcapp.core.pipeline import Pipeline
+        from nmtcapp.core.sample_identity import SampleDataError
         from nmtcapp.core.cde import CDEProfile
         from nmtcapp.core.application import Application
 
@@ -229,6 +230,9 @@ def cmd_analyze(args: argparse.Namespace) -> int:
             )
             _print_demo_banner(cde, requested)
         else:
+            # Not allow_sample: `analyze` is the real-application path.
+            # Someone running the shipped sample wants --demo, which
+            # labels every screen.
             cde = CDEProfile.from_yaml(args.cde)
             requested = args.requested_allocation
 
@@ -242,6 +246,9 @@ def cmd_analyze(args: argparse.Namespace) -> int:
     except FileNotFoundError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
+    except SampleDataError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
     except ValueError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1

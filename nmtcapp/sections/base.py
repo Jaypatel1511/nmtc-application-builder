@@ -11,10 +11,25 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# No length figure appears here, deliberately.
+#
+# Through 1.1.5 this string ended "Word limit for this section: {limit} words",
+# with the limit passed per SUBSECTION — so Section A printed 3000, 500, 400
+# and 400 as four different limits "for this section" against a declared
+# word_limit of 3000, and the four sum to 4300. B printed 1400 against 2500,
+# C 1100 against 2000. None of the numbers was sourced.
+#
+# They were also the wrong unit: the CY 2024-2025 application enforces a
+# CHARACTER limit per question, not a word limit per section. This tool does
+# not encode the real limits — the CY 2026 Application Materials are
+# unpublished — so it must not state one. A CDE writing to an invented budget
+# over-writes and is truncated at submission.
 _PLACEHOLDER = (
-    "\n\n[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. "
-    "CDFI Fund reviewers score on specificity, evidence, and alignment with community need. "
-    "Word limit for this section: {limit} words.]\n\n"
+    "\n\n[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific "
+    "information. CDFI Fund reviewers score on specificity, evidence, and "
+    "alignment with community need. Length is governed by the limit printed on "
+    "the published application form for this question, which this tool does not "
+    "encode — check the form, not this draft.]\n\n"
 )
 
 # Marker for any claim this tool cannot substantiate from the CDE's own inputs.
@@ -117,8 +132,16 @@ def _content_to_markdown(content: dict) -> str:
     return "\n".join(lines)
 
 
-def _placeholder(section_id: str, limit: int) -> str:
-    return _PLACEHOLDER.format(limit=limit)
+def _placeholder() -> str:
+    """The narrative placeholder text.
+
+    Took ``(section_id, limit)`` through 1.1.5. ``section_id`` was never used —
+    the format string said "this section" regardless of which section called
+    it — and ``limit`` printed an unsourced word budget. Both are gone rather
+    than left as ignored parameters, so a caller cannot pass a number that goes
+    nowhere and read the call site as though it did something.
+    """
+    return _PLACEHOLDER
 
 
 def _cde_todo(what: str) -> str:

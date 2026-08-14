@@ -131,13 +131,42 @@ class TestTemplateRoundTrip:
         assert projects[2].expected_jobs_created == 50
 
     def test_cde_profile_sheet_parses_without_error(self):
-        """The template's CDE Profile sheet should parse to a non-empty dict."""
+        """The CDE Profile sheet must parse — exercised on the SAMPLE workbook.
+
+        Retargeted from pipeline_template.xlsx in 1.2.0. The template is now
+        blank, so parsing it correctly yields nothing; the parser still needs a
+        populated sheet to be exercised against, and that is what
+        pipeline_sample.xlsx is for.
+        """
+        sample_path = os.path.join(_templates_dir(), "pipeline_sample.xlsx")
+        if not os.path.exists(sample_path):
+            pytest.skip(f"Sample workbook not found: {sample_path}")
+        with open(sample_path, "rb") as f:
+            xlsx_bytes = f.read()
+        _pipeline, cde_extra = load_uploaded_pipeline(xlsx_bytes, "pipeline_sample.xlsx")
+        assert cde_extra is not None and len(cde_extra) >= 1, (
+            "CDE Profile sheet should parse to a dict with at least one field. "
+            f"Got: {cde_extra!r}"
+        )
+
+    def test_blank_template_yields_no_cde_fields(self):
+        """The blank template must contribute NOTHING to a CDE's scoring attrs.
+
+        The counterpart to the test above: parsing the shipped template must
+        not hand a user someone else's answers.
+        """
         if not os.path.exists(_TEMPLATE_PATH):
             pytest.skip(f"Template not found: {_TEMPLATE_PATH}")
         with open(_TEMPLATE_PATH, "rb") as f:
             xlsx_bytes = f.read()
-        _pipeline, cde_extra = load_uploaded_pipeline(xlsx_bytes, "pipeline_template.xlsx")
-        assert cde_extra is not None and len(cde_extra) >= 1, (
-            "CDE Profile sheet should parse to a dict with at least one field. "
-            f"Got: {cde_extra!r}"
+        try:
+            _pipeline, cde_extra = load_uploaded_pipeline(xlsx_bytes, "pipeline_template.xlsx")
+        except ValueError as exc:
+            # A blank pipeline sheet has no project rows — the correct refusal.
+            assert "No project rows" in str(exc), exc
+            return
+        identity = {k: v for k, v in (cde_extra or {}).items()
+                    if k in ("cde_name", "cde_id", "ein")}
+        assert not identity, (
+            f"the blank template still carries CDE identity: {identity}"
         )

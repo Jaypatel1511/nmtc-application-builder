@@ -150,7 +150,8 @@ def test_cde_from_yaml_missing_fields_raises():
         yaml.dump(data, f)
         path = f.name
     try:
-        with pytest.raises(ValueError, match="missing required fields"):
+        # 1.2.0 replaced the raw set-difference dump with per-field guidance.
+        with pytest.raises(ValueError, match="missing 7 required fields"):
             CDEProfile.from_yaml(path)
     finally:
         os.unlink(path)

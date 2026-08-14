@@ -1,17 +1,46 @@
-"""Release gate: no fabricated claim may reach a rendered application.
+"""REGRESSION TEST for the specific strings 1.2.0 removed. Not a fabrication gate.
 
-WHAT THIS ASSERTS, AND WHY IT IS SHAPED THIS WAY
+WHAT THIS IS, STATED HONESTLY
+
+This is an eighteen-string denylist, hand-maintained, checked against rendered
+output. That is all it is. It was previously described as a fabrication gate
+with a "PARAMETRIZED" (read: derived) denylist, and it is neither. Measured:
+
+  - Verbatim reintroduction of a denylisted string — in prose, in a table cell,
+    as a table row label, and in a different section: 5 of 5 caught.
+  - PARAPHRASES of the same eight claims: 0 of 8 caught. Every one reached the
+    rendered markdown, docx and pdf with the build green. Inserting a single
+    article ("within 18 months of THE award") is enough.
+
+So its coverage of the *defect class* is zero, by construction: a denylist can
+only ever contain strings somebody already thought of. It is kept because a
+regression test for eighteen strings that were actually published to a federal
+filing is worth having — not because it certifies anything general.
+
+The general gate is tests/test_invariant_output.py, which needs no denylist: it
+fails any line that is byte-identical across disjoint inputs and not on a
+reviewed allowlist, so a NEW fabrication fails by default.
+
+WHAT THIS ASSERTS
 
 1. It reads the RENDERED ARTIFACT, not the source. Text is extracted back out
-   of the .docx and .pdf and read off the .md and .xlsx. A gate that greps
-   nmtcapp/*.py cannot see a fabrication reintroduced through a different
-   string, an f-string, or a constant — and every literal below reached a
-   submitted document through exactly such a path.
+   of the .docx and .pdf and read off the .md and .xlsx.
 
-2. The denylist is PARAMETRIZED, so `empty_parameter_set_mark = fail_at_collect`
-   (pyproject.toml) turns an empty list into a collection ERROR rather than a
-   silent skip. A denylist that quietly empties is the failure mode this repo's
-   release gates exist to prevent, so it must not be possible here either.
+   Its blind spot, stated: it reads only artifacts it generates itself into a
+   temp directory. Four generated artifacts committed under
+   examples/sample_output/ carried nine of these eighteen strings for the whole
+   of 1.1.5 and 1.2.0, linked from the README, and this test could not see
+   them. They are deleted and now generated at docs-build time instead
+   (docs/hooks/generate_sample_output.py). Do not add artifact-scanning here to
+   compensate — the answer is to commit no artifacts.
+
+2. pytest parametrization over the denylist means `empty_parameter_set_mark =
+   fail_at_collect` (pyproject.toml) turns an EMPTY list into a collection
+   error. That guards only the empty case. Partial staleness is guarded by
+   test_denylist_is_complete below, which pins an EXACT count — the previous
+   `>= 15` against 18 entries let three be deleted silently, and deleting
+   2.3x, 2.3x-ascii and "zero compliance violations" (the release's three
+   headline fabrications) left the suite green at 126 passed.
 
 3. It runs under TWO pipelines — one fully enriched, one with every eligibility
    field None. Most of these fabrications were reachable only on the degraded
@@ -34,7 +63,7 @@ from nmtcapp.core.pipeline import Pipeline, PipelineProject
 
 
 # ---------------------------------------------------------------------------
-# The denylist — every literal 1.1.6 removed from a rendered document.
+# The denylist — every literal 1.2.0 removed from a rendered document.
 #
 # (finding, needle, why it must never reappear)
 # Matching is case-insensitive on the extracted text.
@@ -181,13 +210,32 @@ def unenriched_text(unenriched_pipeline, tmp_path_factory) -> dict:
 # The gate
 # ---------------------------------------------------------------------------
 
-def test_denylist_is_populated():
-    """An empty denylist certifies nothing. Fail loudly rather than pass."""
+# Pinned EXACTLY, not as a floor. `>= 15` against 18 entries meant three could
+# be deleted with every guard still green — demonstrated by deleting "2.3x",
+# "2.3x" (ASCII) and "zero compliance violations", the release's three headline
+# fabrications, and getting 126 passed. Raising this number is a deliberate act
+# that shows up in review; lowering it requires deleting this comment.
+EXPECTED_DENYLIST_SIZE = 18
+
+
+def test_denylist_is_complete():
+    """The denylist must be exactly the size it was reviewed at."""
     assert FABRICATIONS, "FABRICATIONS is empty — this gate would assert nothing"
-    assert len(FABRICATIONS) >= 15, (
-        f"FABRICATIONS shrank to {len(FABRICATIONS)} entries; entries are removed "
-        "only when the claim is provably unreachable, never to make a build pass"
+    assert len(FABRICATIONS) == EXPECTED_DENYLIST_SIZE, (
+        f"FABRICATIONS has {len(FABRICATIONS)} entries, expected exactly "
+        f"{EXPECTED_DENYLIST_SIZE}. Entries are removed only when the claim is "
+        "provably unreachable, never to make a build pass — and adding one "
+        "means bumping EXPECTED_DENYLIST_SIZE in the same commit, so the "
+        "change is visible in review."
     )
+
+
+def test_denylist_entries_are_well_formed():
+    """Every entry names its finding and says why the string must not return."""
+    for entry in FABRICATIONS:
+        assert len(entry) == 3, f"malformed denylist entry: {entry!r}"
+        finding, needle, why = entry
+        assert finding and needle and why, f"empty field in entry: {entry!r}"
 
 
 @pytest.mark.parametrize("fmt", ["markdown", "word", "excel", "pdf"])
@@ -245,7 +293,7 @@ def test_degraded_path_asserts_no_eligibility_source(unenriched_pipeline, tmp_pa
     """A run that loaded no eligibility data must not cite the CDFI Fund table.
 
     markdown_builder branched on this correctly; word_builder and pdf_builder
-    asserted the citation unconditionally until 1.1.6.
+    asserted the citation unconditionally until 1.2.0.
     """
     from unittest.mock import patch
 

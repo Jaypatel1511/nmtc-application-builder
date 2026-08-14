@@ -61,7 +61,7 @@ include pyproject.toml
 # test_template_fields, test_template_roundtrip, test_csv_robustness and
 # test_sample_yaml_score all fail inside the tarball.
 #
-# 1.1.6 moved these from the repo root into nmtcapp/templates/ and declared
+# 1.2.0 moved these from the repo root into nmtcapp/templates/ and declared
 # them as [tool.setuptools.package-data]. That is what puts them in the
 # WHEEL, which this file never governed — the sdist was always fine, so the
 # `nmtcapp init` failure reproduced only for pip users. This line is kept so

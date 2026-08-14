@@ -75,7 +75,7 @@ class SectionEPriorAwards(SectionGenerator):
 
         outcomes = (
             f"Outcomes across all {len(awards)} prior awards:\n\n"
-        ) + _placeholder(self.section_id, 400)
+        ) + _placeholder()
 
         return {
             "section_id": self.section_id,

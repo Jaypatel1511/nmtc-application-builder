@@ -108,7 +108,18 @@ def add_styled_table(doc, headers: list, data: list,
         )
         for j, val in enumerate(row_data):
             cell = row.cells[j]
-            text = _truncate(_fmt_cell(val), 80)
+            # NOT truncated. An 80-char cut with an ellipsis silently removed
+            # the tail of any long cell — including Section B's severe-distress
+            # row, whose value ended "…Review Process; the CY 2026 NOAA is not
+            # yet published)". Word rendered "…NMTC Allocation Applicatio..."
+            # and dropped the one sentence warning that the current round's
+            # rules are unknown, in the format most likely to be submitted.
+            # Markdown and PDF carried it in full.
+            #
+            # Word wraps cell text on its own; there is no rendering reason to
+            # cut. If a width cap is ever reintroduced it must exempt any cell
+            # carrying a disclosure — see test_word_cells_are_not_truncated.
+            text = _fmt_cell(val)
             _clear_and_set(cell, text)
             shade_cell(cell, bg)
             run = cell.paragraphs[0].runs[0]
@@ -175,7 +186,12 @@ def _add_body_text(doc, text: str) -> None:
 
 
 def _truncate(text: str, max_len: int) -> str:
-    """Truncate cell text with ellipsis if it exceeds max_len."""
+    """Truncate cell text with ellipsis if it exceeds max_len.
+
+    NO LONGER USED FOR TABLE CELLS. Kept only because it is imported
+    elsewhere; see the note at the former call site. Do not reintroduce it
+    for any cell that can carry a disclosure or a qualifier.
+    """
     if len(text) <= max_len:
         return text
     return text[:max_len - 3] + "..."

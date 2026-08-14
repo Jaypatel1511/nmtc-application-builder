@@ -26,7 +26,6 @@ def analyze_sector_mix(pipeline: "Pipeline") -> dict:
     - ``sector_diversity_score`` – 0–100 score (100 = perfectly even spread)
     - ``high_priority_pct`` – fraction of QEI in CDFI Fund priority sectors
     - ``sectors_represented`` – count of distinct sectors
-    - ``vs_winning_application_patterns`` – qualitative label
 
     Example::
 
@@ -84,8 +83,21 @@ def analyze_sector_mix(pipeline: "Pipeline") -> dict:
         "max_single_sector_pct": max_single_sector_pct,
         "high_priority_pct": high_priority_pct,
         "total_qei": total_qei,
-        "vs_winning_application_patterns": _assess_vs_winners(high_priority_pct, n_sectors),
     }
+
+
+# ``vs_winning_application_patterns`` / ``_assess_vs_winners`` were REMOVED in
+# 1.2.0, for the same reason as distress_analysis's ``vs_historical_winners``:
+# the function read only this CDE's own high_priority_pct and sector count and
+# returned "strong_alignment" / "moderate_alignment" / "weak_alignment" off a
+# hardcoded ladder. No corpus of winning applications is loaded anywhere, and
+# the CDFI Fund publishes no sector-mix distribution for awardees.
+#
+# It reached no rendered document, but it DID escape through
+# ApplicationAnalysis.to_dict() (core/application.py), which serialises
+# sector_analysis verbatim — so a CDE exporting JSON received
+# "vs_winning_application_patterns": "moderate_alignment" as a finding about
+# its alignment with winners. to_dict() is an output surface.
 
 
 def _sector_diversity_score(sector_qei: dict, total_qei: float) -> float:
@@ -102,14 +114,6 @@ def _sector_diversity_score(sector_qei: dict, total_qei: float) -> float:
     return (entropy / max_entropy) * 100 if max_entropy > 0 else 0.0
 
 
-def _assess_vs_winners(high_priority_pct: float, n_sectors: int) -> str:
-    if high_priority_pct >= 0.70 and n_sectors >= 3:
-        return "strong_alignment"
-    if high_priority_pct >= 0.50:
-        return "moderate_alignment"
-    return "weak_alignment"
-
-
 def _empty_sector_result() -> dict:
     return {
         "sector_breakdown": {},
@@ -118,5 +122,4 @@ def _empty_sector_result() -> dict:
         "sectors_represented": 0,
         "high_priority_pct": 0.0,
         "total_qei": 0.0,
-        "vs_winning_application_patterns": "weak_alignment",
     }

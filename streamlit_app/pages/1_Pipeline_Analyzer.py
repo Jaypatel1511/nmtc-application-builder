@@ -22,11 +22,13 @@ from nmtcapp.core.pipeline import Pipeline
 from nmtcapp.core.upload_handler import load_uploaded_pipeline
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from nmtcapp.core.sample_identity import SampleDataError
 from utils import (
     fmt_millions,
     fmt_pct,
     get_or_create_app,
     apply_theme,
+    _scoring_attrs_only,
 )
 from chart_style import (
     apply_matplotlib_theme, style_matplotlib_axes, style_plotly_fig,
@@ -162,7 +164,13 @@ if run_clicked:
                 pipeline, _cde_extra = load_uploaded_pipeline(
                     uploaded_file.read(), uploaded_file.name
                 )
-            # Surface which CDE fields were found / missing
+            # Strip identity and blanks BEFORE reporting what was provided.
+            # _summarise_cde_defaults reported "nothing missing" on a template
+            # upload because the sheet arrived fully populated with the sample
+            # CDE's values — affirmatively telling the user their own data had
+            # been read. Whatever this reports has to be true of what actually
+            # reaches the scorer, so it must see the same dict the scorer does.
+            _cde_extra = _scoring_attrs_only(_cde_extra or {}, is_demo=False)
             _missing_cde = _summarise_cde_defaults(_cde_extra)
             st.success(f"Loaded {len(pipeline)} projects from {uploaded_file.name}")
             if _missing_cde:
@@ -172,6 +180,9 @@ if run_clicked:
                     + "\n".join(f"- **{k}** — not provided, sub-score defaulted to {v}"
                                 for k, v in _missing_cde.items())
                 )
+        except SampleDataError as exc:
+            st.error(str(exc))
+            st.stop()
         except Exception as exc:
             st.error(f"Failed to read file: {exc}")
             st.stop()
@@ -417,8 +428,6 @@ with tabs[1]:
         st.pyplot(fig_bench, use_container_width=True)
         plt.close(fig_bench)
 
-        vs_hist = d.get("vs_historical_winners", "N/A")
-        st.markdown(f"**Historical ranking:** {vs_hist}")
 
 # =============================================================================
 # TAB 2 — Geographic

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from nmtcapp.data.schema import NMTC_PROGRAM_CONSTRAINTS
 from nmtcapp.sections.base import SectionGenerator, _cde_todo, _placeholder
+from nmtcapp.tables.investor_table import INVESTOR_TABLE_NOTE
 
 if TYPE_CHECKING:
     from nmtcapp.core.application import Application, ApplicationAnalysis
@@ -85,19 +86,56 @@ class SectionDCapitalizationStrategy(SectionGenerator):
             f"market assumption of this model, not a quoted or committed price.\n\n"
             f"Pipeline footprint: "
             f"{len(list({p.state for p in application.pipeline}))} states.\n\n"
-        ) + _placeholder(self.section_id, 400)
+        ) + _placeholder()
+
+        # "at below-market rates" was asserted unconditionally for every CDE,
+        # in the paragraph describing that CDE's own transactions — while
+        # `below_market_rate` is a per-project column the CDE fills in on the
+        # shipped template, and drives the Product Flexibility sub-score the
+        # CDFI Fund actually reads. A CDE that declared N for every project
+        # still told the Fund its QLICIs were below market.
+        #
+        # The claim is now made only for the share the CDE itself declared,
+        # and only that share is described as below-market capital.
+        projects = list(application.pipeline)
+        declared_bmr = [p for p in projects if p.is_below_market_rate is True]
+        undeclared_bmr = [p for p in projects if p.is_below_market_rate is None]
+        if declared_bmr and not undeclared_bmr and len(declared_bmr) == len(projects):
+            qlici_terms_line = (
+                "  3. Combined proceeds flow through the CDE as QLICI loans. "
+                "All {n} projects are declared below-market-rate in this CDE's "
+                "own pipeline submission.\n".format(n=len(projects))
+            )
+        elif declared_bmr:
+            qlici_terms_line = (
+                "  3. Combined proceeds flow through the CDE as QLICI loans. "
+                "{d} of {n} projects are declared below-market-rate in this "
+                "CDE's own pipeline submission; the terms of the remainder are "
+                "not recorded here.\n".format(d=len(declared_bmr), n=len(projects))
+            )
+        else:
+            qlici_terms_line = (
+                "  3. Combined proceeds flow through the CDE as QLICI loans. "
+                + _cde_todo(
+                    "State the QLICI terms you will offer and how they are "
+                    "below market — rate, amortisation, interest-only period, "
+                    "LTV, subordination, forgiveness features. No project in "
+                    "your pipeline submission is marked below-market-rate, so "
+                    "this tool makes no claim about your terms."
+                ) + "\n"
+            )
 
         leverage_narrative = (
             f"Each transaction will utilize a standard leveraged NMTC structure:\n\n"
             f"  1. Leverage Lender provides senior debt (approx. ${leverage/1e6:.1f}MM total)\n"
             f"  2. Tax Credit Investor contributes equity (${investor_equity/1e6:.1f}MM)\n"
-            f"  3. Combined proceeds flow through CDE as QLICI loans at below-market rates\n"
-            f"  4. Net subsidy to QALICBs: ${net_subsidy/1e6:.1f}MM in below-market capital\n\n"
+            + qlici_terms_line +
+            f"  4. Net subsidy to QALICBs: ${net_subsidy/1e6:.1f}MM\n\n"
             f"Assumed CDE fee rate: {cde_fee_rate:.1%} of QEI (${cde_fees/1e6:.1f}MM) — a market "
             f"assumption of this model, not a CDFI Fund parameter. "
             f"Fees cover origination, compliance monitoring, and asset management over the "
             f"{compliance_years}-year compliance period.\n\n"
-        ) + _placeholder(self.section_id, 200)
+        ) + _placeholder()
 
         return {
             "section_id": self.section_id,
@@ -109,9 +147,16 @@ class SectionDCapitalizationStrategy(SectionGenerator):
                  "body": investor_narrative, "type": "narrative"},
                 {"heading": "Leverage Structure",
                  "body": leverage_narrative, "type": "narrative"},
+                # Markdown and PDF do not render the investor table itself, so
+                # the note has to travel with the pointer — otherwise those two
+                # surfaces send a reader to an attachment without saying that
+                # every cell in it is blank. Word and Excel print the same
+                # INVESTOR_TABLE_NOTE directly above the table.
                 {"heading": "Investor Commitments",
-                 "body": "(See Attachment: Investor Commitments Table)", "type": "table_ref"},
+                 "body": INVESTOR_TABLE_NOTE + "\n\n"
+                         "(See Attachment: Investor Commitments Table)",
+                 "type": "table_ref"},
                 {"heading": "Leverage Loan Sources",
-                 "body": _placeholder(self.section_id, 200), "type": "narrative"},
+                 "body": _placeholder(), "type": "narrative"},
             ],
         }

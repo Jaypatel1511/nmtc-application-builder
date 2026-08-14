@@ -227,7 +227,7 @@ def test_unexpected_exception_propagates():
 
 
 # ---------------------------------------------------------------------------
-# 7. The HMDA adapter stays removed (1.1.6)
+# 7. The HMDA adapter stays removed (1.2.0)
 #
 # It could not reach real HMDA data by any code path — the success branch
 # called hmdaanalyzer.load_sample() (synthetic), and generate_disparity_report()

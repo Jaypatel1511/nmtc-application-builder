@@ -1,22 +1,82 @@
 # CDE Profile Template — nmtc-application-builder
-# Complete all required fields before running analysis.
-# See documentation for field descriptions.
+#
+# BLANK TEMPLATE. Every value below is empty; fill in your own CDE's details.
+#
+# The eight keys before "OPTIONAL" are REQUIRED by CDEProfile.from_yaml. Their
+# names are the ones the loader reads — do not rename them. Through 1.1.5 this
+# scaffold offered `mission_statement`, `service_area_states`,
+# `organization_type` and `headquarters_state`, none of which the loader has
+# ever read, and omitted `certification_date`, `contact` and `governance`
+# entirely. A CDE that filled in every field this file offered still got
+# "CDE YAML missing required fields" and had no way to guess the real names.
+#
+# Verified by tests/test_cde_scaffold_roundtrip.py, which fills this file and
+# asserts from_yaml accepts it.
 
-cde_id: ""              # e.g., "CDE-2025-001"
-name: ""                # Full legal CDE name
-ein: ""                 # Employer Identification Number (XX-XXXXXXX)
-headquarters_state: ""  # Two-letter state code
-service_area_states: [] # List of states where CDE deploys capital
-mission_statement: ""   # Brief mission statement (1-2 sentences)
-organization_type: ""   # "nonprofit" | "for_profit" | "government"
+# ── REQUIRED ────────────────────────────────────────────────────────────────
 
-prior_awards:
-  - allocation_round: ""        # e.g., "CY2020"
-    allocation_amount: 0        # Dollars
-    deployment_status: ""       # "fully_deployed" | "in_deployment" | "not_started"
-    states: []                  # States where this round was deployed
+name: ""                  # Full legal CDE name
+cde_id: ""                # CDFI Fund CDE certification ID, e.g. "CDE-2025-001"
+certification_date: ""    # Date your CDE was certified, as YYYY-MM-DD
+mission: ""               # Mission statement, one or two sentences
 
-financial_profile:
-  total_assets: 0               # Most recent audited total assets
-  net_assets: 0                 # Most recent audited net assets
-  years_in_operation: 0         # Years since CDE certification
+target_markets: []        # States or markets you deploy into
+                          #   e.g. ["Illinois", "Ohio", "Michigan"]
+
+prior_awards: []          # Prior NMTC allocations. Leave as [] if none.
+                          # Each entry:
+                          #   - year: 2021
+                          #     amount: 45000000
+                          #     deployment_status: "fully_deployed"   # | in_deployment | not_started
+                          #     states: ["IL", "OH"]
+                          #     sectors: ["healthcare"]
+
+contact: {}               # e.g.
+                          #   name: "Jane Smith"
+                          #   title: "President & CEO"
+                          #   email: "jsmith@yourcde.org"
+                          #   phone: "555-555-5555"
+
+governance: {}            # e.g.
+                          #   board_members: 7
+                          #   community_representatives: 3
+                          #   independent_directors: 4
+                          #   board_meeting_frequency: "Quarterly"
+
+# ── OPTIONAL ────────────────────────────────────────────────────────────────
+
+website: ""               # Public website, if you have one
+ein: ""                   # Employer Identification Number (XX-XXXXXXX)
+headquarters_state: ""    # Two-letter state code
+organization_type: ""     # "nonprofit" | "for_profit" | "government"
+
+# ── OPTIONAL — Win Alignment scoring inputs ─────────────────────────────────
+#
+# Read into CDEProfile.extra and passed to WinProbabilityModel as
+# cde_attributes. Omit any you do not have: an omitted field is scored as
+# absent, which is correct. Do NOT copy these from the sample file — every
+# one of them is a factual claim about your CDE.
+#
+# See nmtcapp/templates/cde_profile_sample.yaml for a filled-in FICTIONAL
+# example of this block.
+
+# years_in_operation: 0
+# prior_award_count: 0
+# products_below_market_pct: 0.0          # 0–1
+# products_flexible_indicia_count: 0
+# pipeline_pct_identified: 0.0            # 0–1
+# has_own_capital_at_risk: false
+# track_record_pipeline_alignment_pct: 0.0
+# track_record_deployment_pct: 0.0
+# has_quantified_outcomes: false
+# has_third_party_validation: false
+# lic_board_representation_pct: 0.0
+# has_community_engagement_track_record: false
+# dbc_focus_years: 0
+# dbc_dollar_volume_pct: 0.0
+# unrelated_entities_pct: 0.0
+# has_favorable_fee_structure: false
+# has_prior_reporting_issues: false       # Y/N. This drives a COMPLIANCE
+#                                         # STATEMENT in Sections C and E of
+#                                         # the generated application. Set it
+#                                         # only from your own record.
