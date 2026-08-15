@@ -25,18 +25,53 @@ This is the critical limitation that prevents computation of true win probabilit
 
 ---
 
-## CDFI Fund Annual Reports (FY2018–FY2023)
+## Withdrawn: "CDFI Fund Annual Reports (FY2018–FY2023)"
 
-**Source:** [cdfifund.gov/research](https://www.cdfifund.gov/research) — NMTC Program Annual Reports
+**This page previously listed a source that does not exist.** It is recorded here rather than
+deleted, because the page was published to the docs site and a reader may have acted on it.
 
-**What we use:**
-- Impact statistics tables: jobs created and retained per dollar of QEI invested (used to populate `WINNER_IMPACT_BENCHMARKS`)
-- NMTC Investments by Business Type tables: sector allocation percentages across funded projects (used to populate `WINNER_SECTOR_PATTERNS`)
-- Geographic deployment tables: state-level deployment breakdowns (used to infer `WINNER_GEOGRAPHIC_PATTERNS`)
+The withdrawn entry claimed a *CDFI Fund NMTC Program Annual Report* series spanning FY2018–FY2023,
+linked to `cdfifund.gov/research`, and said we used its "impact statistics tables: jobs created and
+retained per dollar of QEI invested" and a "NMTC Investments by Business Type" table.
 
-**Coverage:** FY2018–FY2023 annual reports. FY2024 data will be incorporated when published.
+Established from primary sources:
 
-**Note on aggregation:** Annual reports present program-level aggregates, not individual application data. Winner patterns in `historical_awards.py` are inferred from these aggregates, not computed from a microdata sample. The inference methodology is described in [Methodology](methodology.md).
+- **The series does not exist.** The CDFI Fund's Research & Data listings contain, for NMTC, exactly
+  two things: the *Compliance Review Report of New Markets Tax Credit Program* (August 2017), and the
+  *NMTC Public Data Release* — Summary Report plus Data File, published FY2023, FY2024 and FY2025 and
+  cumulative FY2003 onward. There is no annual report series and no FY2018–FY2023 span. The NMTC
+  "annual report" is OMB collection 1559-0027, filed **to** the Fund through CIIS; its supporting
+  statement states the confidential and proprietary information it collects will not be published.
+- **No jobs-per-dollar figure is published, in any denominator.** The Summary Report gives job counts
+  and dollar counts in separate tables and never divides them. Searching the FY2024 Summary Report
+  (FY2003–FY2022, 24pp) returns zero occurrences of "per dollar" and zero of "jobs per".
+- **No "NMTC Investments by Business Type" table appears in it** — zero occurrences of "Business Type".
+
+`WINNER_IMPACT_BENCHMARKS`, `WINNER_SECTOR_PATTERNS` and `WINNER_GEOGRAPHIC_PATTERNS` in
+`nmtcapp/data/historical_awards.py` are therefore **unsourced constants of this tool**, and are marked
+as such in that module. They do not reach any generated application — verified by rendering every
+format and searching the output by value as well as by label. They do feed the Streamlit alignment
+scores, which now say on their face that they are this tool's own assumptions.
+
+**The real publication**, if you want the Fund's own NMTC figures, is the
+[NMTC Public Data Release](https://www.cdfifund.gov/documents/data-releases) — Summary Report and
+Data File.
+
+## Distress-level definitions (added 1.2.0)
+
+The two distress tiers this tool reports come from the **CDFI Fund NMTC LIC Eligibility workbook**
+itself — the `.xlsb` the package downloads and loads — not from a prose description of it.
+Columns 14 and 15, verbatim:
+
+| Column | Header, verbatim |
+|---|---|
+| 14 | `Severe distress=LIC AND (Poverty>30%; MFI<=60%;Unemployment>=1.5)` |
+| 15 | `Deep distress=LIC AND (Poverty>40%; MFI<=40%;Unemployment>=2.5)` |
+
+The semicolons read as **or**; both tiers additionally require the tract to be a Low-Income Community.
+Through 1.2.0-rc the generated methodology note printed severe distress's thresholds under the *deep*
+label, omitted the median-family-income limb from both, and credited the result to documents that do
+not carry that wording. Fixed.
 
 ---
 

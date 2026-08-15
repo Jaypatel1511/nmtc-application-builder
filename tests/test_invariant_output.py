@@ -35,6 +35,7 @@ empty invariant set, or a missing format all ERROR rather than pass.
 from __future__ import annotations
 
 import os
+import re
 
 import pytest
 
@@ -234,9 +235,127 @@ def _is_prose(line: str) -> bool:
     return len(line.split()) >= 5
 
 
+# ---------------------------------------------------------------------------
+# The mask: compare what a line SAYS, not what it says it ABOUT.
+#
+# Byte-identity was the original test, and it has a hole big enough to have let
+# four blockers through at once. This renders for every CDE that ever runs the
+# tool:
+#
+#     f"All {total_projects} projects have completed preliminary underwriting
+#      review."
+#
+# It is invariant in substance and variable in bytes, so intersecting raw lines
+# never saw it. Interpolating ANY user value into a fabricated sentence hid the
+# sentence. Measured on this fixture set: 43 of the 155 things the tool says
+# about every CDE escaped that way.
+#
+# So mask the interpolated values first, then intersect. A sentence that says
+# the same thing with different nouns is the same sentence.
+#
+# THE VOCABULARY IS DERIVED FROM THE SCENARIOS, NOT GUESSED. Every string below
+# is a value these fixtures actually vary — CDE names, project names, cities,
+# addresses, sectors — read straight off SCENARIOS. A hand-written regex would
+# be simultaneously too broad (eating real words) and too narrow (missing a
+# field somebody adds later); this cannot drift from the fixtures because it is
+# generated from them.
+#
+# TWO NARROWINGS, both empirical, both measured rather than assumed:
+#
+#   1. Matching is WORD-BOUNDED. Substring matching spliced tokens into real
+#      words — "QALICB" contains Alabama's "AL", "CONFIDENTIAL" contains "ID"
+#      and "AL", and "<SECTOR>" contains "OR", so the mask re-masked its own
+#      output. Word boundaries fix all of it.
+#   2. Bare two-letter STATE CODES are NOT masked; full state names are. "ID"
+#      is a whole word in the column header "Project ID" and "OR"/"IN" appear
+#      as English. Masking them moves the count by exactly one line (164 vs
+#      163) and that line is a state-summary table row carrying no proposition.
+#      Not worth corrupting every header row for.
+#
+# Effect, measured: invariant prose 116 -> 172 (163 before the seven blocker
+# fixes changed what renders). The growth IS the point — each new line is
+# something the tool asserts about every CDE that no one had ever had to
+# justify. If a future change pushes this past ~200 the mask has become too
+# aggressive; fix the mask rather than bulk-approving the allowlist.
+# ---------------------------------------------------------------------------
+
+_NUMBER_RE = re.compile(r"\d[\d,]*(?:\.\d+)?")
+
+
+def _spellings(raw: str) -> set:
+    """Every casing a fixture value can reach the page in.
+
+    Renderers title-case sectors ("clean_energy" -> "Clean Energy"), upper-case
+    them in headers, and pass them through raw in CSV-ish columns.
+    """
+    out = {raw}
+    if "_" in raw:
+        spaced = raw.replace("_", " ")
+        out |= {spaced, spaced.title(), spaced.upper(), spaced.capitalize()}
+    out |= {raw.title(), raw.upper(), raw.capitalize()}
+    return {v for v in out if len(v) >= 3}
+
+
+def _build_mask():
+    """Compile a single-pass masker over every value SCENARIOS varies."""
+    buckets = {}
+
+    def add(token, value):
+        if value:
+            buckets.setdefault(token, set()).add(str(value))
+
+    for _sid, (cde, pipeline, _requested) in SCENARIOS.items():
+        for v in _spellings(cde.name):
+            add("<CDE>", v)
+        add("<CDEID>", cde.cde_id)
+        add("<DATE>", cde.certification_date)
+        add("<MISSION>", cde.mission)
+        add("<MISSION>", cde.mission[:200])
+        for market in cde.target_markets:
+            add("<STATE>", market)          # full names only — see narrowing 2
+        for p in pipeline:
+            add("<QALICB>", p.qalicb_name)
+            for v in _spellings(p.project_name):
+                add("<PROJECT>", v)
+            add("<PID>", p.project_id)
+            add("<ADDRESS>", p.address)
+            for v in _spellings(p.city):
+                add("<CITY>", v)
+            for v in _spellings(p.sector):
+                add("<SECTOR>", v)
+            for v in _spellings(p.project_type):
+                add("<PTYPE>", v)
+
+    pairs = sorted(
+        ((v, tok) for tok, vals in buckets.items() for v in vals),
+        key=lambda kv: -len(kv[0]),          # longest first: QALICB name before its ID
+    )
+    assert pairs, (
+        "the mask vocabulary is EMPTY — it is built from SCENARIOS, so an empty "
+        "vocabulary means the fixtures stopped exposing the fields it reads and "
+        "every interpolated line would silently become variant again"
+    )
+    lookup = {value: token for value, token in pairs}
+    # One alternation, one pass: a token can never be re-masked by a later rule.
+    pattern = re.compile(
+        r"(?<![A-Za-z0-9])(" + "|".join(re.escape(v) for v, _ in pairs) + r")(?![A-Za-z0-9])"
+    )
+    return pattern, lookup
+
+
+_MASK_PATTERN, _MASK_LOOKUP = _build_mask()
+
+
+def _mask(line: str) -> str:
+    """Replace interpolated values with typed placeholders, digits with N."""
+    masked = _MASK_PATTERN.sub(lambda m: _MASK_LOOKUP[m.group(1)], line)
+    masked = _NUMBER_RE.sub("N", masked)
+    return re.sub(r"\s+", " ", masked).strip()
+
+
 @pytest.fixture(scope="module")
 def rendered_lines(tmp_path_factory) -> dict:
-    """{scenario_id: set(prose lines)} across all four formats."""
+    """{scenario_id: set(masked prose lines)} across all four formats."""
     per_scenario = {}
     for sid, (cde, pipeline, requested) in SCENARIOS.items():
         out = tmp_path_factory.mktemp(f"inv{sid}")
@@ -258,8 +377,8 @@ def rendered_lines(tmp_path_factory) -> dict:
                 f"scenario {sid}: {fmt} extracted as empty text — the gate "
                 "would then find everything invariant, or nothing"
             )
-            lines |= {ln.strip() for ln in text.splitlines() if ln.strip()}
-        per_scenario[sid] = lines
+            lines |= {_mask(ln) for ln in text.splitlines() if ln.strip()}
+        per_scenario[sid] = {ln for ln in lines if ln}
     return per_scenario
 
 
@@ -301,12 +420,51 @@ def test_allowlist_is_loadable_and_justified():
     """Every allowlist entry must carry a category and a justification."""
     allow = _load_allowlist()
     assert allow, "the allowlist is empty — every invariant line would fail"
-    valid = {"HEADING", "LABEL", "PLACEHO", "SOURCED", "TOOL", "FORMAT"}
+    # DERIVED is new with the mask: a fixed sentence frame whose every figure
+    # comes from the CDE's own inputs. Byte-identity never surfaced these,
+    # because the interpolated value made every scenario differ.
+    valid = {"HEADING", "LABEL", "PLACEHO", "SOURCED", "TOOL", "FORMAT", "DERIVED"}
     for line, (category, justification) in allow.items():
         assert category in valid, f"unknown category {category!r} for {line[:60]!r}"
         assert len(justification.strip()) >= 8, (
             f"allowlist entry has no real justification: {line[:60]!r}"
         )
+
+
+def test_mask_actually_masks():
+    """Fail closed: a mask that silently stops masking restores the old hole.
+
+    This is the failure mode this portfolio keeps producing — a guard that
+    passes because it checks nothing. If the vocabulary stopped covering CDE
+    names, or the number regex stopped matching, every interpolated line would
+    become variant again and four blockers' worth of surface would go dark
+    without a single test turning red.
+    """
+    cde, pipeline, _ = SCENARIOS[1]
+    project = next(iter(pipeline))
+
+    # The exact shape that hid for six rounds.
+    sentence = f"All {len(list(pipeline))} projects have completed review."
+    assert _mask(sentence) == "All N projects have completed review.", _mask(sentence)
+
+    for value, token in ((cde.name, "<CDE>"), (cde.cde_id, "<CDEID>"),
+                         (project.city, "<CITY>"), (project.project_name, "<PROJECT>")):
+        masked = _mask(f"prefix {value} suffix")
+        assert token in masked, f"{value!r} was not masked to {token}: {masked!r}"
+        assert value not in masked, f"{value!r} survived masking: {masked!r}"
+
+    # And it must NOT eat ordinary words. "QALICB" contains Alabama's "AL";
+    # "CONFIDENTIAL" contains "ID" and "AL". Substring matching spliced tokens
+    # into both before word boundaries were added.
+    for intact in ("QALICB Name", "CONFIDENTIAL", "TOTALS", "SUMMARY", "Project ID"):
+        assert _mask(intact) == intact, f"mask corrupted {intact!r} -> {_mask(intact)!r}"
+
+
+def test_mask_does_not_collapse_everything():
+    """The mask must discriminate: two genuinely different claims stay different."""
+    a = _mask("This pipeline is concentrated in deep distress.")
+    b = _mask("This pipeline is concentrated in severe distress.")
+    assert a != b, "the mask erased a real difference between two claims"
 
 
 def test_extraction_is_not_empty(rendered_lines):

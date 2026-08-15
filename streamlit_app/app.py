@@ -76,8 +76,14 @@ def home():
 
     st.markdown(
         '<div class="stats-bar">'
-        "📊 Trained on CY2020–2024 winner data &nbsp;|&nbsp; "
-        "✅ 500+ tests &nbsp;|&nbsp; "
+        # "Trained on CY2020-2024 winner data" was withdrawn in 1.2.0. Nothing
+        # here is trained: the winner patterns are hardcoded constants in
+        # nmtcapp/data/historical_awards.py, whose own docstring records that
+        # the publication they cite does not exist and that every value under
+        # it is unsourced. A provenance claim on the landing page is still a
+        # provenance claim.
+        "📊 CDFI Fund NMTC eligibility data, 2016–2020 ACS &nbsp;|&nbsp; "
+        "✅ 890+ tests &nbsp;|&nbsp; "
         "🔓 MIT License"
         "</div>",
         unsafe_allow_html=True,
@@ -150,11 +156,19 @@ def home():
 
     st.markdown("---")
     st.info(
-        "⚠️ **Methodology Disclosure:** Alignment scores measure similarity to patterns "
-        "observed in historical NMTC award winners (CY2020–CY2024). They are **not** "
-        "win probabilities. The CDFI Fund does not publish non-winner application data, "
-        "so a true probability of selection cannot be computed. Scores are intended to "
-        "guide pipeline improvement, not predict award outcomes."
+        # "observed in historical NMTC award winners" asserted an empirical
+        # provenance the package's own source denies — see
+        # nmtcapp/data/historical_awards.py. The patterns were not observed;
+        # they are this tool's own assumptions.
+        "⚠️ **Methodology Disclosure:** Alignment scores measure similarity to "
+        "**this tool's own assumed winner patterns**, which are unsourced house "
+        "constants — not measurements of past winners, and not a CDFI Fund "
+        "publication. They are **not** win probabilities. The CDFI Fund does not "
+        "publish non-winner application data, so a true probability of selection "
+        "cannot be computed, and it publishes no distribution of applicant "
+        "characteristics, so no percentile of applicants can be computed either. "
+        "Scores are intended to guide pipeline improvement, not predict award "
+        "outcomes."
     )
 
 

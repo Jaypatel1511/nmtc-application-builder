@@ -1,7 +1,7 @@
-# Invariant-output allowlist — every prose line byte-identical across the
-# four disjoint scenarios in tests/test_invariant_output.py.
+# Invariant-output allowlist — every prose line that is IDENTICAL ACROSS ALL
+# FOUR DISJOINT SCENARIOS ONCE INTERPOLATED VALUES ARE MASKED.
 #
-# Format:  CATEGORY | justification | the exact rendered line
+# Format:  CATEGORY | justification | the exact masked line
 #
 #   HEADING  structural title or table-of-contents entry
 #   LABEL    column header, row label or field name
@@ -10,24 +10,88 @@
 #   SOURCED  statutory or published constant carrying its citation in-line
 #   TOOL     a statement about this tool, not about the CDE
 #   FORMAT   scaffolding with no propositional content
+#   DERIVED  a fixed sentence FRAME whose every figure is computed from the
+#            CDE's own inputs. New in this revision, and the reason the list
+#            grew: under byte-identity these lines never appeared, because the
+#            interpolated value made every scenario differ.
 #
-# Wrapped continuations appear because the PDF and Word extractors return
-# hard-wrapped lines; they are fragments of an entry already adjudicated above.
+# WHY THIS FILE GREW FROM 116 TO 172 ENTRIES
 #
-# REVIEWING THIS FILE IS THE HIGHEST-VALUE READ ON THIS PACKAGE. Every line
+# The gate used to intersect RAW lines, so interpolating any CDE value into a
+# sentence hid the sentence from it. Four blockers lived in that gap at once,
+# including
+#
+#     f"All {total_projects} projects have completed preliminary underwriting
+#      review."
+#
+# — invariant in substance, variable in bytes, invisible for six rounds. The
+# gate now masks interpolated values (see _mask in test_invariant_output.py)
+# before intersecting, so a sentence that says the same thing with different
+# nouns is recognised as the same sentence. The 56 lines that appeared as a
+# result are not new output; they are output that was always there and never
+# had to be justified.
+#
+# READING THIS FILE IS THE HIGHEST-VALUE REVIEW ON THIS PACKAGE. Every line
 # below is something the tool says to the CDFI Fund about every CDE that ever
 # runs it. If a line here is not defensible for ALL of them, it is a defect.
 #
-FORMAT | cross-reference describing where the rest of the document is | Full 33-column pipeline detail (deal economics, QLICI structure, timeline) is provided in the accompanying Excel workbook, Pipeline Detail tab. The landscape pages below contain key pipeline fields for reference.
+# DERIVED IS NOT A RUBBER STAMP. It means: the frame is fixed, and the numbers
+# in it come from the CDE. If a DERIVED frame ever describes its numbers as
+# something they are not — a threshold as a percentile, a partial denominator
+# as a whole one — it is the same defect class this gate exists to catch, and
+# the category will not save it.
+#
+DERIVED | contact line rendered from the CDE's own profile fields | Contact: Contact N | cN@example.org |
+DERIVED | deal-economics / pipeline-overview row: fixed label, value computed from the CDE's own pipeline | **CDE Fee Income ($):** $N
+DERIVED | deal-economics / pipeline-overview row: fixed label, value computed from the CDE's own pipeline | **Estimated Investor Equity ($):** $N
+DERIVED | deal-economics / pipeline-overview row: fixed label, value computed from the CDE's own pipeline | **Net Subsidy to QALICBs ($):** $N
+DERIVED | deal-economics / pipeline-overview row: fixed label, value computed from the CDE's own pipeline | **Total Jobs to Be Created:** N
+DERIVED | deal-economics / pipeline-overview row: fixed label, value computed from the CDE's own pipeline | **Total Leverage Loans ($):** $N
+DERIVED | deal-economics / pipeline-overview row: fixed label, value computed from the CDE's own pipeline | **Total NMTCs Generated ($):** $N
+DERIVED | deal-economics / pipeline-overview row: fixed label, value computed from the CDE's own pipeline | **Total Pipeline QEI ($):** $N
+DERIVED | deal-economics / pipeline-overview row: fixed label, value computed from the CDE's own pipeline | **Total Prior Allocation ($):** $N
+DERIVED | deal-economics / pipeline-overview row: fixed label, value computed from the CDE's own pipeline | **Total Projects in Pipeline:** N
+DERIVED | distress-commitments row: fixed label, share computed from the CDE's own pipeline | **% QEI in Deep/Severe Distress:** N%
+DERIVED | distress-commitments row: fixed label, share computed from the CDE's own pipeline | **QEI in Deep/Severely Distressed Tracts:** N%
+DERIVED | distress-commitments row: fixed label, share computed from the CDE's own pipeline | **QEI in High Migration Rural (HMR) Tracts:** N%
+DERIVED | distress-commitments row: fixed label, share computed from the CDE's own pipeline | **QEI in LIC (Standard Eligible) Tracts:** N%
+DERIVED | distress-commitments row: fixed label, share computed from the CDE's own pipeline | **QEI in NMTC Native Areas:** N%
+DERIVED | impact bullet; the square-footage figure is the CDE's own. '<SECTOR>' is a mask artifact - the phrase 'community facility' here is descriptive prose that happens to collide with a sector value in the fixtures | • N sq ft of <SECTOR> / commercial space
+DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | <CDE> requests $N million in New Markets Tax Credit allocation for CYN. Our N-project pipeline spans N states, with N% of QEI committed to deep and severely distressed census tracts.
+DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | <CDE> respectfully requests $NMM in New Markets Tax Credit allocation for application round CYN. Our N-project pipeline spans N states with **N% of QEI committed to deep/severely distressed tracts**.
+DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | <CDE> targets a CYN award.
+DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | <CDE> was certified as a Community Development Entity by the CDFI Fund on <DATE>. Since certification, the organization has received N NMTC allocation awards totaling $N of which N are recorded as fully deployed.
+DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | <CDE> will deploy $N million in NMTC allocation across N projects in N states — targeting N% of QEI in deep and severely distressed census tracts. The pipeline's largest sector concentration is <SECTOR>.
+DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | N. Leverage Lender provides senior debt (approx. $NMM total)
+DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | N. Net subsidy to QALICBs: $NMM
+DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | N. Tax Credit Investor contributes equity ($NMM)
+DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | The N projects in <CDE>'s pipeline will produce the following direct community impacts upon project completion:
+DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | tracts. The pipeline's largest sector concentration is <SECTOR>.
+DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs |  N permanent full-time-equivalent jobs created  N existing jobs retained  N
+DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | • N affordable or mixed-income housing units developed
+DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | • N existing jobs retained
+DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | • N jobs per $NMM of QEI deployed
+DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | • N permanent full-time-equivalent jobs created
+DERIVED | quotes the CDE's own mission field back verbatim; asserts nothing about it | <CDE>'s stated mission is: "<MISSION>"
+FORMAT | cross-reference describing where the rest of the document is | Full N-column pipeline detail (deal economics, QLICI structure, timeline) is provided in the accompanying Excel workbook, Pipeline Detail tab. The landscape pages below contain key pipeline fields for reference.
 FORMAT | cross-reference to the Excel attachment | Full impact detail (units, square footage, OZ/HMR flags) is provided in the accompanying Excel workbook, Impact Projections tab.
 FORMAT | cross-reference to the Excel attachment | Full impact detail is in the Excel attachment.
 FORMAT | document header/footer handling marking, not content | CONFIDENTIAL — Prepared for CDFI Fund Review Only | Do Not Distribute Without CDE Authorization
+FORMAT | document header/footer/table scaffolding; no propositional content | <CDE> | CYN | Generated N-N-N
+FORMAT | document header/footer/table scaffolding; no propositional content | <CDE> — NMTC CYN Application | CONFIDENTIAL
+FORMAT | document header/footer/table scaffolding; no propositional content | <CDE> — NMTC CYN | CONFIDENTIAL
+FORMAT | document header/footer/table scaffolding; no propositional content | CONFIDENTIAL — <CDE> — NMTC CYN — Generated N-N-N
+FORMAT | document header/footer/table scaffolding; no propositional content | | <CDE> — NMTC CYN Application | CONFIDENTIAL
+FORMAT | document header/footer/table scaffolding; no propositional content | | SUMMARY | N total projects | | | N/N | | N/N (N%) | N/N | | | | | | | |
+FORMAT | document header/footer/table scaffolding; no propositional content | | TOTAL | N | N | N | N | N | N | N |
+FORMAT | document header/footer/table scaffolding; no propositional content | | TOTALS | N Projects | | | | N | N | N | N | N | N | N | N | N | | | | |
+FORMAT | document header/footer/table scaffolding; no propositional content | | TOTALS | | TOTAL (N projects) | | | | | | | | | | | | | N | N | N | N | N | N | N | N | N | | N | | | | N | N | N | N |
 FORMAT | markdown table rule; no propositional content | | --- | --- | --- | --- | --- | --- | --- | --- |
 FORMAT | markdown table rule; no propositional content | | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 FORMAT | markdown table rule; no propositional content | | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 FORMAT | markdown table rule; no propositional content | | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 FORMAT | wrapped continuation of a cross-reference to the Excel attachment | Excel workbook, Pipeline Detail tab.
-FORMAT | wrapped cross-reference to the Excel attachment | Full 33-column pipeline detail (deal economics, QLICI structure, timeline) is provided in the accompanying
+FORMAT | wrapped cross-reference to the Excel attachment | Full N-column pipeline detail (deal economics, QLICI structure, timeline) is provided in the accompanying
 HEADING | Section A subsection heading | QEI Deployment Strategy and Timeline
 HEADING | Section A subsection heading | Target Markets — Geographic and Demographic
 HEADING | Section C subsection heading | Track Record — Prior NMTC Deployments
@@ -56,11 +120,18 @@ LABEL | distress-commitments row label; value varies | QEI in LIC (Standard Elig
 LABEL | impact table column label; the count beside it varies | Affordable Units to Be Built
 LABEL | introduces the numbered structure list; the steps under it carry the figures and vary | Each transaction will utilize a standard leveraged NMTC structure:
 LABEL | row label in Section A's pipeline overview; the value beside it varies | % QEI in Deep/Severe Distress
-LABEL | row label naming the round the figure belongs to | CDFI Fund Severe Distress Threshold (CY 2024-2025)
+LABEL | row label naming the round the figure belongs to | CDFI Fund Severe Distress Threshold (CY N-N)
 LABEL | table header row; column names, no assertion about the CDE | | Project ID | Project Name | City, State | Census Tract (GEOID) | NMTC Eligible | Distress Level | Severely Distressed Flag | NMTC Native Area | High Migration Rural (HMR) | Opportunity Zone | Poverty Rate (%) | Median Family Income | Unemployment Rate (%) | Data Source | ACS Vintage |
 LABEL | table header row; column names, no assertion about the CDE | | Project ID | Project Name | State | Sector | Project Type | QEI ($) | Total Project Cost ($) | Jobs Created | Jobs Retained | Total Jobs | Cost per Job ($) | QEI per Job ($) | Affordable Units | Commercial Sq Ft | Distress Level | Native Area | HMR | OZ |
-LABEL | table header row; column names, no assertion about the CDE | | Project ID | QALICB Name | Project Name | Street Address | City | State | ZIP Code | Census Tract (11-digit) | NMTC Eligible (Y/N) | Distress Level | NMTC Native Area (Y/N) | High Migration Rural (Y/N) | Opportunity Zone (Y/N) | Sector (NAICS) | Project Type | Total Project Cost ($) | QEI Request ($) | QLICI A Loan ($) | QLICI B Loan ($) | Leverage Loan ($) | Total NMTCs ($) | Estimated Investor Equity ($) | CDE Fee ($) | Senior Debt ($) | Subordinate Debt ($) | Annual Operating Budget ($) | Construction Start | Operations Start | Closing Target Date | Jobs Created | Jobs Retained | Affordable Units Built | Square Feet |
+LABEL | table header row; column names, no assertion about the CDE | | Project ID | QALICB Name | Project Name | Street Address | City | State | ZIP Code | Census Tract (N-digit) | NMTC Eligible (Y/N) | Distress Level | NMTC Native Area (Y/N) | High Migration Rural (Y/N) | Opportunity Zone (Y/N) | Sector (NAICS) | Project Type | Total Project Cost ($) | QEI Request ($) | QLICI A Loan ($) | QLICI B Loan ($) | Leverage Loan ($) | Total NMTCs ($) | Estimated Investor Equity ($) | CDE Fee ($) | Senior Debt ($) | Subordinate Debt ($) | Annual Operating Budget ($) | Construction Start | Operations Start | Closing Target Date | Jobs Created | Jobs Retained | Affordable Units Built | Square Feet |
 LABEL | table header row; column names, no assertion about the CDE | | State | Project Count | QEI ($) | QEI (% of Total) | Deep/Severe Projects | Native Area Projects | HMR Projects | OZ Projects |
+PLACEHO | [CDE TO COMPLETE] deployment/diligence block, or a wrapped continuation of it — the absence of a claim | [CDE TO COMPLETE: State your deployment timeline and the diligence status of
+PLACEHO | [CDE TO COMPLETE] deployment/diligence block, or a wrapped continuation of it — the absence of a claim | [CDE TO COMPLETE: State your deployment timeline and the diligence status of each project — when you expect to close the first tranche, how the rest are sequenced, and how far each project has actually progressed through your underwriting. This tool holds neither: your pipeline submission records project economics and locations, not diligence milestones or target closing dates. Do not assert that a project has cleared underwriting review unless it has.]
+PLACEHO | [CDE TO COMPLETE] deployment/diligence block, or a wrapped continuation of it — the absence of a claim | assert that a project has cleared underwriting review unless it has.]
+PLACEHO | [CDE TO COMPLETE] deployment/diligence block, or a wrapped continuation of it — the absence of a claim | each project — when you expect to close the first tranche, how the rest are
+PLACEHO | [CDE TO COMPLETE] deployment/diligence block, or a wrapped continuation of it — the absence of a claim | economics and locations, not diligence milestones or target closing dates. Do not
+PLACEHO | [CDE TO COMPLETE] deployment/diligence block, or a wrapped continuation of it — the absence of a claim | sequenced, and how far each project has actually progressed through your
+PLACEHO | [CDE TO COMPLETE] deployment/diligence block, or a wrapped continuation of it — the absence of a claim | underwriting. This tool holds neither: your pipeline submission records project
 PLACEHO | placeholder / its wrapped continuation — the absence of a claim, not a claim | All narrative sections marked \[NARRATIVE PLACEHOLDER\] require review and customization before submission.
 PLACEHO | placeholder / its wrapped continuation — the absence of a claim, not a claim | CDE and supplies no figure in it — not a name, a type, a CRA obligation, a commitment amount, a credit
 PLACEHO | placeholder / its wrapped continuation — the absence of a claim, not a claim | CDFI Fund, and delete any row you cannot.] (See Attachment: Investor Commitments Table)
@@ -94,43 +165,51 @@ PLACEHO | placeholder / its wrapped continuation — the absence of a claim, not
 PLACEHO | placeholder / its wrapped continuation — the absence of a claim, not a claim | tool has no investor data for your CDE and cannot attest to any relationship, to
 PLACEHO | placeholder / its wrapped continuation — the absence of a claim, not a claim | verify community-need statistics of any kind, and supplies no figure for this subsection.
 PLACEHO | placeholder / its wrapped continuation — the absence of a claim, not a claim | vintage — for example credit-access or lending data for your tracts, unemployment
-SOURCED | CY 2024-2025 FAQ #79 threshold; names its round and says the CY 2026 NOAA is unpublished | **CDFI Fund Severe Distress Threshold (CY 2024-2025):** 85% — full Community Outcomes credit (CY 2024-2025 NMTC Allocation Application Review Process; the CY 2026 NOAA is not yet published)
-SOURCED | labelled in-line as this model's assumption, explicitly disclaimed as not a Fund parameter | **Assumed CDE Fee Rate:** 2.5% of QEI (market assumption, not a CDFI Fund parameter)
-SOURCED | labelled in-line as this model's assumption, explicitly disclaimed as not a Fund parameter | **Assumed Credit Price ($/NMTC):** $0.83 (market assumption, not a CDFI Fund parameter)
-SOURCED | methodology note naming the library and every assumption it used | DEAL ECONOMICS: Computed using nmtc-calc library. Standard leveraged NMTC structure with credit price $0.83/credit, CDE fee 2.5% of QEI, 7-year compliance period.
-SOURCED | names the dataset and vintage actually loaded; suppressed on the degraded path | - Eligibility data: CDFI Fund NMTC Eligibility Table, 2016–2020 ACS 5-Year Estimates
-SOURCED | names the dataset and vintage; suppressed when the download failed | ELIGIBILITY: CDFI Fund NMTC Eligibility Table, 2016–2020 ACS 5-Year Estimates.
-SOURCED | names the dataset, its vintage and the statute; suppressed when the download failed | ELIGIBILITY: CDFI Fund NMTC Eligibility Table using 2016–2020 ACS 5-Year Estimates. Tract eligibility determined by Low Income Community (LIC) criteria per IRC §45D.
-SOURCED | per-row data-source citation; only emitted on rows that carry that data | CDFI Fund NMTC Eligibility Table (2016–2020 ACS)
-SOURCED | program-wide definition of the distress tiers, cited in-line; says nothing about this CDE | DISTRESS LEVELS: Deep distress = poverty rate >30% or unemployment >1.5× national average. Severe distress = LIC plus additional qualifying factors. (Source: CDFI Fund NMTC Program guidance and the NMTC Allocation Application Review Process. NMTC rounds are announced by a NOAA — Notice of Allocation Availability — and the CY 2026 NOAA is not yet published.)
-SOURCED | statutory: the NMTC compliance period is set by IRC 45D, cited in-line | **Compliance Period:** 7 years (IRC §45D)
-SOURCED | this tool's modelling assumption, and the line says so in-line | $0.83 (market assumption, not a CDFI Fund parameter)
-SOURCED | value half of the severe-distress threshold row; carries round and caveat in-line | 85% — full Community Outcomes credit (CY 2024-2025 NMTC Allocation Application Review Process; the CY 2026 NOAA is not yet published)
+SOURCED | CY 2024-2025 FAQ #79 threshold; names its round and says the CY 2026 NOAA is unpublished | **CDFI Fund Severe Distress Threshold (CY N-N):** N% — full Community Outcomes credit (CY N-N NMTC Allocation Application Review Process; the CY N NOAA is not yet published)
+SOURCED | distress definitions quoted VERBATIM from CDFI Fund NMTC LIC Eligibility workbook cols 14-15, the file this tool loads; verified against the .xlsb on disk | DISTRESS LEVELS (verbatim from the CDFI Fund NMTC LIC Eligibility workbook,
+SOURCED | distress definitions quoted VERBATIM from CDFI Fund NMTC LIC Eligibility workbook cols 14-15, the file this tool loads; verified against the .xlsb on disk | DISTRESS LEVELS (verbatim from the CDFI Fund NMTC LIC Eligibility workbook, N-N ACS, columns N and N — the file this tool loads to classify every tract): Severe distress = LIC AND (Poverty>N%; MFI<=N%; Unemployment>=N). Deep distress = LIC AND (Poverty>N%; MFI<=N%; Unemployment>=N). The semicolons are ORs; both tiers additionally require the tract to be a Low-Income Community. NMTC rounds are announced by a NOAA — Notice of Allocation Availability — and the CY N NOAA is not yet published.
+SOURCED | distress definitions quoted VERBATIM from CDFI Fund NMTC LIC Eligibility workbook cols 14-15, the file this tool loads; verified against the .xlsb on disk | N-N ACS, columns N and N — the file this tool loads to classify every tract):
+SOURCED | distress definitions quoted VERBATIM from CDFI Fund NMTC LIC Eligibility workbook cols 14-15, the file this tool loads; verified against the .xlsb on disk | Severe distress = LIC AND (Poverty>N%; MFI<=N%; Unemployment>=N). Deep
+SOURCED | distress definitions quoted VERBATIM from CDFI Fund NMTC LIC Eligibility workbook cols 14-15, the file this tool loads; verified against the .xlsb on disk | are ORs; both tiers additionally require the tract to be a Low-Income Community.
+SOURCED | distress definitions quoted VERBATIM from CDFI Fund NMTC LIC Eligibility workbook cols 14-15, the file this tool loads; verified against the .xlsb on disk | distress = LIC AND (Poverty>N%; MFI<=N%; Unemployment>=N). The semicolons
+SOURCED | labelled in-line as this model's assumption, explicitly disclaimed as not a Fund parameter | **Assumed CDE Fee Rate:** N% of QEI (market assumption, not a CDFI Fund parameter)
+SOURCED | labelled in-line as this model's assumption, explicitly disclaimed as not a Fund parameter | **Assumed Credit Price ($/NMTC):** $N (market assumption, not a CDFI Fund parameter)
+SOURCED | methodology note naming the library and every assumption it used | DEAL ECONOMICS: Computed using nmtc-calc library. Standard leveraged NMTC structure with credit price $N/credit, CDE fee N% of QEI, N-year compliance period.
+SOURCED | names the dataset and vintage actually loaded; suppressed on the degraded path | - Eligibility data: CDFI Fund NMTC Eligibility Table, N–N ACS N-Year Estimates
+SOURCED | names the dataset and vintage; suppressed when the download failed | ELIGIBILITY: CDFI Fund NMTC Eligibility Table, N–N ACS N-Year Estimates.
+SOURCED | names the dataset, its vintage and the statute; suppressed when the download failed | ELIGIBILITY: CDFI Fund NMTC Eligibility Table using N–N ACS N-Year Estimates. Tract eligibility determined by Low Income Community (LIC) criteria per IRC §ND.
+SOURCED | per-row data-source citation; only emitted on rows that carry that data | CDFI Fund NMTC Eligibility Table (N–N ACS)
+SOURCED | statutory: the NMTC compliance period is set by IRC 45D, cited in-line | **Compliance Period:** N years (IRC §ND)
+SOURCED | this model's market assumption, disclaimed as not a CDFI Fund parameter in the same line | Assumed CDE fee rate: N% of QEI ($NMM) — a market assumption of this model,
+SOURCED | this model's market assumption, disclaimed as not a CDFI Fund parameter in the same line | Assumed CDE fee rate: N% of QEI ($NMM) — a market assumption of this model, not a CDFI Fund parameter. Fees cover origination, compliance monitoring, and asset management over the N-year compliance period.
+SOURCED | this model's market assumption, disclaimed as not a CDFI Fund parameter in the same line | Modelled on $NMM of pipeline QEI at an assumed credit price of $N/NMTC credit, the structure implies $NMM of investor equity. The credit price is a market assumption of this model, not a quoted or committed price.
+SOURCED | this tool's modelling assumption, and the line says so in-line | $N (market assumption, not a CDFI Fund parameter)
+SOURCED | value half of the severe-distress threshold row; carries round and caveat in-line | N% — full Community Outcomes credit (CY N-N NMTC Allocation Application Review Process; the CY N NOAA is not yet published)
 SOURCED | wrapped continuation of the CDE-fee assumption, disclaimed in-line | not a CDFI Fund parameter. Fees cover origination, compliance monitoring, and asset
-SOURCED | wrapped continuation of the CDE-fee sentence; the 7 years are IRC 45D | management over the 7-year compliance period.
-SOURCED | wrapped continuation of the DEAL ECONOMICS note, which names nmtc-calc as its source | $0.83/credit, CDE fee 2.5% of QEI, 7-year compliance period.
-SOURCED | wrapped continuation of the assumed CDE fee rate row | 2.5% of QEI (market assumption, not a CDFI Fund parameter)
-SOURCED | wrapped continuation of the distress-definitions note | national average. Severe distress = LIC plus additional qualifying factors.
+SOURCED | wrapped continuation of the CDE-fee sentence; the 7 years are IRC 45D | management over the N-year compliance period.
+SOURCED | wrapped continuation of the DEAL ECONOMICS note, which names nmtc-calc as its source | $N/credit, CDE fee N% of QEI, N-year compliance period.
+SOURCED | wrapped continuation of the assumed CDE fee rate row | N% of QEI (market assumption, not a CDFI Fund parameter)
 SOURCED | wrapped opening of the deal-economics methodology note | DEAL ECONOMICS: nmtc-calc library, standard leveraged structure. Credit price
-SOURCED | wrapped opening of the distress-definitions note | DISTRESS LEVELS: Deep distress = poverty rate >30% or unemployment >1.5×
-TOOL | declares the 5/12/20 impact bands this tool's own and states the CDFI Fund publishes no jobs-per-QEI benchmark — the F28 relabel, replacing a citation to a publication that does not exist | $1MM QEI). The CDFI Fund publishes no jobs-per-QEI benchmark in any
-TOOL | declares the 5/12/20 impact bands this tool's own and states the CDFI Fund publishes no jobs-per-QEI benchmark — the F28 relabel, replacing a citation to a publication that does not exist | - Impact screening bands (5 / 12 / 20 FTE per $1MM QEI): this tool's own bands. The CDFI Fund publishes no jobs-per-QEI benchmark in any denominator — it reports job counts and dollar counts separately and never divides them. These are not a federal figure.
-TOOL | declares the 5/12/20 impact bands this tool's own and states the CDFI Fund publishes no jobs-per-QEI benchmark — the F28 relabel, replacing a citation to a publication that does not exist | IMPACT SCREENING BANDS: THIS TOOL'S OWN BANDS (5 / 12 / 20 FTE per
-TOOL | declares the 5/12/20 impact bands this tool's own and states the CDFI Fund publishes no jobs-per-QEI benchmark — the F28 relabel, replacing a citation to a publication that does not exist | IMPACT SCREENING BANDS: THIS TOOL'S OWN BANDS (5 / 12 / 20 FTE per $1MM QEI). The CDFI Fund publishes no jobs-per-QEI benchmark in any denominator: it reports job counts and dollar counts separately and never divides them, and it publishes no distribution, so no band here is a percentile. These are not a federal figure and must not be cited as one.
+TOOL | declares the 5/12/20 impact bands this tool's own and states the CDFI Fund publishes no jobs-per-QEI benchmark — the F28 relabel, replacing a citation to a publication that does not exist | $NMM QEI). The CDFI Fund publishes no jobs-per-QEI benchmark in any
+TOOL | declares the 5/12/20 impact bands this tool's own and states the CDFI Fund publishes no jobs-per-QEI benchmark — the F28 relabel, replacing a citation to a publication that does not exist | - Impact screening bands (N / N / N FTE per $NMM QEI): this tool's own bands. The CDFI Fund publishes no jobs-per-QEI benchmark in any denominator — it reports job counts and dollar counts separately and never divides them. These are not a federal figure.
+TOOL | declares the 5/12/20 impact bands this tool's own and states the CDFI Fund publishes no jobs-per-QEI benchmark — the F28 relabel, replacing a citation to a publication that does not exist | IMPACT SCREENING BANDS: THIS TOOL'S OWN BANDS (N / N / N FTE per
+TOOL | declares the 5/12/20 impact bands this tool's own and states the CDFI Fund publishes no jobs-per-QEI benchmark — the F28 relabel, replacing a citation to a publication that does not exist | IMPACT SCREENING BANDS: THIS TOOL'S OWN BANDS (N / N / N FTE per $NMM QEI). The CDFI Fund publishes no jobs-per-QEI benchmark in any denominator: it reports job counts and dollar counts separately and never divides them, and it publishes no distribution, so no band here is a percentile. These are not a federal figure and must not be cited as one.
 TOOL | declares the 5/12/20 impact bands this tool's own and states the CDFI Fund publishes no jobs-per-QEI benchmark — the F28 relabel, replacing a citation to a publication that does not exist | denominator: it reports job counts and dollar counts separately and never divides
 TOOL | declares the 5/12/20 impact bands this tool's own and states the CDFI Fund publishes no jobs-per-QEI benchmark — the F28 relabel, replacing a citation to a publication that does not exist | federal figure and must not be cited as one.
 TOOL | declares the 5/12/20 impact bands this tool's own and states the CDFI Fund publishes no jobs-per-QEI benchmark — the F28 relabel, replacing a citation to a publication that does not exist | them, and it publishes no distribution, so no band here is a percentile. These are not a
-TOOL | declares the readiness weights unsourced and non-predictive | READINESS SCORE: An UNSOURCED HOUSE HEURISTIC of this tool (eligibility 25%, distress concentration 25%, geographic diversity 15%, impact metrics 20%, validation 10%, completeness 5%). The weights are this tool's own judgement; they are not calibrated against award data, the CDFI Fund publishes no such weighting, and the score does not predict an award outcome.
-TOOL | declares the readiness weights unsourced; a disclaimer, not a claim | - Readiness scoring: an unsourced house heuristic of this tool. The weights are not calibrated against award data, and the CDFI Fund publishes no such weighting. NMTC rounds are announced by a NOAA (Notice of Allocation Availability); the CY 2026 NOAA is not yet published.
-TOOL | disclaims the >=75% band as this tool's own; it rendered as '(CDFI Fund target: >=75%)' until 1.2.0 while data/schema.py commented it 'house heuristic' | tool's own internal scoring band is ≥75%; it is not a CDFI Fund threshold.)
+TOOL | declares the >=75% deep-distress band this tool's own and not a CDFI Fund threshold | QEI deployment strategy: N% of QEI committed to deep/severe distress tracts. (This
+TOOL | declares the >=75% deep-distress band this tool's own and not a CDFI Fund threshold | QEI deployment strategy: N% of QEI committed to deep/severe distress tracts. (This tool's own internal scoring band is ≥N%; it is not a CDFI Fund threshold.)
+TOOL | declares the readiness weights unsourced and non-predictive | READINESS SCORE: An UNSOURCED HOUSE HEURISTIC of this tool (eligibility N%, distress concentration N%, geographic diversity N%, impact metrics N%, validation N%, completeness N%). The weights are this tool's own judgement; they are not calibrated against award data, the CDFI Fund publishes no such weighting, and the score does not predict an award outcome.
+TOOL | declares the readiness weights unsourced; a disclaimer, not a claim | - Readiness scoring: an unsourced house heuristic of this tool. The weights are not calibrated against award data, and the CDFI Fund publishes no such weighting. NMTC rounds are announced by a NOAA (Notice of Allocation Availability); the CY N NOAA is not yet published.
+TOOL | disclaims the >=75% band as this tool's own; it rendered as '(CDFI Fund target: >=75%)' until 1.2.0 while data/schema.py commented it 'house heuristic' | tool's own internal scoring band is ≥N%; it is not a CDFI Fund threshold.)
 TOOL | methodology note disclaiming a capability; a negative about the tool | - Community need: NOT generated by this tool — documented by the CDE and cited to sources the CDE controls
 TOOL | names the library that computed the deal economics | - Deal economics: nmtc-calc library (standard leveraged NMTC transaction structure)
-TOOL | provenance stamp about this tool, not about the CDE | *This document was generated by nmtc-application-builder v1.2.0. Narrative placeholders marked \[NARRATIVE PLACEHOLDER\] require CDE review and customization.*
-TOOL | provenance stamp; version and build date are facts about the tool | Generated by **nmtc-application-builder v1.2.0** on 2026-08-14.
-TOOL | provenance stamp; version and build date are facts about the tool | Generated by nmtc-application-builder v1.2.0 on 2026-08-14.
+TOOL | provenance stamp about this tool, not about the CDE | *This document was generated by nmtc-application-builder vN.N. Narrative placeholders marked \[NARRATIVE PLACEHOLDER\] require CDE review and customization.*
+TOOL | provenance stamp; version and build date are facts about the tool | Generated by **nmtc-application-builder vN.N** on N-N-N.
+TOOL | provenance stamp; version and build date are facts about the tool | Generated by nmtc-application-builder vN.N on N-N-N.
 TOOL | the Key Strengths list is this tool's own assessment against its own thresholds, and now says so where it is introduced | **Key Strengths** (this tool's own assessment against its own thresholds — not a CDFI Fund evaluation)**:**
 TOOL | wrapped continuation of the credit-price disclaimer in Section D | assumption of this model, not a quoted or committed price.
-TOOL | wrapped continuation of the readiness-weights disclaimer | 25%, distress 25%, geographic 15%, impact 20%, validation 10%, completeness 5%).
+TOOL | wrapped continuation of the readiness-weights disclaimer | N%, distress N%, geographic N%, impact N%, validation N%, completeness N%).
 TOOL | wrapped continuation of the readiness-weights disclaimer | The weights are this tool's own judgement; they are not calibrated against award data,
 TOOL | wrapped continuation of the readiness-weights disclaimer | the CDFI Fund publishes no such weighting, and the score does not predict an award
 TOOL | wrapped opening of the readiness-weights disclaimer | READINESS SCORE: An UNSOURCED HOUSE HEURISTIC of this tool (eligibility
