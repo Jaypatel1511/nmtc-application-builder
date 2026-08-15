@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
+from nmtcapp.tables.pipeline_table import _sector_cell
+
 from nmtcapp.renderers.styles import DISTRESS_DISPLAY
 
 if TYPE_CHECKING:
@@ -57,7 +59,9 @@ def build_impact_summary_table(pipeline: "Pipeline") -> pd.DataFrame:
         rows.append({
             "Project Name":      name,
             "State":             p.state,
-            "Sector":            p.sector.replace("_", " ").title(),
+            # See tables/pipeline_table._sector_cell: an unrecognised sector
+            # must not render as though it were a recognised one.
+            "Sector":            _sector_cell(p),
             "Jobs Created":      p.expected_jobs_created,
             "QEI ($)":           p.qei_request,
             "Cost per Job ($)":  round(cost_per_job),
@@ -101,7 +105,7 @@ def build_impact_table(pipeline: "Pipeline") -> pd.DataFrame:
             "Project ID":            p.project_id,
             "Project Name":          p.project_name,
             "State":                 p.state,
-            "Sector":                p.sector.replace("_", " ").title(),
+            "Sector":                _sector_cell(p),
             "Project Type":          p.project_type.replace("_", " ").title(),
             "QEI ($)":               p.qei_request,
             "Total Project Cost ($)":p.total_project_cost,
@@ -110,7 +114,8 @@ def build_impact_table(pipeline: "Pipeline") -> pd.DataFrame:
             "Total Jobs":            p.expected_jobs_created + p.expected_jobs_retained,
             "Cost per Job ($)":      round(cost_per_job),
             "QEI per Job ($)":       round(qei_per_job),
-            "Affordable Units":      p.expected_units_built if p.expected_units_built else 0,
+            # See tables/pipeline_table: None is "not supplied", not zero.
+            "Affordable Units":      p.expected_units_built,
             "Commercial Sq Ft":      int(p.expected_sq_ft) if p.expected_sq_ft else 0,
             "Distress Level":        _distress_cell(p),
             "Native Area (CDE-declared)": _flag(p.is_native_area),

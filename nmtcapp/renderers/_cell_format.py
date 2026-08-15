@@ -42,6 +42,10 @@ from __future__ import annotations
 
 import math
 
+# What a cell prints when no value was supplied. Matches the tri-state flags
+# elsewhere in the package rather than inventing a second convention.
+NOT_SUPPLIED = "—"
+
 
 def is_currency_column(header: str) -> bool:
     """True when the column header declares itself a dollar column."""
@@ -69,10 +73,16 @@ def format_cell(header: str, value) -> str:
         format_cell("Square Feet", 24000.0)      # '24,000'
         format_cell("Jobs/$MM QEI", 7.13)        # '7.13'
     """
+    # AN ABSENT VALUE IS NOT AN EMPTY ONE. A blank cell reads as an oversight
+    # or as a zero somebody forgot to type; the em dash is what this package
+    # already uses for "nobody told us" (tables/distress_table._flag,
+    # tables/pipeline_table._yn_flag), so a reader who has seen one cell of it
+    # knows what the next one means. It matters most where the column is
+    # numeric: "0 affordable units" is a claim, "—" is not.
     if value is None:
-        return ""
+        return NOT_SUPPLIED
     if _is_number(value) and isinstance(value, float) and math.isnan(value):
-        return ""
+        return NOT_SUPPLIED
 
     if _is_number(value):
         if is_currency_column(header):

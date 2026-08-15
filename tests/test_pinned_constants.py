@@ -63,6 +63,43 @@ the duplications it found rather than pinning around them: win_probability's
 "40-point minimum"/"85-point minimum" and excel_builder's weight_map, both of
 which printed one value while the package gated on another. If you add a pin,
 check the call site interpolates.
+
+A PIN MUST ALSO BE ABLE TO FAIL ON A REARRANGEMENT, NOT ONLY ON A DELETION.
+Pinning the bare string "Deep Distress" proves the phrase is somewhere in the
+document. It does not prove it is on the right ROW: swap the two values in
+renderers/styles.DISTRESS_DISPLAY and both phrases still appear, on each
+other's projects, and a "Deep Distress" pin passes. Every label pin below is
+therefore anchored to the fixture project whose distress_level produced it, so
+the swap moves the label away from the anchor and the pin fails. Verified by
+executing the swap: eight of the twelve distress-label pins go red.
+
+WHAT WAS NEVER A CANDIDATE FOR PINNING, AND IS NOW (1.2.1 S-2)
+
+The gate's scope through 1.2.1-rc was nmtcapp/data/{schema,benchmark_thresholds}
+only. That is where the NUMBERS live, and the gate was built for numbers. But
+the thing a CDE reads is not only a number — it is also the WORD a number is
+printed under, and the mapping from an internal key to that word lives in a
+renderer, not in nmtcapp/data/. Three mutations were run against the 1.2.1
+tree and all three passed 937 green:
+
+    distress_table._ELIGIBILITY_SOURCE  2016-2020 ACS -> 2011-2015 ACS
+    styles.DISTRESS_DISPLAY             swap the deep and severe LABELS
+    recommendations.py                  hardcoded federal 85% -> 55%
+
+The middle one is the reason the scope changed. It leaves Section B's narrative
+share correct (it is computed from the distress_level KEY) while Appendices A,
+B and D relabel every project, so a reviewer summing the attachment's Deep rows
+gets a different number from the one the narrative claims. Reproduced on a
+five-project fixture: narrative 19.4%, attachment 47.2%, one document.
+
+It got through because a LABEL DICT had never been a candidate for pinning —
+not because anybody skipped it. So the sweep no longer asks "is this constant
+in nmtcapp/data/". It asks the artifact: DOES ANY STRING THIS CONSTANT HOLDS
+APPEAR IN THE RENDERED DOCUMENT? A constant whose strings appear must be
+adjudicated. A constant whose strings do not is adjudicated BY THE FIXTURE, on
+every run, and needs no hand-written waiver — which matters, because a
+hand-written "this does not render" is exactly the claim that goes stale
+silently. See test_every_rendering_constant_is_pinned_or_waived.
 """
 from __future__ import annotations
 
@@ -79,13 +116,60 @@ from nmtcapp.core.pipeline import Pipeline, PipelineProject
 PIN_PATH = os.path.join(os.path.dirname(__file__), "pinned_constants.txt")
 
 DOCUMENT_SURFACES = ("markdown", "word", "excel", "pdf")
-TEXT_SURFACES = ("cli_summary", "win_score")
-ALL_SURFACES = DOCUMENT_SURFACES + TEXT_SURFACES
+# recommendations: RecommendationSet.summary(), reached through the public
+# app.recommendations() and printed by the Streamlit scorer. It is a SEVENTH
+# rendered surface and no gate looked at it, which is how a hardcoded federal
+# 85% survived being changed to 55% with nothing red (1.2.1 L-3).
+#
+# top_tier_*: the same two text surfaces rendered from a SECOND fixture, one
+# that actually reaches Top Tier. TOP_TIER_AGGREGATE_MIN and
+# TOP_TIER_SECTION_MIN were waived on the grounds that they "render only when a
+# fixture reaches Top Tier", which was an admission that the fixture was too
+# weak rather than a statement that the constants reach no surface. They gate
+# the tier LABEL, the label renders, and a fixture that sits just above the bar
+# makes both constants bite: raise either and the label changes.
+TEXT_SURFACES = (
+    "cli_summary", "win_score", "recommendations",
+    "top_tier_win_score", "top_tier_recommendations",
+)
+# NOT text. The number FORMAT applied to a cell is something the reader sees
+# and no text extractor can: openpyxl's data_only read returns 6000000 whether
+# the cell prints "$6,000,000", "600000000.0%" or "6000000". FMT_PCT landing on
+# a dollar column is a units defect that changes every figure on the page and
+# leaves the extracted text byte-identical, so the eight excel_builder.FMT_*
+# constants were invisible to a gate built on extracted text. This surface is
+# "<sheet> · <column header> · <number format>", one line per column, which
+# makes a format pinnable TO A COLUMN rather than merely present in the file.
+SHAPE_SURFACES = ("excel_cell_formats",)
+ALL_SURFACES = DOCUMENT_SURFACES + TEXT_SURFACES + SHAPE_SURFACES
 
 DATA_MODULES = {
     "schema": os.path.join("nmtcapp", "data", "schema.py"),
     "benchmark_thresholds": os.path.join("nmtcapp", "data", "benchmark_thresholds.py"),
 }
+
+# The whole shipped package, for the rendering sweep. DATA_MODULES above stays
+# as the scope of the older CONSUMED sweep, which asks a different question
+# (is a published value read by another module) and catches constants that
+# reach a score without reaching a string.
+PACKAGE_ROOT = "nmtcapp"
+
+# Trees that CONSUME a constant. Through 1.2.1-rc this was nmtcapp/ alone, so a
+# constant read only by a Streamlit page — a surface a CDE looks at — counted
+# as consumed by nobody and needed no adjudication.
+CONSUMER_ROOTS = ("nmtcapp", "streamlit_app")
+
+# A string shorter than this matches by accident. "name", "state", "deep" and
+# "none" all appear in any rendered application for reasons having nothing to
+# do with the constant that happens to contain them; at a 4-character floor the
+# sweep demanded rows for a colour map and a field-name list on exactly those
+# collisions. The floor is 12 rather than a larger round number because the
+# SHORTEST published label the sweep must not lose is "Deep Distress", which is
+# 13 characters — a floor above it would drop the very constant this sweep was
+# widened to catch. Measured across the whole package: floor 4 -> 30 rows
+# demanded, floor 8 -> 23, floor 12 -> 19, floor 16 -> 17 and "Deep Distress"
+# gone. 12 is the largest floor that still holds the case.
+MIN_RENDERED_STRING = 12
 
 # A HOUSE pin must render its own disclaimer on the same surface. These are the
 # phrases that count; a HOUSE pin whose surface carries none of them fails.
@@ -129,14 +213,21 @@ def _load_registry():
             line = raw.rstrip("\n")
             if not line.strip() or line.lstrip().startswith("#"):
                 continue
-            parts = line.split(" | ")
-            if parts[0].strip() == "WAIVE":
+            # maxsplit, so the LAST field may itself contain " | ". A markdown
+            # table row is the only string that anchors a cell label to the row
+            # it sits on ("| 39035103200 | Y | Deep Distress |"), and without
+            # this the distress-label pins could not be expressed on the
+            # markdown surface at all. Missing fields still error: len < 3 or
+            # len < 4 below.
+            if line.lstrip().startswith("WAIVE | "):
+                parts = line.split(" | ", 2)
                 assert len(parts) == 3, (
                     f"{PIN_PATH}:{lineno}: a WAIVE row is "
                     f"'WAIVE | CONSTANT | reason', got {len(parts)} fields"
                 )
                 waivers[parts[1].strip()] = parts[2].strip()
                 continue
+            parts = line.split(" | ", 3)
             assert len(parts) == 4, (
                 f"{PIN_PATH}:{lineno}: a pin row is "
                 f"'CONSTANT | SURFACES | SOURCE | expected', got {len(parts)} fields"
@@ -221,6 +312,100 @@ def _fixture_application() -> Application:
     return app
 
 
+def _top_tier_application() -> Application:
+    """A pipeline strong enough to be classified Top Tier.
+
+    R-1: TOP_TIER_AGGREGATE_MIN and TOP_TIER_SECTION_MIN were waived because
+    "they render only when a fixture actually reaches Top Tier". That is a
+    statement about the FIXTURE, not about the constants — the constants decide
+    which of three tier labels a CDE is told it is in, and the label is printed
+    on the score block and on the recommendation set's overall assessment. A
+    waiver saying "our fixture is too weak to reach the branch" waives the test,
+    not the constant.
+
+    So: a fixture that reaches the branch. Every project is Deep Distress, the
+    CDE has three fully-deployed prior awards, and the flexible-product and
+    unrelated-entity attributes are set, which is what the Business Strategy
+    and Community Outcomes sub-scorers read. The pins that hang off this
+    fixture assert the LABEL "Top Tier", so raising either constant above the
+    score drops the label to "Highly Qualified" and the pin fails.
+    """
+    cde = CDEProfile(
+        name="Top Tier Fixture CDE, LLC",
+        cde_id="CDE-2014-0555",
+        certification_date="2014-03-03",
+        mission="Fixture profile that reaches the Top Tier gating branch.",
+        target_markets=["Ohio", "Kentucky", "West Virginia", "Tennessee",
+                        "Indiana", "Michigan", "Pennsylvania"],
+        prior_awards=[
+            {"year": 2019, "amount": 60_000_000, "deployment_status": "fully_deployed"},
+            {"year": 2021, "amount": 65_000_000, "deployment_status": "fully_deployed"},
+            {"year": 2023, "amount": 70_000_000, "deployment_status": "fully_deployed"},
+        ],
+        contact={"name": "Top Tier Fixture", "email": "toptier@example.org"},
+        governance={"board_members": 11, "community_representatives": 7},
+        extra={
+            "years_in_operation": 12,
+            "has_own_capital_at_risk": True,
+            "products_below_market_pct": 1.0,
+            "products_flexible_indicia_count": 7,
+            "pipeline_pct_identified": 1.0,
+            "track_record_pipeline_alignment_pct": 1.0,
+            "track_record_deployment_pct": 1.0,
+            "dbc_focus_years": 9,
+            "dbc_dollar_volume_pct": 0.95,
+            "unrelated_entities_pct": 1.0,
+            "lic_board_representation_pct": 0.64,
+            "has_community_engagement_track_record": True,
+            "has_quantified_outcomes": True,
+            "has_third_party_validation": True,
+        },
+    )
+    tracts = [
+        ("OH", "39035103200"), ("KY", "21111010100"), ("WV", "54039000200"),
+        ("TN", "47157003100"), ("IN", "18097353100"), ("MI", "26163516900"),
+        ("PA", "42101014000"), ("OH", "39049003400"),
+    ]
+    projects = []
+    for i, (state, tract) in enumerate(tracts):
+        p = PipelineProject(
+            project_id=f"TOP-{i:02d}",
+            project_name=f"Top Tier Fixture Project {i}",
+            qalicb_name=f"Top Tier {i} QALICB LLC",
+            address=f"{500 + i} Summit Street",
+            city="Peakville",
+            state=state,
+            sector=("healthcare", "affordable_housing", "education",
+                    "community_facility", "clean_energy")[i % 5],
+            project_type="real_estate",
+            total_project_cost=float(12_000_000 + i),
+            qei_request=float(8_000_000 + i),
+            qlici_amount=float(8_000_000 + i),
+            expected_jobs_created=90 + i,
+            expected_jobs_retained=30 + i,
+            expected_units_built=40 + i,
+            expected_sq_ft=float(30_000 + i),
+        )
+        p.census_tract = tract
+        p.is_nmtc_eligible = True
+        p.distress_level = "deep"
+        p.is_native_area = i % 2 == 0
+        p.is_high_migration_rural = i % 3 == 0
+        p.is_opportunity_zone = True
+        p.is_us_territory = False
+        p.is_persistent_poverty = True
+        p.is_below_market_rate = True
+        p.is_unrelated_entity = True
+        p.geocode_success = True
+        projects.append(p)
+    pipeline = Pipeline(projects)
+    pipeline.eligibility_data_status = "ok"
+
+    app = Application(cde=cde, requested_allocation=64_000_000.0)
+    app.add_pipeline(pipeline)
+    return app
+
+
 def _extract(fmt: str, path: str) -> str:
     if fmt == "markdown":
         with open(path, encoding="utf-8") as fh:
@@ -250,6 +435,44 @@ def _extract(fmt: str, path: str) -> str:
     raise AssertionError(f"unknown format {fmt}")
 
 
+def _excel_cell_formats(path: str) -> str:
+    """"<sheet> · <column header> · <number format>", one line per data column.
+
+    The number format is the only thing about the Excel attachment that the
+    reader sees and _extract cannot: openpyxl with data_only=True hands back
+    6000000 regardless of whether the cell prints $6,000,000 or 600000000.0%.
+    Building this surface makes the eight excel_builder.FMT_* constants
+    pinnable to the COLUMN they format, so swapping FMT_CURRENCY for FMT_PCT on
+    the QEI column fails a pin instead of shipping a page of percentages.
+
+    The header is taken to be the last row above the first cell that carries a
+    non-General format, which is how these sheets are laid out (a title block,
+    then one header row, then data). A column whose data cells are all text
+    contributes nothing, which is correct: there is no format to pin.
+    """
+    import openpyxl
+    wb = openpyxl.load_workbook(path, data_only=True)
+    lines = []
+    for ws in wb.worksheets:
+        rows = list(ws.iter_rows())
+        for col_idx in range(ws.max_column):
+            header, seen = None, []
+            for row in rows:
+                if col_idx >= len(row):
+                    continue
+                cell = row[col_idx]
+                if cell.value is None:
+                    continue
+                fmt = cell.number_format
+                if fmt in ("General", "@"):
+                    header = str(cell.value)
+                    continue
+                if header and fmt not in seen:
+                    seen.append(fmt)
+                    lines.append(f"{ws.title} · {header} · {fmt}")
+    return "\n".join(lines)
+
+
 def _normalise(text: str) -> str:
     """Collapse whitespace so a pin survives PDF line wrapping and cell padding.
 
@@ -262,7 +485,7 @@ def _normalise(text: str) -> str:
 
 @pytest.fixture(scope="module")
 def rendered() -> dict:
-    """{surface: normalised text} for all six surfaces."""
+    """{surface: normalised text} for every surface in ALL_SURFACES."""
     import tempfile
     out = tempfile.mkdtemp(prefix="nmtcapp-pins-")
     app = _fixture_application()
@@ -281,14 +504,45 @@ def rendered() -> dict:
         assert text.strip(), f"{fmt} extracted as empty — the gate would pin nothing"
         surfaces[fmt] = _normalise(text)
 
+    # NOT normalised: this surface is line-structured ("sheet · header · fmt")
+    # and _shape_tokens reads it a line at a time. Collapsing the newlines would
+    # turn it into one line and the token set into one token.
+    surfaces["excel_cell_formats"] = _excel_cell_formats(paths["excel"])
+
     analysis = app.analyze()
     surfaces["cli_summary"] = _normalise(
         analysis.pipeline_result.summary() + "\n" + analysis.readiness_score.summary()
     )
     surfaces["win_score"] = _normalise(app.score_win_probability().summary())
+    surfaces["recommendations"] = _normalise(app.recommendations().summary())
 
-    for name in TEXT_SURFACES:
+    top = _top_tier_application()
+    top_score = top.score_win_probability()
+    # FAIL CLOSED. Every pin on the two top_tier_* surfaces exists to make
+    # TOP_TIER_AGGREGATE_MIN and TOP_TIER_SECTION_MIN bite. If the fixture stops
+    # reaching the branch — because a sub-scorer changed, or because somebody
+    # raised the constants and the fixture no longer clears them — those pins
+    # would go quietly unreachable and the constants would be back to being
+    # ungated. This assert says so out loud instead.
+    assert top_score.tier == "Top Tier", (
+        f"the Top Tier fixture scored {top_score.aggregate_base_score}/100 and was "
+        f"classified {top_score.tier!r}, not 'Top Tier'. Either a sub-scorer "
+        "changed, or TOP_TIER_AGGREGATE_MIN / TOP_TIER_SECTION_MIN moved. Both "
+        "are release-blocking: the pins that gate those two constants hang off "
+        "this branch, and a fixture that no longer reaches it un-gates them "
+        "silently — which is the reason those constants were waived in the "
+        "first place. Strengthen the fixture; do not weaken the assert."
+    )
+    surfaces["top_tier_win_score"] = _normalise(top_score.summary())
+    surfaces["top_tier_recommendations"] = _normalise(top.recommendations().summary())
+
+    for name in TEXT_SURFACES + SHAPE_SURFACES:
         assert surfaces[name].strip(), f"{name} rendered empty"
+    assert set(surfaces) == set(ALL_SURFACES), (
+        f"rendered {sorted(surfaces)}, ALL_SURFACES is {sorted(ALL_SURFACES)}. A "
+        "surface named in ALL_SURFACES but never rendered would let every pin "
+        "that names it pass by KeyError-free accident."
+    )
     return surfaces
 
 
@@ -403,10 +657,42 @@ def test_house_pins_carry_their_disclaimer(rendered):
 
 # ---------------------------------------------------------------------------
 # Derivation: the list must not be a list somebody once wrote down
+#
+# BOTH SWEEPS BELOW READ THE SOURCE TREE, so both are checkout-only.
+#
+# release.yml's sdist job deliberately runs the suite from a directory holding
+# ONLY what the tarball shipped, with nmtcapp/ ABSENT from the working
+# directory (a bare nmtcapp/ there would shadow the installed package as a
+# namespace package and turn the job into a test of the tarball's own source
+# tree). So _repo_root()/nmtcapp does not exist there, and it never can.
+#
+# This is not a cosmetic skip. Before 1.2.1 the consumed sweep did not skip and
+# did not fail either: os.walk over a directory that does not exist yields
+# nothing, silently, so _consumed() returned [] for every constant, nothing was
+# ever "consumed", and the sweep reported success having adjudicated zero
+# constants. It failed only because _module_constants() opened schema.py first
+# and raised FileNotFoundError — an accident of ordering standing in for a
+# guard. Both are fixed: the sweeps skip where the tree is absent, and
+# _consumer_roots() raises rather than walking nothing where it is present.
 # ---------------------------------------------------------------------------
 
 def _repo_root() -> str:
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+_SOURCE_TREE_PRESENT = os.path.isdir(os.path.join(_repo_root(), PACKAGE_ROOT))
+
+_needs_source_tree = pytest.mark.skipif(
+    not _SOURCE_TREE_PRESENT,
+    reason=(
+        f"{PACKAGE_ROOT}/ is not present next to tests/ (this is an unpacked "
+        "sdist or an installed tree, not a checkout). These two sweeps read the "
+        "package's SOURCE to enumerate its constants; release.yml's sdist job "
+        "deliberately runs with no source tree in the working directory, so the "
+        "question is not the sdist's to answer. Every pin still runs there — "
+        "only the derivation of the list is skipped."
+    ),
+)
 
 
 def _module_constants() -> dict:
@@ -428,25 +714,101 @@ def _module_constants() -> dict:
     return found
 
 
+def _package_constants() -> dict:
+    """{qualified_name: repo-relative path} for ALL of nmtcapp/, not just data/.
+
+    Same shape as _module_constants but over the whole shipped package, because
+    the label dict that let the deep/severe swap through lives in a renderer.
+    """
+    found = {}
+    root = _repo_root()
+    for dirpath, _dirs, files in os.walk(os.path.join(root, PACKAGE_ROOT)):
+        for f in sorted(files):
+            if not f.endswith(".py"):
+                continue
+            path = os.path.join(dirpath, f)
+            mod = os.path.splitext(f)[0]
+            tree = ast.parse(open(path, encoding="utf-8").read())
+            for node in tree.body:
+                targets = (
+                    node.targets if isinstance(node, ast.Assign)
+                    else [node.target] if isinstance(node, ast.AnnAssign)
+                    else []
+                )
+                for t in targets:
+                    if isinstance(t, ast.Name) and t.id.isupper() and t.id != "__all__":
+                        found[f"{mod}.{t.id}"] = os.path.relpath(path, root)
+    return found
+
+
+def _consumer_roots() -> list:
+    """The trees a constant can be consumed from. Raises if one is missing.
+
+    FAILS CLOSED, and the reason is specific rather than defensive: os.walk over
+    an absent directory yields no files and no error, so a root that quietly
+    stopped existing would make every constant look unconsumed and the sweep
+    would pass having checked nothing.
+    """
+    root = _repo_root()
+    paths = []
+    for name in CONSUMER_ROOTS:
+        p = os.path.join(root, name)
+        if not os.path.isdir(p):
+            raise AssertionError(
+                f"consumer root {name}/ is missing from {root}. os.walk would "
+                "return nothing from it WITHOUT error, so the consumed sweep "
+                "would report every constant unconsumed and pass having "
+                "adjudicated none. Fix the root or remove it from "
+                "CONSUMER_ROOTS deliberately."
+            )
+        paths.append(p)
+    return paths
+
+
 def _consumed(constant_name: str) -> list:
-    """Modules outside nmtcapp/data/ that reference this constant by name."""
+    """Files outside nmtcapp/data/ that reference this constant by name.
+
+    Scans streamlit_app/ as well as nmtcapp/ (1.2.1 S-2): a constant read only
+    by a Streamlit page reaches a surface a CDE looks at, and under the old
+    nmtcapp/-only scan it counted as consumed by nobody.
+    """
     root = _repo_root()
     bare = constant_name.split(".", 1)[1]
     pattern = re.compile(rf"\b{re.escape(bare)}\b")
     hits = []
-    for dirpath, _dirs, files in os.walk(os.path.join(root, "nmtcapp")):
-        if os.path.join("nmtcapp", "data") in dirpath:
-            continue
-        for f in files:
-            if not f.endswith(".py"):
+    for tree_root in _consumer_roots():
+        for dirpath, _dirs, files in os.walk(tree_root):
+            if os.path.join("nmtcapp", "data") in dirpath:
                 continue
-            p = os.path.join(dirpath, f)
-            with open(p, encoding="utf-8") as fh:
-                if pattern.search(fh.read()):
-                    hits.append(os.path.relpath(p, root))
+            for f in files:
+                if not f.endswith(".py"):
+                    continue
+                p = os.path.join(dirpath, f)
+                with open(p, encoding="utf-8") as fh:
+                    if pattern.search(fh.read()):
+                        hits.append(os.path.relpath(p, root))
     return sorted(hits)
 
 
+def _adjudicated(name: str) -> bool:
+    """Is this exact constant name pinned or waived?
+
+    SUBSCRIPTS DO NOT PROPAGATE UPWARD (1.2.1 S-2). Through 1.2.1-rc this
+    compared against ``{p.constant.split("[")[0] for p in PINS}``, so pinning
+    ONE key of a dict marked the WHOLE dict adjudicated — every other key,
+    including keys added later, inherited a pin that says nothing about them.
+    NMTC_PROGRAM_CONSTRAINTS has six keys and four pins; the two unpinned keys
+    were adjudicated only because somebody had also written waivers for them by
+    hand, not because the sweep asked.
+
+    Now ``X[k]`` adjudicates ``X[k]`` and nothing else, and the bare name ``X``
+    adjudicates the whole constant — which is correct for a scalar and is a
+    deliberate, visible choice for a dict.
+    """
+    return name in {p.constant for p in PINS} or name in WAIVERS
+
+
+@_needs_source_tree
 def test_every_consumed_constant_is_pinned_or_waived():
     """Sweep the data modules; every consumed constant must be adjudicated.
 
@@ -456,15 +818,17 @@ def test_every_consumed_constant_is_pinned_or_waived():
     every constant any other module reads is either pinned to a rendered string
     or waived with a stated reason.
     """
-    pinned_roots = {p.constant.split("[", 1)[0] for p in PINS}
-    pinned_exact = {p.constant for p in PINS}
-    waived_roots = {w.split("[", 1)[0] for w in WAIVERS}
+    constants = _module_constants()
+    assert len(constants) >= 20, (
+        f"the data-module sweep found only {len(constants)} constants. "
+        "nmtcapp/data/{schema,benchmark_thresholds}.py carry far more than "
+        "that; a number this small means the parse found nothing and the "
+        "sweep is about to pass vacuously."
+    )
 
     unadjudicated = []
-    for name in sorted(_module_constants()):
-        if name in pinned_exact or name in pinned_roots or name in WAIVERS:
-            continue
-        if name in waived_roots:
+    for name in sorted(constants):
+        if _adjudicated(name):
             continue
         consumers = _consumed(name)
         if consumers:
@@ -480,10 +844,217 @@ def test_every_consumed_constant_is_pinned_or_waived():
     )
 
 
+def _strings_in(value, depth: int = 0):
+    """Every string reachable inside a constant, keys and values alike."""
+    if depth > 3:
+        return
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for k, v in value.items():
+            yield from _strings_in(k, depth + 1)
+            yield from _strings_in(v, depth + 1)
+    elif isinstance(value, (list, tuple, set, frozenset)):
+        for v in value:
+            yield from _strings_in(v, depth + 1)
+
+
+def _rendered_blob(rendered: dict) -> str:
+    return "\n".join(rendered[s] for s in DOCUMENT_SURFACES + TEXT_SURFACES)
+
+
+def _shape_tokens(rendered: dict) -> set:
+    """The number formats actually applied, as exact tokens.
+
+    Matched EXACTLY rather than as substrings with a length floor, because a
+    number format is a token and not prose: '"$"#,##0' is eight characters,
+    below MIN_RENDERED_STRING, and would never trip the substring sweep — while
+    a document containing that exact token by accident is not a thing that
+    happens. Without this the excel_cell_formats surface would exist and demand
+    nothing, which is a gate that cannot fail dressed as a new surface.
+    """
+    tokens = set()
+    for surface in SHAPE_SURFACES:
+        for line in rendered[surface].splitlines():
+            if " · " in line:
+                tokens.add(line.rsplit(" · ", 1)[-1].strip())
+    return tokens
+
+
+@_needs_source_tree
+def test_every_rendering_constant_is_pinned_or_waived(rendered):
+    """ASK THE ARTIFACT, NOT THE DIRECTORY: does this constant's text appear?
+
+    This is the sweep that would have caught the deep/severe label swap, and
+    the reason it is asked this way rather than by widening DATA_MODULES.
+
+    Widening DATA_MODULES to every module that renders was measured first:
+    97 constants outside nmtcapp/data/ would each have needed a hand-written
+    waiver, most of them saying "this is a colour" or "this is a point size".
+    A file of 139 rows where two-thirds are ceremony is a file nobody reads,
+    and a waiver nobody reads is the rubber stamp this gate exists to avoid.
+
+    So the non-rendering side is adjudicated BY THE FIXTURE instead. For every
+    module-level constant in nmtcapp/, the sweep asks whether any string it
+    holds appears in the rendered document. If none does, the constant needs no
+    row: the artifact says so on every run, and it cannot go stale the way a
+    written waiver can. If one does, the constant publishes text and must be
+    pinned or waived by hand. Measured on this tree: 133 constants, 21 render,
+    19 of them newly adjudicated in 1.2.1.
+
+    WHAT THIS SWEEP STILL CANNOT SEE, stated rather than implied:
+
+      * A constant that shapes the artifact WITHOUT contributing text. Colours,
+        fonts and page margins are the harmless case; the eight
+        excel_builder.FMT_* number formats are not, because a percent format on
+        a dollar column changes every figure a reviewer reads and leaves the
+        extracted text identical. That class is why the excel_cell_formats
+        surface exists — the formats ARE text there, keyed to their column, so
+        the FMT_* constants land in this sweep like any other.
+      * A constant that renders only on a path this fixture does not take.
+        benchmarks._METHODOLOGY reaches app.benchmark(), which app.generate()
+        never calls, so it is silent here and waived by hand instead.
+      * A string shorter than MIN_RENDERED_STRING. See that constant.
+    """
+    constants = _package_constants()
+    assert len(constants) >= 100, (
+        f"the package sweep found only {len(constants)} constants under "
+        f"{PACKAGE_ROOT}/. This tree has ~133; a number this small means the "
+        "walk found nothing and the sweep is about to pass vacuously."
+    )
+
+    blob = _rendered_blob(rendered)
+    assert len(blob) > 20_000, (
+        f"the rendered surfaces total {len(blob)} characters. A truncated or "
+        "degraded render would make every constant look silent and this sweep "
+        "would demand nothing of anybody."
+    )
+    shape_tokens = _shape_tokens(rendered)
+    assert len(shape_tokens) >= 3, (
+        f"the excel_cell_formats surface yielded {len(shape_tokens)} distinct "
+        "number formats. This workbook applies several; a set this small means "
+        "the surface parsed nothing and every FMT_* constant is about to look "
+        "silent."
+    )
+
+    import importlib
+    unadjudicated = []
+    for name in sorted(constants):
+        if _adjudicated(name):
+            continue
+        rel = constants[name]
+        modname = rel[:-3].replace(os.sep, ".")
+        try:
+            module = importlib.import_module(modname)
+        except Exception:                              # pragma: no cover
+            continue
+        value = getattr(module, name.split(".", 1)[1], None)
+        hits = [
+            s for s in set(_strings_in(value))
+            if (len(s) >= MIN_RENDERED_STRING and _normalise(s) in blob)
+            or s in shape_tokens
+        ]
+        if hits:
+            shown = ", ".join(repr(h[:60]) for h in sorted(hits)[:3])
+            unadjudicated.append(f"  {name}  ({rel})\n      renders: {shown}")
+
+    assert not unadjudicated, (
+        f"{len(unadjudicated)} constant(s) under {PACKAGE_ROOT}/ publish text "
+        "into the rendered application and are neither pinned nor waived in "
+        f"{os.path.basename(PIN_PATH)}.\n\n"
+        "This sweep does not care which directory the constant lives in. It "
+        "asks whether a string it holds reaches the page a CDE files. The "
+        "deep/severe label swap reached four appendices and passed 937 tests "
+        "because a LABEL DICT in a renderer had never been a candidate for "
+        "pinning.\n\n"
+        "Pin it to the string it prints — anchored to the row it prints on, if "
+        "it is a label — or waive it with a reason a reviewer can check. Do "
+        "not delete this test to make it pass.\n\n" + "\n".join(unadjudicated)
+    )
+
+
+@_needs_source_tree
+def test_every_dict_key_the_package_reads_is_adjudicated():
+    """A subscripted pin covers ONE key. The rest are not covered by it.
+
+    ``schema.NMTC_PROGRAM_CONSTRAINTS[credit_rate]`` says nothing about
+    ``[leverage_ratio_typical]``, and before 1.2.1 the sweep treated it as
+    though it did — pinning any one key marked the whole dict adjudicated,
+    including keys added afterwards. This test closes that: for every dict
+    constant in nmtcapp/data/ that is not adjudicated by its bare name, every
+    key the package actually subscripts must carry its own row.
+    """
+    import importlib
+    adjudicated_keys = {
+        n.split("[", 1)[0] + "[" + n.split("[", 1)[1]
+        for n in ({p.constant for p in PINS} | set(WAIVERS)) if "[" in n
+    }
+    root = _repo_root()
+    missing = []
+    for name, mod in sorted(_module_constants().items()):
+        if _adjudicated(name):
+            continue                       # bare name decided; keys inherit it
+        bare = name.split(".", 1)[1]
+        value = getattr(importlib.import_module(f"nmtcapp.data.{mod}"), bare, None)
+        if not isinstance(value, dict):
+            continue
+        for key in value:
+            if not isinstance(key, str):
+                continue
+            # Only keys the package actually reads. A declared-and-unread key
+            # publishes nothing and is the dict's business, not this gate's.
+            pattern = re.compile(rf"\b{re.escape(bare)}\b\s*\[\s*[\"']{re.escape(key)}[\"']")
+            read = False
+            for tree_root in _consumer_roots():
+                for dirpath, _dirs, files in os.walk(tree_root):
+                    for f in files:
+                        if f.endswith(".py") and pattern.search(
+                            open(os.path.join(dirpath, f), encoding="utf-8").read()
+                        ):
+                            read = True
+            if read and f"{name}[{key}]" not in adjudicated_keys:
+                missing.append(f"  {name}[{key}]  is read but not adjudicated")
+
+    assert not missing, (
+        f"{len(missing)} dict key(s) are subscripted by the package and carry "
+        "no row of their own. A pin on a SIBLING key does not adjudicate "
+        "them.\n\n" + "\n".join(missing)
+    )
+
+
 def test_no_waiver_shadows_a_live_pin():
     """A constant cannot be both pinned and waived — one of them is a lie."""
-    both = sorted({p.constant.split("[", 1)[0] for p in PINS} & set(WAIVERS))
+    both = sorted({p.constant for p in PINS} & set(WAIVERS))
     assert not both, (
         "these constants are both pinned and waived; the waiver claims they "
         f"reach no rendered surface while the pin asserts they do: {both}"
+    )
+
+
+@_needs_source_tree
+def test_every_pinned_constant_name_resolves():
+    """A pin's CONSTANT column must name something that exists.
+
+    The registry's own format note says CONSTANT is "the dotted name of the
+    constant this row pins, for the reviewer and for the coverage meta-test".
+    Five 1.2.1 rows named modules the package does not have — ``_statute.``
+    and ``_workbook.`` — which are prose labels for quotations, not constants.
+    Neither sweep could ever match them, so they sat outside the derivation
+    while looking like they were inside it.
+
+    A row that pins a QUOTATION rather than a constant is legitimate; it just
+    has to say so. The QUOTE: prefix is that statement.
+    """
+    known = set(_package_constants())
+    unknown = sorted({
+        p.constant for p in PINS
+        if not p.constant.startswith("QUOTE:")
+        and p.constant.split("[", 1)[0] not in known
+    })
+    assert not unknown, (
+        "these pin rows name a constant that does not exist anywhere under "
+        f"{PACKAGE_ROOT}/, so no sweep can ever reach them:\n  "
+        + "\n  ".join(unknown)
+        + "\n\nEither correct the name, or prefix it 'QUOTE:' if the row pins a "
+        "quotation this package holds as inline text rather than as a constant."
     )

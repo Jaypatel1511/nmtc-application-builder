@@ -201,16 +201,243 @@ sitting in plain sight for the whole cycle:
   sample-identity guard itself is untouched and was re-verified: all three
   refusal cases fire, name which field matched, and near-misses still pass.
 
+### Fixed — the gate around the fixes, which was narrower than this file said
+
+A hostile audit of the paragraphs above found the fixes themselves correct and
+the gate built around them incomplete. Three blockers, all closed here.
+
+**The release pipeline could not ship this artifact.** `MANIFEST.in` is
+`prune docs`, `release.yml` runs the suite from inside the tarball, and two
+tests read files the tarball does not carry. Reproduced by building the sdist
+from a pristine clone and running `release.yml`'s exact invocation:
+
+```
+2 failed, 931 passed, 4 skipped, 1 deselected     PYTEST EXIT CODE: 1
+FAILED test_docs_hook_raises_when_a_configured_format_is_missing
+FAILED test_every_consumed_constant_is_pinned_or_waived
+```
+
+CI was green throughout, because CI runs from a checkout. A tag on that
+artifact would have failed the release job with nothing on PyPI — the Aug 6
+failure mode by a different road. Both now skip explicitly, each with its own
+written reason, mirroring `test_no_committed_generated_artifacts.py`. Not a
+`try/except`: a skip is counted, and `FLOOR` subtracts skips from the executed
+total, so a skip that starts firing shows up as a smaller number rather than as
+green. After the fix: **943 passed, 11 skipped, exit code 0.**
+
+The second failure was hiding a worse one. `_consumed()` walked
+`nmtcapp/` with `os.walk`, which yields nothing — silently, without error — for
+a directory that does not exist. In the sdist that made every constant look
+unconsumed, so the sweep would have reported success having adjudicated none of
+them. It failed only because `_module_constants()` opened `schema.py` first and
+raised, an accident of ordering standing in for a guard. The roots now raise.
+
+**The constant gate did not cover the class it was built for.** Three mutations,
+none of them this release's, all survived with 937 green:
+
+| Mutation | Before | After |
+|---|---|---|
+| `distress_table._ELIGIBILITY_SOURCE`: ACS 2016–2020 → 2011–2015 | 937 passed | **fails** |
+| `styles.DISTRESS_DISPLAY`: swap the `deep` and `severe` labels | 937 passed | **fails** |
+| `recommendations.py`: hardcoded federal 85% → 55% | 937 passed | **fails** |
+
+The middle one is the reason the gate's scope changed. It leaves Section B's
+narrative share correct — that reads the `distress_level` KEY — and relabels
+every project in Appendices A, B and D, which read the LABEL. Reproduced on a
+five-project fixture: **the narrative says 19.4% in Deep Distress and the
+attachment's Deep rows sum to 47.2%**, in one filing, against a 20% federal bar.
+Every gate stayed green: invariance masks digits and these strings have none,
+attribution normalises digits, the cross-surface check compares five dollar
+figures, and the pin registry had never considered a label dict.
+
+It got through because **a key-to-printed-word mapping had never been a
+candidate for pinning** — not because anybody skipped it. So the sweep no longer
+asks which directory a constant lives in. It asks the artifact: *does any string
+this constant holds appear in the rendered document?* A constant whose strings
+appear must be pinned or waived by hand. A constant whose strings do not is
+adjudicated by the fixture, on every run, and needs no written waiver — which
+matters, because a hand-written "this does not render" is exactly the claim that
+goes stale silently.
+
+Widening `DATA_MODULES` to every module that renders was measured first and
+rejected: 97 constants would each have needed a row, most saying "this is a
+colour". The rendered-string sweep demands **19**, and 133 constants are swept
+where 49 were.
+
+Two structural holes closed with it: the consumer scan now includes
+`streamlit_app/`, and a subscripted pin adjudicates **one** key — through
+1.2.1-rc it stripped the subscript, so pinning `NMTC_PROGRAM_CONSTRAINTS
+[credit_rate]` silently adjudicated every other key including any added later.
+
+A seventh surface (`RecommendationSet.summary()`, reachable through the public
+`app.recommendations()`) and an eighth (`excel_cell_formats`) are now gated. The
+second is not text: openpyxl returns `6000000` whether the cell prints
+`$6,000,000` or `600000000.0%`, so the eight `FMT_*` number formats were
+invisible to every text-based gate. They are now pinned to the column they
+format.
+
+Five pin rows named modules the package does not have (`_statute.`,
+`_workbook.`) — prose labels for quotations, which no sweep could ever match,
+sitting outside the derivation while looking like they were inside it. They now
+carry a `QUOTE:` prefix and a test fails on any name with no constant behind it.
+
+**`check_consistency` passed vacuously, in shipped code.** Forcing
+`_shared_figures` to return `{}` produced `issues == []` and `passed == True`.
+The non-empty guard existed only in the test file. In a CDE's hands there is no
+test file. It is now in the validator — and not as a numeric floor: a floor of
+4 against 5 pairs lets one drop silently, and re-deriving it from today's count
+is how a floor stops being evidence. The check is set equality against the
+declared groups, and the declared set is itself derived — every currency column
+`pipeline_table` publishes and every dollar row Section D renders must be
+compared or excused with a reason.
+
+A missing column now raises instead of hitting a `continue`; that fail-silent
+filter is the same shape that cost Word a column below. And the docstring
+claiming the pairs were "DERIVED FROM THE RENDERERS, NOT HAND-LISTED" was true
+of the values and false of the map — corrected, with the coverage genuinely
+derived. `pipeline_table.CURRENCY_COLUMNS` was declared in 1.2.1 saying it
+existed "so a column rename cannot silently drop a figure out of the check", and
+was then imported by nobody while this module retyped the same names; it is now
+read.
+
+The check also compared five dollar figures between two surfaces while its
+docstring promised "any figure printed in more than one place". **Total QEI is
+printed in Appendices A, C and D as well as Section D; Jobs Created in A and D.
+None was compared.** Both are now, and the claim is narrowed to what the code
+does with the remaining gap stated.
+
+### Fixed — live text a CDE reads
+
+- **Word's Appendix A silently dropped the Native Area column.** `word_builder`
+  asked for `"NMTC Native Area (Y/N)"`; the table renders `"NMTC Native Area
+  (CDE-declared, Y/N)"` — the heading 1.2.1 widened so every surface would say
+  whose declaration the flag is. `[c for c in landscape_cols if c in
+  full_df.columns]` dropped it without a word: **11 columns rendered where the
+  comment claimed 12, and this file's "every surface now says so" was false for
+  Word's Appendix A, which had stopped saying anything.** The filter is gone;
+  an unmatched column raises.
+- **The High Migration Rural sentence credited the CDE with a tool-corrected
+  figure.** Section A read "Per the flags supplied in this CDE's own pipeline
+  submission…" over a share the mapper had overwritten: the CDE declared 36.2%,
+  `_prefer_determinate(False, True)` returned `False`, and the document filed
+  12.6% as the CDE's own. **The mapper is right; the sentence was wrong about
+  its own author** — the mirror image of the Native Area defect fixed in this
+  same release. The two flags now carry separate attributions and the HMR
+  clause says which authority governs. A sweep of the join that produces this
+  defect — a field that is both a CDE-supplied column and adapter-assignable —
+  returns exactly two, `is_high_migration_rural` and `is_opportunity_zone`, and
+  is now a test rather than a one-off search.
+- **`RecommendationSet.summary()` printed "below the 85% CDFI Fund threshold"
+  from a hardcoded literal.** Every federal figure in `recommendations.py` is
+  now interpolated — the 85% and 20% distress bars, the 40/85/45 gating points,
+  the 70%/90% track-record bars, the DBC and unrelated-entity bars, and every
+  section and sub-score denominator. The 90%/98% "competitive threshold" was
+  neither federal nor sourced; it is this package's own winner-pattern band, and
+  the sentence now says so.
+- **The docs site still described withdrawn output.** `output-formats.md`
+  listed "Net subsidy to QALICB" as a row the document contains; it is `QEI Less
+  CDE Fees ($)`. `pipeline-analysis.md` carried the same phrase. The attribution
+  and fabrication gates render artifacts into a temp directory and never look at
+  `docs/`, exactly as they never looked at `examples/sample_output/`. Both pages
+  fixed, and a scan of every `.md` page for claims this repository has already
+  established to be wrong is now part of the suite. **`gh-pages` does not update
+  until `mkdocs gh-deploy` is run by hand.**
+- **Section E promised detail it did not have.** "…including states served,
+  sectors financed, and outcomes achieved" printed directly above rows reading
+  `States: N/A. Sectors: N/A.` Neither field is collected by the CDE profile
+  scaffold, and outcomes are a placeholder two subsections below. The sentence
+  now names only what the awards carry, and `N/A` — which reads as a value the
+  CDE supplied — is replaced by an explicit not-collected marker.
+- **`expected_units_built=None` rendered as "0 affordable units",** a supplied
+  zero where nothing was supplied, on a field feeding a Community Outcomes
+  measure. Same class as the `"Quarterly"` governance default removed in 1.2.0.
+  Absent values now render as an em dash, matching the tri-state flags already
+  used elsewhere; a real `0` still reads as `0`.
+- **An invalid sector rendered as though it were a recognised one.** `retail`
+  passed validation with a stderr warning nobody reads and printed as "Retail"
+  in Appendix D beside seven Fund categories. **The list is a suggestion on the
+  way in and a contract on the way out**: the project still loads — raising
+  would reject pipelines that work today, and a patch release is not the place
+  — and the rendered cell now marks the sector as unrecognised.
+
+### Fixed — the registry and the bookkeeping
+
+- **Three waivers were wrong by the registry's own definition.**
+  `TOP_TIER_AGGREGATE_MIN` and `TOP_TIER_SECTION_MIN` were waived as rendering
+  "only when a fixture reaches Top Tier", which waived the fixture rather than
+  the constants. A second fixture now reaches the branch — and asserts it did —
+  so both are pinned to the tier label they decide. `TARGET_SECTORS`' waiver
+  admitted the constant reaches `cli_summary`; its reason is rewritten to what
+  is actually true of it. The `DISTRESS_LEVELS` waiver identified its rendered
+  twin and stopped there, which is a forwarding address rather than a waiver —
+  and the twin was unpinned on every surface at the time. It now says what is
+  pinned instead.
+- **Thirteen allowlist entries were filed `SOURCED` over an internal defect ID,
+  and five more over an assertion that no source exists.** Not one is a false
+  statement. But `SOURCED` is the shelf a reviewer skims past assuming somebody
+  can go and read the cited thing, and "1.2.1 B-3" is not readable outside this
+  repository. Two categories added: `HOUSE` (this package set it, and the
+  rendered line admits that) and `UNSOURCED` (no primary source exists, and here
+  is the research establishing that) — the latter a *stronger* claim than a
+  citation, because it asserts a negative somebody had to go and check.
+- **Two pins passed incidentally.** `IRC §45D` appears inside the compliance-
+  period and credit-rate sentences that are separately pinned, so the row could
+  not fail on anything those two did not already catch; `/100 < 85)` is six
+  characters of punctuation. Both are re-anchored to the sentence a CDE reads.
+- **`FLOOR` derived itself from stale counts.** `release.yml` said `FLOOR=440`
+  from "collected 896 / executed 892" — the 1.2.0 numbers. 1.2.1 collects 954
+  and executes 943 in the sdist, so by the file's own rule the floor is **470**.
+  The gate still functioned; its derivation had stopped being evidence, in a
+  file whose whole premise is that its numbers are.
+- **`50 / 50 / 10` existed twice, independently.** `win_probability` hardcoded
+  `"max_available"` beside the constants it gates on, which is why the waivers
+  for `BUSINESS_STRATEGY_MAX` and its two siblings were *factually true* — a
+  duplication recorded in the release that removed five others. All three are
+  read now, and the waivers became pins.
+
+### Found by mutation
+
+Six mutations, run against the finished gate. Five are killed by a pin; the
+sixth was killed by a fix it exposed.
+
+`_PIPELINE_COLUMNS` — the list `word_builder` and `consistency_check` both name
+columns against, and which a reader of the module treats as the schema —
+**governed nothing but the empty table.** The populated table's columns came
+from a row dict, so swapping two entries of the declaration passed 954 tests.
+They agreed by coincidence, with nothing checking that they did. The declaration
+is now authoritative, a disagreeing dict raises, and the full header run is
+pinned in order.
+
 ### Known and left alone
 
 Reported rather than fixed, with reasons, in the 1.2.1 branch notes: the 25
 invented GEOIDs (two of which were corrected as a consequence of the address
 fix), `data/historical_awards.py`, round parameterization and the `"CY2025"`
-default, `TOP_TIER_*`, the readiness weights' attribution, the sector→NAICS
-mapping, `geographic_analysis`'s hardcoded `_RURAL_STATES` and one-MSA-per-state
-map, the `urban_rural` CSV column that `from_csv` never reads, `DISTRESS_LEVELS`
-(a dead constant), and three addresses in `pipeline_sample_weak.csv` that do not
-resolve (two verified as bad data, one as a TIGER range gap).
+default, `TOP_TIER_*` as an invented tier (now disclosed as this tool's own
+label wherever it prints, but not removed), the readiness weights' attribution,
+the sector→NAICS mapping, `geographic_analysis`'s hardcoded `_RURAL_STATES` and
+one-MSA-per-state map, the `urban_rural` CSV column that `from_csv` never reads,
+`DISTRESS_LEVELS` (a dead constant), and three addresses in
+`pipeline_sample_weak.csv` that do not resolve (two verified as bad data, one as
+a TIGER range gap).
+
+Two further items, both recorded for the next release rather than patched:
+
+- **Table A5 row (d), "Located in a Non-Metropolitan County?", is required by
+  the Fund and this tool does not supply it** — despite column B of the
+  eligibility workbook it already downloads and loads carrying the OMB
+  designation. That is a real gap in the per-project attachment and a feature,
+  not a patch fix.
+- **Thirteen sub-scorers in `win_probability` cap at hardcoded literals**
+  (`min(15.0, …)`) rather than at the section maxima beside them. It is why the
+  eight sub-score maximum constants are waived rather than pinned: a pin on the
+  denominator alone would freeze half of a pair whose other half is typed.
+  Removing them changes scoring behaviour, which a patch is not the place for.
+- **The `Opportunity Zone` columns carry no basis statement.** Like High
+  Migration Rural, the flag is CDE-supplied and adapter-overwritable, but unlike
+  it the headings credit nobody, so there is no false attribution to fix — only
+  an absent one to add. Renaming the column would move a pinned heading, so it
+  is recorded rather than done here.
 
 ---
 

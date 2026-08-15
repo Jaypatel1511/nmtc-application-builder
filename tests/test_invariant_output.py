@@ -169,7 +169,12 @@ SCENARIOS = {
 #   PLACEHO   [CDE TO COMPLETE] / [NARRATIVE PLACEHOLDER] text, which is the
 #             absence of a claim
 #   SOURCED   a statutory or published constant that carries its citation
-#             inline in the same line
+#             inline in the same line. EXTERNALLY RETRIEVABLE: a reader must be
+#             able to go and read the thing the justification names.
+#   HOUSE     a value this package sets itself, disclaimed on its face in the
+#             rendered line. Split out of SOURCED in 1.2.1 R-2.
+#   UNSOURCED research established that NO primary source exists, and the
+#             rendered line says so. Also split out of SOURCED in 1.2.1 R-2.
 #   TOOL      a statement about this tool, not about the CDE
 #   FORMAT    markdown/table scaffolding with no propositional content
 # ---------------------------------------------------------------------------
@@ -440,11 +445,77 @@ def test_allowlist_is_loadable_and_justified():
     # DERIVED is new with the mask: a fixed sentence frame whose every figure
     # comes from the CDE's own inputs. Byte-identity never surfaced these,
     # because the interpolated value made every scenario differ.
-    valid = {"HEADING", "LABEL", "PLACEHO", "SOURCED", "TOOL", "FORMAT", "DERIVED"}
+    valid = {"HEADING", "LABEL", "PLACEHO", "SOURCED", "TOOL", "FORMAT",
+             "DERIVED", "HOUSE", "UNSOURCED"}
     for line, (category, justification) in allow.items():
         assert category in valid, f"unknown category {category!r} for {line[:60]!r}"
         assert len(justification.strip()) >= 8, (
             f"allowlist entry has no real justification: {line[:60]!r}"
+        )
+
+
+def test_sourced_means_externally_retrievable():
+    """SOURCED is the category a future reviewer trusts. It must stay earned.
+
+    1.2.1 R-2: thirteen entries were filed SOURCED whose "source" was an
+    internal defect ID ("1.2.1 B-3"), and five more whose source was an
+    assertion that NO source exists ("No primary source defines 'net
+    subsidy'"). Not one of those justifications is a false statement — every
+    one is accurate about the line it justifies. The problem is the shelf they
+    were put on: SOURCED is what a reviewer skims past on the assumption that
+    somebody can go and read the cited thing, and an internal ticket number is
+    not something anybody outside this repository can read.
+
+    Three categories now carry the distinction, so the shelf means what it
+    says:
+        SOURCED    go and read it: a document, a year, a section
+        HOUSE      this package set it, and the rendered line admits that
+        UNSOURCED  nobody published it, and here is the research establishing
+                   that nobody did
+
+    UNSOURCED is the fourth category this file did not have. It is not a
+    softer SOURCED: it is a stronger claim, because it asserts a negative that
+    somebody had to go and check. "The CY 2024-2025 Application does not use
+    the phrase 'net subsidy' at all (zero occurrences across 142 pages)" is a
+    finding, and filing it as a citation hid the work that produced it.
+    """
+    allow = _load_allowlist()
+    internal = []
+    for line, (category, justification) in allow.items():
+        if category != "SOURCED":
+            continue
+        j = justification.lower()
+        if re.search(r"\b1\.[0-9]+\.[0-9]+ [a-z]-[0-9]", j):
+            internal.append(f"internal defect ID: {justification[:70]}")
+        elif "no primary source" in j or "publishes no" in j:
+            internal.append(f"asserts no source exists: {justification[:70]}")
+        elif "this model's" in j or "this tool's own" in j or "market assumption" in j:
+            internal.append(f"a house value: {justification[:70]}")
+    assert not internal, (
+        f"{len(internal)} entr(ies) are filed SOURCED whose source is not "
+        "externally retrievable. Use HOUSE (this package set it and the line "
+        "says so) or UNSOURCED (no primary source exists and here is the "
+        "research):\n  " + "\n  ".join(internal)
+    )
+
+
+def test_house_and_unsourced_are_both_populated():
+    """Fail closed: an empty category is a category nobody is using.
+
+    If HOUSE or UNSOURCED ever empties out, either the entries moved back to
+    SOURCED — which is the defect R-2 fixed — or the disclosures they describe
+    stopped rendering.
+    """
+    allow = _load_allowlist()
+    counts = {}
+    for _line, (category, _j) in allow.items():
+        counts[category] = counts.get(category, 0) + 1
+    for category in ("HOUSE", "UNSOURCED"):
+        assert counts.get(category, 0) > 0, (
+            f"no entry is filed {category}. This package renders both a credit "
+            "price it invented and a row whose term of art no primary source "
+            "defines; if neither is on this list, either the categories were "
+            "collapsed back into SOURCED or those lines stopped rendering."
         )
 
 

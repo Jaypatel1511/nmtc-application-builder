@@ -152,7 +152,7 @@ def build_pipeline_table(pipeline: "Pipeline", cde: "CDEProfile" = None) -> pd.D
             # Was SECTOR_NAICS.get(p.sector, p.sector) under a "Sector
             # (NAICS)" heading — an invented industry code. See the note
             # where SECTOR_NAICS used to live in renderers/styles.py.
-            "Sector (as supplied)":       (p.sector or "").replace("_", " ").title() or "Not supplied",
+            "Sector (as supplied)":       _sector_cell(p),
             "Project Type":               p.project_type.replace("_", " ").title(),
             "Total Project Cost ($)":     p.total_project_cost,
             "QEI Request ($)":            qei,
@@ -169,18 +169,82 @@ def build_pipeline_table(pipeline: "Pipeline", cde: "CDEProfile" = None) -> pd.D
             "Closing Target Date":        p.closing_target_date or "",
             "Jobs Created":               p.expected_jobs_created,
             "Jobs Retained":              p.expected_jobs_retained,
-            "Affordable Units Built":     p.expected_units_built if p.expected_units_built else 0,
+            # NOT `... if p.expected_units_built else 0` (1.2.1 L-5). That
+            # collapsed None and 0 to the same cell, so a project whose
+            # affordable-unit count was never supplied filed "0 affordable
+            # units" — a number the CDE did not give, in the CDFI Fund's own
+            # per-project attachment, on a field that feeds a Community
+            # Outcomes measure. Same class as the "Quarterly" governance
+            # default 1.2.0 removed: a default rendered as a declaration.
+            #
+            # None survives as NaN, which sums correctly (skipna) in the TOTALS
+            # row and renders as an em dash rather than a zero. A real 0 stays
+            # a 0, because a CDE writing 0 has said something.
+            "Affordable Units Built":     p.expected_units_built,
             "Square Feet":                int(p.expected_sq_ft) if p.expected_sq_ft else 0,
         })
 
     if not rows:
         return pd.DataFrame(columns=_PIPELINE_COLUMNS)
 
-    df = pd.DataFrame(rows)
+    # _PIPELINE_COLUMNS IS THE AUTHORITY, NOT A SECOND COPY OF ONE.
+    #
+    # Found by mutation in 1.2.1: swapping two entries of _PIPELINE_COLUMNS
+    # changed nothing and passed 954 tests, because the populated table's
+    # columns came from the row dict above and the declared list governed only
+    # the EMPTY case. Two independent hand-maintained orderings of the same
+    # column set, agreeing by coincidence, with nothing checking that they did
+    # — the same duplication class as the five 1.2.1 removed elsewhere
+    # (win_probability's max_available, excel_builder's weight_map).
+    #
+    # Today they agree. The failure that was available is a column renamed in
+    # one place and not the other: the empty table would then carry a heading
+    # the populated table does not, and _PIPELINE_COLUMNS — which a reader of
+    # this module treats as the schema, and which validation/consistency_check
+    # and renderers/word_builder both name columns against — would describe an
+    # attachment nobody renders.
+    #
+    # Now the dict must match the declaration exactly, and the frame is
+    # reindexed to it, so the declared order is the rendered order.
+    declared, produced = list(_PIPELINE_COLUMNS), list(rows[0])
+    if produced != declared:
+        raise KeyError(
+            "tables/pipeline_table builds its rows with columns that do not "
+            f"match _PIPELINE_COLUMNS.\n  only in the row dict: "
+            f"{[c for c in produced if c not in declared]}\n  only in "
+            f"_PIPELINE_COLUMNS: {[c for c in declared if c not in produced]}"
+            + ("\n  same set, different ORDER" if set(produced) == set(declared)
+               and produced != declared else "")
+            + "\nThe declared list is what word_builder and consistency_check "
+            "name columns against, and what an empty pipeline renders. It "
+            "cannot describe a different table from the one this function "
+            "produces."
+        )
+
+    df = pd.DataFrame(rows)[declared]
     # Add totals row
     totals = _build_totals_row(df)
     df = pd.concat([df, pd.DataFrame([totals])], ignore_index=True)
     return df
+
+
+def _sector_cell(p) -> str:
+    """The CDE's sector, marked when this tool does not recognise it.
+
+    1.2.1 L-5. An unrecognised sector ("retail") used to render as "Retail",
+    which is what a recognised one renders as. The list is advisory on input —
+    the project loads — and declarative on output: a reviewer reading Appendix
+    A must be able to tell which of the two they are looking at.
+    """
+    from nmtcapp.data.schema import VALID_SECTORS
+
+    raw = (p.sector or "").strip()
+    if not raw:
+        return "Not supplied"
+    shown = raw.replace("_", " ").title()
+    if raw not in VALID_SECTORS:
+        return f"{shown} (not one of the sectors this tool recognises)"
+    return shown
 
 
 def _yn_flag(value) -> str:

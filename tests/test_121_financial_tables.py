@@ -511,15 +511,58 @@ def test_the_refusal_guard_is_still_multi_signal():
 # C-4: the docs hook cannot report success on a partial build
 # ---------------------------------------------------------------------------
 
+_DOCS_HOOK = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "docs", "hooks", "generate_sample_output.py",
+)
+
+# THIS TEST IS ABOUT THE DOCS BUILD, AND MANIFEST.in PRUNES docs/.
+#
+# The hook is loaded by absolute path because mkdocs loads it that way too
+# (mkdocs.yml `hooks:`), and it is not importable as a module. In a git
+# checkout that path always resolves. Inside an unpacked sdist it never can:
+# MANIFEST.in:88 is `prune docs`, so the tarball carries no docs/ at all,
+# while release.yml's sdist job runs this suite out of the tarball with no
+# checkout to fall back on. The test then raised FileNotFoundError and the
+# release job exited 1 — CI stayed green only because CI runs from a checkout.
+# A tag on that artifact would have failed before publishing anything.
+#
+# So the question this test asks — "does the docs hook fail loudly on a
+# partial build?" — is not merely unanswerable in the sdist; it is not the
+# sdist's question. The sdist does not build the docs and does not ship the
+# hook. Skip explicitly, the same way and for the same reason as
+# tests/test_no_committed_generated_artifacts.py.
+#
+# The skip is safe because its condition is unambiguous and cannot occur in
+# the repository: docs/hooks/generate_sample_output.py is tracked, and
+# tests/test_no_committed_generated_artifacts.py fails if the repo stops being
+# a git checkout. It cannot be reached by a regression in the hook — deleting
+# or renaming the hook in a CHECKOUT still fails this test, because the
+# checkout has a docs/ directory and the file is simply absent from it. What
+# it cannot distinguish is a checkout with no docs/ directory at all, which
+# would fail the mkdocs build long before this suite ran.
+#
+# NOT a try/except around the load. Swallowing the error would make the test
+# pass while asserting nothing, on every platform, forever. A skip is counted:
+# release.yml's FLOOR subtracts skips from the executed total, so a skip that
+# started firing in CI shows up as a smaller number rather than as green.
+_DOCS_HOOK_PRESENT = os.path.isfile(_DOCS_HOOK)
+
+
+@pytest.mark.skipif(
+    not _DOCS_HOOK_PRESENT,
+    reason=(
+        "docs/hooks/generate_sample_output.py is absent (this is an unpacked "
+        "sdist or an installed tree, not a checkout). MANIFEST.in prunes docs/, "
+        "the sdist does not build the documentation, and this gate is about the "
+        "docs build's own failure mode."
+    ),
+)
 def test_docs_hook_raises_when_a_configured_format_is_missing(monkeypatch, tmp_path):
     """It logged 'sample output generated' over two of four files under --strict."""
     import importlib.util
 
-    spec = importlib.util.spec_from_file_location(
-        "_gen_sample",
-        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                     "docs", "hooks", "generate_sample_output.py"),
-    )
+    spec = importlib.util.spec_from_file_location("_gen_sample", _DOCS_HOOK)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
 
@@ -592,3 +635,350 @@ def test_docs_extra_exists_and_covers_the_toolchain():
         any(op in dep for op in (">=", "==", "~="))
         for dep in deps
     ), f"an unpinned docs dependency: {deps}"
+
+
+# ---------------------------------------------------------------------------
+# L-2: no sentence may credit the CDE with a value an adapter can overwrite
+# ---------------------------------------------------------------------------
+
+_PACKAGE_SOURCE = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "nmtcapp"
+)
+
+
+@pytest.mark.skipif(
+    not os.path.isdir(_PACKAGE_SOURCE),
+    reason=(
+        "nmtcapp/ is not present next to tests/ (this is an unpacked sdist or "
+        "an installed tree, not a checkout). This test derives its subject — "
+        "the fields an adapter can assign and the columns a CDE fills in — "
+        "from the package SOURCE, and release.yml's sdist job deliberately "
+        "runs with no source tree in the working directory."
+    ),
+)
+def test_no_rendered_claim_credits_the_cde_with_an_overwritable_flag():
+    """The sweep behind the High Migration Rural fix, kept runnable.
+
+    Section A printed "Per the flags supplied in this CDE's own pipeline
+    submission, the pipeline places 13% in tracts declared High Migration
+    Rural" over a figure the mapper had CORRECTED — the CDE declared 36.2%,
+    _prefer_determinate(False, True) returned False, and the document reported
+    12.6% as the CDE's own. The mapper was right; the sentence was wrong about
+    where the number came from.
+
+    That defect is a JOIN, not a string: a field that is both a CDE-supplied
+    column and an adapter-assignable attribute, rendered under a sentence
+    crediting the CDE. This test recomputes the join rather than re-checking
+    the one sentence, so a second instance fails here the day it is written.
+
+    The current answer is two fields, and neither is falsely attributed:
+      is_high_migration_rural   attributed to BOTH authors since 1.2.1 L-2
+      is_opportunity_zone       rendered under bare headings ("Opportunity
+                                Zone (Y/N)", "OZ") that credit nobody
+    """
+    import ast
+    import re
+
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    # Fields any integration assigns onto a project.
+    assigned = set()
+    integrations = os.path.join(root, "nmtcapp", "integrations")
+    for name in sorted(os.listdir(integrations)):
+        if not name.endswith(".py"):
+            continue
+        src = open(os.path.join(integrations, name), encoding="utf-8").read()
+        assigned |= set(re.findall(r"project\.(\w+)\s*=", src))
+    assert assigned, "no adapter assigns anything — the join would be empty"
+
+    # Boolean columns the CDE fills in on the shipped template.
+    pipeline_src = open(
+        os.path.join(root, "nmtcapp", "core", "pipeline.py"), encoding="utf-8"
+    ).read()
+    cde_columns = set(re.findall(r'_optional_bool\(row\.get\("(\w+)"', pipeline_src))
+    assert cde_columns, "no CDE-declared boolean columns found — regex is stale"
+
+    overwritable = sorted({f"is_{c}" for c in cde_columns} & assigned)
+    assert overwritable == ["is_high_migration_rural", "is_opportunity_zone"], (
+        f"the set of CDE-declared, adapter-overwritable fields changed to "
+        f"{overwritable}. Each one needs its rendered attribution checked: a "
+        "sentence saying 'supplied by this CDE' over a value an adapter can "
+        "correct is wrong about its own author, and it reaches a scored "
+        "Special Targeting criterion. Adjudicate the new field, then update "
+        "this list."
+    )
+
+    # And Section A must not have gone back to crediting the CDE for HMR.
+    section_a = open(
+        os.path.join(root, "nmtcapp", "sections", "section_a_business.py"),
+        encoding="utf-8",
+    ).read()
+    rendered = "\n".join(
+        line for line in section_a.splitlines() if not line.strip().startswith("#")
+    )
+    tree = ast.parse(rendered)
+    strings = [
+        n.value for n in ast.walk(tree)
+        if isinstance(n, ast.Constant) and isinstance(n.value, str)
+    ]
+    hmr_claims = [
+        s for s in strings
+        if "High Migration Rural" in s and "CDE's own" in s
+    ]
+    assert not hmr_claims, (
+        "Section A credits the CDE with the High Migration Rural share again: "
+        f"{hmr_claims}. That share is overwritten by nmtc_mapper_adapter "
+        "wherever the mapper returned a determination."
+    )
+
+
+# ---------------------------------------------------------------------------
+# L-1: Word's Appendix A must not drop a column without saying so
+# ---------------------------------------------------------------------------
+
+def test_word_appendix_a_asks_for_columns_the_table_actually_has(pipeline):
+    """Eleven columns rendered where the comment claimed twelve.
+
+    word_builder asked for "NMTC Native Area (Y/N)". The table renders "NMTC
+    Native Area (CDE-declared, Y/N)" — the heading 1.2.1 widened so every
+    surface would say whose declaration the flag is. `[c for c in
+    landscape_cols if c in full_df.columns]` dropped it without a word, and the
+    CHANGELOG's "every surface now says so" became false for Word's Appendix A,
+    which had stopped saying anything at all.
+    """
+    import inspect
+    import re
+
+    from nmtcapp.renderers import word_builder
+
+    src = inspect.getsource(word_builder.WordApplicationBuilder._build_appendix_pipeline)
+    requested = re.findall(r'"([^"]+)"', src.split("landscape_cols = [", 1)[1].split("]", 1)[0])
+    assert len(requested) == 12, f"expected the 12-column subset, found {requested}"
+
+    produced = set(build_pipeline_table(pipeline).columns)
+    missing = [c for c in requested if c not in produced]
+    assert not missing, (
+        f"Word's Appendix A asks for {missing}, which tables/pipeline_table "
+        "does not produce. A silent drop is how a disclosure disappears."
+    )
+    assert "NMTC Native Area (CDE-declared, Y/N)" in requested, (
+        "the Native Area column must carry its (CDE-declared) disclosure into "
+        "Word's Appendix A, not just into the Excel attachment"
+    )
+
+
+def test_word_appendix_a_raises_on_an_unmatched_column(pipeline, monkeypatch):
+    """The filter is gone; a shape change must fail loudly."""
+    pytest.importorskip("docx")
+
+    from nmtcapp.core.application import Application
+    from nmtcapp.core.cde import CDEProfile
+    from nmtcapp.renderers import word_builder
+
+    real = word_builder.build_pipeline_table
+
+    def _renamed(pl, cde=None):
+        df = real(pl, cde)
+        return df.rename(columns={"NMTC Native Area (CDE-declared, Y/N)": "Native Area"})
+
+    monkeypatch.setattr(word_builder, "build_pipeline_table", _renamed)
+
+    cde = CDEProfile(
+        name="L1 Fixture CDE, LLC", cde_id="CDE-2019-0001",
+        certification_date="2019-01-01", mission="L1 fixture.",
+        target_markets=["Ohio"], prior_awards=[],
+        contact={"name": "L1", "email": "l1@example.org"},
+        governance={"board_members": 7, "community_representatives": 3},
+    )
+    app = Application(cde=cde, requested_allocation=15_000_000.0)
+    app.add_pipeline(pipeline)
+
+    with pytest.raises(KeyError, match="Native Area"):
+        word_builder.WordApplicationBuilder(app, app.analyze()).build()
+
+
+# ---------------------------------------------------------------------------
+# L-5: three smaller ones, each asserted against rendered output
+# ---------------------------------------------------------------------------
+
+def test_an_unsupplied_affordable_unit_count_is_not_a_zero(pipeline):
+    """`expected_units_built=None` used to render "0 affordable units".
+
+    A supplied zero and an absent value are different statements to a federal
+    reviewer, and the field feeds a Community Outcomes measure. Same class as
+    the "Quarterly" governance default 1.2.0 removed.
+    """
+    from nmtcapp.renderers._cell_format import NOT_SUPPLIED, format_cell
+    from nmtcapp.tables.impact_table import build_impact_table
+
+    for p in pipeline:
+        assert p.expected_units_built is None, "fixture must not supply units"
+
+    for df, column in (
+        (build_pipeline_table(pipeline), "Affordable Units Built"),
+        (build_impact_table(pipeline), "Affordable Units"),
+    ):
+        rows = df[df[df.columns[0]].astype(str).str.contains("TOTAL") == False]  # noqa: E712
+        for value in rows[column]:
+            assert format_cell(column, value) == NOT_SUPPLIED, (
+                f"{column} rendered {format_cell(column, value)!r} for a project "
+                "that supplied no unit count. A zero is a claim."
+            )
+
+    # A real zero still reads as a zero: a CDE writing 0 has said something.
+    assert format_cell("Affordable Units Built", 0) == "0"
+
+
+def test_an_unrecognised_sector_is_marked_as_unrecognised(pipeline):
+    """`retail` used to render as "Retail", exactly like a recognised sector.
+
+    The list is advisory on the way in — the project loads, and every derived
+    figure is unaffected — and declarative on the way out.
+    """
+    from nmtcapp.data.schema import VALID_SECTORS
+    from nmtcapp.tables.impact_table import build_impact_summary_table
+
+    assert "retail" not in VALID_SECTORS, "fixture assumes retail is unrecognised"
+    # A recognised sector is NOT marked. Asserted before the mutation, because
+    # `pipeline` hands out the same PipelineProject objects.
+    assert build_pipeline_table(pipeline).iloc[0]["Sector (as supplied)"] == "Healthcare"
+
+    projects = list(pipeline)
+    projects[0].sector = "retail"
+    pl = Pipeline(projects)
+    pl.eligibility_data_status = "ok"
+
+    cell = build_pipeline_table(pl).iloc[0]["Sector (as supplied)"]
+    assert cell == "Retail (not one of the sectors this tool recognises)", cell
+
+    summary = build_impact_summary_table(pl).iloc[0]["Sector"]
+    assert "not one of the sectors this tool recognises" in summary, summary
+
+
+def test_section_e_does_not_promise_detail_it_does_not_have():
+    """It printed "including states served, sectors financed, and outcomes
+    achieved" directly above rows reading "States: N/A. Sectors: N/A."."""
+    from nmtcapp.core.application import Application
+    from nmtcapp.core.cde import CDEProfile
+    from nmtcapp.sections.section_e_prior_awards import SectionEPriorAwards
+
+    cde = CDEProfile(
+        name="Section E Fixture CDE, LLC", cde_id="CDE-2015-0002",
+        certification_date="2015-02-02", mission="Section E fixture.",
+        target_markets=["Ohio"],
+        prior_awards=[{"year": 2019, "amount": 30_000_000,
+                       "deployment_status": "fully_deployed"}],
+        contact={"name": "E", "email": "e@example.org"},
+        governance={"board_members": 7, "community_representatives": 3},
+    )
+    app = Application(cde=cde, requested_allocation=20_000_000.0)
+    content = SectionEPriorAwards().generate_content(app, None)
+    body = "\n".join(
+        s["body"] if isinstance(s["body"], str) else "\n".join(s["body"])
+        for s in content["subsections"]
+    )
+
+    assert "including states served, sectors financed, and outcomes achieved" not in body, (
+        "Section E promises detail the table does not contain"
+    )
+    assert "States: N/A" not in body and "Sectors: N/A" not in body, (
+        "'N/A' reads as a value the CDE supplied; nothing was collected"
+    )
+    assert "not collected by this tool" in body, (
+        "the absence must be stated, not left as a blank or an N/A"
+    )
+
+    # And when the CDE DOES supply them, the sentence names them.
+    cde.prior_awards[0]["states"] = ["OH", "KY"]
+    cde.prior_awards[0]["sectors"] = ["healthcare"]
+    body2 = "\n".join(
+        s["body"] if isinstance(s["body"], str) else "\n".join(s["body"])
+        for s in SectionEPriorAwards().generate_content(app, None)["subsections"]
+    )
+    assert "including states served and sectors financed" in body2, body2[:400]
+
+
+# ---------------------------------------------------------------------------
+# L-4: the attribution gate does not scan docs/, so this does
+# ---------------------------------------------------------------------------
+
+_DOCS_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "docs"
+)
+
+# Claims withdrawn from the RENDERED document that the DOCUMENTATION SITE went
+# on making. Each is (phrase, why it was withdrawn).
+#
+# WHY THIS EXISTS SEPARATELY. tests/test_attributed_claims.py and
+# tests/test_no_fabricated_output.py both read artifacts they render
+# themselves into a temp directory; docs/ is outside their world, exactly as
+# examples/sample_output/ was before it was deleted. So "Net subsidy to
+# QALICB" was removed from the document in 1.2.1 and stayed on
+# docs/workflow/output-formats.md as a row the document contains — a
+# description of output that no longer exists, published on the site a CDE
+# reads before running anything.
+#
+# NOT a general fabrication scan. It is a list of claims this repository has
+# already established to be wrong, checked against the pages that describe the
+# output, so a withdrawal has to happen in both places or fail here.
+_WITHDRAWN_FROM_DOCS = (
+    ("net subsidy to the QALICB",
+     "1.2.1 B-4: the row is QEI minus the CDE fee, ~97.5% of QEI, and includes "
+     "the whole leverage loan. Renamed to 'QEI Less CDE Fees ($)'"),
+    ("Net subsidy to QALICB",
+     "1.2.1 B-4: same row, as listed in the Excel sheet contents"),
+    ("Sector (NAICS)",
+     "1.2.0: the column mapped a coarse sector label to a NAICS code this tool "
+     "invented. Deleted; the column is now 'Sector (as supplied)'"),
+    ("QLICI A Loan",
+     "1.2.1 B-2: an invented tranche. Table A5 collects one QLICI total"),
+    ("top quartile",
+     "1.2.0: a percentile claim against a distribution nothing publishes"),
+)
+
+
+@pytest.mark.skipif(
+    not os.path.isdir(_DOCS_DIR),
+    reason=(
+        "docs/ is absent (this is an unpacked sdist or an installed tree). "
+        "MANIFEST.in prunes docs/, and the sdist does not build or publish the "
+        "documentation site."
+    ),
+)
+def test_the_docs_site_does_not_still_describe_withdrawn_output():
+    """A claim removed from the document must be removed from the site too."""
+    pages = []
+    for dirpath, _dirs, files in os.walk(_DOCS_DIR):
+        for name in sorted(files):
+            if name.endswith(".md"):
+                pages.append(os.path.join(dirpath, name))
+    assert pages, "no documentation pages found — this scan would check nothing"
+
+    failures = []
+    for path in pages:
+        text = open(path, encoding="utf-8").read()
+        for lineno, line in enumerate(text.splitlines(), 1):
+            for phrase, why in _WITHDRAWN_FROM_DOCS:
+                if phrase.lower() not in line.lower():
+                    continue
+                # A page may DISCUSS a withdrawn claim, and 1.2.1 adds notes
+                # that do exactly that. What it may not do is present one as
+                # current output. The marker is the withdrawal note itself.
+                context = "\n".join(text.splitlines()[max(0, lineno - 12):lineno + 12])
+                if any(m in context for m in
+                       ("not a net subsidy", "Renamed in 1.2.1", "renamed in 1.2.1",
+                        "WAS DELETED", "was deleted", "withdrawn", "no longer")):
+                    continue
+                rel = os.path.relpath(path, os.path.dirname(_DOCS_DIR))
+                failures.append(f"  {rel}:{lineno}: {line.strip()[:100]}\n      {why}")
+
+    assert not failures, (
+        f"{len(failures)} documentation line(s) describe output this package "
+        "has withdrawn:\n\n" + "\n".join(failures) + "\n\n"
+        "The attribution and fabrication gates render artifacts into a temp "
+        "directory and never look at docs/, so a claim can be removed from the "
+        "document and left on the site indefinitely. Fix the page, or add the "
+        "withdrawal note that explains what the phrase used to mean.\n\n"
+        "NOTE: docs/ changes do not reach the published site until "
+        "`mkdocs gh-deploy` is run by hand."
+    )

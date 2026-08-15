@@ -75,16 +75,151 @@ def application() -> Application:
 # ---------------------------------------------------------------------------
 
 def test_shared_figures_is_not_empty(application):
-    """Fail closed: nothing to compare means nothing is being checked."""
+    """Fail closed: nothing to compare means nothing is being checked.
+
+    THIS ASSERT USED TO BE THE ONLY ONE, AND IT LIVED HERE (1.2.1 S-3). In a
+    CDE's hands there is no test file: the shipped validator had no non-empty
+    guard at all, so an empty shared-figure set produced issues == [] and
+    check_consistency.passed == True. The guard is now inside
+    check_cross_surface_agreement, and the two tests below assert the SHIPPED
+    behaviour rather than re-asserting this one.
+    """
     analysis = application.analyze()
     shared = _shared_figures(application, analysis.deal_economics)
     assert shared, (
         "no figure was found to appear on two surfaces. The check would then "
         "pass on every document, which is the failure mode it exists to close."
     )
-    assert len(shared) >= 4, f"only {len(shared)} shared figures: {sorted(shared)}"
     for label, surfaces in shared.items():
         assert len(surfaces) >= 2, f"{label} names only one surface"
+
+
+def test_an_empty_shared_set_makes_the_SHIPPED_validator_fail(application, monkeypatch):
+    """The vacuous path must produce a FAIL, with no test file in the room.
+
+    Reproduced against 1.2.1-rc before the fix::
+
+        _shared_figures -> {}
+        issues == []
+        check_consistency(...).passed is True
+
+    A gate that cannot fail on its own subject, inside the check that exists
+    because the previous one could not fail on a $15.15MM contradiction.
+    """
+    from nmtcapp.validation import consistency_check as module
+
+    monkeypatch.setattr(module, "_shared_figures", lambda app, econ: {})
+
+    issues = module.check_cross_surface_agreement(
+        application, application.analyze().deal_economics
+    )
+    assert issues, "an empty shared-figure set produced no issue"
+    assert "declared figure groups" in issues[0]
+
+    result = module.check_consistency(application)
+    assert result.passed is False, (
+        "check_consistency PASSED with nothing compared. This is the shipped "
+        "code path a CDE runs; there is no test file on their machine."
+    )
+
+
+def test_a_dropped_pair_makes_the_shipped_validator_fail(application, monkeypatch):
+    """Losing ONE of the declared groups must fail, not shrink the set.
+
+    The old guard was `len(shared) >= 4` against five pairs, so one could drop
+    silently even in CI. The guard is now set equality against the declared
+    groups, which has no slack by construction.
+    """
+    from nmtcapp.validation import consistency_check as module
+
+    real = module._shared_figures
+
+    def _minus_one(app, econ):
+        shared = dict(real(app, econ))
+        shared.pop("Total leverage loans")
+        return shared
+
+    monkeypatch.setattr(module, "_shared_figures", _minus_one)
+    issues = module.check_cross_surface_agreement(
+        application, application.analyze().deal_economics
+    )
+    assert issues and "Total leverage loans" in issues[0], issues
+
+
+def test_a_renamed_column_raises_rather_than_continuing(application, monkeypatch):
+    """A missing column means the document changed shape. Say so loudly.
+
+    The 1.2.1-rc code hit a ``continue`` here, quietly dropping the pair out of
+    the comparison — the same fail-silent filter that dropped the Native Area
+    column out of Word's Appendix A without a word (1.2.1 L-1).
+    """
+    from nmtcapp.validation import consistency_check as module
+
+    monkeypatch.setattr(
+        module, "_APPENDIX_A_TO_SECTION_D",
+        dict(module._APPENDIX_A_TO_SECTION_D,
+             **{"Total leverage loans": ("Leverage Loan (USD)", "Total Leverage Loans ($)")}),
+    )
+    issues = module.check_cross_surface_agreement(
+        application, application.analyze().deal_economics
+    )
+    assert issues, "a renamed Appendix A column produced no issue"
+    assert "could not run" in issues[0] and "Leverage Loan (USD)" in issues[0], issues
+
+
+def test_every_money_column_is_paired_or_excused(application):
+    """The COVERAGE is derived, even though the pairing is hand-written.
+
+    _assert_pairs_cover_every_money_column requires every currency column
+    pipeline_table publishes and every dollar row Section D renders to be
+    either compared or listed in _UNPAIRED with a reason. Adding one without
+    adjudicating it fails here.
+    """
+    from nmtcapp.tables.pipeline_table import CURRENCY_COLUMNS
+    from nmtcapp.validation.consistency_check import (
+        _APPENDIX_A_TO_SECTION_D, _UNPAIRED, _assert_pairs_cover_every_money_column,
+    )
+    from nmtcapp.sections.section_d_capitalization import SectionDCapitalizationStrategy
+
+    assert CURRENCY_COLUMNS, "the pipeline table declares no currency columns"
+    analysis = application.analyze()
+    economics = SectionDCapitalizationStrategy().generate_content(
+        application, _EconomicsOnly(analysis.deal_economics)
+    )["subsections"][0]["body"]
+
+    from nmtcapp.tables.pipeline_table import build_pipeline_table
+    columns = build_pipeline_table(application.pipeline, application.cde).columns
+    _assert_pairs_cover_every_money_column(columns, economics)     # must not raise
+
+    # And it must be able to fail: an unadjudicated money row does.
+    import pytest as _pytest
+    from nmtcapp.validation.consistency_check import CrossSurfaceCheckError
+    with _pytest.raises(CrossSurfaceCheckError, match="neither compares them"):
+        _assert_pairs_cover_every_money_column(
+            columns, dict(economics, **{"Brand New Money Row ($)": "$1,000,000"})
+        )
+    assert _UNPAIRED, "no single-surface money figures recorded"
+    assert _APPENDIX_A_TO_SECTION_D, "no pairs declared"
+
+
+def test_the_cross_appendix_totals_are_compared(application):
+    """Total QEI in three appendices, Jobs Created in two — none was compared.
+
+    The docstring promised "any figure this document prints in more than one
+    place" and the implementation looked at Appendix A against Section D only.
+    """
+    analysis = application.analyze()
+    shared = _shared_figures(application, analysis.deal_economics)
+    qei = shared["Total pipeline QEI (across appendices)"]
+    assert set(qei) == {
+        "Appendix A (pipeline detail)",
+        "Appendix C (geographic targeting)",
+        "Appendix D (impact projections)",
+    }, sorted(qei)
+    assert len(set(qei.values())) == 1, f"three appendices, {len(set(qei.values()))} totals: {qei}"
+
+    jobs = shared["Jobs created (across appendices)"]
+    assert len(jobs) == 2 and len(set(jobs.values())) == 1, jobs
 
 
 def test_leverage_is_among_the_shared_figures(application):

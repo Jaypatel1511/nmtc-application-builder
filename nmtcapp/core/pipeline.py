@@ -99,8 +99,32 @@ class PipelineProject:
             raise ValueError(f"Project {self.project_id}: qlici_amount must be > 0")
         if self.expected_jobs_created < 0:
             raise ValueError(f"Project {self.project_id}: expected_jobs_created must be >= 0")
+        # THE SECTOR LIST IS A SUGGESTION ON THE WAY IN AND A CONTRACT ON THE
+        # WAY OUT (1.2.1 L-5).
+        #
+        # It used to be neither. An unrecognised sector logged a warning to
+        # stderr, which nobody running `nmtcapp generate` reads, and then
+        # rendered as "Retail" in Appendix D beside seven sectors the Fund's
+        # own categories cover — indistinguishable, on the page, from a
+        # recognised one.
+        #
+        # Raising here was considered and rejected for a PATCH release: it
+        # would reject pipelines that load today, and a CDE whose business is
+        # genuinely outside the eight has a legitimate home in "other". So
+        # loading still succeeds. What changes is that the DOCUMENT says so:
+        # tables/pipeline_table and tables/impact_table render an unrecognised
+        # sector with an explicit marker, so a reviewer sees the tool did not
+        # recognise it rather than seeing it silently normalised.
         if self.sector not in VALID_SECTORS:
-            logger.warning("Project %s: unrecognized sector '%s'", self.project_id, self.sector)
+            logger.warning(
+                "Project %s: sector '%s' is not one of the %d sectors this tool "
+                "recognises (%s). The project loads and every figure derived "
+                "from it is unaffected, but the rendered tables will mark the "
+                "sector as unrecognised rather than print it as though it were "
+                "a known category.",
+                self.project_id, self.sector, len(VALID_SECTORS),
+                ", ".join(VALID_SECTORS),
+            )
         if self.project_type not in VALID_PROJECT_TYPES:
             logger.warning("Project %s: unrecognized project_type '%s'",
                            self.project_id, self.project_type)

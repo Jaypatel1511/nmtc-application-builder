@@ -360,6 +360,38 @@ jobs:
           # Getting that backwards is exactly the class of error this file's
           # gates exist to catch, so it is corrected rather than left.
           #
+          # RE-MEASURED FOR 1.2.1, AND THE NUMBER MOVES. The 1.2.0 derivation
+          # above is now false in both of its inputs, in a file whose entire
+          # premise is that its numbers are evidence. Measured by building the
+          # sdist from a pristine clone and running THIS JOB'S EXACT INVOCATION
+          # from inside the unpacked tarball:
+          #
+          #     collected under -m "not wheel"   954
+          #     skipped in the sdist            -11
+          #     EXECUTED                         943   <- what the formula returns
+          #     half                             471.5
+          #     rounded down                     470
+          #
+          # THE SKIP COUNT TRIPLED, AND EVERY ONE IS DELIBERATE. Each is a test
+          # whose question is not the sdist's to answer, skipped explicitly
+          # with its own written reason rather than tolerated by a try/except:
+          #
+          #     4  test_no_committed_generated_artifacts.py  needs a git
+          #        checkout; MANIFEST.in prunes examples/. Unchanged in 1.2.1.
+          #     4  test_pinned_constants.py  the two constant SWEEPS and the
+          #        name-resolution check read the package SOURCE to enumerate
+          #        its constants, and this job deliberately runs with no
+          #        nmtcapp/ in the working directory. Every PIN still executes
+          #        here — only the derivation of the list is skipped.
+          #     3  test_121_financial_tables.py  the docs-hook gate (docs/ is
+          #        pruned), the docs-withdrawal scan (same), and the
+          #        attribution sweep that reads integrations/ source.
+          #
+          # Two of those eleven were FAILURES before 1.2.1, not skips, and this
+          # job exited 1 on them. CI stayed green because CI runs from a
+          # checkout; a tag on that artifact would have failed here with
+          # nothing on PyPI. See the S-1 note in CHANGELOG.md.
+          #
           # The jump from 350 is not drift. 1.2.0 adds:
           #   151  test_no_fabricated_output.py -- 18 denylist entries x 4
           #        rendered formats x 2 pipelines (144), plus the size and
@@ -381,7 +413,7 @@ jobs:
           # Recount before changing this line again; a floor copied forward
           # from a previous release stops being evidence.
           #
-          # KNOWN SLACK, stated rather than implied: 440 leaves 452 tests of
+          # KNOWN SLACK, stated rather than implied: 470 leaves 473 tests of
           # headroom. It catches the regression this repo is prone to (the 36
           # nested modules failing to ship drops the run to 238), and total
           # deselection lands at 0. It would NOT catch losing tests/sections/
@@ -390,12 +422,20 @@ jobs:
           # Half, deliberately: the rejected `-lt 14` threshold sat at the
           # exact count shipping that day, so deleting one test module failed
           # the job with a packaging error for a deliberate source change.
-          # This one has 452 tests of headroom -- you would have to delete more
+          # This one has 473 tests of headroom -- you would have to delete more
           # than half the suite before it complains, while total deselection
           # lands at 0 and trips it immediately. It would also catch the
           # narrower regression this repo is actually prone to: the 36 nested
-          # modules failing to ship takes the run far below 440.
-          FLOOR=440
+          # modules failing to ship takes the run far below 470.
+          #
+          # THE SKIP COUNT IS PART OF THIS NUMBER, and that is a real coupling
+          # rather than an accident of arithmetic: the formula is total MINUS
+          # skipped, so adding a deliberate skip lowers EXECUTED and re-deriving
+          # the floor from it lowers the floor. Eleven skips against 954
+          # collected is 1.2%; if that ever climbs, the right response is to ask
+          # why the sdist stopped being able to answer its own suite's
+          # questions, not to keep re-deriving downward.
+          FLOOR=470
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()
