@@ -113,7 +113,7 @@ def build_impact_table(pipeline: "Pipeline") -> pd.DataFrame:
             "Affordable Units":      p.expected_units_built if p.expected_units_built else 0,
             "Commercial Sq Ft":      int(p.expected_sq_ft) if p.expected_sq_ft else 0,
             "Distress Level":        _distress_cell(p),
-            "Native Area":           _flag(p.is_native_area),
+            "Native Area (CDE-declared)": _flag(p.is_native_area),
             "HMR":                   _flag(p.is_high_migration_rural),
             "OZ":                    _flag(p.is_opportunity_zone),
         })
@@ -142,7 +142,7 @@ def build_impact_table(pipeline: "Pipeline") -> pd.DataFrame:
         "Affordable Units": df["Affordable Units"].sum(),
         "Commercial Sq Ft": df["Commercial Sq Ft"].sum(),
         "Distress Level": "",
-        "Native Area": "",
+        "Native Area (CDE-declared)": "",
         "HMR": "",
         "OZ": "",
     }

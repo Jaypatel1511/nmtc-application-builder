@@ -340,7 +340,15 @@ with tabs[1]:
         delta_color="normal" if meets_target else "inverse",
     )
     c2.metric("LIC (standard)", fmt_pct(lic_pct))
-    c3.metric("Native area", fmt_pct(native_pct))
+    # CDE-DECLARED, and the label says so. This share comes from the
+    # `native_area` column the CDE fills in, never from nmtc-mapper (which
+    # dropped is_nmtc_native_area at 0.5.0), and the CDFI Fund publishes no
+    # tract-keyed Native Areas resource to check it against. See
+    # NATIVE_AREA_BASIS in nmtcapp/tables/distress_table.
+    c3.metric("Native area (CDE-declared)", fmt_pct(native_pct),
+              help="This tool cannot verify a Native Area. The figure is the "
+                   "share of QEI in projects the CDE itself declared as NMTC "
+                   "Native Areas on its pipeline submission.")
 
     st.markdown("---")
     left, right = st.columns([1, 1])
@@ -714,7 +722,11 @@ with tabs[4]:
                     name="Deal Economics",
                     orientation="v",
                     measure=["absolute", "relative", "total"],
-                    x=["QEI Raised", "− CDE Fees (2.5%)", "Net Capital to QALICBs"],
+                    # NOT "Net Capital to QALICBs": this is QEI less the CDE
+                    # fee, ~97.5% of QEI, and it still contains the leverage
+                    # loan the QALICB repays. See the note in
+                    # nmtcapp/sections/section_d_capitalization.
+                    x=["QEI Raised", "− CDE Fees (2.5%)", "QEI less CDE fees"],
                     y=[qei_val / 1e6, -cde_fees_val / 1e6, 0],
                     text=[
                         f"${qei_val / 1e6:.1f}M",

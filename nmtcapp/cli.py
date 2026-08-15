@@ -243,6 +243,26 @@ def cmd_analyze(args: argparse.Namespace) -> int:
 
         if args.demo:
             _print_demo_banner(cde, requested)
+
+        failed = [v.check_name for v in analysis.validation_results if not v.passed]
+        if failed:
+            print(
+                "\n"
+                + ("=" * 72) + "\n"
+                f"  {len(failed)} VALIDATION CHECK(S) FAILED: {', '.join(failed)}\n"
+                + (
+                    "  --strict was passed, so this run exits non-zero.\n"
+                    if args.strict else
+                    "  This command exits 0 anyway: the exit code reports whether\n"
+                    "  the ANALYSIS RAN, not what it found. Re-run with --strict to\n"
+                    "  exit non-zero on a failed check, which is what a CI job or a\n"
+                    "  wrapper script should use.\n"
+                )
+                + ("=" * 72),
+                file=sys.stderr,
+            )
+            if args.strict:
+                return 1
     except FileNotFoundError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
@@ -330,7 +350,18 @@ def _build_parser() -> argparse.ArgumentParser:
             "--cde and --requested-allocation are both required: CDE-level "
             "scores, peer ratios and recommendations are meaningless against "
             "someone else's CDE. Use --demo to run on the shipped fictional "
-            "profile instead; that output is labelled as a demo throughout."
+            "profile instead; that output is labelled as a demo throughout.\n\n"
+            "EXIT CODE. `analyze` is a report, not a gate, and its exit code "
+            "reports whether the analysis RAN — not what it found. A pipeline "
+            "whose projects are affirmatively not NMTC-eligible prints [FAIL] "
+            "and still exits 0, because refusing to print a report about a "
+            "pipeline with problems is the opposite of useful. Pass --strict "
+            "to exit non-zero on a failed check; a CI job or a wrapper script "
+            "that reads exit 0 as approval wants --strict. Either way the "
+            "failure is named on stderr, so it is never silent.\n\n"
+            "The library and notebook paths behave the same way and do not "
+            "raise: Application.analyze() returns ValidationResult objects "
+            "with a `.passed` flag for the caller to act on."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -357,6 +388,17 @@ def _build_parser() -> argparse.ArgumentParser:
         help=(
             "Run on the shipped fictional CDE profile. Output is labelled "
             "DEMO MODE and must not be used for a real application."
+        ),
+    )
+    analyze_parser.add_argument(
+        "--strict",
+        action="store_true",
+        help=(
+            "Exit non-zero when any validation check FAILS. Without it the "
+            "exit code reports whether the analysis ran, not what it found — "
+            "so a pipeline containing projects that are affirmatively NOT "
+            "NMTC-eligible still exits 0. Use --strict in CI or any script "
+            "that treats exit 0 as approval."
         ),
     )
 

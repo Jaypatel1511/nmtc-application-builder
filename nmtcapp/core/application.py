@@ -219,7 +219,13 @@ class Application:
         try:
             eligibility_val = check_eligibility(self._pipeline)
             completeness_val = check_completeness(self)
-            consistency_val = check_consistency(self)
+            # Hand the economics across rather than letting check_consistency
+            # call back into analyze(): its cross-surface arithmetic check needs
+            # the same deal_economics Section D renders, and this call site is
+            # inside analyze(), before the cache is set.
+            consistency_val = check_consistency(
+                self, deal_economics=pipeline_result.deal_economics_summary
+            )
             validation_results = [eligibility_val, completeness_val, consistency_val]
         except Exception as exc:
             raise RuntimeError(f"Validation failed for {self.cde.name}: {exc}") from exc

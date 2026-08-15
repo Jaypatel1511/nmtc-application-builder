@@ -6,6 +6,7 @@ from docx.oxml.ns import qn
 from docx.shared import Pt, RGBColor, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
+from nmtcapp.renderers._cell_format import format_cell
 from nmtcapp.renderers.styles import COLORS, TYPOGRAPHY
 
 
@@ -119,7 +120,7 @@ def add_styled_table(doc, headers: list, data: list,
             # Word wraps cell text on its own; there is no rendering reason to
             # cut. If a width cap is ever reintroduced it must exempt any cell
             # carrying a disclosure — see test_word_cells_are_not_truncated.
-            text = _fmt_cell(val)
+            text = _fmt_cell(val, headers[j] if j < len(headers) else "")
             _clear_and_set(cell, text)
             shade_cell(cell, bg)
             run = cell.paragraphs[0].runs[0]
@@ -206,15 +207,18 @@ def _clear_and_set(cell, text: str) -> None:
     cell.paragraphs[0].add_run(text)
 
 
-def _fmt_cell(val) -> str:
-    """Format a cell value for display."""
-    if val is None:
-        return ""
-    if isinstance(val, float):
-        if val > 1000:
-            return f"${val:,.0f}"
-        return f"{val:.2f}"
-    return str(val)
+def _fmt_cell(val, header: str = "") -> str:
+    """Format a cell value for display, by the meaning of its column.
+
+    THE HEADER DECIDES, NOT THE MAGNITUDE. This returned f"${val:,.0f}" for any
+    float over 1000, so a non-currency float in a Word table got a dollar sign
+    it had not earned, and a share stored as a fraction (0.328) fell under the
+    threshold and printed "0.33" — a third of one percent, for a third of the
+    pipeline. See renderers/_cell_format for the convention and the measured
+    instances. ``header`` defaults to "" so the few call sites that format a
+    lone value keep working; those get the plain branch.
+    """
+    return format_cell(header, val)
 
 
 def _hex_to_rgb(hex_color: str) -> tuple:

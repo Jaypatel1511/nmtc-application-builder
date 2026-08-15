@@ -510,20 +510,31 @@ class WinProbabilityModel:
         meets_section_min = bs_total >= HIGHLY_QUALIFIED_SECTION_MIN and co_total >= HIGHLY_QUALIFIED_SECTION_MIN
         meets_aggregate = aggregate >= HIGHLY_QUALIFIED_AGGREGATE_MIN
 
+        # THE THRESHOLDS ARE INTERPOLATED, NOT TYPED. These three sentences
+        # carried the literals "40-point" and "85-point" while the comparisons
+        # beside them read HIGHLY_QUALIFIED_SECTION_MIN and
+        # HIGHLY_QUALIFIED_AGGREGATE_MIN. Moving either constant would have
+        # changed which applications were gated out while the printed
+        # explanation went on naming the old bar — a document stating one rule
+        # and a program applying another. tests/pinned_constants.txt pins the
+        # rendered sentence, and a pin over a literal pins the typing.
         if bs_total < HIGHLY_QUALIFIED_SECTION_MIN:
             notes.append(
-                f"Business Strategy section ({bs_total}/50) is below the 40-point "
-                "minimum required for Highly Qualified status."
+                f"Business Strategy section ({bs_total}/50) is below the "
+                f"{HIGHLY_QUALIFIED_SECTION_MIN}-point minimum required for "
+                "Highly Qualified status."
             )
         if co_total < HIGHLY_QUALIFIED_SECTION_MIN:
             notes.append(
-                f"Community Outcomes section ({co_total}/50) is below the 40-point "
-                "minimum required for Highly Qualified status."
+                f"Community Outcomes section ({co_total}/50) is below the "
+                f"{HIGHLY_QUALIFIED_SECTION_MIN}-point minimum required for "
+                "Highly Qualified status."
             )
         if not meets_aggregate and (meets_section_min or aggregate >= 70):
             notes.append(
-                f"Aggregate base score ({aggregate}/100) is below the 85-point minimum "
-                "required for Highly Qualified status."
+                f"Aggregate base score ({aggregate}/100) is below the "
+                f"{HIGHLY_QUALIFIED_AGGREGATE_MIN}-point minimum required for "
+                "Highly Qualified status."
             )
 
         if meets_section_min and meets_aggregate:
@@ -623,25 +634,28 @@ def _build_peer_comparison(score: "WinProbabilityScore") -> str:
 
     if tier == "Top Tier":
         return (
-            f"Top Tier ({agg}/100). Both sections exceed the 45-point threshold. "
+            f"Top Tier ({agg}/100). Both sections exceed the "
+            f"{TOP_TIER_SECTION_MIN}-point threshold. "
             "High probability of Phase 2 advancement; award may approach the maximum requested."
         )
     if tier == "Highly Qualified":
         weak_section = "Business Strategy" if bs < co else "Community Outcomes"
         return (
-            f"Highly Qualified ({agg}/100). Both sections meet the 40-point minimum. "
+            f"Highly Qualified ({agg}/100). Both sections meet the "
+            f"{HIGHLY_QUALIFIED_SECTION_MIN}-point minimum. "
             f"Priority Points: {pp}/10. Phase 2 review of Management Capacity and "
             f"Capitalization Strategy will determine final ranking. "
             f"Focus improvement on {weak_section} ({min(bs, co)}/50)."
         )
     # Not Qualified
     below = []
+    # Same rule as _classify_tier: the bar prints from the constant it gates on.
     if bs < HIGHLY_QUALIFIED_SECTION_MIN:
-        below.append(f"Business Strategy ({bs}/50 < 40)")
+        below.append(f"Business Strategy ({bs}/50 < {HIGHLY_QUALIFIED_SECTION_MIN})")
     if co < HIGHLY_QUALIFIED_SECTION_MIN:
-        below.append(f"Community Outcomes ({co}/50 < 40)")
+        below.append(f"Community Outcomes ({co}/50 < {HIGHLY_QUALIFIED_SECTION_MIN})")
     if agg < HIGHLY_QUALIFIED_AGGREGATE_MIN:
-        below.append(f"Aggregate ({agg}/100 < 85)")
+        below.append(f"Aggregate ({agg}/100 < {HIGHLY_QUALIFIED_AGGREGATE_MIN})")
     gap_str = "; ".join(below) if below else f"aggregate {agg}/100"
     return (
         f"Not Qualified ({agg}/100). Application does not meet the Highly Qualified "

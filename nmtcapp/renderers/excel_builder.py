@@ -6,9 +6,11 @@ import os
 from datetime import date
 from typing import TYPE_CHECKING
 
+from nmtcapp.data.schema import READINESS_SCORING_WEIGHTS
 from nmtcapp.renderers._disclosure import (
     is_partial_unverified, qualified_pct, unverified_banner,
 )
+from nmtcapp.renderers._methodology import readiness_weights_sheet_note
 from nmtcapp.renderers.styles import COLORS, TYPOGRAPHY, TABLE_STYLES, xl_color
 from nmtcapp.tables.distress_table import build_distress_table
 from nmtcapp.tables.geographic_table import build_geographic_table
@@ -251,11 +253,17 @@ class ExcelApplicationBuilder:
         ws.merge_cells("A17:B17")
         ws.row_dimensions[17].height = 18
 
-        weight_map = {
-            "eligibility": 0.25, "distress_concentration": 0.25,
-            "geographic_diversity": 0.15, "impact_metrics": 0.20,
-            "validation": 0.10, "completeness": 0.05,
-        }
+        # READ THE WEIGHTS, DO NOT RETYPE THEM. This was a hardcoded dict whose
+        # keys were "eligibility" and "validation" while ReadinessScore's
+        # component keys are "eligibility_quality" and "validation_pass_rate",
+        # so weight_map.get(comp, 0) returned 0 for both. The workbook the Word
+        # and PDF documents cross-reference as the authoritative attachment
+        # printed Eligibility Quality 0.0% and Validation Pass Rate 0.0%, a
+        # Weight column summing to 65%, and two components declared weightless
+        # — against a methodology appendix in the same package stating 25% and
+        # 10%. Reading the constant makes the two agree by construction and
+        # removes the key-drift failure mode entirely.
+        weight_map = READINESS_SCORING_WEIGHTS
         for i, (comp, val) in enumerate(score.component_scores.items()):
             row = 18 + i
             ws.row_dimensions[row].height = 17
@@ -302,6 +310,19 @@ class ExcelApplicationBuilder:
         overall_val.alignment = _right()
         overall_grade.alignment = _center()
 
+        # The workbook showed a Weight column with no statement of whose
+        # weighting it was — the only one of the four artifacts to print the
+        # readiness breakdown without the disclosure the other three carry, and
+        # the one a reviewer opens to check the numbers.
+        disclosure_row = tot_row + 1
+        ws.merge_cells(start_row=disclosure_row, start_column=1,
+                       end_row=disclosure_row, end_column=6)
+        ws.row_dimensions[disclosure_row].height = 28
+        note_cell = ws.cell(row=disclosure_row, column=1,
+                            value=readiness_weights_sheet_note())
+        note_cell.font = _font(italic=True, color=xl_color("text_muted"), size=8)
+        note_cell.alignment = _left()
+
         # --- Bar chart: component scores ---
         try:
             score_start_row = 18
@@ -335,7 +356,7 @@ class ExcelApplicationBuilder:
         ws.column_dimensions["F"].width = 12
 
         # Footer
-        footer_row = tot_row + 2
+        footer_row = disclosure_row + 2
         ws.merge_cells(f"A{footer_row}:F{footer_row}")
         ws.cell(row=footer_row, column=1,
                 value=f"CONFIDENTIAL — {app.cde.name} — NMTC {app.application_round} — "
@@ -371,6 +392,28 @@ class ExcelApplicationBuilder:
         currency_cols = set(currency_cols or [])
         pct_cols = set(pct_cols or [])
         number_cols = set(number_cols or [])
+
+        # FAIL LOUD ON A STALE CONFIG. Every one of these lists is a set of
+        # column names typed at the call site, and five of the six sheets had
+        # drifted: twenty names across Pipeline Detail, Distress Documentation,
+        # Geographic Targeting, Impact Projections and Track Record referred to
+        # columns that do not exist in the DataFrames they format. The columns
+        # then fell through to the magnitude-based auto-detect below, which is
+        # how Appendix C's share column ended up reading 0 0 0 0 0 0 1.
+        #
+        # A misconfigured column is silent by construction — the sheet still
+        # renders, just wrong — so it has to be an exception rather than a
+        # log line. The developer sees it on the first build; the CDE never
+        # files it.
+        named = currency_cols | pct_cols | number_cols
+        missing = sorted(named - set(display.columns))
+        if missing:
+            raise ValueError(
+                f"{sheet_name!r} formats column(s) that do not exist in its "
+                f"table: {missing}. Available: {sorted(display.columns)}. "
+                "A name that matches nothing formats nothing and falls through "
+                "to magnitude-based auto-detection."
+            )
 
         # Title row
         n_cols = len(display.columns)
@@ -480,9 +523,12 @@ class ExcelApplicationBuilder:
         self._write_df_to_sheet(
             wb, "Pipeline Detail", df,
             title="Appendix A: Pipeline Detail",
-            currency_cols=["QEI Request ($)", "Project Cost ($)", "QLICI-A ($)", "QLICI-B ($)",
-                           "Investor Equity ($)", "CDE Fee ($)", "Leverage Debt ($)"],
-            number_cols=["Jobs Created", "Jobs Retained", "Units Built"],
+            currency_cols=["Total Project Cost ($)", "QEI Request ($)",
+                           "Total QLICI ($)", "Leverage Loan ($)",
+                           "Total NMTCs ($)", "Estimated Investor Equity ($)",
+                           "CDE Fee ($)"],
+            number_cols=["Jobs Created", "Jobs Retained",
+                         "Affordable Units Built", "Square Feet"],
             freeze_col=2,
             max_rows=100,
         )
@@ -521,7 +567,11 @@ class ExcelApplicationBuilder:
         self._write_df_to_sheet(
             wb, "Distress Documentation", df,
             title="Appendix B: Distress Documentation",
-            pct_cols=["Poverty Rate (Est.)", "Unemployment Rate (Est.)"],
+            # No numeric columns. "Poverty Rate (%)" and "Unemployment Rate
+            # (%)" both render the string "See ACS" — tables/distress_table
+            # refuses to infer an ACS statistic from a distress label. The
+            # pct_cols this used to carry named "Poverty Rate (Est.)" and
+            # "Unemployment Rate (Est.)", which have never existed here.
             freeze_col=2,
         )
 
@@ -530,9 +580,13 @@ class ExcelApplicationBuilder:
         self._write_df_to_sheet(
             wb, "Geographic Targeting", df,
             title="Appendix C: Geographic Targeting",
-            currency_cols=["Total QEI ($)", "Deep Distress QEI ($)", "Severe Distress QEI ($)"],
-            number_cols=["Project Count", "Deep Distress Count", "Severe Distress Count",
-                         "Native Area Count", "HMR Count", "OZ Count"],
+            currency_cols=["QEI ($)"],
+            # The real pct_cols entry the 1.2.0 note asked for once this
+            # config was repaired. The column is a float again.
+            pct_cols=["QEI (% of Total)"],
+            number_cols=["Project Count", "Deep/Severe Projects",
+                         "Native Area Projects (CDE-declared)",
+                         "HMR Projects", "OZ Projects"],
             freeze_col=1,
         )
 
@@ -540,8 +594,8 @@ class ExcelApplicationBuilder:
         ws = wb["Geographic Targeting"]
         try:
             header_vals = [ws.cell(row=3, column=j).value for j in range(1, 30)]
-            if "Total QEI ($)" in header_vals:
-                col_idx = header_vals.index("Total QEI ($)") + 1
+            if "QEI ($)" in header_vals:
+                col_idx = header_vals.index("QEI ($)") + 1
                 col_letter = get_column_letter(col_idx)
                 last_row = 3 + min(len(df), 200) if df is not None and not df.empty else 10
                 ws.conditional_formatting.add(
@@ -560,9 +614,10 @@ class ExcelApplicationBuilder:
         self._write_df_to_sheet(
             wb, "Impact Projections", df,
             title="Appendix D: Impact Projections",
-            currency_cols=["QEI Request ($)", "Project Cost ($)", "Cost Per Job ($)",
-                           "QEI Per Job ($)"],
-            number_cols=["Jobs Created", "Jobs Retained", "Units Built", "Businesses Supported"],
+            currency_cols=["QEI ($)", "Total Project Cost ($)",
+                           "Cost per Job ($)", "QEI per Job ($)"],
+            number_cols=["Jobs Created", "Jobs Retained", "Total Jobs",
+                         "Affordable Units", "Commercial Sq Ft"],
             freeze_col=2,
             max_rows=100,
         )
@@ -581,6 +636,6 @@ class ExcelApplicationBuilder:
         self._write_df_to_sheet(
             wb, "Track Record", df,
             title="Appendix E: CDE Track Record",
-            currency_cols=["Allocation Amount ($)", "Amount Deployed ($)"],
+            currency_cols=["Allocation ($)"],
             freeze_col=1,
         )

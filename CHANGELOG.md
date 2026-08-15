@@ -5,6 +5,215 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.2.1] — 2026-08-15
+
+Patch release. The financial tables, the shipped inputs, and a gate that could
+not fail. No public API changes.
+
+1.2.0's final audit returned **ship, not clean** — every remaining defect was
+also present in 1.1.5 and not worsened by 1.2.0. This release is those defects,
+plus six more found by running the published wheel from a clean venv after the
+tag landed, plus what recomputing every derived figure in Appendix A and
+Section D from the CDE's own inputs turned up.
+
+### The constant gate (new)
+
+**Every published constant is now pinned to the string it prints.**
+`tests/test_invariant_output.py` collapses every digit run to `N` before it
+intersects, which is what makes invariance detectable at all — without it every
+dollar figure varies per scenario and nothing is invariant. THE MASK IS CORRECT
+AND WAS NOT WEAKENED. But it necessarily erases every constant the document
+prints, so that gate was structurally blind to all of them. Measured on the
+1.2.0 tree by mutating the rendered 85%/20% commitment to 55%/5%:
+
+```
+[baseline 85%/20%]  invariant=207  UNALLOWED=0  DEAD=0
+[mutated  55%/ 5%]  invariant=207  UNALLOWED=0  DEAD=0
+```
+
+`tests/pinned_constants.txt` + `tests/test_pinned_constants.py` close it. Each
+row asserts a literal string against a rendered artifact, carries a source (or
+says HOUSE, and the rendered text must then say so too), and fails closed: an
+empty registry, a stale pin, a missing source and an unadjudicated constant all
+error. A coverage test sweeps `nmtcapp/data/` and requires every constant any
+other module reads to be pinned or waived with a reason.
+
+Verified by mutating each pinned constant one at a time: **17 mutations, 17
+caught.** The invariant gate stayed green on 16 of the 17.
+
+**Five constants were duplicated as display literals** and are now interpolated,
+because a pin over a literal pins the typing rather than the value:
+
+- `win_probability` printed "the 40-point minimum" and "the 85-point minimum"
+  while gating on `HIGHLY_QUALIFIED_SECTION_MIN` / `_AGGREGATE_MIN`. Moving
+  either constant would have changed which applications were gated out while
+  the printed explanation named the old bar.
+- `excel_builder.weight_map` hardcoded the readiness weights under keys
+  (`eligibility`, `validation`) that do not match `ReadinessScore`'s component
+  keys (`eligibility_quality`, `validation_pass_rate`), so `.get(comp, 0)`
+  returned **0** for both. **The workbook printed Eligibility Quality 0.0% and
+  Validation Pass Rate 0.0%, a Weight column summing to 65%, and two components
+  declared weightless** — against a methodology appendix in the same package
+  stating 25% and 10%. Found by recomputation, not by any audit.
+- `section_a_business` typed the >=75% band; `data/schema.py` owns it.
+- The methodology appendix was three hand-typed copies (Word, PDF, markdown)
+  whose figures were all literals and which disagreed with each other about the
+  names of the readiness components. It is now composed once in
+  `renderers/_methodology` from `nmtcapp/data/`.
+- `tables/pipeline_table` kept module-local copies of the credit price, credit
+  rate and CDE fee rate, so Appendix A and Section D computed the same figures
+  from two independent copies of the same three numbers.
+
+`DEEP_DISTRESS_MIN_PCT` was **assigned twice on consecutive lines**; the mutation
+harness found it when changing the first assignment moved nothing.
+
+### Fixed — financial tables
+
+- **Appendix A printed five invented columns as data.** The CY 2024-2025 NMTC
+  Allocation Application was retrieved and read: the Fund's per-project pipeline
+  attachment is **Table A5: Proposed Transactions** (Exhibit A, pp. 82-84), and a
+  full-text search of all 142 pages returns **zero** occurrences of "QLICI B",
+  "Senior Debt", "Subordinate Debt", "Annual Operating Budget" and "Investor
+  Equity". The Fund collects one QLICI total (row h) and defines no tranches.
+  So the five are **deleted**, not bracketed as `[CDE TO COMPLETE]`: bracketing
+  preserves a form shape, and this one is not the Fund's. The CDE's own
+  `qlici_amount` is printed whole as "Total QLICI ($)". The module docstring's
+  claim to "mirror CDFI Fund CY2025 Excel template format" went with them.
+- **A $15.15MM contradiction inside one document, which `check_consistency`
+  passed.** Section D took nmtc-calc's leverage loan (the residual of QEI less
+  investor equity); Appendix A sized it at a flat 80% of QEI from a module-local
+  constant. On the shipped 20-project sample: Appendix A $98,000,000, Section D
+  $82,846,750. Both now use the identity that is true of the structure the
+  document describes — leverage + equity = QEI.
+- **The two branches of `nmtc_calc_adapter` disagreed with each other**, so a
+  user without nmtc-calc installed got a different Section D. `_compute_fallback`
+  sized leverage at 80% of QEI where the library returns QEI less equity, and
+  returned `avg_leverage_ratio` as a *fraction of QEI* (0.80) where the library
+  returns leverage/**equity** (~2.09x) — one key, two incompatible quantities,
+  a factor of 2.6 apart. Both branches now model the same structure.
+- **`check_consistency` gained a cross-surface arithmetic check.** Any figure the
+  document prints in more than one place must be one figure. The shared-figure
+  list is derived by calling the renderers, not hand-written. Proven to fail:
+  reintroducing the flat-80% leverage produces
+  `Total leverage loans disagrees between surfaces of the same document:
+  Appendix A (per-project total) $98,000,000; Section D (deal economics)
+  $82,846,750 (difference $15,153,250)`.
+- **"Net Subsidy to QALICBs" overstated by ~3.3x** — it was QEI minus CDE fees,
+  97.5% of QEI, while the term of art means the QALICB's benefit net of the
+  leverage loan it repays. **No replacement formula was substituted**: the
+  CY 2024-2025 Application never uses the phrase (zero occurrences in 142
+  pages), and the closest federal figure is an observation rather than a
+  definition — GAO-10-334 reports that eight case-study CDEs "generally agreed
+  that it is reasonable to expect that the CDE will leave about 50 percent to
+  65 percent of the amount of tax credits investors can claim in QALICBs after
+  the 7-year tax credit period". The row is renamed **"QEI Less CDE Fees ($)"**
+  and says on its face that it is not the retained benefit. The published
+  `total_net_subsidy` dict key is unchanged: this is a patch.
+- **The Fund's Deep-only 20% bar rendered above a combined deep+severe figure.**
+  Deep-only was computed on every run and reported nowhere. Section B now
+  reports deep-only, severe-only and combined as separate rows, and the
+  commitment row states that the 85% and 20% bars have different bases.
+- **Cell formatting now reads the column, not the magnitude.** Every renderer
+  decided currency by `value > 1000`, which is too eager (a non-currency float
+  takes a dollar sign) and too timid (a share stored as a fraction is under the
+  threshold, so Word and PDF printed "0.33" for 32.8% and Excel rendered it
+  "0"). `renderers/_cell_format` formats by what the header declares. Appendix
+  C's share is a float again, with a real `pct_cols` entry — it sorts and sums
+  in the workbook, which 1.2.0 traded away as a stated cost.
+- **Five of the six Excel sheets had stale format configs** — twenty column
+  names that do not exist in the tables they format, not just the geographic
+  sheet. An unmatched name silently formats nothing. `_write_df_to_sheet` now
+  raises on a name it cannot find.
+- The Excel Summary Dashboard showed a readiness Weight column with **no
+  disclosure of any kind** — the only one of the four artifacts to print the
+  weighting without saying whose it was.
+
+### Fixed — citations and provenance
+
+- **The distress-definitions citation was 0-based.** It read "columns 14 and 15";
+  the Fund's own NOTES sheet labels them **"Column O. Severe Distress"** and
+  **"Column P. Deep Distress"**. Verified by opening
+  `NMTC_LIC_Eligibility_2016_2020.xlsb`. A reader checking columns 14 and 15
+  would land on N and O. Corrected in the rendered methodology appendix, in
+  `tests/attribution_allowlist.txt`, and on the published docs page
+  `docs/reference/data-sources.md`. **The docs fix does not reach `gh-pages`
+  without a manual `mkdocs gh-deploy`.**
+- The statutory **39% credit rate** was the one deal-economics figure with no
+  attribution anywhere in the document; the methodology note now states it and
+  cites IRC §45D(a)(2).
+- **`Native Area` is the CDE's own declaration** and every surface now says so.
+  Traced from the rendered `Native Area: 10%` back to the `native_area` CSV
+  column: it is not read from nmtc-mapper (which dropped `is_nmtc_native_area`
+  at 0.5.0), not defaulted and not inferred. The CDFI Fund publishes no
+  tract-keyed NMTC Native Areas resource — the four classes are Census AIANNH
+  geographies whose GEOIDs cannot nest into `SSCCCTTTTTT`, and the determination
+  is a spatial intersection against the CIMS map. Special Targeting scores it,
+  so a wrong figure here is a scored figure.
+
+### Fixed — the CLI summary block
+
+Read the same way as the documents, which is where `Native Area` had been
+sitting in plain sight for the whole cycle:
+
+- The `(✗ target)` tick cited `TARGET_DISTRESS_THRESHOLDS`' 0.75 — a value
+  `data/schema.py` labels a HOUSE HEURISTIC in capitals. Every rendered document
+  got that disclosure in 1.2.0; this block did not.
+- `Non-LIC` rolls unverified projects in with ineligible ones, so it is an
+  **upper** bound while the distress shares beside it are lower bounds. It now
+  says so.
+- `Eligible` is a share of project count while everything under Distress
+  Concentration is a share of QEI. Two denominators under one heading, neither
+  stated; both labels now state their own.
+
+### Fixed — shipped inputs and packaging
+
+- **`3500 Troost Ave, Kansas City, KS` was wrong data, not a geocoder gap.**
+  Troost Avenue is a Kansas City, **Missouri** street. The Census geocoder
+  resolves the address to MO 64109, tract 29095017800, and refuses it when the
+  state is given as KS — which is why a wrong-state row surfaced as "could not
+  be verified". Corrected to MO in `pipeline_sample_strong.csv` and
+  `Pipeline.sample()`, with the tract, because a Kansas GEOID on a Missouri row
+  fails `consistency_check`'s own state-FIPS test.
+- **`2800 Freedom Dr, Charlotte, NC` was a geocoder limitation.** Freedom Drive
+  is real and 2700, 2801, 2810 and 2900 all resolve; only that exact even number
+  is absent from the Census TIGER address ranges. Nudged to 2810.
+- **`nmtcapp analyze` exit code, ruled on explicitly.** It stays 0 on a failed
+  check — `analyze` is a report, not a gate, and refusing to print a report
+  about a pipeline with problems is the opposite of useful — but the failure is
+  now named on stderr with the rule stated, `--strict` exits non-zero, and the
+  `--help` text says what the exit code means. The library and notebook paths
+  behave the same way and return `ValidationResult.passed` for the caller.
+- **The docs sample-output hook failed open.** Without the output extras it
+  produced two of four formats and logged success under a `--strict` build,
+  while `docs/workflow/output-formats.md` told the reader all four are generated
+  on every build. It now raises. Demonstrated: the same partial toolchain that
+  used to build green now exits 1 with
+  `sample output is missing 2 of 4 formats: pdf, word`.
+- **`[docs]` extra added.** `pip install -e ".[docs]"` emitted
+  `WARNING: ... does not provide the extra 'docs'` and silently installed only
+  the core; nothing anywhere pinned the docs toolchain.
+- **CI builds the docs on every pull request** (`--strict`). It does not deploy:
+  publishing to `gh-pages` is still a manual `mkdocs gh-deploy`, and that is
+  stated in both contributing guides.
+- **Refusal messages resolve their paths at runtime.** They named
+  `nmtcapp/templates/...` as though the reader were in a git checkout. They now
+  lead with `nmtcapp init <dir>` and give the resolved packaged path. The
+  sample-identity guard itself is untouched and was re-verified: all three
+  refusal cases fire, name which field matched, and near-misses still pass.
+
+### Known and left alone
+
+Reported rather than fixed, with reasons, in the 1.2.1 branch notes: the 25
+invented GEOIDs (two of which were corrected as a consequence of the address
+fix), `data/historical_awards.py`, round parameterization and the `"CY2025"`
+default, `TOP_TIER_*`, the readiness weights' attribution, the sector→NAICS
+mapping, `geographic_analysis`'s hardcoded `_RURAL_STATES` and one-MSA-per-state
+map, the `urban_rural` CSV column that `from_csv` never reads, `DISTRESS_LEVELS`
+(a dead constant), and three addresses in `pipeline_sample_weak.csv` that do not
+resolve (two verified as bad data, one as a TIGER range gap).
+
+---
+
 ## [1.2.0] — 2026-08-14
 
 Integrity release: the section generators no longer write fabricated statistics,

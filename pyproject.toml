@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nmtc-application-builder"
-version = "1.2.0"
+version = "1.2.1"
 description = "Flagship NMTC application intelligence platform — pipeline analysis, eligibility validation, readiness scoring, and visualization for CDEs"
 readme = "README.md"
 license = { text = "MIT" }
@@ -67,6 +67,32 @@ output = [
     "python-docx>=1.1.0",
     "openpyxl>=3.0.9",
     "reportlab>=4.0.0",
+]
+# THE DOCS TOOLCHAIN, PINNED. `pip install -e ".[docs]"` emitted
+#   WARNING: nmtc-application-builder 1.2.0 does not provide the extra 'docs'
+# and silently installed only the core — so a maintainer who followed the
+# contributing guide got a docs build with no mkdocs and, once mkdocs was
+# installed by hand, a sample-output hook quietly producing two of four
+# formats because python-docx and reportlab were absent. Nothing anywhere
+# pinned any of it.
+#
+# The output libraries are here as well as in [output] on purpose: the docs
+# build RENDERS the sample application, so they are docs build-dependencies,
+# not an optional extra a docs author can skip.
+#
+# Floors are set by what the build actually uses:
+#   mkdocs           1.5 is the first release with the `hooks:` config key
+#                    that mkdocs.yml uses to load
+#                    docs/hooks/generate_sample_output.py.
+#   mkdocs-material  9.0 is the first release supporting mkdocs 1.5's schema
+#                    and the navigation.tabs/sections features mkdocs.yml sets.
+docs = [
+    "mkdocs>=1.5",
+    "mkdocs-material>=9.0",
+    "python-docx>=1.1.0",
+    "openpyxl>=3.0.9",
+    "reportlab>=4.0.0",
+    "matplotlib>=3.7",
 ]
 dev = [
     "pytest>=7.0",

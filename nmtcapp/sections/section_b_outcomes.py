@@ -63,6 +63,14 @@ class SectionBCommunityOutcomes(SectionGenerator):
         # as fact when fully verified; otherwise they carry inline qualifiers
         # (or an explicit Unverified marker when no data loaded at all).
         deep_pct = distress.get("pct_deep_or_severe", 0.0)
+        # DEEP DISTRESS ALONE. The Fund's 20% bar is Deep Distress only, and
+        # this figure was computed on every run and reported nowhere — the
+        # document printed the 20% commitment directly above the CDE's COMBINED
+        # deep+severe share, which is a larger number on a wider base. On the
+        # audit's sample that read "20% Deep Distress" above "20.5%", inviting
+        # the reader to conclude the bar was met when deep-only was 8.7%.
+        deep_only_pct = distress.get("pct_deep", 0.0)
+        severe_only_pct = distress.get("pct_severe", 0.0)
         native_pct = distress.get("pct_native_area", 0.0)
         hmr_pct = distress.get("pct_high_migration_rural", 0.0)
 
@@ -77,9 +85,22 @@ class SectionBCommunityOutcomes(SectionGenerator):
             return f"{value:.1%}"
 
         distress_commitments = {
-            "QEI in Deep/Severely Distressed Tracts": _tract_pct(deep_pct),
+            # THE TWO BARS HAVE DIFFERENT BASES AND EACH NOW HAS ITS OWN ROW.
+            # 85% is severe distress OR multiple indicia; 20% is Deep Distress
+            # alone. One number must not be left to answer both, which is what
+            # a single combined deep+severe row sitting under both bars did.
+            "QEI in Deep Distress Tracts (the 20% bar's own basis)":
+                _tract_pct(deep_only_pct),
+            "QEI in Severely Distressed Tracts": _tract_pct(severe_only_pct),
+            "QEI in Deep or Severely Distressed Tracts (combined)":
+                _tract_pct(deep_pct),
             "QEI in LIC (Standard Eligible) Tracts": _tract_pct(distress.get("pct_lic", 0)),
-            "QEI in NMTC Native Areas": _tract_pct(native_pct),
+            # CDE-declared. This tool cannot verify a Native Area: the Fund
+            # publishes no tract-keyed resource and the determination is a
+            # spatial intersection against its CIMS map, not a join. See
+            # NATIVE_AREA_BASIS in tables/distress_table.
+            "QEI in NMTC Native Areas (CDE-declared, not verified by this tool)":
+                _tract_pct(native_pct),
             "QEI in High Migration Rural (HMR) Tracts": _tract_pct(hmr_pct),
             # Was labelled "CDFI Fund Severe Distress Threshold" and cited to
             # the Review Process generally (and, in the attribution allowlist,
@@ -94,8 +115,17 @@ class SectionBCommunityOutcomes(SectionGenerator):
                 f"{DEEP_DISTRESS_MIN_PCT:.0%} in Deep Distress areas "
                 "(CY 2024-2025 NMTC Program Review Process, Targeting Areas of "
                 "Higher Distress, Question 25; the CY 2026 NOAA is not yet "
-                "published)",
-            f"{application.cde.name} Commitment (Deep/Severe)": _tract_pct(deep_pct),
+                "published). THE TWO BARS HAVE DIFFERENT BASES: the "
+                f"{SEVERE_DISTRESS_MIN_PCT:.0%} covers severe distress OR "
+                f"multiple indicia, the {DEEP_DISTRESS_MIN_PCT:.0%} covers Deep "
+                "Distress alone. Read each against its own row above; a "
+                "combined deep-plus-severe share does not answer the "
+                f"{DEEP_DISTRESS_MIN_PCT:.0%} bar.",
+            f"{application.cde.name} — measured against the "
+            f"{DEEP_DISTRESS_MIN_PCT:.0%} Deep Distress bar":
+                _tract_pct(deep_only_pct),
+            f"{application.cde.name} — deep or severe distress (combined)":
+                _tract_pct(deep_pct),
         }
 
         # This tool does not retrieve, compute or verify any community-need

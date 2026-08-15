@@ -58,15 +58,53 @@ marks everything else as yours to write.
 """
 
 
+_FORMATS = ("markdown", "word", "excel", "pdf")
+
+
 def _build_sample(out_dir: str) -> list:
-    """Render the sample application into out_dir. Returns written filenames."""
+    """Render the sample application into out_dir. Returns written filenames.
+
+    RAISES IF ANY CONFIGURED FORMAT IS MISSING, and that is the 1.2.1 fix.
+
+    Application.generate() catches ImportError per format and logs a warning,
+    so on a machine without the output extras it returns the subset that
+    worked. This hook then reported success::
+
+        python-docx not installed — skipping Word output
+        reportlab not installed — skipping PDF output
+        INFO - sample output generated: CDE-2018-0117_application.md,
+                                        CDE-2018-0117_application.xlsx
+        INFO - Documentation built in 8.36 seconds     <- --strict, and it passed
+
+    Two of four formats, a green --strict build, and
+    docs/workflow/output-formats.md telling the reader "A complete sample in
+    all four formats is generated fresh on every docs build". The eleventh
+    instance in this package of a gate that cannot fail, and it was found by
+    hand on the deploy that fixed a fabricated citation.
+
+    Comparing what was asked for against what came back is the whole fix. The
+    page's claim is the thing a reader relies on, so the build stops rather
+    than the page quietly describing less.
+    """
     from nmtcapp.core.application import Application
     from nmtcapp.core.cde import CDEProfile
     from nmtcapp.core.pipeline import Pipeline
 
     app = Application(cde=CDEProfile.sample(), requested_allocation=65_000_000)
     app.add_pipeline(Pipeline.sample(n=20))
-    paths = app.generate(out_dir, formats=["markdown", "word", "excel", "pdf"])
+    paths = app.generate(out_dir, formats=list(_FORMATS))
+
+    missing = sorted(set(_FORMATS) - set(paths))
+    if missing:
+        raise RuntimeError(
+            f"sample output is missing {len(missing)} of {len(_FORMATS)} "
+            f"formats: {', '.join(missing)}. Application.generate() skips a "
+            "format whose renderer will not import, so this is almost always "
+            "the output extras not being installed. Install the docs "
+            "toolchain with `pip install -e \".[docs]\"` and rebuild. The "
+            "published page claims all four formats; it must not be built "
+            "from fewer."
+        )
     return sorted(os.path.basename(p) for p in paths.values())
 
 
@@ -83,8 +121,10 @@ def on_post_build(config, **kwargs):  # noqa: D103 - mkdocs hook signature
         log.info("sample output generated: %s", ", ".join(written))
         body = _PAGE_HEADER + "\n".join(f"- [`{n}`]({n})" for n in written) + "\n"
     except Exception:
-        # Say so in the published docs. A silent failure here is how a stale
-        # artifact survives; an empty page with an explanation is not.
+        # Say so in the published docs AND fail the build. A silent failure
+        # here is how a stale artifact survives; an explanatory page is better
+        # than a stale one, but neither is good enough on its own, because a
+        # green --strict build is what a maintainer actually reads.
         log.error("sample output generation FAILED:\n%s", traceback.format_exc())
         body = (
             _PAGE_HEADER
@@ -93,6 +133,9 @@ def on_post_build(config, **kwargs):  # noqa: D103 - mkdocs hook signature
             + "    `python -m mkdocs build` locally to see the traceback.\n"
             + "    Nothing stale is served in its place.\n"
         )
+        with open(os.path.join(out_dir, "index.html"), "w", encoding="utf-8") as fh:
+            fh.write(_html(body))
+        raise
 
     with open(os.path.join(out_dir, "index.html"), "w", encoding="utf-8") as fh:
         fh.write(_html(body))

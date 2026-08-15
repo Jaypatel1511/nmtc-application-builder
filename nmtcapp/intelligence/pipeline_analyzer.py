@@ -5,6 +5,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional, TYPE_CHECKING
 
+from nmtcapp.data.schema import TARGET_DISTRESS_THRESHOLDS
 from nmtcapp.intelligence.distress_analysis import analyze_distress_concentration
 from nmtcapp.intelligence.geographic_analysis import analyze_geographic_diversity
 from nmtcapp.intelligence.impact_aggregator import aggregate_impact
@@ -86,14 +87,35 @@ class PipelineAnalysisResult:
             f"  Projects:        {self.total_projects}",
             f"  Total QEI:       ${self.total_qei_request:>14,.0f}",
             f"  Total Cost:      ${self.total_project_cost:>14,.0f}",
-            f"  Eligible:        {eligible_display}",
+            # "Eligible" is a share of PROJECT COUNT while every figure under
+            # Distress Concentration below is a share of QEI. Two denominators
+            # under one heading, neither stated. The label now states its own.
+            f"  Eligible (by project count): {eligible_display}",
             "",
-            "── Distress Concentration ─────────────────────────────",
+            "── Distress Concentration (share of pipeline QEI) ─────",
+            # The "target" tick was TARGET_DISTRESS_THRESHOLDS' 0.75, which
+            # data/schema.py labels a HOUSE HEURISTIC in capitals and warns must
+            # not be presented as a Fund figure. Every rendered document got
+            # that disclosure in 1.2.0. This block, the one `nmtcapp analyze`
+            # prints, did not — it showed a bare "✗ target" against an
+            # unattributed bar.
             f"  Deep/Severe:     {d.get('pct_deep_or_severe', 0):.0%}  "
-            f"({'✓' if d.get('meets_target_threshold') else '✗'} target)",
+            f"({'✓' if d.get('meets_target_threshold') else '✗'} this tool's own "
+            f"≥{TARGET_DISTRESS_THRESHOLDS['target_deep_distress']:.0%} band — "
+            "not a CDFI Fund threshold)",
             f"  LIC:             {d.get('pct_lic', 0):.0%}",
-            f"  Non-LIC:         {d.get('pct_non_lic', 0):.0%}",
-            f"  Native Area:     {d.get('pct_native_area', 0):.0%}",
+            # Non-LIC rolls the "unknown" bucket in with the "ineligible" one
+            # (distress_analysis.py:77), so an unverified project is counted as
+            # non-LIC. Deep/Severe and LIC are lower bounds and 1.2.0 disclosed
+            # them as such; this is the same arithmetic pointing the other way,
+            # and it was printed bare. It is an UPPER bound and now says so.
+            f"  Non-LIC:         {d.get('pct_non_lic', 0):.0%}"
+            + ("  (upper bound — includes unverified)"
+               if self.unverified_project_ids else ""),
+            # CDE-DECLARED, not tool-derived. See the provenance note on
+            # NATIVE_AREA_BASIS in tables/distress_table.
+            f"  Native Area:     {d.get('pct_native_area', 0):.0%}  "
+            "(CDE-declared; not verified by this tool)",
             "",
             "── Geographic Diversity ────────────────────────────────",
             f"  States:          {g.get('states_count', 0)}",
@@ -118,8 +140,12 @@ class PipelineAnalysisResult:
             "── Deal Economics ──────────────────────────────────────",
             f"  Total NMTCs:     ${e.get('total_nmtcs', 0):>14,.0f}",
             f"  Investor Equity: ${e.get('total_investor_equity', 0):>14,.0f}",
+            f"  Leverage Loans:  ${e.get('total_leverage_loans', 0):>14,.0f}",
             f"  CDE Fees:        ${e.get('total_cde_fees', 0):>14,.0f}",
-            f"  Net Subsidy:     ${e.get('total_net_subsidy', 0):>14,.0f}",
+            # Was "Net Subsidy". Same figure, honest label: this is QEI minus
+            # the CDE fee, ~97.5% of QEI, and it contains the leverage loan the
+            # QALICB repays. See section_d_capitalization for the full note.
+            f"  QEI less fees:   ${e.get('total_net_subsidy', 0):>14,.0f}",
             "=" * 60,
         ]
         return "\n".join(lines)

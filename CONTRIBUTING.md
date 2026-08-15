@@ -9,7 +9,17 @@ bug reports, documentation improvements, new features, and data source integrati
 git clone https://github.com/Jaypatel1511/nmtc-application-builder.git
 cd nmtc-application-builder
 pip install -e ".[dev]"
+
+# To build the documentation as well:
+pip install -e ".[docs]"
+python -m mkdocs build --strict
 ```
+
+The `[docs]` extra covers `mkdocs`, `mkdocs-material` and the output libraries
+the docs build needs — the build renders the full sample application in all four
+formats, and the hook that does so fails the build if any format is missing.
+CI builds the docs on every pull request, but does **not** deploy them:
+publishing to `gh-pages` is still a manual `python -m mkdocs gh-deploy`.
 
 ## Running Tests
 

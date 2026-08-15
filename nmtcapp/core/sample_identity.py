@@ -55,6 +55,42 @@ def _norm(value) -> str:
     return str(value).strip().lower() if value is not None else ""
 
 
+def _blank_form_locations() -> str:
+    """Where the blank forms actually are, for THIS install.
+
+    The message named ``nmtcapp/templates/pipeline_template.xlsx`` and
+    ``nmtcapp/templates/cde_profile_template.yaml`` as though the reader were
+    standing in a git checkout. A pip user has those inside site-packages, at a
+    path they cannot guess and should not be editing in place — the same shape
+    as documentation that assumes a checkout.
+
+    So: resolve the real directory, and lead with ``nmtcapp init``, which is
+    the instruction that works for every install kind. If the packaged
+    templates cannot be located at all (a broken install), say only the part
+    that is still true rather than printing a path that is not there.
+    """
+    init_line = (
+        "`nmtcapp init <dir>` writes blank copies of both forms into a "
+        "directory of your choosing; fill those in."
+    )
+    try:
+        import importlib.resources as pkg_resources
+        from pathlib import Path
+
+        templates = Path(str(pkg_resources.files("nmtcapp") / "templates"))
+        if not templates.is_dir():
+            templates = Path(__file__).resolve().parent.parent / "templates"
+        if templates.is_dir():
+            return (
+                f"{init_line} The packaged originals are read-only copies at "
+                f"{templates} (pipeline_template.xlsx, CDE Profile sheet, "
+                "row 4; and cde_profile_template.yaml)."
+            )
+    except Exception:                              # pragma: no cover - defensive
+        pass
+    return init_line
+
+
 def matched_sample_field(name=None, cde_id=None, ein=None):
     """Return the name of the identity field that matches the shipped sample.
 
@@ -92,10 +128,7 @@ def assert_not_sample_identity(name=None, cde_id=None, ein=None, source: str = "
         f"with nmtc-application-builder (Riverbend Community Capital CDE, LLC "
         f"/ CDE-2018-0117). Refusing to score or generate an application "
         f"against sample identity.\n\n"
-        f"Enter your own CDE's details. The blank forms are "
-        f"nmtcapp/templates/pipeline_template.xlsx (CDE Profile sheet, row 4) "
-        f"and nmtcapp/templates/cde_profile_template.yaml; "
-        f"`nmtcapp init <dir>` writes a copy of the YAML for you.\n\n"
+        f"Enter your own CDE's details. {_blank_form_locations()}\n\n"
         f"If you are deliberately running the shipped sample, load it with "
         f"allow_sample=True (library) or --demo (CLI), which labels every "
         f"screen as fictional."

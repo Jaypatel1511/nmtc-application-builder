@@ -37,8 +37,14 @@ from __future__ import annotations
 # as a "Severe Distress Threshold" narrowed the Fund's own category, and the
 # separate 20% Deep Distress commitment was not reported at all.
 SEVERE_DISTRESS_MIN_PCT = 0.85       # >=85% of QLICIs in areas of higher distress
+# ASSIGNED ONCE. This name was assigned twice, on consecutive lines, with the
+# same value and two different comments. Found by the 1.2.1 mutation harness:
+# changing the first assignment to 0.05 moved nothing, because the second
+# reassigned 0.20 immediately afterwards, and the constant pin stayed green
+# over what looked like a mutated threshold. A duplicate assignment is a live
+# hazard even when the two values agree today — the next editor changes one of
+# them and the other silently wins.
 DEEP_DISTRESS_MIN_PCT = 0.20         # >=20% of QLICIs in "Deep Distress" areas
-DEEP_DISTRESS_MIN_PCT = 0.20         # 20%+ in Deep Distress areas for full credit
 SPECIAL_TARGETING_BONUS_PCT = 0.10   # 10%+ in a special targeting category triggers bonus
 
 # --- Business Strategy thresholds ---
