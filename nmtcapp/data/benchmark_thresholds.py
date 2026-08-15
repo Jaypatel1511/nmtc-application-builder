@@ -23,7 +23,21 @@ from __future__ import annotations
 # ===========================================================================
 
 # --- Community Outcomes thresholds ---
-SEVERE_DISTRESS_MIN_PCT = 0.85       # 85%+ in severe distress / multi-indicia for full credit
+# CY 2024-2025 NMTC Program Review Process, "Targeting Areas of Higher Distress
+# (Question 25)", quoted verbatim from the published document:
+#
+#   "The Applicant indicated that it will commit to providing at least 85% of
+#    its QLICIs in specified areas of severe distress and/or areas
+#    characterized by multiple indicia of distress. The Applicant indicated
+#    that it will commit to providing at least 20% of its QLICIs to 'Deep
+#    Distress' areas."
+#
+# Note what the 85% actually covers: severe distress OR multiple indicia — the
+# Question 25 list of twelve, not the severe-distress tier alone. Rendering it
+# as a "Severe Distress Threshold" narrowed the Fund's own category, and the
+# separate 20% Deep Distress commitment was not reported at all.
+SEVERE_DISTRESS_MIN_PCT = 0.85       # >=85% of QLICIs in areas of higher distress
+DEEP_DISTRESS_MIN_PCT = 0.20         # >=20% of QLICIs in "Deep Distress" areas
 DEEP_DISTRESS_MIN_PCT = 0.20         # 20%+ in Deep Distress areas for full credit
 SPECIAL_TARGETING_BONUS_PCT = 0.10   # 10%+ in a special targeting category triggers bonus
 
