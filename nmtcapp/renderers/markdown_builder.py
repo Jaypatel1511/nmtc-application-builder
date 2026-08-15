@@ -151,7 +151,7 @@ class MarkdownApplicationBuilder:
                 f"**{d.get('pct_deep_or_severe', 0):.0%} of QEI {unverified_qualifier(pr)} "
                 "committed to deep/severely distressed tracts** — a lower bound: "
                 "unverified projects are absent from the numerator but present in "
-                "the denominator. See _disclosure.unverified_banner.\n\n"
+                "the denominator, so the true share may be materially higher.\n\n"
             )
         else:
             banner = ""
