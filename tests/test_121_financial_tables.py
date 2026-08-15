@@ -537,17 +537,51 @@ def test_docs_hook_raises_when_a_configured_format_is_missing(monkeypatch, tmp_p
         module._build_sample(str(tmp_path))
 
 
-def test_docs_extra_exists_and_covers_the_toolchain():
-    """`pip install -e ".[docs]"` used to warn and install only the core."""
-    import tomllib
+def _docs_extra_deps():
+    """The [docs] extra's dependency strings, parsed WITHOUT tomllib.
+
+    tomllib is 3.11+. requires-python is >=3.9 and CI runs 3.9-3.12, so an
+    `import tomllib` here fails on the two oldest interpreters — which is
+    exactly where a floor claim needs testing.
+
+    NOT wrapped in try/except ImportError with a skip. A skip exits 0, so the
+    test would be silently absent on precisely the two interpreters where it
+    currently fails: a gate that cannot fail, which is the class this release
+    exists to close. hmda-analyzer hit this identical defect and recorded the
+    rule — a test that can only run on 3.11 asserts nothing about a 3.9 floor.
+
+    NOT a tomli dependency either: adding a runtime-version-shim package to
+    [dev] to read one list is a heavier answer than the question. The portfolio
+    precedent is regex.
+
+    FAILS CLOSED. The two asserts below are the reason this is a helper and not
+    an inline findall: a parser that silently returned [] on a table it could
+    not find would make the "unpinned operator" check below pass vacuously
+    (all() over an empty list is True). It raises instead.
+    """
+    import re
 
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    with open(os.path.join(root, "pyproject.toml"), "rb") as fh:
-        pyproject = tomllib.load(fh)
+    with open(os.path.join(root, "pyproject.toml"), encoding="utf-8") as fh:
+        text = fh.read()
+    block = re.search(
+        r"^\[project\.optional-dependencies\](.*?)(?=^\[)", text,
+        re.MULTILINE | re.DOTALL)
+    assert block, "no [project.optional-dependencies] table"
+    docs = re.search(r"^docs\s*=\s*\[(.*?)\]", block.group(1),
+                     re.MULTILINE | re.DOTALL)
+    assert docs, "there is still no [docs] extra"
+    return re.findall(r'"([^"]+)"', docs.group(1))
 
-    extras = pyproject["project"]["optional-dependencies"]
-    assert "docs" in extras, "there is still no [docs] extra"
-    names = " ".join(extras["docs"]).lower()
+
+def test_docs_extra_exists_and_covers_the_toolchain():
+    """`pip install -e ".[docs]"` used to warn and install only the core."""
+    deps = _docs_extra_deps()
+    assert deps, (
+        "the [docs] extra parsed as empty. Every assertion below would then "
+        "pass or fail for the wrong reason."
+    )
+    names = " ".join(deps).lower()
     for required in ("mkdocs", "mkdocs-material", "python-docx",
                      "openpyxl", "reportlab"):
         assert required in names, (
@@ -556,5 +590,5 @@ def test_docs_extra_exists_and_covers_the_toolchain():
         )
     assert all(
         any(op in dep for op in (">=", "==", "~="))
-        for dep in extras["docs"]
-    ), f"an unpinned docs dependency: {extras['docs']}"
+        for dep in deps
+    ), f"an unpinned docs dependency: {deps}"
