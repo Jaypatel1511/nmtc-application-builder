@@ -92,7 +92,7 @@ FORMAT | document header/footer/table scaffolding; no propositional content | <C
 FORMAT | document header/footer/table scaffolding; no propositional content | CONFIDENTIAL — <CDE> — NMTC CYN — Generated N-N-N
 FORMAT | document header/footer/table scaffolding; no propositional content | | <CDE> — NMTC CYN Application | CONFIDENTIAL
 FORMAT | document header/footer/table scaffolding; no propositional content | | SUMMARY | N total projects | | | N/N | | N/N (N%) | N/N | | | | | | | |
-FORMAT | document header/footer/table scaffolding; no propositional content | | TOTAL | N | N | N | N | N | N | N |
+FORMAT | Appendix C totals row. The share column is now a formatted string ("100.0%"), so the masked form carries N% where it used to carry a bare N — that is the fix to the fraction-under-a-percent-header defect showing through the mask, not new output | | TOTAL | N | N | N% | N | N | N | N |
 FORMAT | document header/footer/table scaffolding; no propositional content | | TOTALS | N Projects | | | | N | N | N | N | N | N | N | N | N | | | | |
 FORMAT | document header/footer/table scaffolding; no propositional content | | TOTALS | | TOTAL (N projects) | | | | | | | | | | | | | N | N | N | N | N | N | N | N | N | | N | | | | N | N | N | N |
 FORMAT | markdown table rule; no propositional content | | --- | --- | --- | --- | --- | --- | --- | --- |
