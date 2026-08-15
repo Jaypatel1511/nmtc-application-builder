@@ -579,12 +579,17 @@ _SAMPLE_PROJECTS: List[PipelineProject] = [
     ),
     PipelineProject(
         project_id="PRJ-013", project_name="Charlotte Workforce Training Center",
-        qalicb_name="Charlotte WTC QALICB LLC", address="2800 Freedom Dr",
+        qalicb_name="Charlotte WTC QALICB LLC", address="2810 Freedom Dr",
         city="Charlotte", state="NC", sector="education", project_type="real_estate",
         total_project_cost=7_500_000, qei_request=5_500_000, qlici_amount=5_500_000,
         expected_jobs_created=30, expected_jobs_retained=12, expected_sq_ft=14_000,
         closing_target_date="2025-12-31",
-        census_tract="37119001900", is_nmtc_eligible=True, distress_level="deep",
+        # C-3: "2800 Freedom Dr" is absent from the Census TIGER address ranges
+        # for Freedom Drive (2700, 2801, 2810 and 2900 all resolve), so every
+        # demo run printed "Location could not be verified". Nudged to 2810,
+        # which resolves, and the tract and distress level are the workbook's
+        # own values for it rather than the invented 37119001900.
+        census_tract="37119004200", is_nmtc_eligible=True, distress_level="severe",
         is_native_area=False, is_high_migration_rural=False, is_opportunity_zone=False,
     ),
     PipelineProject(
@@ -634,11 +639,20 @@ _SAMPLE_PROJECTS: List[PipelineProject] = [
     PipelineProject(
         project_id="PRJ-018", project_name="Kansas City Affordable Senior Housing",
         qalicb_name="KC Senior Housing QALICB LLC", address="3500 Troost Ave",
-        city="Kansas City", state="KS", sector="affordable_housing", project_type="real_estate",
+        # C-3: this row said KANSAS. Troost Avenue is a Kansas City, MISSOURI
+        # street; Kansas City KS is a separate municipality across the state
+        # line. The Census geocoder resolves the address to 3500 TROOST AVE,
+        # KANSAS CITY, MO 64109, tract 29095017800 (Jackson County, MO), and
+        # refuses it when the state is given as KS — which is why it rendered
+        # as "could not be verified" rather than as the wrong-state row it was.
+        # Tract corrected with the state, because leaving the Kansas GEOID
+        # 20091000100 on a Missouri row would fail consistency_check's own
+        # state-FIPS test.
+        city="Kansas City", state="MO", sector="affordable_housing", project_type="real_estate",
         total_project_cost=11_800_000, qei_request=8_500_000, qlici_amount=8_500_000,
         expected_jobs_created=10, expected_jobs_retained=3, expected_units_built=56,
         closing_target_date="2026-02-15",
-        census_tract="20091000100", is_nmtc_eligible=True, distress_level="lic",
+        census_tract="29095017800", is_nmtc_eligible=True, distress_level="lic",
         is_native_area=False, is_high_migration_rural=False, is_opportunity_zone=False,
     ),
     PipelineProject(

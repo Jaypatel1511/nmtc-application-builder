@@ -21,6 +21,28 @@ pip install -e ".[dev]"
 
 The `[dev]` extra installs `pytest`, `pytest-cov`, `jupyter`, and all output/viz libraries (`python-docx`, `openpyxl`, `reportlab`, `matplotlib`).
 
+## Building the documentation
+
+```bash
+pip install -e ".[docs]"
+python -m mkdocs build --strict     # or: python -m mkdocs serve
+```
+
+The `[docs]` extra installs `mkdocs`, `mkdocs-material` and the output libraries
+the docs build itself needs. **It is not optional for a docs build.** The build
+runs `docs/hooks/generate_sample_output.py`, which renders the complete sample
+application in all four formats; without `python-docx` and `reportlab` that hook
+now raises rather than publishing a page claiming four formats over two files.
+
+`[docs]` did not exist before 1.2.1 — `pip install -e ".[docs]"` printed
+`WARNING: ... does not provide the extra 'docs'` and installed only the core.
+CI builds the docs on every pull request, so an unbuildable docs tree fails
+before it is merged.
+
+**Publishing is still manual.** CI builds; it does not deploy. A correction to a
+page under `docs/` is not live on the published site until somebody runs
+`python -m mkdocs gh-deploy`.
+
 ---
 
 ## Running tests

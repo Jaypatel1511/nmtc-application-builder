@@ -49,11 +49,10 @@ class SectionDCapitalizationStrategy(SectionGenerator):
         )
         investor_equity = econ.get("total_investor_equity", total_nmtcs * credit_price)
         cde_fees = econ.get("total_cde_fees", total_qei * cde_fee_rate)
-        net_subsidy = econ.get("total_net_subsidy", total_qei - cde_fees)
-        leverage = econ.get(
-            "total_leverage_loans",
-            total_qei * NMTC_PROGRAM_CONSTRAINTS["leverage_ratio_typical"],
-        )
+        qei_less_fees = econ.get("total_net_subsidy", total_qei - cde_fees)
+        # Same identity as tables/pipeline_table.leverage_loan_for, so Section D
+        # and Appendix A cannot report two leverage totals for one pipeline.
+        leverage = econ.get("total_leverage_loans", max(0.0, total_qei - investor_equity))
 
         economics_summary = {
             "Allocation Requested ($)":       f"${requested:,.0f}",
@@ -66,7 +65,33 @@ class SectionDCapitalizationStrategy(SectionGenerator):
             "CDE Fee Income ($)":             f"${cde_fees:,.0f}",
             "Assumed CDE Fee Rate":
                 f"{cde_fee_rate:.1%} of QEI (market assumption, not a CDFI Fund parameter)",
-            "Net Subsidy to QALICBs ($)":     f"${net_subsidy:,.0f}",
+            # RENAMED FROM "Net Subsidy to QALICBs ($)". The computation is
+            # unchanged and the label now describes it.
+            #
+            # "Net subsidy" is a term of art for the QALICB's benefit NET OF
+            # THE LEVERAGE LOAN, which the QALICB or its affiliate repays or
+            # refinances after the seven-year period; this row is QEI minus the
+            # CDE's fee, which is ~97.5% of QEI and includes the whole leverage
+            # loan. On the shipped sample it read $121,582,500 against a
+            # $124,700,000 QEI.
+            #
+            # NO REPLACEMENT FORMULA IS SUBSTITUTED, because no primary source
+            # defines one. The CY 2024-2025 Allocation Application does not use
+            # the phrase at all (zero occurrences across 142 pages). The
+            # closest federal figure is an OBSERVATION, not a definition, and it
+            # is quoted rather than converted into arithmetic: GAO-10-334, "New
+            # Markets Tax Credit: The Credit Helps Fund a Variety of Projects
+            # in Low-Income Communities, but Could Be Simplified" (January
+            # 2010), reports that the eight leveraged-transaction CDEs in its
+            # case studies "generally agreed that it is reasonable to expect
+            # that the CDE will leave about 50 percent to 65 percent of the
+            # amount of tax credits investors can claim in QALICBs after the
+            # 7-year tax credit period". That is a range from eight cases, over
+            # a different denominator, and it is not this row.
+            "QEI Less CDE Fees ($)":
+                f"${qei_less_fees:,.0f} (not the QALICB's retained benefit — "
+                f"the ${leverage/1e6:.1f}MM leverage loan inside this figure is "
+                "repaid or refinanced)",
             "Compliance Period":              f"{compliance_years} years (IRC §45D)",
         }
 
@@ -130,7 +155,10 @@ class SectionDCapitalizationStrategy(SectionGenerator):
             f"  1. Leverage Lender provides senior debt (approx. ${leverage/1e6:.1f}MM total)\n"
             f"  2. Tax Credit Investor contributes equity (${investor_equity/1e6:.1f}MM)\n"
             + qlici_terms_line +
-            f"  4. Net subsidy to QALICBs: ${net_subsidy/1e6:.1f}MM\n\n"
+            f"  4. QEI less CDE fees: ${qei_less_fees/1e6:.1f}MM. This is not the "
+            f"QALICB's retained benefit — the ${leverage/1e6:.1f}MM leverage "
+            f"loan inside it is repaid or refinanced after the "
+            f"{compliance_years}-year period.\n\n"
             f"Assumed CDE fee rate: {cde_fee_rate:.1%} of QEI (${cde_fees/1e6:.1f}MM) — a market "
             f"assumption of this model, not a CDFI Fund parameter. "
             f"Fees cover origination, compliance monitoring, and asset management over the "

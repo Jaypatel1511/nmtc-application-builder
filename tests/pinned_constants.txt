@@ -1,0 +1,109 @@
+# Constant pins — every published constant that reaches a RENDERED SURFACE,
+# asserted against the rendered string rather than against the constant.
+#
+# WHY THIS FILE EXISTS
+#
+# tests/test_invariant_output.py masks every digit run to "N" before it
+# intersects (_NUMBER_RE, test_invariant_output.py:299/369). That mask is
+# CORRECT and must not be weakened: without it every dollar figure varies per
+# scenario and nothing is invariant, so the gate could not run at all. But the
+# mask necessarily erases every constant the document prints. Measured, on the
+# 1.2.0 tree, by mutating the rendered 85%/20% commitment to 55%/5%:
+#
+#     [baseline 85%/20%]  invariant=207  UNALLOWED=0  DEAD=0
+#     [mutated  55%/ 5%]  invariant=207  UNALLOWED=0  DEAD=0
+#
+# The round-nine swapped distress thresholds mask identically to the correct
+# legend. So do IRC 45D -> 42D, the 7-year compliance period, $0.83, the ACS
+# vintage, the impact bands and the readiness weights. The attribution gate
+# normalises digits too, and its own header concedes citations are "recorded,
+# not verified". Nothing in this package could fail on a wrong constant.
+#
+# This file closes that. Each row asserts that a specific literal string
+# appears in a specific rendered artifact. Mutate the constant, the string
+# changes, the row fails.
+#
+# FORMAT:  CONSTANT | SURFACES | SOURCE | expected rendered text
+#
+#   CONSTANT   dotted name of the constant this row pins, for the reviewer and
+#              for the coverage meta-test. Subscripted for dict members:
+#              schema.NMTC_PROGRAM_CONSTRAINTS[credit_rate]
+#   SURFACES   comma-separated, from:
+#                markdown word excel pdf       the four generated artifacts
+#                cli_summary                   PipelineAnalysisResult.summary()
+#                                              + ReadinessScore.summary(), the
+#                                              block `nmtcapp analyze` prints
+#                win_score                     WinProbabilityScore.summary()
+#   SOURCE     a citation that names a document AND carries a digit (year,
+#              section, question, column) — OR the literal prefix "HOUSE:"
+#              followed by what the rendered text must itself say. A HOUSE row
+#              additionally requires its disclosure phrase to co-render on the
+#              same surface (see DISCLOSURE below); an entry claiming HOUSE
+#              while the document reads as a federal figure is the defect, not
+#              the fix. This is the attribution allowlist's policy, applied to
+#              values instead of clauses.
+#   expected   the exact substring that must appear. NOT computed from the
+#              constant — a row that read the constant and compared it to
+#              itself could not fail, which is the whole failure mode this
+#              package keeps producing.
+#
+# FAILS CLOSED. An empty file, a row that no longer renders, a row with no
+# source, a HOUSE row without its disclosure, and a consumed constant that is
+# neither pinned nor waived all ERROR.
+
+# --- CDFI Fund published thresholds -----------------------------------------
+benchmark_thresholds.SEVERE_DISTRESS_MIN_PCT | markdown,word,pdf | CY 2024-2025 NMTC Program Review Process, "Targeting Areas of Higher Distress (Question 25)", quoted verbatim: "at least 85% of its QLICIs in specified areas of severe distress and/or areas characterized by multiple indicia of distress" | 85% of QLICIs in areas of severe distress and/or multiple indicia of distress
+benchmark_thresholds.DEEP_DISTRESS_MIN_PCT | markdown,word,pdf | CY 2024-2025 NMTC Program Review Process, "Targeting Areas of Higher Distress (Question 25)", quoted verbatim: "at least 20% of its QLICIs to 'Deep Distress' areas" | and 20% in Deep Distress areas
+benchmark_thresholds.HIGHLY_QUALIFIED_SECTION_MIN | win_score | CY 2024-2025 NMTC Program Review Process, Highly Qualified gating: each of the two scored sections must reach 40 of its 50 points | is below the 40-point minimum required for Highly Qualified status
+benchmark_thresholds.HIGHLY_QUALIFIED_AGGREGATE_MIN | win_score | CY 2024-2025 NMTC Program Review Process, Highly Qualified gating: 85 of 100 aggregate base score | /100 < 85)
+
+# --- Statutory --------------------------------------------------------------
+schema.NMTC_PROGRAM_CONSTRAINTS[compliance_period_years] | markdown,word,pdf | IRC 45D(a)(2): the credit is allowed on the QEI date and each of the six following anniversary dates, a 7-year compliance period | 7 years (IRC §45D)
+schema.NMTC_PROGRAM_CONSTRAINTS[credit_rate] | markdown,word,pdf | IRC 45D(a)(2): 5% of the QEI for each of the first three credit allowance dates and 6% for each of the remaining four = 39% | Statutory credit rate 39% of QEI over 7 years (IRC §45D(a)(2)
+_statute.IRC_45D | markdown,word,pdf | IRC 45D is the New Markets Tax Credit section of the Internal Revenue Code, 26 U.S.C. 45D | IRC §45D
+
+# --- Eligibility data vintage ----------------------------------------------
+distress_table._ACS_YEAR | markdown,word,excel,pdf | The CDFI Fund NMTC LIC Eligibility workbook this package downloads and loads is NMTC_LIC_Eligibility_2016_2020.xlsb; its data sheet is named "2016-2020" and its NOTES sheet says "based on 2016-2020 ACS data" | 2016–2020 ACS 5-Year Estimates
+
+# --- Distress-tier definitions, verbatim from the file this tool loads ------
+_workbook.SEVERE_DISTRESS_DEFINITION | word,pdf | CDFI Fund NMTC LIC Eligibility workbook (NMTC_LIC_Eligibility_2016_2020.xlsb), NOTES sheet, "Column O. Severe Distress", value quoted verbatim | Severe distress = LIC AND (Poverty>30%; MFI<=60%; Unemployment>=1.5)
+_workbook.DEEP_DISTRESS_DEFINITION | word,pdf | CDFI Fund NMTC LIC Eligibility workbook (NMTC_LIC_Eligibility_2016_2020.xlsb), NOTES sheet, "Column P. Deep Distress", value quoted verbatim | Deep distress = LIC AND (Poverty>40%; MFI<=40%; Unemployment>=2.5)
+_workbook.DISTRESS_COLUMN_LETTERS | word,pdf | CDFI Fund NMTC LIC Eligibility workbook, NOTES sheet rows headed "Column O. Severe Distress" and "Column P. Deep Distress". The workbook's own letters; 1.2.0 cited "columns 14 and 15", which are the 0-based positional indices of those two columns and are not what the Fund calls them | columns O and P
+
+# --- Market assumptions of this model ---------------------------------------
+schema.NMTC_PROGRAM_CONSTRAINTS[standard_credit_price] | markdown,word,pdf | HOUSE: this model's credit-price assumption. The CDFI Fund sets no credit price; the rendered line says "market assumption, not a CDFI Fund parameter" | $0.83
+schema.NMTC_PROGRAM_CONSTRAINTS[cde_fee_rate_typical] | markdown,word,pdf | HOUSE: this model's CDE fee assumption. The CDFI Fund sets no fee rate; the rendered line says "market assumption, not a CDFI Fund parameter" | 2.5% of QEI
+
+# --- House bands and weights, disclosed as such on the page -----------------
+schema.IMPACT_BENCHMARKS | markdown,word,pdf | HOUSE: this tool's own screening bands. The CDFI Fund publishes no jobs-per-QEI figure in any denominator; the rendered text says so | 5 / 12 / 20 FTE per $1MM QEI
+schema.TARGET_DISTRESS_THRESHOLDS[target_deep_distress] | markdown,word,pdf | HOUSE: internal scoring band, not a CDFI Fund threshold; the rendered line says so | internal scoring band is ≥75%
+schema.READINESS_SCORING_WEIGHTS | word,pdf | HOUSE: unsourced house heuristic; the rendered text says the weights are this tool's own judgement and that the CDFI Fund publishes no such weighting | eligibility 25%, distress concentration 25%, geographic diversity 15%, impact metrics 20%, validation 10%, completeness 5%
+schema.READINESS_SCORING_WEIGHTS | excel | HOUSE: unsourced house heuristic; the sheet carries the same disclosure the methodology appendix does | weights are this tool's own unsourced judgement (eligibility quality 25%; distress concentration 25%; geographic diversity 15%; impact metrics 20%; validation pass rate 10%; completeness 5%)
+
+# --- Waivers: consumed constants that reach no rendered surface --------------
+# Format: WAIVE | CONSTANT | reason
+WAIVE | schema.DISTRESS_LEVELS | Dead constant. Its rendered twin is renderers/styles.DISTRESS_DISPLAY; nothing imports DISTRESS_LEVELS anywhere in the package. Reported in the 1.2.1 notes rather than deleted, because deleting a public name from nmtcapp.data.schema is an API change and 1.2.1 is a patch.
+WAIVE | schema.GRADE_THRESHOLDS | The grade LETTER renders ("Grade A"); the 85/70/55/40 cut points do not appear in any artifact. Pinning the letter would pin the fixture's score, not the constant.
+WAIVE | schema.MIN_GEOGRAPHIC_DIVERSITY | Feeds meets_diversity_minimum, a boolean. Neither the boolean nor the 3 renders in any artifact.
+WAIVE | schema.REQUIRED_PROJECT_FIELDS | Field names, not a published value; they render only inside completeness warnings that name the missing field.
+WAIVE | schema.VALID_SECTORS | Input validation vocabulary. Rejected values raise; the list itself does not render.
+WAIVE | schema.VALID_PROJECT_TYPES | Input validation vocabulary. Rejected values raise; the list itself does not render.
+WAIVE | schema.TARGET_SECTORS | Reaches only PipelineAnalysisResult.summary()'s "High Priority: NN%", as a share and never as the priority labels themselves. The labels are unsourced and the share carries no disclosure — recorded as an open defect in the 1.2.1 notes, not pinned, because pinning a share pins the fixture.
+WAIVE | schema.NMTC_PROGRAM_CONSTRAINTS[leverage_ratio_typical] | No longer sizes anything after the 1.2.1 leverage fix: both branches of nmtc_calc_adapter and tables/pipeline_table now derive the leverage loan from QEI less investor equity. Retained as a public dict key (patch release) but consumed by nothing.
+WAIVE | schema.NMTC_PROGRAM_CONSTRAINTS[min_qei_per_project] | Consumed by no module in the package. Declared and never read.
+WAIVE | benchmark_thresholds.WINNER_PATTERN_THRESHOLDS | Feeds HistoricalBenchmarks.compare(), reached only through app.benchmark(). Not part of app.generate() and not part of the CLI summary block.
+WAIVE | benchmark_thresholds.BENCHMARK_SCORE_POINTS | Same surface as WINNER_PATTERN_THRESHOLDS: HistoricalBenchmarks.compare(), reached only via app.benchmark() and never by app.generate().
+WAIVE | benchmark_thresholds.BENCHMARK_METRIC_WEIGHTS | Same surface as WINNER_PATTERN_THRESHOLDS: HistoricalBenchmarks.compare(), reached only via app.benchmark() and never by app.generate().
+WAIVE | benchmark_thresholds.SPECIAL_TARGETING_BONUS_PCT | Feeds a win_probability sub-score; the 10% itself renders nowhere, only the resulting point total.
+WAIVE | benchmark_thresholds.TRACK_RECORD_PIPELINE_ALIGNMENT_MIN | Feeds a win_probability sub-score; the 70% renders nowhere.
+WAIVE | benchmark_thresholds.TRACK_RECORD_DEPLOYMENT_MIN | Feeds a win_probability sub-score; the 90% renders nowhere.
+WAIVE | benchmark_thresholds.PRODUCT_FLEXIBILITY_BELOW_MARKET_PCT | Feeds a win_probability sub-score; the 50% renders nowhere.
+WAIVE | benchmark_thresholds.PRODUCT_FLEXIBILITY_MIN_INDICIA | Feeds a win_probability sub-score; the 5 renders nowhere.
+WAIVE | benchmark_thresholds.DBC_PRIORITY_YEARS_MIN | Feeds a win_probability sub-score; the 5 renders nowhere.
+WAIVE | benchmark_thresholds.DBC_VOLUME_PCT_MIN | Feeds a win_probability sub-score; the 70% renders nowhere.
+WAIVE | benchmark_thresholds.UNRELATED_ENTITIES_MIN_PCT | Feeds a win_probability sub-score; the 90% renders nowhere.
+WAIVE | benchmark_thresholds.TOP_TIER_AGGREGATE_MIN | Renders only when a fixture actually reaches Top Tier. Out of scope for 1.2.1: TOP_TIER_* is on the deferred list.
+WAIVE | benchmark_thresholds.TOP_TIER_SECTION_MIN | Renders only in the Top Tier assessment sentence, which a fixture reaches only by scoring 95+. TOP_TIER_* is on the 1.2.1 deferred list.
+WAIVE | benchmark_thresholds.BUSINESS_STRATEGY_MAX | The "/ 50" printed by WinProbabilityScore.summary() comes from the score dict's own max_available (win_probability.py:166), which exists so a PARTIAL score can shrink its denominator. It is not read from this constant, so a pin here would pass over a mutated constant. Recorded rather than pinned.
+WAIVE | benchmark_thresholds.COMMUNITY_OUTCOMES_MAX | As BUSINESS_STRATEGY_MAX: the printed denominator comes from the score dict's max_available, not from this constant.
+WAIVE | benchmark_thresholds.PRIORITY_POINTS_MAX | As BUSINESS_STRATEGY_MAX: the printed denominator comes from the score dict's max_available, not from this constant.

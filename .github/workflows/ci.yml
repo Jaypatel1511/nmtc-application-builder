@@ -36,3 +36,39 @@ jobs:
 
     - name: Run tests
       run: pytest -m "not wheel" -v
+
+  # BUILD THE DOCS IN CI. They built nowhere before this job, and that is why a
+  # source correction to docs/reference/data-sources.md sat unpublished on
+  # gh-pages, and why the sample-output hook's degradation — two of four
+  # formats produced, under a --strict build that passed — was invisible until
+  # somebody ran mkdocs by hand.
+  #
+  # This does NOT deploy. gh-pages still needs a manual `mkdocs gh-deploy`, and
+  # a correction to a docs page is not live until someone runs it. What the job
+  # buys is that the docs cannot become unbuildable, and that the hook (which
+  # now raises when a configured format is missing) fails a pull request
+  # instead of publishing a page that overstates what it contains.
+  #
+  # One version, not the matrix: the docs build is not version-sensitive and a
+  # second matrix leg would quadruple the cost of a check whose whole job is to
+  # notice that mkdocs still runs.
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+    - name: Set up Python
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+      with:
+        python-version: "3.12"
+
+    - name: Install the docs toolchain
+      run: |
+        python -m pip install --upgrade pip
+        pip install ".[docs]"
+
+    - name: Build docs (strict)
+      # --strict turns a warning into a failure. It was already in use locally
+      # and passed a two-of-four-formats build, because the hook swallowed the
+      # missing renderers; the hook raises now, so --strict means what it says.
+      run: python -m mkdocs build --strict

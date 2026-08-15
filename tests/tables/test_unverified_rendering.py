@@ -66,7 +66,7 @@ def test_poverty_rate_is_see_acs_for_every_row(mixed_pipeline):
 def test_distress_table_unverified_flags_not_rendered_as_no(mixed_pipeline):
     df = build_distress_table(mixed_pipeline)
     unv = df[df["Project ID"] == "UNV-01"].iloc[0]
-    assert unv["NMTC Native Area"] == "—"
+    assert unv["NMTC Native Area (CDE-declared)"] == "—"
     assert unv["High Migration Rural (HMR)"] == "—"
     assert unv["Opportunity Zone"] == "—"
     assert unv["Severely Distressed Flag"] == "Unverified"
@@ -76,7 +76,7 @@ def test_distress_table_unverified_flags_not_rendered_as_no(mixed_pipeline):
 def test_distress_table_verified_flags_still_yes_no(mixed_pipeline):
     df = build_distress_table(mixed_pipeline)
     ver = df[df["Project ID"] == "VER-01"].iloc[0]
-    assert ver["NMTC Native Area"] == "No"
+    assert ver["NMTC Native Area (CDE-declared)"] == "No"
     assert ver["High Migration Rural (HMR)"] == "No"
     assert ver["Opportunity Zone"] == "Yes"
     assert ver["Severely Distressed Flag"] == "Yes"
@@ -87,7 +87,7 @@ def test_distress_summary_table_unverified_flags(mixed_pipeline):
     df = build_distress_summary_table(mixed_pipeline)
     unv = df[df["Project ID"] == "UNV-01"].iloc[0]
     assert unv["Severely Distressed"] == "Unverified"
-    assert unv["Native Area"] == "—"
+    assert unv["Native Area (CDE-declared)"] == "—"
 
 
 def test_summary_row_counts_only_verified_yes(mixed_pipeline):
@@ -106,7 +106,7 @@ def test_summary_row_counts_only_verified_yes(mixed_pipeline):
 def test_pipeline_table_unverified_flags_not_rendered_as_n(mixed_pipeline):
     df = build_pipeline_table(mixed_pipeline)
     unv = df[df["Project ID"] == "UNV-01"].iloc[0]
-    assert unv["NMTC Native Area (Y/N)"] == "—"
+    assert unv["NMTC Native Area (CDE-declared, Y/N)"] == "—"
     assert unv["High Migration Rural (Y/N)"] == "—"
     assert unv["Opportunity Zone (Y/N)"] == "—"
     assert unv["NMTC Eligible (Y/N)"] == "Unverified"
@@ -115,7 +115,7 @@ def test_pipeline_table_unverified_flags_not_rendered_as_n(mixed_pipeline):
 def test_pipeline_table_verified_flags_still_y_n(mixed_pipeline):
     df = build_pipeline_table(mixed_pipeline)
     ver = df[df["Project ID"] == "VER-01"].iloc[0]
-    assert ver["NMTC Native Area (Y/N)"] == "N"
+    assert ver["NMTC Native Area (CDE-declared, Y/N)"] == "N"
     assert ver["High Migration Rural (Y/N)"] == "N"
     assert ver["Opportunity Zone (Y/N)"] == "Y"
     assert ver["NMTC Eligible (Y/N)"] == "Y"

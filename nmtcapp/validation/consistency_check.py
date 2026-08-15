@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import TYPE_CHECKING
 
 from nmtcapp.data.schema import ValidationResult
@@ -22,7 +23,8 @@ _COST_PER_SQFT_BOUNDS = {
 _QEI_COVERAGE_BOUNDS = (0.30, 0.95)
 
 
-def check_consistency(application: "Application") -> ValidationResult:
+def check_consistency(application: "Application",
+                      deal_economics: dict = None) -> ValidationResult:
     """Validate cross-field consistency within and across projects.
 
     Checks:
@@ -32,6 +34,12 @@ def check_consistency(application: "Application") -> ValidationResult:
     - QEI as fraction of total cost within reasonable bounds
     - Construction start before operations start (when both provided)
     - Total pipeline QEI vs requested allocation
+    - CROSS-SURFACE AGREEMENT: any figure this document prints in more than one
+      place must be one figure (see check_cross_surface_agreement)
+
+    ``deal_economics`` is passed by Application.analyze(), which holds it before
+    the ApplicationAnalysis exists. Omit it and the cross-surface check will
+    run analyze() itself.
 
     Example::
 
@@ -109,8 +117,150 @@ def check_consistency(application: "Application") -> ValidationResult:
                 f"allocation (${requested:,.0f}) — pipeline undersized"
             )
 
+    issues.extend(check_cross_surface_agreement(application, deal_economics))
+
     passed = len(issues) == 0
     return ValidationResult("consistency_check", passed, issues, warnings)
+
+
+# ---------------------------------------------------------------------------
+# Cross-surface arithmetic
+# ---------------------------------------------------------------------------
+
+# Tolerance in dollars. The renderers round to whole dollars at several points
+# and the per-project sum in Appendix A rounds differently from the pipeline
+# total in Section D, so exact equality would fail on float noise alone. One
+# dollar per project is the largest divergence rounding can produce; anything
+# above it is a different formula, not a different rounding.
+_AGREEMENT_TOLERANCE_PER_PROJECT = 1.0
+_AGREEMENT_TOLERANCE_FLOOR = 1.0
+
+
+class _EconomicsOnly:
+    """The slice of ApplicationAnalysis that Section D reads.
+
+    check_consistency runs INSIDE Application.analyze(), before the
+    ApplicationAnalysis object exists, so this check cannot call analyze() —
+    that recurses forever. Section D's generate_content touches exactly one
+    attribute of the analysis (``deal_economics``); everything else it needs is
+    on the Application. tests/validation/test_consistency_check.py asserts that
+    remains true, so a future Section D that reads another attribute fails a
+    test rather than an AttributeError in a validator.
+    """
+
+    __slots__ = ("deal_economics",)
+
+    def __init__(self, deal_economics: dict) -> None:
+        self.deal_economics = deal_economics
+
+
+def _shared_figures(application: "Application", deal_economics: dict) -> dict:
+    """{label: {surface: value}} for every figure printed in more than one place.
+
+    DERIVED FROM THE RENDERERS, NOT HAND-LISTED. The Section D column is read
+    out of the section generator's own economics table, by calling it and
+    parsing the rendered cell; the Appendix A column out of the pipeline
+    table's own TOTALS row, by calling it. A hand-written list of "figures that
+    appear twice" goes stale the first time somebody adds a row; this cannot,
+    because a row that stops being produced stops being compared and a row that
+    starts being produced starts.
+    """
+    from nmtcapp.sections.section_d_capitalization import SectionDCapitalizationStrategy
+    from nmtcapp.tables.pipeline_table import build_pipeline_table
+
+    analysis = _EconomicsOnly(deal_economics)
+    appendix_a = build_pipeline_table(application.pipeline, application.cde)
+    if appendix_a.empty:
+        return {}
+    totals = appendix_a.iloc[-1]
+
+    section_d = SectionDCapitalizationStrategy().generate_content(application, analysis)
+    economics = section_d["subsections"][0]["body"]
+
+    def _money(text) -> float:
+        """Pull the leading dollar figure out of a rendered Section D cell."""
+        match = re.search(r"\$([\d,]+(?:\.\d+)?)", str(text))
+        return float(match.group(1).replace(",", "")) if match else float("nan")
+
+    # Appendix A column -> Section D row label, for the figures both print.
+    pairs = {
+        "Total pipeline QEI": ("QEI Request ($)", "Total Pipeline QEI ($)"),
+        "Total NMTCs generated": ("Total NMTCs ($)", "Total NMTCs Generated ($)"),
+        "Estimated investor equity": (
+            "Estimated Investor Equity ($)", "Estimated Investor Equity ($)"),
+        "CDE fee income": ("CDE Fee ($)", "CDE Fee Income ($)"),
+        "Total leverage loans": ("Leverage Loan ($)", "Total Leverage Loans ($)"),
+    }
+    shared = {}
+    for label, (a_col, d_row) in pairs.items():
+        if a_col not in appendix_a.columns or d_row not in economics:
+            continue
+        shared[label] = {
+            "Appendix A (per-project total)": float(totals[a_col]),
+            "Section D (deal economics)": _money(economics[d_row]),
+        }
+    return shared
+
+
+def check_cross_surface_agreement(application: "Application",
+                                  deal_economics: dict = None) -> list:
+    """Any figure printed in more than one place in one document must agree.
+
+    THIS IS THE CHECK THAT DID NOT EXIST, and its absence is why a $10.2MM
+    contradiction shipped. Section D reported leverage loans as the residual of
+    QEI less investor equity, taken from nmtc-calc; Appendix A sized the same
+    loans at a flat 80% of QEI from a module-local constant. Reproduced on the
+    shipped 20-project sample before the fix: Appendix A $98,000,000 against
+    Section D $82,846,750, in one generated document, with
+    ``check_consistency`` passing.
+
+    check_consistency existed to catch exactly this and could not, because
+    every assertion in it was about one project's own fields. A cross-field
+    check that never crosses a surface cannot fail on the defect that spans
+    two surfaces — the tenth instance in this package of a gate that cannot
+    fail on its own subject.
+
+    ``deal_economics`` is the ``deal_economics_summary`` dict Section D renders
+    from. Application.analyze() passes it in because this runs before the
+    ApplicationAnalysis exists; a direct caller may omit it and pay for an
+    analyze().
+
+    Returns a list of issue strings; empty when every shared figure agrees.
+    """
+    if deal_economics is None:
+        deal_economics = application.analyze().deal_economics
+    try:
+        shared = _shared_figures(application, deal_economics)
+    except Exception as exc:                       # pragma: no cover - defensive
+        # A check that cannot run must SAY SO as an issue, not return clean.
+        return [
+            f"Cross-surface agreement check could not run ({exc}); the "
+            "document's shared figures are unverified"
+        ]
+
+    project_count = len(list(application.pipeline)) if application.pipeline else 0
+    tolerance = max(
+        _AGREEMENT_TOLERANCE_FLOOR,
+        _AGREEMENT_TOLERANCE_PER_PROJECT * project_count,
+    )
+
+    issues = []
+    for label, surfaces in shared.items():
+        values = list(surfaces.values())
+        if any(v != v for v in values):            # NaN: a cell did not parse
+            issues.append(
+                f"{label}: a figure could not be read back out of a rendered "
+                f"surface ({surfaces}) — it cannot be checked for agreement"
+            )
+            continue
+        if max(values) - min(values) > tolerance:
+            detail = "; ".join(f"{name} ${value:,.0f}" for name, value in surfaces.items())
+            issues.append(
+                f"{label} disagrees between surfaces of the same document: "
+                f"{detail} (difference ${max(values) - min(values):,.0f}). "
+                "A figure printed in two places must be one figure."
+            )
+    return issues
 
 
 # State abbreviation → FIPS code prefix (2-digit)

@@ -61,12 +61,21 @@ Data File.
 
 The two distress tiers this tool reports come from the **CDFI Fund NMTC LIC Eligibility workbook**
 itself — the `.xlsb` the package downloads and loads — not from a prose description of it.
-Columns 14 and 15, verbatim:
+Columns **O** and **P**, verbatim — the letters the Fund's own NOTES sheet uses:
 
-| Column | Header, verbatim |
-|---|---|
-| 14 | `Severe distress=LIC AND (Poverty>30%; MFI<=60%;Unemployment>=1.5)` |
-| 15 | `Deep distress=LIC AND (Poverty>40%; MFI<=40%;Unemployment>=2.5)` |
+| Column | NOTES sheet label | Header, verbatim |
+|---|---|---|
+| O | `Column O. Severe Distress` | `Severe distress=LIC AND (Poverty>30%; MFI<=60%;Unemployment>=1.5)` |
+| P | `Column P. Deep Distress` | `Deep distress=LIC AND (Poverty>40%; MFI<=40%;Unemployment>=2.5)` |
+
+!!! warning "Corrected in 1.2.1"
+    This page, and the generated methodology appendix, cited these as
+    "columns 14 and 15" through 1.2.0. Those are the **0-based positional
+    indices** of the same two columns in the data sheet's header row — correct
+    as array offsets, and not what the Fund calls them. A reader opening the
+    workbook to check the quotation would look at columns N and O and find the
+    unemployment ratio and severe distress. It was a citation-precision defect
+    inside the text added to fix a citation defect.
 
 The semicolons read as **or**; both tiers additionally require the tract to be a Low-Income Community.
 Through 1.2.0-rc the generated methodology note printed severe distress's thresholds under the *deep*

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
+from nmtcapp.renderers._methodology import ACS_VINTAGE
 from nmtcapp.renderers.styles import DISTRESS_DISPLAY
 
 if TYPE_CHECKING:
@@ -13,9 +14,58 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# ACS data year cited in methodology
-_ACS_YEAR = "2016–2020 ACS 5-Year Estimates"
+# ACS data year cited in methodology. Imported rather than retyped so a per-row
+# "ACS Vintage" cell and the methodology appendix that explains it cannot name
+# two different releases of the same dataset.
+_ACS_YEAR = ACS_VINTAGE
 _ELIGIBILITY_SOURCE = "CDFI Fund NMTC Eligibility Table (2016–2020 ACS)"
+
+# ---------------------------------------------------------------------------
+# NATIVE AREA IS THE CDE'S OWN DECLARATION. THE CHAIN, END TO END.
+#
+# `nmtcapp analyze` printed "Native Area: 10%" under a heading of tool-derived
+# distress shares, on a package whose dependency no longer publishes the field.
+# Traced from the rendered line back to its source:
+#
+#   1. RENDERED   intelligence/pipeline_analyzer.summary() prints
+#                 distress_breakdown["pct_native_area"].
+#   2. COMPUTED   intelligence/distress_analysis.analyze_distress_concentration
+#                 sums p.qei_request over projects where `p.is_native_area` is
+#                 truthy and divides by total_qei.
+#   3. FIELD      core/pipeline.PipelineProject.is_native_area, Optional[bool],
+#                 default None.
+#   4. POPULATED  core/pipeline.Pipeline.from_csv reads the `native_area` CSV
+#                 column through _optional_bool (pipeline.py:305), and
+#                 core/upload_handler maps the spreadsheet header
+#                 "Native Area (Y/N)" to the same field. Both are cells the CDE
+#                 fills in on the shipped template, which documents the column
+#                 as "native_area -> drives pct_native_area".
+#   5. NOT THE DEPENDENCY. integrations/nmtc_mapper_adapter deliberately does
+#                 not assign it (nmtc_mapper_adapter.py:181-189), and
+#                 tests/integrations/test_mapper_contract.py:192 fails if any
+#                 enrichment path ever does.
+#
+# SO IT IS POSSIBILITY (1): a CDE-supplied declaration. Not the dependency, not
+# a default, not an inference. nmtc-mapper 0.5.0 dropped is_nmtc_native_area
+# and nothing here noticed because nothing here read it.
+#
+# THAT DOES NOT MAKE THE RENDERING CORRECT. The CDFI Fund publishes no
+# tract-keyed NMTC Native Areas resource to check it against: the four classes
+# are Census AIANNH legal geographies whose GEOIDs carry no state or county
+# component and cannot nest into SSCCCTTTTTT, and the determination is a
+# spatial intersection against the Fund's CIMS map, not a join. This tool
+# therefore cannot verify the declaration and must not present it beside shares
+# it derived itself. Special Targeting awards up to 1.25 Priority Points for
+# NMTC Native Areas, so a figure here is a scored figure.
+#
+# Every surface that prints it now says whose it is.
+#
+# ONE DENOMINATOR CAVEAT, stated because 1.2.0's fix pass corrected the banner
+# covering the distress shares without auditing each site: pct_native_area
+# divides by the SAME total_qei as those shares, and an undeclared project
+# (is_native_area None) falls to the "not native" side. It is a lower bound
+# over declared values, on a full-pipeline denominator.
+NATIVE_AREA_BASIS = "CDE-declared; not verified by this tool"
 
 
 def build_distress_table(pipeline: "Pipeline") -> pd.DataFrame:
@@ -40,7 +90,7 @@ def build_distress_table(pipeline: "Pipeline") -> pd.DataFrame:
                                                "No" if p.is_nmtc_eligible is False else "Unverified"),
             "Distress Level":              _distress_cell(p),
             "Severely Distressed Flag":    _severely_distressed_flag(p),
-            "NMTC Native Area":            _flag(p.is_native_area),
+            "NMTC Native Area (CDE-declared)": _flag(p.is_native_area),
             "High Migration Rural (HMR)":  _flag(p.is_high_migration_rural),
             "Opportunity Zone":            _flag(p.is_opportunity_zone),
             "Poverty Rate (%)":            _fmt_pct(p),
@@ -57,7 +107,7 @@ def build_distress_table(pipeline: "Pipeline") -> pd.DataFrame:
     # Summary row
     total = len(df)
     deep = df["Severely Distressed Flag"].str.lower().eq("yes").sum()
-    native = df["NMTC Native Area"].str.lower().eq("yes").sum()
+    native = df["NMTC Native Area (CDE-declared)"].str.lower().eq("yes").sum()
     df.loc[len(df)] = {
         "Project ID": "SUMMARY",
         "Project Name": f"{total} total projects",
@@ -66,7 +116,7 @@ def build_distress_table(pipeline: "Pipeline") -> pd.DataFrame:
         "NMTC Eligible": f"{(df['NMTC Eligible'].str.lower()=='yes').sum()}/{total}",
         "Distress Level": "",
         "Severely Distressed Flag": f"{deep}/{total} ({deep/total:.0%})",
-        "NMTC Native Area": f"{native}/{total}",
+        "NMTC Native Area (CDE-declared)": f"{native}/{total}",
         "High Migration Rural (HMR)": "",
         "Opportunity Zone": "",
         "Poverty Rate (%)": "",
@@ -92,7 +142,7 @@ def build_distress_summary_table(pipeline: "Pipeline") -> pd.DataFrame:
             "Census Tract (GEOID)": _tract_cell(p),
             "Distress Level":       _distress_cell(p),
             "Severely Distressed":  _severely_distressed_flag(p),
-            "Native Area":          _flag(p.is_native_area),
+            "Native Area (CDE-declared)": _flag(p.is_native_area),
         })
     if not rows:
         return pd.DataFrame()

@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from nmtcapp.data.schema import TARGET_DISTRESS_THRESHOLDS
 from nmtcapp.renderers._disclosure import (
     is_partial_unverified, qualified_pct, unverified_qualifier,
 )
@@ -142,25 +143,32 @@ class SectionABusinessStrategy(SectionGenerator):
             "Sector Diversity Score": f"{sector.get('sector_diversity_score', 0):.1f}/100",
         }
 
+        # THE BAND IS INTERPOLATED, NOT TYPED. "≥75%" was a literal in all
+        # three branches while data/schema.py owns the value; moving the
+        # constant would have changed what the readiness score gates on while
+        # the document went on printing 75%. Found by the 1.2.1 mutation
+        # harness: it was the one pinned constant whose mutation stayed green.
+        band = (
+            "(This tool's own internal scoring band is "
+            f"≥{TARGET_DISTRESS_THRESHOLDS['target_deep_distress']:.0%}; "
+            "it is not a CDFI Fund threshold.)"
+        )
         if degraded:
             deployment_distress_line = (
                 "QEI deployment strategy: deep/severe distress commitment "
                 "unverified — eligibility data unavailable; re-verify before "
-                "asserting a commitment level. (This tool's own internal "
-                "scoring band is ≥75%; it is not a CDFI Fund threshold.)"
+                f"asserting a commitment level. {band}"
             )
         elif partial_unverified:
             deployment_distress_line = (
                 f"QEI deployment strategy: {deep_pct:.0%} of QEI "
                 f"{unverified_qualifier(pr)} committed to deep/severe distress "
-                "tracts. (This tool's own internal scoring band is ≥75%; it "
-                "is not a CDFI Fund threshold.)"
+                f"tracts. {band}"
             )
         else:
             deployment_distress_line = (
                 f"QEI deployment strategy: {deep_pct:.0%} of QEI "
-                "committed to deep/severe distress tracts. (This tool's own "
-                "internal scoring band is ≥75%; it is not a CDFI Fund threshold.)"
+                f"committed to deep/severe distress tracts. {band}"
             )
 
         # B1 and B6. Two invented facts stood here, in the subsection where

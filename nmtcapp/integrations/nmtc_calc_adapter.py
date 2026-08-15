@@ -22,11 +22,17 @@ def compute_pipeline_economics(pipeline: "Pipeline") -> dict:
     - ``total_qei`` – sum of all QEI requests
     - ``total_nmtcs`` – total NMTC credits generated (39% of QEI × 7 years)
     - ``total_investor_equity`` – total tax credit equity at $0.83/credit
-    - ``total_leverage_loans`` – total leverage loan component
+    - ``total_leverage_loans`` – leverage loan component, the residual of QEI
+      less investor equity, so leverage + equity = QEI
     - ``total_cde_fees`` – aggregate CDE fees (2.5% of QEI)
-    - ``total_net_subsidy`` – total net subsidy to QALICBs (QEI – fees)
+    - ``total_net_subsidy`` – QEI less CDE fees. NOT the QALICB's retained
+      benefit: the leverage loan inside the QEI is repaid or refinanced, so
+      this figure is ~97.5% of QEI and is renamed "QEI Less CDE Fees ($)"
+      wherever it renders. The key keeps its name because it is published
+      through ``ApplicationAnalysis.to_dict()`` and 1.2.1 is a patch.
     - ``project_count`` – number of projects modeled
-    - ``avg_leverage_ratio`` – average leverage ratio across deals
+    - ``avg_leverage_ratio`` – leverage loan divided by INVESTOR EQUITY, the
+      quantity nmtc-calc computes (a multiple, ~2.09x), not a fraction of QEI
 
     Example::
 
@@ -91,16 +97,35 @@ def _compute_via_library(projects, NMTCDeal, nmtc_transaction) -> dict:
 
 
 def _compute_fallback(projects) -> dict:
-    """Manual fallback using published NMTC program parameters."""
+    """Manual fallback, modelling the SAME structure the library models.
+
+    THE TWO BRANCHES USED TO DISAGREE, and a CDE could not tell which one had
+    run. ``_compute_via_library`` takes nmtc-calc's leverage loan, which is the
+    residual QEI less investor equity; this branch sized it as
+    ``total_qei * leverage_ratio_typical`` — a flat 80%. On the shipped
+    20-project sample that is $98,000,000 here against $82,846,750 there, a
+    $15.15MM difference in Section D's "Total Leverage Loans ($)" decided by
+    whether nmtc-calc happened to be importable.
+
+    Both now use the identity that is true of the structure the document
+    describes: leverage loan + investor equity = QEI. ``leverage_ratio_typical``
+    is no longer read anywhere.
+
+    ``avg_leverage_ratio`` carried the same split definition — nmtc-calc
+    defines it leverage/EQUITY (models/transaction.py:85, ~2.09x on that
+    sample) while this branch returned 0.80, a fraction of QEI. Same key, two
+    incompatible quantities, a factor of 2.6 apart. It now means what the
+    library means. Nothing renders it; it reaches library callers through
+    ``ApplicationAnalysis.to_dict()["deal_economics"]``.
+    """
     credit_rate = NMTC_PROGRAM_CONSTRAINTS["credit_rate"]
     credit_price = NMTC_PROGRAM_CONSTRAINTS["standard_credit_price"]
     cde_fee_rate = NMTC_PROGRAM_CONSTRAINTS["cde_fee_rate_typical"]
-    leverage_ratio = NMTC_PROGRAM_CONSTRAINTS["leverage_ratio_typical"]
 
     total_qei = sum(p.qei_request for p in projects)
     total_nmtcs = total_qei * credit_rate
     total_investor_equity = total_nmtcs * credit_price
-    total_leverage = total_qei * leverage_ratio
+    total_leverage = max(0.0, total_qei - total_investor_equity)
     total_cde_fees = total_qei * cde_fee_rate
 
     return {
@@ -111,7 +136,10 @@ def _compute_fallback(projects) -> dict:
         "total_cde_fees": round(total_cde_fees),
         "total_net_subsidy": round(total_qei - total_cde_fees),
         "project_count": len(projects),
-        "avg_leverage_ratio": leverage_ratio,
+        "avg_leverage_ratio": (
+            round(total_leverage / total_investor_equity, 3)
+            if total_investor_equity else 0.0
+        ),
     }
 
 
