@@ -146,6 +146,159 @@ claims were withdrawn, so the clauses no longer render. Three surviving entries
 carry a new `DOCUMENT RETRIEVABLE, CONTENT NOT LOCATED` marker — the weaker
 sibling of the same defect, queued the same way.
 
+### Fixed — seven unsubstantiated claims removed from generated applications
+
+A hostile re-audit of this branch returned DO NOT SHIP. Seven claims reached a
+document a CDE signs and submits, none of them supported by anything the CDE
+supplied. All seven are fixed; four had been invisible to every gate.
+
+1. **`sections/section_a_business.py` — "All N projects have completed preliminary
+   underwriting review."** Unconditional, in the subsection where deployment
+   capacity is scored. `grep -ril underwrit nmtcapp/` finds no underwriting field
+   on `PipelineProject`, in the CSV templates, or in `upload_handler`. This is the
+   claim this same release removed from Section C, recording at
+   `section_c_management.py:61-70` that it told the Fund "it ran a review it does
+   not run" — the remediation was applied there and not here. Now a
+   `[CDE TO COMPLETE]` covering timeline and diligence status.
+2. **`renderers/_disclosure.py` — the unverified-projects banner claimed
+   eligibility-dependent figures "reflect verified projects only."** They do not.
+   An unverified project has `distress_level = None` so it never enters the
+   numerator, but `distress_analysis.py:41` sums **every** project into the
+   denominator. Measured: a pipeline whose only verified project was 100% of
+   verified QEI and severely distressed reported **48.3%**.
+   **The sentence changed, not the arithmetic**, and deliberately: the
+   full-pipeline denominator matches the basis the Fund scores on (CY 2024-2025
+   Allocation Application, Question 25(a) — "at least 85% of its QLICIs (in terms
+   of aggregate dollar amounts)"), and a verified-only denominator would
+   **overstate**, in the direction that flatters the applicant — one verified
+   deep-distress project out of twenty would file "100%". These figures are now
+   described as the lower bounds they are. `markdown_builder.py` and
+   `readiness_score.py` carried the same false sentence and are fixed too.
+   Note the document carries two denominators on purpose: the eligibility *rate*
+   uses a verified-only denominator and says so on its face.
+3. **`renderers/word_builder.py`, `renderers/pdf_builder.py` — the methodology note
+   printed SEVERE distress's thresholds under the DEEP label.** It read "Deep
+   distress = poverty rate >30% or unemployment >1.5× national average. Severe
+   distress = LIC plus additional qualifying factors", credited to "CDFI Fund NMTC
+   Program guidance and the NMTC Allocation Application Review Process".
+   Verified against the Fund's **own NMTC LIC Eligibility workbook** — the `.xlsb`
+   this package downloads and loads — columns 14 and 15 read verbatim:
+
+   > col 14 `Severe distress=LIC AND (Poverty>30%; MFI<=60%;Unemployment>=1.5)`
+   > col 15 `Deep distress=LIC AND (Poverty>40%; MFI<=40%;Unemployment>=2.5)`
+
+   So a CDE reading the old note was told a 32%-poverty tract is "deep distress";
+   the Fund's deep bar is 40%. Both definitions had also dropped the
+   median-family-income limb and the "AND LIC" term. **Both tiers are the Fund's
+   own and both are kept** — they are separate columns in the Fund's data file and
+   separate fields in `nmtc-mapper`, so collapsing them would desynchronise the
+   package from its own dependency. The classification *data* was never wrong; only
+   the printed legend was, which is its own lesson.
+4. **`sections/section_a_business.py` — "guides our market selection toward
+   persistent-poverty counties and high-migration rural communities."** Asserted for
+   every CDE, including pipelines where no project carries either flag and pipelines
+   whose tracts were never verified — while `persistent_poverty` and
+   `high_migration_rural` are both per-project columns the CDE fills in. The tool
+   asserted the targeting and ignored the declaration. Now renders only what was
+   declared, attributed to the declaration, and a placeholder when nothing was. The
+   same line also appended "…" to missions it had not truncated.
+5. **`sections/section_c_management.py` — `board_meeting_frequency` defaulted to
+   `"Quarterly"`.** Not a fallback string: an answer to a governance question the
+   CDE was asked and did not answer, printed in a governance table in the section
+   where management capacity is scored, indistinguishable from a supplied value.
+   Every sibling row defaults to `"N/A"`; this one now matches.
+6. **`sections/section_a_business.py` — "within 12 months of award announcement."**
+   A literal. No CDE supplies a closing timeline.
+7. **`sections/section_a_business.py` — "in markets where conventional capital is
+   systematically absent."** An assertion about credit conditions in the CDE's
+   markets, which this tool retrieves no data for — while Section B's placeholder
+   tells the CDE in as many words that it "does not compute, retrieve or verify
+   community-need statistics of any kind".
+
+### Fixed — the tool invented the NAICS code it filed
+
+**`renderers/styles.py:SECTOR_NAICS` is deleted.** The pipeline table printed a
+column headed "Sector (NAICS)" whose value was `SECTOR_NAICS.get(p.sector, p.sector)`.
+
+- **No NAICS input exists.** `PipelineProject` has no `naics` field and
+  `pipeline_template.csv` has no `naics` column. No CDE ever supplied one.
+- **A sector label does not determine a NAICS code.** `small_business` is a *size*
+  classification; it mapped to `"722/336 – Food Services / Manufacturing"`, asserting
+  every such project is a restaurant or a transportation-equipment manufacturer (336
+  is Transportation Equipment Manufacturing, not manufacturing at large).
+- **The parentheticals are invented.** 531 is "Real Estate", not "Real Estate (Mixed
+  Use)" or "(Residential)" — and two sectors mapped to the same code, separated only
+  by the invented parenthetical. 221 is "Utilities"; 624 is "Social Assistance".
+- **It degraded silently.** An unrecognised sector fell through to the raw string, so
+  `retail` printed under a column headed "Sector (NAICS)".
+
+A NAICS code identifies the QALICB's industry to the Fund and follows the allocation
+into CIIS/AMIS compliance reporting. The column now renders the CDE's own sector
+label under **"Sector (as supplied)"**. If a NAICS code is required, it is the CDE's
+to supply; this tool does not have it.
+
+### Changed — the invariance gate compares meaning, not bytes
+
+`tests/test_invariant_output.py` intersected **raw** rendered lines, so interpolating
+any CDE value into a sentence made it invisible. It now masks interpolated values
+first — CDE and project names, cities, addresses, sectors, dates, and all digits —
+then intersects. **The mask vocabulary is generated from `SCENARIOS` rather than
+hand-written**, so it cannot drift from the fixtures.
+
+Two narrowings, both measured rather than assumed:
+
+- **Matching is word-bounded.** Substring matching spliced tokens into real words:
+  "QALICB" contains Alabama's `AL`, "CONFIDENTIAL" contains `ID` and `AL`, and
+  `<SECTOR>` contains `OR`, so the mask re-masked its own output.
+- **Bare two-letter state codes are not masked**; full state names are. `ID` is a
+  whole word in the column header "Project ID". Masking them moves the count by one
+  line, and that line is a state-summary table row carrying no proposition.
+
+`_is_prose` also drops from five words to **four**: `**Board Meeting Frequency:**
+Quarterly` is 38 characters and four words, which is how blocker 5 stayed invisible.
+Three words was measured (223 lines) and rejected as dilution.
+
+`tests/invariant_allowlist.txt` grows **116 → 207** entries as a direct result, with a
+new `DERIVED` category for a fixed sentence frame whose every figure comes from the
+CDE's own inputs. **That growth is the point** — the new entries are not new output,
+they are output that was always there and never had to be justified. Two fail-closed
+tests assert the mask still masks and still discriminates; each of the five
+previously-missed blockers was re-planted and confirmed to turn the gate red.
+
+### Coverage — how much of the output the gates actually adjudicate
+
+**Stated as a number, because the honest denominator is the point.**
+
+The invariance gate compares rendered lines across four disjoint scenarios. It used
+to compare them byte-for-byte, which meant interpolating any CDE value into a
+sentence hid the sentence from it. It now masks interpolated values first. Measured
+on the four fixtures the gate actually runs:
+
+| | lines |
+|---|---|
+| Structurally-invariant prose lines (things the tool says about every CDE) | **207** |
+| Adjudicated on `tests/invariant_allowlist.txt`, each with a justification | **207** |
+| Visible to the gate *before* this release's mask and threshold fixes | 126 |
+| Structurally-invariant lines that were therefore **invisible** | **81** |
+
+Four of the seven blockers below lived in those 81.
+
+**What is still ungated, stated plainly.** Both gates key on invariance or on
+attribution triggers. Neither can see a claim that *varies with the input and is
+still wrong* — a threshold labelled as a percentile, a computed value described as a
+comparison, a denominator that is not what the sentence says it is. Rendering eleven
+diverse scenarios in all four formats yields **448 distinct prose templates**, of
+which **287 (64%) are input-varying** and therefore outside both gates by
+construction. That surface has not been line-by-line adjudicated.
+
+Two of this release's blockers came out of it (the distress denominator, and the
+invented NAICS code), and it is where the next one will be. Read generated output;
+do not assume a green suite means the document is true.
+
+*(A figure of "1,917 input-varying lines" circulated in earlier reviews. It does not
+reproduce — it summed per-scenario counts without taking the union, inflating the
+number roughly fourfold. The distinct-template counts above are the ones to use.)*
+
 ### Changed — fabrication removed
 
 Any claim the tool cannot substantiate from the CDE's own inputs is now an explicit
@@ -321,8 +474,14 @@ install today**; no working environment changes as a result of this release.
   and re-assigning `project.is_native_area` each turn it red.
 - `tests/integrations/test_no_fabrication.py` extended to assert the HMDA adapter stays
   removed and that neither `hmda-analyzer` nor `cra-scraper` is re-declared.
-- Suite: **709 → 861 tests, all passing.** `release.yml`'s `FLOOR` re-derived from the
-  new count by its own documented rule (half of 860 executed, rounded down): 350 → 430.
+- Suite: **709 → 897 collected, 896 run under `-m "not wheel"`, all passing.**
+  `release.yml`'s `FLOOR` is **440**, re-derived from the count the CI step actually
+  measures: the sdist job runs 896 and skips 4 (the committed-artifacts gate, which
+  needs a git checkout), so 892 execute; half is 446, rounded down to 440.
+  *An earlier draft of this entry said "709 → 861" and "FLOOR 350 → 430". Both were
+  wrong — the suite was 894 and the floor was already 440. A release note that
+  misstates the artifact it ships with is the same defect class one level up, which
+  is why it is corrected here rather than quietly overwritten.*
 
 ---
 
