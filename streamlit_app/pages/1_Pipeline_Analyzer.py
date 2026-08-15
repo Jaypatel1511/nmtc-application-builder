@@ -23,6 +23,7 @@ from nmtcapp.core.upload_handler import load_uploaded_pipeline
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from nmtcapp.core.sample_identity import SampleDataError
+from nmtcapp.data.schema import TARGET_DISTRESS_THRESHOLDS
 from utils import (
     fmt_millions,
     fmt_pct,
@@ -384,49 +385,58 @@ with tabs[1]:
         st.plotly_chart(fig_pie, use_container_width=True, config=PLOTLY_CONFIG)
 
     with right:
-        # --- B: Benchmarks vs. historical winners ---
-        st.markdown("**Benchmarks vs. historical winners**")
-        WINNER_MEDIAN = 0.82
-        winner_p25 = 0.72
-        winner_p75 = 0.91
+        # --- B: distress concentration vs. this tool's own screening band ---
+        #
+        # WITHDRAWN IN 1.2.0. This chart used to read "Benchmarks vs. historical
+        # winners" and plot three hardcoded values:
+        #
+        #     WINNER_MEDIAN = 0.82 ; winner_p25 = 0.72 ; winner_p75 = 0.91
+        #
+        # labelled "Winner p25 / Winner median / Winner p75", with a green/red
+        # "up above median" / "down below median" delta against the user's
+        # pipeline and no disclaimer anywhere on the page.
+        #
+        # There is no such distribution. The three values are copies of
+        # WINNER_DISTRESS_PATTERNS in nmtcapp/data/historical_awards.py, whose
+        # own module docstring records that the publication it cites DOES NOT
+        # EXIST and that "Every value under them is unsourced" — and they were
+        # hardcoded here separately, so correcting that module would not have
+        # corrected this page. The CDFI Fund publishes winner-level award data
+        # but no distribution of applicant distress concentration, so no
+        # percentile of winners can be computed from anything public.
+        #
+        # Same policy as the F28 impact-band relabel and the >=75% deep-distress
+        # band: the claim is WITHDRAWN, not re-cited and not softened. What
+        # replaces it is the only comparator this tool can honestly draw — its
+        # own screening band, labelled on its face as its own.
+        st.markdown("**Distress concentration vs. this tool's screening band**")
+        screening_band = TARGET_DISTRESS_THRESHOLDS["target_deep_distress"]
 
-        bench_labels = ["Your pipeline", "Winner p25", "Winner median", "Winner p75"]
-        bench_values = [
-            deep_severe_pct * 100,
-            winner_p25 * 100,
-            WINNER_MEDIAN * 100,
-            winner_p75 * 100,
-        ]
-        bar_colors = [ACCENT if m == "Your pipeline" else LIGHT_BLUE for m in bench_labels]
+        bench_labels = ["Your pipeline", "This tool's band"]
+        bench_values = [deep_severe_pct * 100, screening_band * 100]
+        bar_colors = [ACCENT, LIGHT_BLUE]
 
         fig_bench, ax_bench = plt.subplots(figsize=(6, 3.5))
-        _bars = ax_bench.bar(bench_labels, bench_values, color=bar_colors, width=0.6)
-        # Median reference line
-        ax_bench.axhline(y=WINNER_MEDIAN * 100, color=NEUTRAL, linestyle="--",
+        _bars = ax_bench.bar(bench_labels, bench_values, color=bar_colors, width=0.5)
+        ax_bench.axhline(y=screening_band * 100, color=NEUTRAL, linestyle="--",
                          linewidth=1.2, alpha=0.8)
-        ax_bench.text(3.45, WINNER_MEDIAN * 100 + 0.5, f"Median {WINNER_MEDIAN*100:.0f}%",
-                      color=NEUTRAL, fontsize=8, ha="right", va="bottom")
-        # Value labels + "Your pipeline" annotation
-        for bar, val, lbl in zip(_bars, bench_values, bench_labels):
+        for bar, val in zip(_bars, bench_values):
             ax_bench.text(bar.get_x() + bar.get_width() / 2, val + 0.5,
                           f"{val:.1f}", ha="center", va="bottom", fontsize=9)
-            if lbl == "Your pipeline":
-                diff = deep_severe_pct * 100 - WINNER_MEDIAN * 100
-                arrow = "↑ above" if diff >= 0 else "↓ below"
-                ax_bench.text(
-                    bar.get_x() + bar.get_width() / 2,
-                    max(val - 6, 2),
-                    f"{arrow} median",
-                    ha="center", va="top", fontsize=8,
-                    color=SUCCESS if diff >= 0 else DANGER,
-                    style="italic",
-                )
         ax_bench.set_ylim(0, 108)
         style_matplotlib_axes(ax_bench, ylabel="% of QEI in deep/severe tracts")
         ax_bench.tick_params(axis="x", rotation=10)
         fig_bench.tight_layout()
         st.pyplot(fig_bench, use_container_width=True)
         plt.close(fig_bench)
+        st.caption(
+            f"The {screening_band:.0%} line is **this tool's own screening band**, "
+            "not a CDFI Fund threshold and not a percentile of past winners. The "
+            "CDFI Fund publishes no distribution of applicant distress "
+            "concentration, so no such percentile exists. The published CY "
+            "2024-2025 bar for full Community Outcomes credit is 85% of QLICIs "
+            "in areas of higher distress (Allocation Application, Question 25(a))."
+        )
 
 
 # =============================================================================

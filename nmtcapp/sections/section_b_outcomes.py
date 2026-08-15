@@ -4,7 +4,9 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from nmtcapp.data.benchmark_thresholds import SEVERE_DISTRESS_MIN_PCT
+from nmtcapp.data.benchmark_thresholds import (
+    DEEP_DISTRESS_MIN_PCT, SEVERE_DISTRESS_MIN_PCT,
+)
 from nmtcapp.renderers._disclosure import is_partial_unverified, unverified_qualifier
 from nmtcapp.sections.base import SectionGenerator, _cde_todo, _placeholder
 
@@ -79,10 +81,20 @@ class SectionBCommunityOutcomes(SectionGenerator):
             "QEI in LIC (Standard Eligible) Tracts": _tract_pct(distress.get("pct_lic", 0)),
             "QEI in NMTC Native Areas": _tract_pct(native_pct),
             "QEI in High Migration Rural (HMR) Tracts": _tract_pct(hmr_pct),
-            "CDFI Fund Severe Distress Threshold (CY 2024-2025)":
-                f"{SEVERE_DISTRESS_MIN_PCT:.0%} — full Community Outcomes credit "
-                "(CY 2024-2025 NMTC Allocation Application Review Process; "
-                "the CY 2026 NOAA is not yet published)",
+            # Was labelled "CDFI Fund Severe Distress Threshold" and cited to
+            # the Review Process generally (and, in the attribution allowlist,
+            # to a "FAQ #79" that document does not contain). The Review
+            # Process states the commitment under "Targeting Areas of Higher
+            # Distress (Question 25)", it covers severe distress OR multiple
+            # indicia rather than severe distress alone, and it carries a
+            # SECOND figure this tool was not reporting at all.
+            "CDFI Fund Higher-Distress Commitment (CY 2024-2025)":
+                f"{SEVERE_DISTRESS_MIN_PCT:.0%} of QLICIs in areas of severe "
+                "distress and/or multiple indicia of distress, and "
+                f"{DEEP_DISTRESS_MIN_PCT:.0%} in Deep Distress areas "
+                "(CY 2024-2025 NMTC Program Review Process, Targeting Areas of "
+                "Higher Distress, Question 25; the CY 2026 NOAA is not yet "
+                "published)",
             f"{application.cde.name} Commitment (Deep/Severe)": _tract_pct(deep_pct),
         }
 

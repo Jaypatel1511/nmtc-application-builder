@@ -51,7 +51,16 @@ class SectionCManagementCapacity(SectionGenerator):
             "Board Members": board.get("board_members", "N/A"),
             "Community Representatives": board.get("community_representatives", "N/A"),
             "Independent Directors": board.get("independent_directors", "N/A"),
-            "Board Meeting Frequency": board.get("board_meeting_frequency", "Quarterly"),
+            # Defaulted to "Quarterly" through 1.2.0-rc. That is not a fallback
+            # string, it is an ANSWER to a governance question the CDE was asked
+            # and did not answer, printed in a governance table in the section
+            # where management capacity is scored — indistinguishable, to a
+            # reader, from a value the CDE supplied. Every other row in this
+            # dict defaults to "N/A"; this one now matches them.
+            #
+            # It survived every gate because "**Board Meeting Frequency:**
+            # Quarterly" is four words and _is_prose requires five.
+            "Board Meeting Frequency": board.get("board_meeting_frequency", "N/A"),
             "CDE Certification Date": cde.certification_date,
             "Prior Allocations Received": len(cde.prior_awards),
             "Total Prior Allocation ($)": f"${total_prior:,.0f}",

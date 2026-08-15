@@ -187,8 +187,8 @@ def compute_readiness_score(
     elif unverified_ids:
         partial_note = (
             f"{len(unverified_ids)} projects unverified — locations could not "
-            "be verified; eligibility-dependent components reflect verified "
-            "projects only"
+            "be verified; eligibility-dependent components are lower bounds "
+            "(unverified projects count in the denominator, never the numerator)"
         )
 
     return ReadinessScore(

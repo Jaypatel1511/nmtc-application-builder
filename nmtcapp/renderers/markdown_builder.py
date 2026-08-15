@@ -149,8 +149,9 @@ class MarkdownApplicationBuilder:
                 f"Our {pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states with "
                 f"**{d.get('pct_deep_or_severe', 0):.0%} of QEI {unverified_qualifier(pr)} "
-                "committed to deep/severely distressed tracts** — figures reflect "
-                "location-verified projects only.\n\n"
+                "committed to deep/severely distressed tracts** — a lower bound: "
+                "unverified projects are absent from the numerator but present in "
+                "the denominator, so the true share may be materially higher.\n\n"
             )
         else:
             banner = ""

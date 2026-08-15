@@ -25,17 +25,43 @@
 # entries are gone. They were not re-cited and not downgraded to HOUSE — the
 # claims were withdrawn. See nmtcapp/data/schema.py.
 #
-# Three entries below now read DOCUMENT RETRIEVABLE, CONTENT NOT LOCATED. That
-# is the weaker sibling of the same defect: the document exists and can be
-# fetched, but nobody has confirmed the specific figure inside it. Treat that
-# marker the way PROVENANCE UNVERIFIED was treated — as a queue, not approval.
+# NO ENTRY READS "DOCUMENT RETRIEVABLE, CONTENT NOT LOCATED" ANY MORE EITHER.
+# Three did, all three for the distress-level definitions. That queue is now
+# closed, and closing it found a defect worse than the missing citation.
+#
+# The rendered text read:
+#
+#     "Deep distress = poverty rate >30% or unemployment >1.5x national
+#      average. Severe distress = LIC plus additional qualifying factors."
+#
+# Those thresholds are real. They are the CDFI Fund's definition of SEVERE
+# distress, printed under the label DEEP. Verified by opening the Fund's own
+# NMTC LIC Eligibility workbook — the .xlsb this package downloads and loads —
+# and reading columns 14 and 15 verbatim:
+#
+#     col 14: "Severe distress=LIC AND (Poverty>30%; MFI<=60%;Unemployment>=1.5)"
+#     col 15: "Deep distress=LIC AND (Poverty>40%; MFI<=40%;Unemployment>=2.5)"
+#
+# So the tool had the two tiers' thresholds swapped, dropped the median-family-
+# income limb from both, dropped the "AND LIC" term from both, and attributed
+# the result to "CDFI Fund NMTC Program guidance and the NMTC Allocation
+# Application Review Process" — neither of which carries that wording. A CDE
+# reading the old note was told a 32%-poverty tract is "deep distress"; the
+# Fund's deep-distress bar is 40%.
+#
+# The classification DATA was never wrong — distress_level comes from these same
+# workbook columns via nmtc-mapper. Only the printed definition was. That is its
+# own lesson: correct data under an incorrect legend is still a wrong document.
+#
+# Cite the file you actually load. It is more retrievable than the prose
+# document describing it, and it is the thing the numbers came from.
 
-CITED | CY 2024-2025 NMTC Allocation Application Review Process (retrievable, URL above) plus CDFI Fund NMTC Program guidance at https://www.cdfifund.gov/nmtc. DOCUMENT RETRIEVABLE, CONTENT NOT LOCATED: nobody has confirmed the deep-distress definition appears in either at this wording. | (source: cdfi fund nmtc program guidance and the nmtc allocation application review process.
 PLACEHO | Wrapped continuation of the [NARRATIVE PLACEHOLDER] block. Reclassified from CITED in 1.2.0: it is guidance addressed to the CDE about what to write, not a figure, and the claim about reviewer emphasis was never located in a Fund document. N2 misses it only because the PDF extractor wraps the line away from its opening bracket. | cdfi fund reviewers score on specificity, evidence, and alignment with
-CITED | CY 2024-2025 NMTC Allocation Application Review Process, FAQ #79 — 'at least 85 percent of QLICIs (in terms of aggregate dollar amounts) in areas of higher distress'. Retrievable: https://www.cdfifund.gov/system/files/2025-12/CY_2024_25_NMTC_Program_Review_Process.pdf. Document AND figure verified against the primary source. | cdfi fund severe distress threshold (cy N-N)
-CITED | CY 2024-2025 NMTC Allocation Application Review Process, FAQ #79 — 'at least 85 percent of QLICIs (in terms of aggregate dollar amounts) in areas of higher distress'. Retrievable: https://www.cdfifund.gov/system/files/2025-12/CY_2024_25_NMTC_Program_Review_Process.pdf. Document AND figure verified against the primary source. | cdfi fund severe distress threshold (cy N-N):** N% — full community outcomes credit (cy N-N nmtc allocation application review process;
 PLACEHO | Wrapped tail of INVESTOR_TABLE_NOTE, a [CDE TO COMPLETE] block. Names the Fund as the audience a CDE must defend a row to. | cdfi fund, and delete any row you cannot.] (see attachment: investor commitments table)
-CITED | CY 2024-2025 NMTC Allocation Application Review Process, plus CDFI Fund NMTC Program guidance. DOCUMENT RETRIEVABLE, CONTENT NOT LOCATED — the >30% poverty / >1.5x unemployment thresholds were not confirmed inside either document. Queued with the constant-provenance audit. | distress levels: deep distress = poverty rate >N% or unemployment >N× national average.
 PLACEHO | Inside the has_prior_reporting_issues [CDE TO COMPLETE] block. A statement about the Fund's own recordkeeping, in guidance addressed to the CDE, not a figure in the CDE's voice. | do not omit this — the cdfi fund holds prior
 LABEL | Column header in the Section B distress-documentation table. Names an ACS field; the value beneath it renders 'See ACS'. Claims nothing. | median family income
-CITED | CY 2024-2025 NMTC Allocation Application Review Process — wrapped continuation of the distress-definitions note above. Same CONTENT NOT LOCATED caveat. | national average.
+CITED | CDFI Fund NMTC LIC Eligibility workbook (NMTC_LIC_Eligibility_2016_2020.xlsb), sheet '2016-2020', column headers 14 and 15, quoted verbatim: 'Severe distress=LIC AND (Poverty>30%; MFI<=60%;Unemployment>=1.5)' and 'Deep distress=LIC AND (Poverty>40%; MFI<=40%;Unemployment>=2.5)'. Read directly off the .xlsb this tool downloads and loads, not off a secondary description. Replaces the three CONTENT NOT LOCATED entries this file used to carry. | distress levels (verbatim from the cdfi fund nmtc lic eligibility workbook,
+CITED | CDFI Fund NMTC LIC Eligibility workbook (NMTC_LIC_Eligibility_2016_2020.xlsb), sheet '2016-2020', column headers 14 and 15, quoted verbatim: 'Severe distress=LIC AND (Poverty>30%; MFI<=60%;Unemployment>=1.5)' and 'Deep distress=LIC AND (Poverty>40%; MFI<=40%;Unemployment>=2.5)'. Read directly off the .xlsb this tool downloads and loads, not off a secondary description. Replaces the three CONTENT NOT LOCATED entries this file used to carry. | distress levels (verbatim from the cdfi fund nmtc lic eligibility workbook, N-N acs, columns N and N — the file this tool loads to classify every tract): severe distress = lic and (poverty>N%;
+LABEL | 'tiers' here names the two levels the Fund's own workbook defines; the clause states a structural fact about both definitions (each requires LIC) and claims no rank. | both tiers additionally require the tract to be a low-income community.
+CITED | CY 2024-2025 NMTC Program Review Process, 'Targeting Areas of Higher Distress (Question 25)': 'at least 85% of its QLICIs in specified areas of severe distress and/or areas characterized by multiple indicia of distress ... at least 20% of its QLICIs to "Deep Distress" areas'. Downloaded and text-extracted; the document contains no 'FAQ #79', which is what the two entries this replaces used to cite. | cdfi fund higher-distress commitment (cy N-N)
+CITED | CY 2024-2025 NMTC Program Review Process, 'Targeting Areas of Higher Distress (Question 25)': 'at least 85% of its QLICIs in specified areas of severe distress and/or areas characterized by multiple indicia of distress ... at least 20% of its QLICIs to "Deep Distress" areas'. Downloaded and text-extracted; the document contains no 'FAQ #79', which is what the two entries this replaces used to cite. | cdfi fund higher-distress commitment (cy N-N):** N% of qlicis in areas of severe distress and/or multiple indicia of distress, and N% in deep distress areas (cy N-N nmtc program review process, targeting areas of higher distress, question N;

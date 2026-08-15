@@ -341,10 +341,24 @@ jobs:
           #
           # FLOOR DERIVATION -- not a number picked to be safe. The rule is
           # HALF of what the suite genuinely runs today, rounded down to a
-          # round number. RE-MEASURED for 1.2.0: 894 tests executed under this
-          # job's exact invocation (1 more is `wheel` and deselected, and is
-          # correctly NOT counted toward the floor). Half is 447, rounded
-          # down to a round number: 440.
+          # round number.
+          #
+          # RE-MEASURED for 1.2.0, and corrected. An earlier version of this
+          # comment said "894 tests executed", which is the COLLECTED count, not
+          # the executed one -- and this step's own formula is total MINUS
+          # SKIPPED. In the sdist four tests skip
+          # (test_no_committed_generated_artifacts.py, which needs a git
+          # checkout and explicitly says so), so:
+          #
+          #     collected under -m "not wheel"   896
+          #     skipped in the sdist              -4
+          #     EXECUTED                         892   <- what the formula returns
+          #     half                             446
+          #     rounded down                     440
+          #
+          # 440 was already correct; the derivation printed beside it was not.
+          # Getting that backwards is exactly the class of error this file's
+          # gates exist to catch, so it is corrected rather than left.
           #
           # The jump from 350 is not drift. 1.2.0 adds:
           #   151  test_no_fabricated_output.py -- 18 denylist entries x 4
@@ -367,7 +381,7 @@ jobs:
           # Recount before changing this line again; a floor copied forward
           # from a previous release stops being evidence.
           #
-          # KNOWN SLACK, stated rather than implied: 440 leaves 445 tests of
+          # KNOWN SLACK, stated rather than implied: 440 leaves 452 tests of
           # headroom. It catches the regression this repo is prone to (the 36
           # nested modules failing to ship drops the run to 238), and total
           # deselection lands at 0. It would NOT catch losing tests/sections/
@@ -376,7 +390,7 @@ jobs:
           # Half, deliberately: the rejected `-lt 14` threshold sat at the
           # exact count shipping that day, so deleting one test module failed
           # the job with a packaging error for a deliberate source change.
-          # This one has 454 tests of headroom -- you would have to delete more
+          # This one has 452 tests of headroom -- you would have to delete more
           # than half the suite before it complains, while total deselection
           # lands at 0 and trips it immediately. It would also catch the
           # narrower regression this repo is actually prone to: the 36 nested
