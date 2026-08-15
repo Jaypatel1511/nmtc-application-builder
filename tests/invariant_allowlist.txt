@@ -56,6 +56,14 @@ DERIVED | distress-commitments row: fixed label, share computed from the CDE's o
 DERIVED | distress-commitments row: fixed label, share computed from the CDE's own pipeline | **QEI in High Migration Rural (HMR) Tracts:** N%
 DERIVED | distress-commitments row: fixed label, share computed from the CDE's own pipeline | **QEI in LIC (Standard Eligible) Tracts:** N%
 DERIVED | distress-commitments row: fixed label, share computed from the CDE's own pipeline | **QEI in NMTC Native Areas:** N%
+DERIVED | fixed label, value computed from or copied out of the CDE's own inputs | **<CDE> Commitment (Deep/Severe):** N%
+DERIVED | fixed label, value computed from or copied out of the CDE's own inputs | **Allocation Requested ($):** $N
+DERIVED | fixed label, value computed from or copied out of the CDE's own inputs | **CDE Certification Date:** <DATE>
+DERIVED | fixed label, value computed from or copied out of the CDE's own inputs | **Prior Allocations Received:** N
+DERIVED | fixed label, value computed from or copied out of the CDE's own inputs | **Rounds Fully Deployed:** N
+DERIVED | fixed label, value computed from or copied out of the CDE's own inputs | **Sector Diversity Score:** N/N
+DERIVED | fixed label, value computed from or copied out of the CDE's own inputs | Validation Pass Rate: N/N
+DERIVED | governance row. Defaulted to a fabricated "Quarterly" until 1.2.0; now N/A like every sibling row. THIS IS THE LINE THE FIVE-WORD THRESHOLD HID | **Board Meeting Frequency:** N/A
 DERIVED | impact bullet; the square-footage figure is the CDE's own. '<SECTOR>' is a mask artifact - the phrase 'community facility' here is descriptive prose that happens to collide with a sector value in the fixtures | • N sq ft of <SECTOR> / commercial space
 DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | <CDE> requests $N million in New Markets Tax Credit allocation for CYN. Our N-project pipeline spans N states, with N% of QEI committed to deep and severely distressed census tracts.
 DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | <CDE> respectfully requests $NMM in New Markets Tax Credit allocation for application round CYN. Our N-project pipeline spans N states with **N% of QEI committed to deep/severely distressed tracts**.
@@ -73,6 +81,7 @@ DERIVED | narrative frame; every figure in it is computed from the CDE's own inp
 DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | • N jobs per $NMM of QEI deployed
 DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | • N permanent full-time-equivalent jobs created
 DERIVED | quotes the CDE's own mission field back verbatim; asserts nothing about it | <CDE>'s stated mission is: "<MISSION>"
+DERIVED | state count computed from the CDE's own pipeline | Pipeline footprint: N states.
 FORMAT | cross-reference describing where the rest of the document is | Full N-column pipeline detail (deal economics, QLICI structure, timeline) is provided in the accompanying Excel workbook, Pipeline Detail tab. The landscape pages below contain key pipeline fields for reference.
 FORMAT | cross-reference to the Excel attachment | Full impact detail (units, square footage, OZ/HMR flags) is provided in the accompanying Excel workbook, Impact Projections tab.
 FORMAT | cross-reference to the Excel attachment | Full impact detail is in the Excel attachment.
@@ -100,6 +109,22 @@ HEADING | appendix continuation heading | Appendix A (continued): Pipeline Detai
 HEADING | appendix heading | Appendix E: CDE Track Record
 HEADING | document title | NEW MARKETS TAX CREDIT ALLOCATION APPLICATION
 HEADING | section heading | Section E: Prior Awards — Deployment History
+HEADING | section, appendix or subsection title | Aggregate Community Impact Projections
+HEADING | section, appendix or subsection title | Appendix A: Pipeline Detail
+HEADING | section, appendix or subsection title | Appendix B: Distress Documentation
+HEADING | section, appendix or subsection title | Appendix C: Geographic Targeting
+HEADING | section, appendix or subsection title | Appendix D: Impact Projections
+HEADING | section, appendix or subsection title | CDE History and Certification
+HEADING | section, appendix or subsection title | Governance and Organizational Structure
+HEADING | section, appendix or subsection title | Investment Thesis and Strategy
+HEADING | section, appendix or subsection title | Investor Strategy and Relationships
+HEADING | section, appendix or subsection title | Key Personnel and Qualifications
+HEADING | section, appendix or subsection title | Long-Term Community Impact Strategy
+HEADING | section, appendix or subsection title | Section A: Business Strategy
+HEADING | section, appendix or subsection title | Section B: Community Outcomes
+HEADING | section, appendix or subsection title | Section C: Management Capacity
+HEADING | section, appendix or subsection title | Section D: Capitalization Strategy
+HEADING | section, appendix or subsection title | Section D: Investor Commitments
 HEADING | table-of-contents link | - [Appendix A: Pipeline Detail](#appendix-a)
 HEADING | table-of-contents link | - [Appendix B: Distress Documentation](#appendix-b)
 HEADING | table-of-contents link | - [Appendix C: Geographic Targeting](#appendix-c)
@@ -110,6 +135,15 @@ HEADING | table-of-contents link | - [Section B: Community Outcomes](#section-b)
 HEADING | table-of-contents link | - [Section C: Management Capacity](#section-c)
 HEADING | table-of-contents link | - [Section D: Capitalization Strategy](#section-d)
 HEADING | table-of-contents link | - [Section E: Prior Awards — Deployment History](#section-e)
+LABEL | column header / row label; names a field, asserts nothing | Annual Operating Budget ($)
+LABEL | column header / row label; names a field, asserts nothing | Assumed Credit Price ($/NMTC)
+LABEL | column header / row label; names a field, asserts nothing | Estimated Investor Equity ($)
+LABEL | column header / row label; names a field, asserts nothing | High Migration Rural (HMR)
+LABEL | column header / row label; names a field, asserts nothing | High Migration Rural (Y/N)
+LABEL | column header / row label; names a field, asserts nothing | Total NMTC Allocation Requested
+LABEL | column header / row label; names a field, asserts nothing | Total NMTCs Generated ($)
+LABEL | column header / row label; names a field, asserts nothing | Total Prior Allocation ($)
+LABEL | column header / row label; names a field, asserts nothing | Total Projects in Pipeline
 LABEL | cross-reference to an attachment, not a claim | (See Attachment: Impact Projections Table)
 LABEL | cross-reference to an attachment, not a claim | (See Attachment: Investor Commitments Table)
 LABEL | cross-reference to an attachment, not a claim | (See Attachment: Track Record Table)
@@ -117,6 +151,7 @@ LABEL | deal-economics row label; the dollar figure beside it varies | Net Subsi
 LABEL | distress-commitments row label; value varies | QEI in Deep/Severely Distressed Tracts
 LABEL | distress-commitments row label; value varies | QEI in High Migration Rural (HMR) Tracts
 LABEL | distress-commitments row label; value varies | QEI in LIC (Standard Eligible) Tracts
+LABEL | heading for the recommendations list; the recommendations under it vary | **Recommended Improvements Before Submission:**
 LABEL | impact table column label; the count beside it varies | Affordable Units to Be Built
 LABEL | introduces the numbered structure list; the steps under it carry the figures and vary | Each transaction will utilize a standard leveraged NMTC structure:
 LABEL | row label in Section A's pipeline overview; the value beside it varies | % QEI in Deep/Severe Distress

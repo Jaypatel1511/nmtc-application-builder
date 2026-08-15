@@ -227,12 +227,29 @@ def _is_prose(line: str) -> bool:
 
     Short cells, bare numbers and single words carry no proposition on their
     own; they are covered by the table-label allowlist entries they sit under.
+
+    THE THRESHOLD IS FOUR WORDS, NOT FIVE, AND THAT IS A BUG FIX. At five, this
+    rendered line was invisible to BOTH gates:
+
+        **Board Meeting Frequency:** Quarterly
+
+    — thirty-eight characters, four words, and a fabricated answer to a
+    governance question the CDE never answered, printed in the section where
+    management capacity is scored. It survived six rounds behind a word count.
+
+    Cost of the change, measured: the invariant set grows 172 -> 207, and 33 of
+    the 35 additions are bare headings and column labels. That is a cheap price
+    for closing the last of the four gaps this gate had.
+
+    Three words was also measured (223 lines) and rejected: the extra 16 are
+    fragments like "Native Area Projects" that carry no proposition even in
+    principle, and they dilute the list a reviewer has to read.
     """
     if len(line) < 25:
         return False
     if line.startswith(("#", "@@SHEET")):
         return False
-    return len(line.split()) >= 5
+    return len(line.split()) >= 4
 
 
 # ---------------------------------------------------------------------------
