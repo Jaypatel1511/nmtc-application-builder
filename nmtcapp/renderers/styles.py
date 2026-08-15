@@ -117,18 +117,44 @@ DISTRESS_DISPLAY = {
 }
 
 # ---------------------------------------------------------------------------
-# NAICS code mapping by sector
+# SECTOR_NAICS WAS DELETED IN 1.2.0. It mapped the CDE's coarse sector label to
+# a NAICS code this tool invented, and printed the result in a column headed
+# "Sector (NAICS)" in the pipeline table the CDE files. It read:
+#
+#     "healthcare":         "621 – Ambulatory Health Care Services"
+#     "small_business":     "722/336 – Food Services / Manufacturing"
+#     "community_facility": "624 – Social Assistance / Community Facilities"
+#     "mixed_use":          "531 – Real Estate (Mixed Use)"
+#     "clean_energy":       "221 – Utilities (Renewable Energy)"
+#     ...
+#
+# Every one of those is a fabricated classification, for four separate reasons:
+#
+#   1. THERE IS NO NAICS INPUT. `PipelineProject` has no naics field and
+#      pipeline_template.csv has no naics column, so no CDE has ever supplied
+#      one. The code was derived entirely from `sector`.
+#   2. A SECTOR LABEL DOES NOT DETERMINE A NAICS CODE. "small_business" is a
+#      SIZE classification, not an industry; mapping every small-business
+#      project to "722/336" asserts that each is either a restaurant or a
+#      transportation-equipment manufacturer. 336 is Transportation Equipment
+#      Manufacturing specifically, not manufacturing at large (31-33).
+#   3. THE PARENTHETICALS ARE INVENTED. NAICS 531 is "Real Estate", not "Real
+#      Estate (Mixed Use)" or "Real Estate (Residential)"; 221 is "Utilities",
+#      not "Utilities (Renewable Energy)"; 624 is "Social Assistance", not
+#      "Social Assistance / Community Facilities". Two different sectors were
+#      also mapped to the same code, 531, distinguished only by the invented
+#      parenthetical.
+#   4. IT DEGRADED SILENTLY. The call site was
+#      `SECTOR_NAICS.get(p.sector, p.sector)`, so a CDE writing `sector: retail`
+#      got the literal string "retail" printed under a column headed
+#      "Sector (NAICS)".
+#
+# A NAICS code identifies the QALICB's industry to the CDFI Fund and follows the
+# allocation into CIIS/AMIS compliance reporting. Filing an invented one is a
+# wrong number about the CDE's own project. The column now renders the CDE's own
+# sector label under an honest heading; if a NAICS code is required, it is the
+# CDE's to supply, and this tool does not have it.
 # ---------------------------------------------------------------------------
-SECTOR_NAICS = {
-    "healthcare":         "621 – Ambulatory Health Care Services",
-    "affordable_housing": "531 – Real Estate (Residential)",
-    "education":          "611 – Educational Services",
-    "small_business":     "722/336 – Food Services / Manufacturing",
-    "community_facility": "624 – Social Assistance / Community Facilities",
-    "mixed_use":          "531 – Real Estate (Mixed Use)",
-    "clean_energy":       "221 – Utilities (Renewable Energy)",
-    "other":              "N/A",
-}
 
 # ---------------------------------------------------------------------------
 # Section metadata

@@ -366,7 +366,7 @@ class WordApplicationBuilder:
             "Project ID", "Project Name", "City", "State",
             "Distress Level", "NMTC Eligible (Y/N)", "NMTC Native Area (Y/N)",
             "QEI Request ($)", "Total Project Cost ($)",
-            "Jobs Created", "Jobs Retained", "Sector (NAICS)",
+            "Jobs Created", "Jobs Retained", "Sector (as supplied)",
         ]
         existing = [c for c in landscape_cols if c in full_df.columns]
         _write_df_to_doc(doc, full_df[existing], max_rows=50, font_size=8)

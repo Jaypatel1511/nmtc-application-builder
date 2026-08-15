@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from nmtcapp.renderers.styles import DISTRESS_DISPLAY, SECTOR_NAICS
+from nmtcapp.renderers.styles import DISTRESS_DISPLAY
 
 if TYPE_CHECKING:
     from nmtcapp.core.cde import CDEProfile
@@ -74,7 +74,10 @@ def build_pipeline_table(pipeline: "Pipeline", cde: "CDEProfile" = None) -> pd.D
             "NMTC Native Area (Y/N)":     _yn_flag(p.is_native_area),
             "High Migration Rural (Y/N)": _yn_flag(p.is_high_migration_rural),
             "Opportunity Zone (Y/N)":     _yn_flag(p.is_opportunity_zone),
-            "Sector (NAICS)":             SECTOR_NAICS.get(p.sector, p.sector),
+            # Was SECTOR_NAICS.get(p.sector, p.sector) under a "Sector
+            # (NAICS)" heading — an invented industry code. See the note
+            # where SECTOR_NAICS used to live in renderers/styles.py.
+            "Sector (as supplied)":       (p.sector or "").replace("_", " ").title() or "Not supplied",
             "Project Type":               p.project_type.replace("_", " ").title(),
             "Total Project Cost ($)":     p.total_project_cost,
             "QEI Request ($)":            qei,
@@ -172,7 +175,7 @@ _PIPELINE_COLUMNS = [
     "Project ID", "QALICB Name", "Project Name", "Street Address", "City", "State",
     "ZIP Code", "Census Tract (11-digit)", "NMTC Eligible (Y/N)", "Distress Level",
     "NMTC Native Area (Y/N)", "High Migration Rural (Y/N)", "Opportunity Zone (Y/N)",
-    "Sector (NAICS)", "Project Type", "Total Project Cost ($)", "QEI Request ($)",
+    "Sector (as supplied)", "Project Type", "Total Project Cost ($)", "QEI Request ($)",
     "QLICI A Loan ($)", "QLICI B Loan ($)", "Leverage Loan ($)", "Total NMTCs ($)",
     "Estimated Investor Equity ($)", "CDE Fee ($)", "Senior Debt ($)", "Subordinate Debt ($)",
     "Annual Operating Budget ($)", "Construction Start", "Operations Start",
