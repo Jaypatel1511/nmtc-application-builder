@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1422,7 +1422,7 @@
 <p>The core package installs the intelligence engine, pipeline analysis, validation, and Markdown output. No optional output libraries are required to run analysis.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>nmtc-application-builder
 </code></pre></div>
-<p>The core install includes: <code>pandas</code>, <code>numpy</code>, <code>pyyaml</code>, and the five integration libraries (<code>nmtc-mapper</code>, <code>nmtc-calc</code>, <code>hmda-analyzer</code>, <code>cdfidata</code>, <code>impact-ledger</code>).</p>
+<p>The core install includes: <code>pandas</code>, <code>numpy</code>, <code>pyyaml</code>, and the four integration libraries (<code>nmtc-mapper</code>, <code>nmtc-calc</code>, <code>cdfidata</code>, <code>impact-ledger</code>).</p>
 <hr />
 <h2 id="optional-extras">Optional extras<a class="headerlink" href="#optional-extras" title="Permanent link">&para;</a></h2>
 <p>Most output formats and visualization require additional libraries. Install only what you need.</p>
@@ -1477,7 +1477,7 @@
 <hr />
 <h2 id="verify-the-install">Verify the install<a class="headerlink" href="#verify-the-install" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">nmtcapp</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">nmtcapp</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>        <span class="c1"># &quot;1.0.0&quot;</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">nmtcapp</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>        <span class="c1"># prints the installed version</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="nb">print</span><span class="p">(</span><span class="n">Pipeline</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">5</span><span class="p">))</span>       <span class="c1"># Pipeline(projects=5, total_qei=$...)</span>
@@ -1597,7 +1597,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.action.edit"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
