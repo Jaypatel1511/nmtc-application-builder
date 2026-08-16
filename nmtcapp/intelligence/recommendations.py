@@ -381,6 +381,18 @@ class RecommendationEngine:
             ))
 
         # Higher Distress Targeting (15 pts) — tract-derived, skip when unassessable
+        #
+        # THE SUB-SCORE IS A QEI-BASED PROXY AND THE FINDING NOW SAYS SO.
+        # ``pct_deep_or_severe`` is a share of QEI (distress_analysis.py:128);
+        # the Fund's higher-distress commitment is a share of QLICIs, and it
+        # covers severe distress OR MULTIPLE INDICIA, which this package does
+        # not measure. This finding used to read "Only X% of QEI is in severe
+        # distress or multi-indicia distress tracts — below the 85% CDFI Fund
+        # threshold", which compared a QEI share to a QLICI bar and claimed a
+        # multi-indicia numerator that is not computed. The percentage-point
+        # gap is now stated as what it is — the distance to THIS TOOL'S full
+        # credit on its own proxy — rather than as a gap to the commitment,
+        # which cannot be computed from anything in this package.
         severe_pct = d.get("pct_deep_or_severe", 0.0)
         if hdt is not None and hdt < 12:
             gap_pp = round((SEVERE_DISTRESS_MIN_PCT - severe_pct) * 100)
@@ -388,15 +400,23 @@ class RecommendationEngine:
                 category="community_outcomes",
                 priority="critical",
                 finding=(
-                    f"Higher Distress Targeting is {hdt}/{HIGHER_DISTRESS_MAX}. Only {severe_pct:.0%} of QEI is "
-                    f"in severe distress or multi-indicia distress tracts — below the "
-                    f"{_SEVERE_PCT_TEXT} CDFI Fund threshold for full credit."
+                    f"Higher Distress Targeting is {hdt}/{HIGHER_DISTRESS_MAX}. "
+                    f"{severe_pct:.0%} of QEI is in severely distressed tracts, "
+                    "deep distress included. The CDFI Fund's higher-distress "
+                    "commitment is measured on QLICIs rather than QEI and covers "
+                    "severe distress OR multiple indicia of distress; this tool "
+                    "computes neither the QLICI-denominated share nor any "
+                    "multi-indicia measure, so the distance to the commitment "
+                    "cannot be stated here and this sub-score is a QEI-based "
+                    "proxy for it."
                 ),
                 action=(
                     f"Replace at least {gap_pp} percentage points of standard-LIC pipeline with "
-                    "projects in census tracts meeting the CDFI Fund's severe distress or "
-                    "multi-indicia distress criteria. Use the CDFI Fund's NMTC Mapping Tool to "
-                    "identify qualifying tracts in your target markets."
+                    "projects in census tracts the CDFI Fund flags as severely distressed — "
+                    f"that is what closes the gap to full credit on this tool's {_SEVERE_PCT_TEXT}-of-QEI "
+                    "proxy, not what the Fund will score. Use the CDFI Fund's NMTC Mapping Tool to "
+                    "identify qualifying tracts in your target markets, and compute your own "
+                    "QLICI-denominated share before committing to a figure."
                 ),
                 expected_impact=(
                     "Bring Higher Distress Targeting to full credit; this is the highest-weighted "
@@ -414,12 +434,14 @@ class RecommendationEngine:
                 priority="medium",
                 finding=(
                     f"Higher Distress Targeting is {hdt}/{HIGHER_DISTRESS_MAX} — close to "
-                    f"but below the {_SEVERE_PCT_TEXT} threshold."
+                    f"but below this tool's {_SEVERE_PCT_TEXT}-of-QEI full-credit point. "
+                    "The CDFI Fund's commitment is measured on QLICIs, not QEI."
                 ),
                 action=(
                     f"Add {round((SEVERE_DISTRESS_MIN_PCT - severe_pct) * 100)}pp of deeper-distress projects to "
-                    f"reach the {_SEVERE_PCT_TEXT} full-credit threshold. Target tracts at ≤60% AMI or ≥30% "
-                    "poverty rate to maximize the distress classification."
+                    f"reach full credit on this tool's {_SEVERE_PCT_TEXT}-of-QEI proxy. Target tracts at ≤60% AMI "
+                    "or ≥30% poverty rate to maximize the distress classification, and compute your own "
+                    "QLICI-denominated share before committing to a figure."
                 ),
                 expected_impact="Reach full Higher Distress Targeting credit.",
                 quantified_improvement=f"Estimated +{HIGHER_DISTRESS_MAX - hdt} points (Higher Distress: {hdt}/{HIGHER_DISTRESS_MAX} → {HIGHER_DISTRESS_MAX}/{HIGHER_DISTRESS_MAX}).",
@@ -442,8 +464,11 @@ class RecommendationEngine:
                 priority="high",
                 finding=(
                     f"Deep Distress Commitment is {ddc}/{DEEP_DISTRESS_MAX}. "
-                    f"Only {deep_pct:.0%} of QEI is in CDFI Fund-designated Deep Distress tracts "
-                    f"— {gap_pp}pp below the {_DEEP_PCT_TEXT} threshold for full credit."
+                    f"{deep_pct:.0%} of QEI is in CDFI Fund-designated Deep Distress tracts, "
+                    f"{gap_pp}pp below this tool's {_DEEP_PCT_TEXT}-of-QEI full-credit point. "
+                    "The CDFI Fund's Deep Distress commitment is measured on QLICIs rather "
+                    "than QEI and this tool does not compute the QLICI-denominated share, so "
+                    "the gap above is to the proxy, not to the commitment."
                 ),
                 # "These are distinct from severe distress" was FALSE, and it
                 # was live text telling a CDE which tracts to go and find. Deep
@@ -710,23 +735,35 @@ class RecommendationEngine:
         d = result.distress_breakdown
         severe_pct = d.get("pct_deep_or_severe", 0.0)
 
+        # SAME BASIS MISMATCH AS THE SCORED PATH ABOVE (FIX-3), and this one
+        # fires when no score is available at all — the surface with the least
+        # context around it, which is the worst place to state a bar wrong.
+        # It read "below the CDFI Fund's 85% threshold for full Higher Distress
+        # Targeting credit" over a share of QEI, and its quantified_improvement
+        # subtracted the QLICI bar from that QEI share to size the gap.
         if severe_pct < SEVERE_DISTRESS_MIN_PCT:
             gap_pp = round((SEVERE_DISTRESS_MIN_PCT - severe_pct) * 100)
             recs.append(Recommendation(
                 category="community_outcomes",
                 priority="critical",
                 finding=(
-                    f"Severe/deep distress concentration is {severe_pct:.0%} — "
-                    f"below the CDFI Fund's {_SEVERE_PCT_TEXT} threshold for full Higher Distress Targeting credit."
+                    f"Severe/deep distress concentration is {severe_pct:.0%} of QEI — "
+                    f"below this tool's {_SEVERE_PCT_TEXT}-of-QEI full-credit point for "
+                    "Higher Distress Targeting. The CDFI Fund's own commitment is "
+                    "measured on QLICIs, not QEI, and covers severe distress OR "
+                    "multiple indicia of distress; this tool computes neither, so "
+                    "the distance to the commitment cannot be stated here."
                 ),
                 action=(
-                    f"Replace {gap_pp}pp of standard-LIC pipeline with projects in severe "
-                    "distress or multi-indicia distress census tracts."
+                    f"Replace {gap_pp}pp of standard-LIC pipeline with projects in "
+                    "severely distressed census tracts, and compute your own "
+                    "QLICI-denominated share before committing to a figure."
                 ),
                 expected_impact="Reach full Higher Distress Targeting credit (15/15 pts).",
                 quantified_improvement=(
-                    f"Estimated {_SEVERE_PCT_TEXT} → {severe_pct:.0%} gap requires adding "
-                    f"{gap_pp}pp of deep-distress QEI."
+                    f"Estimated {severe_pct:.0%} → {_SEVERE_PCT_TEXT} of QEI requires "
+                    f"adding {gap_pp}pp of severe-distress QEI. That is the gap to this "
+                    "tool's proxy; the QLICI-denominated gap is not computed."
                 ),
                 citation=f"{_SOURCE_DOC}, Section II.C.1 — Higher Distress Targeting",
             ))

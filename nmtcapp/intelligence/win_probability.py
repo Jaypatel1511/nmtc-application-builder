@@ -482,6 +482,19 @@ class WinProbabilityModel:
     # Community Outcomes sub-scorers
     # ------------------------------------------------------------------
 
+    # BOTH SUB-SCORES DIVIDE A QEI SHARE BY A QLICI BAR, AND THAT IS KNOWN.
+    # SEVERE_DISTRESS_MIN_PCT and DEEP_DISTRESS_MIN_PCT are shares of QLICIs
+    # (CY 2024-2025 Review Process, Question 25); pct_deep_or_severe and
+    # pct_deep are shares of QEI (distress_analysis.py:128). The scale factor
+    # is therefore a proxy, not the Fund's own arithmetic, and the 85% carries
+    # a second mismatch — it covers severe distress OR MULTIPLE INDICIA, which
+    # this package does not measure at all.
+    #
+    # LEFT AS IT IS, DELIBERATELY. Swapping the denominator to QLICIs moves
+    # every Community Outcomes sub-score and every figure downstream of them,
+    # and belongs behind a written methodology that is hostile-audited first —
+    # 1.2.2. What FIX-3 removed is the CLAIM that these numbers answer the
+    # Fund's bars, not the numbers. Nothing rendered may say they do.
     def _score_higher_distress(self, result: "PipelineAnalysisResult") -> int:
         pct = result.distress_breakdown.get("pct_deep_or_severe", 0.0)
         return _to_int(min(15.0, pct / SEVERE_DISTRESS_MIN_PCT * 15.0))

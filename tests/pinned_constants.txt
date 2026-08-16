@@ -125,8 +125,14 @@
 # whose text reaches the rendered document while unadjudicated all ERROR.
 
 # --- CDFI Fund published thresholds -----------------------------------------
-benchmark_thresholds.SEVERE_DISTRESS_MIN_PCT | markdown,word,pdf | CY 2024-2025 NMTC Program Review Process, "Targeting Areas of Higher Distress (Question 25)", quoted verbatim: "at least 85% of its QLICIs in specified areas of severe distress and/or areas characterized by multiple indicia of distress" | 85% of QLICIs in areas of severe distress and/or multiple indicia of distress
-benchmark_thresholds.DEEP_DISTRESS_MIN_PCT | markdown,word,pdf | CY 2024-2025 NMTC Program Review Process, "Targeting Areas of Higher Distress (Question 25)", quoted verbatim: "at least 20% of its QLICIs to 'Deep Distress' areas" | and 20% in Deep Distress areas
+# FIX-3 moved both of these into the Section B BASIS NOTE row and brought the
+# rendered wording back to the Fund's own sentence, INCLUDING the word "QLICIs"
+# and the phrase "at least". The bars are shares of QLICIs; every share this
+# package renders is a share of QEI. The pinned fragments below are the parts
+# a CDE reads, and they now carry the denominator inside the pin itself, so a
+# rewrite that drops "of QLICIs" fails here rather than shipping.
+benchmark_thresholds.SEVERE_DISTRESS_MIN_PCT | markdown,word,pdf | CY 2024-2025 NMTC Program Review Process, "Targeting Areas of Higher Distress (Question 25)", quoted verbatim: "at least 85% of its QLICIs in specified areas of severe distress and/or areas characterized by multiple indicia of distress" | at least 85% of QLICIs in specified areas of severe distress and/or areas characterized by multiple indicia of distress
+benchmark_thresholds.DEEP_DISTRESS_MIN_PCT | markdown,word,pdf | CY 2024-2025 NMTC Program Review Process, "Targeting Areas of Higher Distress (Question 25)", quoted verbatim: "at least 20% of its QLICIs to 'Deep Distress' areas" | at least 20% of QLICIs to 'Deep Distress' areas
 benchmark_thresholds.HIGHLY_QUALIFIED_SECTION_MIN | win_score | CY 2024-2025 NMTC Program Review Process, Highly Qualified gating: each of the two scored sections must reach 40 of its 50 points | is below the 40-point minimum required for Highly Qualified status
 benchmark_thresholds.HIGHLY_QUALIFIED_AGGREGATE_MIN | win_score | CY 2024-2025 NMTC Program Review Process, Highly Qualified gating: 85 of 100 aggregate base score. R-3: this row used to pin the fragment '/100 < 85)', six characters of punctuation that would survive almost any rewording of the sentence around them and say nothing about what a CDE is told. It now pins the gating clause a CDE reads, with the bar, its denominator and its name in one string | gating thresholds — Business Strategy
 
@@ -138,9 +144,19 @@ QUOTE:IRC_45D | word | 26 U.S.C. 45D is the New Markets Tax Credit section of th
 # --- Eligibility data vintage ----------------------------------------------
 distress_table._ACS_YEAR | markdown,word,excel,pdf | The CDFI Fund NMTC LIC Eligibility workbook this package downloads and loads is NMTC_LIC_Eligibility_2016_2020.xlsb; its data sheet is named "2016-2020" and its NOTES sheet says "based on 2016-2020 ACS data" | 2016–2020 ACS 5-Year Estimates
 
-# --- Distress-tier definitions, verbatim from the file this tool loads ------
-QUOTE:SEVERE_DISTRESS_DEFINITION | word,pdf | CDFI Fund NMTC LIC Eligibility workbook (NMTC_LIC_Eligibility_2016_2020.xlsb), NOTES sheet, "Column O. Severe Distress", value quoted verbatim | Severe distress = LIC AND (Poverty>30%; MFI<=60%; Unemployment>=1.5)
-QUOTE:DEEP_DISTRESS_DEFINITION | word,pdf | CDFI Fund NMTC LIC Eligibility workbook (NMTC_LIC_Eligibility_2016_2020.xlsb), NOTES sheet, "Column P. Deep Distress", value quoted verbatim | Deep distress = LIC AND (Poverty>40%; MFI<=40%; Unemployment>=2.5)
+# --- Distress-tier definitions, quoted from the file this tool loads --------
+# NOT BYTE-IDENTICAL, AND THESE ROWS NO LONGER CLAIM TO BE. Read off the
+# .xlsb, the NOTES sheet holds
+#     Severe distress=LIC AND (Poverty>30%; MFI<=60%;Unemployment>=1.5)
+# and the document renders a space either side of the '=' and after the second
+# semicolon — three insertions per line, six across both. Every threshold,
+# operator and separator is the workbook's; only the spacing is not. The source
+# column below said 'value quoted verbatim' and the rendered sentence said
+# 'verbatim from the CDFI Fund … workbook' until FIX-4. The pinned strings in
+# the last column are UNCHANGED by that fix — what changed is the claim made
+# about them.
+QUOTE:SEVERE_DISTRESS_DEFINITION | word,pdf | CDFI Fund NMTC LIC Eligibility workbook (NMTC_LIC_Eligibility_2016_2020.xlsb), NOTES sheet, "Column O. Severe Distress", value quoted with spacing normalised for legibility (the workbook has no space around the "=" or after the second ";"; every threshold and operator is unchanged) | Severe distress = LIC AND (Poverty>30%; MFI<=60%; Unemployment>=1.5)
+QUOTE:DEEP_DISTRESS_DEFINITION | word,pdf | CDFI Fund NMTC LIC Eligibility workbook (NMTC_LIC_Eligibility_2016_2020.xlsb), NOTES sheet, "Column P. Deep Distress", value quoted with spacing normalised for legibility (the workbook has no space around the "=" or after the second ";"; every threshold and operator is unchanged) | Deep distress = LIC AND (Poverty>40%; MFI<=40%; Unemployment>=2.5)
 _methodology.DISTRESS_COLUMN_LETTERS | word,pdf | CDFI Fund NMTC LIC Eligibility workbook, NOTES sheet rows headed "Column O. Severe Distress" and "Column P. Deep Distress". The workbook's own letters; 1.2.0 cited "columns 14 and 15", which are the 0-based positional indices of those two columns and are not what the Fund calls them | columns O and P
 
 # --- Market assumptions of this model ---------------------------------------

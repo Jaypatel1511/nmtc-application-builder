@@ -413,7 +413,7 @@ jobs:
           # Recount before changing this line again; a floor copied forward
           # from a previous release stops being evidence.
           #
-          # KNOWN SLACK, stated rather than implied: 470 leaves 473 tests of
+          # KNOWN SLACK, stated rather than implied: 500 leaves 507 tests of
           # headroom. It catches the regression this repo is prone to (the 36
           # nested modules failing to ship drops the run to 238), and total
           # deselection lands at 0. It would NOT catch losing tests/sections/
@@ -422,20 +422,50 @@ jobs:
           # Half, deliberately: the rejected `-lt 14` threshold sat at the
           # exact count shipping that day, so deleting one test module failed
           # the job with a packaging error for a deliberate source change.
-          # This one has 473 tests of headroom -- you would have to delete more
+          # This one has 507 tests of headroom -- you would have to delete more
           # than half the suite before it complains, while total deselection
           # lands at 0 and trips it immediately. It would also catch the
           # narrower regression this repo is actually prone to: the 36 nested
-          # modules failing to ship takes the run far below 470.
+          # modules failing to ship takes the run far below 500.
           #
           # THE SKIP COUNT IS PART OF THIS NUMBER, and that is a real coupling
           # rather than an accident of arithmetic: the formula is total MINUS
           # skipped, so adding a deliberate skip lowers EXECUTED and re-deriving
-          # the floor from it lowers the floor. Eleven skips against 954
-          # collected is 1.2%; if that ever climbs, the right response is to ask
+          # the floor from it lowers the floor. Fifteen skips against 1,022
+          # collected is 1.5%; if that ever climbs, the right response is to ask
           # why the sdist stopped being able to answer its own suite's
           # questions, not to keep re-deriving downward.
-          FLOOR=470
+          #
+          # RE-MEASURED FOR FIX-3, AND STALE AGAIN — the third time in one
+          # release cycle. 470 was derived from 954/-11/943 and the same job,
+          # re-run against a fresh sdist, gives:
+          #
+          #     collected under -m "not wheel" 1,022
+          #     skipped in the sdist             -15
+          #     EXECUTED                       1,007   <- what the formula returns
+          #     half                             503.5
+          #     rounded down                     500
+          #
+          # Measured on 3.9.25 and 3.12: both give 1,007 / 15 / 1 deselected.
+          #
+          # 440, then 470, now 500. THE PATTERN IS HAND-TYPED COUNTS INSIDE
+          # GATES, and every one of them was wrong in the safe direction, which
+          # is why nothing ever failed to announce it. A floor that is too low
+          # is not conservative; it is a gate that has stopped asking anything.
+          #
+          # SO IT IS NOW RE-DERIVED BY A TEST rather than by whoever next reads
+          # this comment: tests/test_release_floor.py parses this assignment,
+          # runs a fresh collection of the same suite under the same marker
+          # expression, and fails if FLOOR has drifted out of the band the rule
+          # above produces. Grow the suite without re-deriving and CI says so.
+          #
+          # Deriving it in this step instead was considered and rejected. The
+          # floor exists to catch a marker change or an -m expression that
+          # deselects the suite; a threshold computed from the same deselected
+          # run moves down with it and can never fail. The reference count has
+          # to come from somewhere the deselection cannot reach, and that is a
+          # collection in the checkout — which is where the test lives.
+          FLOOR=500
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()

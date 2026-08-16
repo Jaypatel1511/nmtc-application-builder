@@ -117,20 +117,43 @@ class SectionBCommunityOutcomes(SectionGenerator):
             return f"{value:.1%}"
 
         distress_commitments = {
-            # THE TWO BARS HAVE DIFFERENT BASES AND EACH NOW HAS ITS OWN ROW.
-            # 85% is severe distress OR multiple indicia; 20% is Deep Distress
-            # alone. One number must not be left to answer both, which is what
-            # a single combined deep+severe row sitting under both bars did.
+            # THE FUND'S TWO BARS ARE MEASURED ON QLICIs. EVERY SHARE IN THIS
+            # TABLE IS A SHARE OF QEI. analyze_distress_concentration buckets
+            # and divides ``qei_request`` and nothing else (distress_analysis
+            # .py:128,160-184); ``qlici_amount`` is a required CSV field that
+            # reaches one display column in Appendix A (tables/pipeline_table
+            # .py) and the QLICI <= QEI rule in validation/consistency_check,
+            # and feeds no percentage, no score and no bar.
             #
-            # AND THE TWO BASES OVERLAP, WHICH THE LABELS NOW SAY. Deep
+            # SO NO FIGURE HERE ANSWERS EITHER COMMITMENT, AND NO LABEL MAY
+            # SAY OR IMPLY THAT IT DOES. FIX-2 (232df43) labelled these two
+            # rows "the 20% bar's own basis" / "the 85% bar's own basis" and
+            # added two more reading "<CDE> — measured against the 20% Deep
+            # Distress bar". The arithmetic was inherited from 1.1.5; the
+            # claim was not. On an 8-project pipeline where only the QLICIs
+            # vary, that filed 25.0% against a bar the CDE misses at 9.5%, in
+            # a sentence naming the CDE, on all four surfaces. Removed rather
+            # than hedged: the two duplicate rows are gone and the labels no
+            # longer carry a bar percentage at all.
+            #
+            # The QEI share still belongs in the document — it is what this
+            # tool can compute, and it is what 1.1.5 and 1.2.0 reported, under
+            # an honest label. What it may not do is stand beside a bar.
+            #
+            # The basis note is the last row rather than a footnote because
+            # this subsection renders as a two-column Item/Value table on all
+            # four surfaces; there is nowhere else for it to go.
+            #
+            # AND THE TWO BASES OVERLAP, WHICH THE LABELS STILL SAY. Deep
             # distress is a strict subset of severe distress, so the severe
             # row INCLUDES the deep row and the third row is the arithmetic
             # between them. Reading the three together must not require the
             # reader to know the Fund's column definitions.
-            "QEI in Deep Distress Tracts (the 20% bar's own basis)":
+            "QEI in Deep Distress Tracts (a share of QEI, not of QLICIs — "
+            "see the basis note below)":
                 _tract_pct(deep_only_pct),
             "QEI in Severely Distressed Tracts, Deep Distress included "
-            "(the 85% bar's own basis)":
+            "(a share of QEI, not of QLICIs — see the basis note below)":
                 _tract_pct(deep_pct),
             "— of which severely distressed but not also deep":
                 _tract_pct(severe_not_deep_pct),
@@ -142,32 +165,46 @@ class SectionBCommunityOutcomes(SectionGenerator):
             "QEI in NMTC Native Areas (CDE-declared, not verified by this tool)":
                 _tract_pct(native_pct),
             "QEI in High Migration Rural (HMR) Tracts": _tract_pct(hmr_pct),
-            # Was labelled "CDFI Fund Severe Distress Threshold" and cited to
+            # THE ONLY ROW THAT MAY CARRY A BAR PERCENTAGE, because it is the
+            # row whose whole subject is that no share above answers one. It
+            # was labelled "CDFI Fund Severe Distress Threshold" and cited to
             # the Review Process generally (and, in the attribution allowlist,
             # to a "FAQ #79" that document does not contain). The Review
             # Process states the commitment under "Targeting Areas of Higher
             # Distress (Question 25)", it covers severe distress OR multiple
             # indicia rather than severe distress alone, and it carries a
             # SECOND figure this tool was not reporting at all.
-            "CDFI Fund Higher-Distress Commitment (CY 2024-2025)":
-                f"{SEVERE_DISTRESS_MIN_PCT:.0%} of QLICIs in areas of severe "
-                "distress and/or multiple indicia of distress, and "
-                f"{DEEP_DISTRESS_MIN_PCT:.0%} in Deep Distress areas "
-                "(CY 2024-2025 NMTC Program Review Process, Targeting Areas of "
-                "Higher Distress, Question 25; the CY 2026 NOAA is not yet "
-                "published). THE TWO BARS HAVE DIFFERENT BASES: the "
-                f"{SEVERE_DISTRESS_MIN_PCT:.0%} covers severe distress OR "
-                f"multiple indicia, the {DEEP_DISTRESS_MIN_PCT:.0%} covers Deep "
-                "Distress alone. Read each against its own row above; a "
-                "combined deep-plus-severe share does not answer the "
-                f"{DEEP_DISTRESS_MIN_PCT:.0%} bar.",
-            f"{application.cde.name} — measured against the "
-            f"{DEEP_DISTRESS_MIN_PCT:.0%} Deep Distress bar":
-                _tract_pct(deep_only_pct),
-            f"{application.cde.name} — measured against the "
-            f"{SEVERE_DISTRESS_MIN_PCT:.0%} higher-distress bar "
-            "(severe, deep included)":
-                _tract_pct(deep_pct),
+            #
+            # It used to end "Read each against its own row above", which
+            # instructed the reader to make exactly the comparison the bases
+            # do not support. It now states both mismatches instead: the
+            # denominator (QLICIs, not QEI) and the numerator (severe distress
+            # OR MULTIPLE INDICIA, and this package computes no multi-indicia
+            # measure at all).
+            "BASIS NOTE — the CDFI Fund's two distress commitments are "
+            "measured on QLICIs, not on QEI":
+                "The CY 2024-2025 NMTC Program Review Process (Targeting Areas "
+                "of Higher Distress, Question 25) states two commitments, and "
+                "both are measured on QLICIs: at least "
+                f"{SEVERE_DISTRESS_MIN_PCT:.0%} of QLICIs in specified areas of "
+                "severe distress and/or areas characterized by multiple indicia "
+                f"of distress, and at least {DEEP_DISTRESS_MIN_PCT:.0%} of "
+                "QLICIs to 'Deep Distress' areas. Every share in this table is "
+                "a share of QEI. nmtc-application-builder computes neither "
+                "QLICI-denominated figure — it reads this pipeline's QLICI "
+                "amounts only to print them in Appendix A and to check that "
+                "each is no larger than its QEI — so no figure above answers "
+                "either commitment, and none may be presented to the CDFI Fund "
+                "as doing so. Two further gaps in the higher-distress "
+                "commitment: it covers severe distress OR MULTIPLE INDICIA of "
+                "distress, and this package computes no multi-indicia measure "
+                "at all, so even the QLICI-denominated severe-distress share "
+                "would be incomplete against it; and Deep Distress is a strict "
+                "subset of severe distress, so the second row above already "
+                "includes the first. The CDE must compute both "
+                "QLICI-denominated shares from its own QLICI amounts before "
+                "stating either commitment. (The CY 2026 NOAA is not yet "
+                "published.)",
         }
 
         # This tool does not retrieve, compute or verify any community-need

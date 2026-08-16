@@ -28,8 +28,21 @@ Section D from the CDE's own inputs turned up.
 >   letters — but a reader who opened the workbook at "column 14" would land on
 >   N. **Verified by opening `NMTC_LIC_Eligibility_2016_2020.xlsb` directly**:
 >   the NOTES sheet reads `Column O. Severe Distress` and `Column P. Deep
->   Distress`, and the criterion strings the rows quote are byte-identical to
->   the workbook's own. The amendment is correct and it is an improvement.
+>   Distress`, and the criterion strings the rows quote carry the workbook's
+>   own criteria exactly — every threshold, operator and separator.
+>
+>   **"Byte-identical" was the wrong word and is corrected here**, in a bullet
+>   whose subject is fidelity. Read off the `.xlsb` the workbook's NOTES sheet
+>   holds `Severe distress=LIC AND (Poverty>30%; MFI<=60%;Unemployment>=1.5)`;
+>   the document renders `Severe distress = LIC AND (Poverty>30%; MFI<=60%;
+>   Unemployment>=1.5)` — **three whitespace insertions**, around the `=` and
+>   after the second semicolon, and three more in the Deep Distress line. The
+>   substance is exactly right and no criterion, threshold or operator differs.
+>   The claim about the substance was true; the claim about the bytes was not.
+>   The rendered methodology note still introduces both lines with the word
+>   *"verbatim"*, which has the same problem — recorded under **Known and left
+>   alone** rather than changed here, because the fix moves a rendered line and
+>   a pinned constant and this release's rendered diff is reserved for FIX-3. The amendment is correct and it is an improvement.
 > - The corresponding docs page (`docs/reference/data-sources.md`) carries the
 >   same correction, as a table keyed by letter. `gh-pages` still needs a
 >   manual `mkdocs gh-deploy`.
@@ -506,6 +519,182 @@ does with the remaining gap stated.
   duplication recorded in the release that removed five others. All three are
   read now, and the waivers became pins.
 
+### Fixed — three defects THIS RELEASE INTRODUCED, and the gate that finds them
+
+Not inherited. Each was created by the previous fix in this same release, each
+one level deeper into the same sentence of Section B, and every gate stayed
+green through all three. None of them shipped. This file omitted all of it.
+
+```
+B-5's fix  ->  B-1: an exclusive bucket rendered under an inclusive label
+B-1's fix  ->  B-3: a year rendered as 2,019
+B-1's fix  ->  FIX-3: an honest QEI label rewritten into a QLICI bar assertion
+```
+
+- **B-1 — one filing stated both 0.0% and 85% severe distress.** B-5's fix
+  split the 85%/20% bars onto their own rows and gave the new row the
+  **exclusive** severe bucket under the **inclusive** words "QEI in Severely
+  Distressed Tracts", against an Appendix B whose per-project flag counts deep
+  as severe. On a pipeline whose distressed tracts are all deep, Section B read
+  0.0% while Appendix B flagged every one of them "Yes" — one filing, two
+  answers. The subset premise was verified against the Fund's own workbook
+  rather than inferred: `NMTC_LIC_Eligibility_2016_2020.xlsb`, columns O and P,
+  all 85,395 tracts — 8,061 deep, 13,121 severe-not-deep, **zero**
+  deep-but-not-severe. The bucket is renamed `pct_severe_excluding_deep`, so
+  the name says what it holds.
+- **B-3 — prior-award years rendered as `2,019`** on markdown, Word and PDF.
+  B-1's cell-format unification correctly gave the currency columns their
+  dollar signs and gave a year a thousands separator on the way past.
+  `_cell_format` now declares an IDENTIFIER column class in its own contract.
+  Excel had rendered `2,019` since at least v1.2.0, from the magnitude
+  auto-detect rather than from 1.2.1.
+- **FIX-3 — the QEI shares were relabelled as answers to the Fund's QLICI
+  bars.** See the section below.
+
+**The gate: a ~3,250-line rendered-output regression baseline.** Every other
+gate in this package asks whether a rendered line is ENTITLED to be there — the
+invariance gate asks whether it was derived from the input, the constant gate
+whether a published value prints as pinned, the attribution gate whether a
+claim carries a citation. **None asked what CHANGED**, and all three defects
+above were found by a human reading the output. A byte-diff of all four formats
+between v1.2.0 and the branch head, from one fixed fixture, showed two of them
+in ninety seconds. Nobody had ever diffed this package's output against its own
+last release.
+
+`tests/test_rendered_output_baseline.py` is that diff, kept: one fixed
+fully-populated fixture, all four formats projected to text (including Excel's
+number formats, because the year defect *is* a number-format defect and the
+cell value 2019 is correct either way), normalised for timestamps, temp paths
+and the run date only, and diffed line by line against
+`tests/rendered_baseline/`. A changed line fails. Regenerating is a separate
+deliberate command (`python -m tests.regen_rendered_baseline`) whose output
+belongs in the same commit — a gate that writes its own expected output on
+failure can never fail. It fails closed on a missing format, an empty
+extraction, an absent or suspiciously short baseline, and a fixture that stops
+populating a field.
+
+The first 743-line diff was classified in full: 556 intended fixes across 13
+distinct changes, 166 consequential reflow, and the two defects above.
+
+### Fixed — the Fund's distress commitments are measured on QLICIs (FIX-3)
+
+**The document told a federal agency the CDE clears a bar this package does not
+measure.** The CY 2024-2025 NMTC Program Review Process, "Targeting Areas of
+Higher Distress (Question 25)", commits an applicant to *"at least 85% of its
+**QLICIs** in specified areas of severe distress and/or areas characterized by
+multiple indicia of distress"* and *"at least 20% of its **QLICIs** to 'Deep
+Distress' areas"*. Both are shares of **QLICIs**.
+
+Every share this package computes is a share of **QEI**:
+`analyze_distress_concentration` buckets and divides `qei_request` and reads
+`qlici_amount` never. `qlici_amount` is a required CSV field that reaches
+exactly one rendered figure — the "Total QLICI ($)" column of Appendix A — plus
+the `QLICI <= QEI` consistency rule. **It feeds no percentage, no score and no
+bar.**
+
+**The arithmetic is inherited; the claim was not.** 1.1.5 and 1.2.0 both render
+*"QEI in Deep/Severely Distressed Tracts"* — an honest label on an honest
+number. B-1's fix rewrote it into a bar assertion without touching the
+denominator, on three rows plus two new ones naming the CDE:
+
+```
+was:  QEI in Deep Distress Tracts (the 20% bar's own basis)           52.2%
+      <CDE> — measured against the 20% Deep Distress bar              52.2%
+```
+
+On an 8-project pipeline where only the QLICIs vary, that files 25.0% against a
+bar the CDE misses at 9.5%, in a sentence naming the CDE, on all four surfaces.
+**Nothing published is wrong and this never shipped.**
+
+- The two `bar's own basis` labels now name their own denominator, and the two
+  `measured against the …` rows — exact duplicates of the rows above them whose
+  only added content was the assertion — are **deleted**. No share row carries
+  a bar percentage at all.
+- The commitment row becomes a **BASIS NOTE** stating both mismatches on its
+  face: the denominator (QLICIs, not QEI, so no figure above answers either
+  commitment) and the numerator (the 85% covers severe distress **or multiple
+  indicia**, and this package computes no multi-indicia measure at all, so even
+  the QLICI-denominated share would be incomplete against it). It replaces
+  *"Read each against its own row above"*, which instructed the reader to make
+  exactly the comparison the bases do not support.
+- **The same assertion was live in a second file.** `recommendations.py` told a
+  CDE *"Only 40% of QEI is in severe distress or multi-indicia distress tracts
+  — below the 85% CDFI Fund threshold for full credit"* and subtracted a QLICI
+  bar from a QEI share to state a gap in percentage points. It fires on no
+  fixture in the package, so no rendered gate had ever seen it. Both findings
+  now name the denominator and frame the gap as the distance to **this tool's
+  own QEI-based proxy**, which is what it measures.
+- `docs/reference/methodology.md` presented both sub-score thresholds as
+  "85%+ / 20%+ of QEI" with no mention of QLICIs, and documented a `pct_deep`
+  fallback removed in 1.2.1. Both corrected; a basis note added.
+- The Streamlit benchmark caption printed the 85%-of-QLICIs bar under a chart
+  axis reading "% of QEI"; it now says the two are not comparable.
+- `_disclosure.unverified_banner`'s docstring justified the full-pipeline
+  denominator as *"it matches the basis the Fund scores on"*. The **shape**
+  matches — aggregate over everything, not over the geocoded subset — the
+  **basis** does not, and this was the sentence the rendered labels were
+  written from. `DISTRESS_SHARE_SEMANTICS`, which the pins consult, said the
+  same thing and now says "proxy".
+
+**Two new gates.** `tests/test_qlici_basis.py` pins the corrected text and adds
+the general rule: **a rendered line may state one of the Fund's bar percentages
+only if the same line names that bar's denominator.** Run against the baseline
+at `128436f` it returns twelve hits — the four Section B rows, in each of the
+three text formats. It also scans `RecommendationSet.summary()` and the
+`nmtcapp analyze` block, which the rendered baseline's fixture cannot reach
+because that fixture scores full credit on both distress sub-scores.
+
+**THE EXCEL WORKBOOK IS NOT COVERED BY THIS FIX, AND THAT IS KNOWN.** The
+BASIS NOTE lands on markdown, Word and PDF. `excel.txt` is byte-unchanged, and
+the reason recorded for that — "Excel does not render this subsection" — is
+true of the **subsection** and false of the **figure**. `Summary Dashboard!A12`
+reads `Deep/Severe Distress Concentration` and `C12` carries the share as a raw
+float under a `0.0%` number format. **The label names no denominator, and the
+workbook contains no basis note anywhere**: zero occurrences of "BASIS NOTE",
+"a share of QEI" or "not of QLICIs" across all sheets, and its only "QLICI" is
+Appendix A's `Total QLICI ($)` column heading. **A CDE copying that cell into
+Question 25 would file a QEI figure against a QLICI bar** — which is the exact
+harm FIX-3 exists to prevent, on the surface most likely to be copied from.
+Two things follow. The cell is invisible to the rendered gate by construction:
+the baseline stores it as `|float|fmt=0.0%|0.8531073446327684`, so a scan keyed
+on the string "85%" cannot see it, and the label carries none of the framing
+words the rule requires. And the figure is not wrong — it is an accurate share
+of QEI — so nothing here is a false statement; it is an **unlabelled** one.
+**Not fixed in this release** (adding a note to the workbook moves the Excel
+baseline, which this patch does not regenerate) and **first in the 1.2.2
+queue**, ahead of the denominator swap: it is the shortest path from this
+package to a wrong number on a federal application.
+
+**And a fixture whose two denominators actually differ.** Every fixture in the
+package sets `qlici_amount == qei_request` — both shipped samples,
+`Pipeline.sample()`, the pin fixtures, and the baseline gate's own fixture.
+That is why four passes missed this. **A fixture that collapses two distinct
+inputs cannot exercise the distinction, and no gate built on it ever will.**
+`test_the_two_denominators_actually_diverge` is the first one where they do, and
+it fails closed if they ever collapse again.
+
+### Changed — the release floor is derived by a test, not typed
+
+`release.yml`'s sdist job asserts that the tarball's suite executed tests rather
+than shipping every module and deselecting the lot. Its threshold was a
+hand-typed `FLOOR=470`, **stale for the third time in one cycle** — `440`
+carried forward from 1.2.0, then `133` typed in three places, then 470 derived
+from `954 / −11 / 943` when a fresh run of the same job gives
+`1,022 / −15 / 1,007`. Every one of them was wrong in the safe direction, which
+is why nothing ever announced it: **a floor that is too low is not
+conservative, it is a gate that has stopped asking anything.**
+
+`FLOOR=500`, and `tests/test_release_floor.py` now parses the assignment, runs a
+fresh collection of the same suite under the same marker expression, and fails
+when the number drifts out of the band the workflow's own stated rule produces.
+Grow the suite without re-deriving and CI says so.
+
+Deriving it inside the step was considered and rejected, and the rejection is
+recorded in the workflow: the floor exists to catch a marker change or an `-m`
+expression that deselects the suite, and a threshold computed from the same
+deselected run moves down with it and can never fail. The reference count has to
+come from somewhere the deselection cannot reach.
+
 ### Found by mutation
 
 Six mutations, run against the finished gate. Five are killed by a pin; the
@@ -549,6 +738,94 @@ Two further items, both recorded for the next release rather than patched:
   it the headings credit nobody, so there is no false attribution to fix — only
   an absent one to add. Renaming the column would move a pinned heading, so it
   is recorded rather than done here.
+
+Recorded by FIX-3, all of them **1.2.2** and none of them patch-safe:
+
+- **FIRST IN THE QUEUE — the Excel workbook's distress figure carries no
+  denominator and no basis note.** `Summary Dashboard!A12` /
+  `C12`: `Deep/Severe Distress Concentration`, the share as a raw float under a
+  `0.0%` format, with nothing in the workbook naming what it is a share of and
+  no basis note on any sheet. **A CDE copying that cell into Question 25 would
+  file a QEI figure against a QLICI bar.** The number is correct as a share of
+  QEI; what is missing is the label. It is ranked first because it is the
+  shortest path from this package to a wrong number on a federal application,
+  and because Excel is the surface a CDE is most likely to copy from. It also
+  cannot be caught by the gate FIX-3 added: the baseline stores the cell as
+  `|float|fmt=0.0%|…`, so a scan keyed on the rendered "85%" cannot see it.
+  Deferred only because writing the note moves the Excel rendered baseline,
+  which this patch deliberately does not regenerate — **not** because it is
+  judged low-risk.
+- **`intelligence/recommendations.py:41` asserts an invariant its own module
+  breaks, and a gate leans on it.** The module header states *"EVERY FEDERAL
+  FIGURE IN THIS MODULE IS INTERPOLATED, NOT TYPED (1.2.1 L-3)"*. Line 232
+  types both figures in *"The CDFI Fund awards full credit for CDEs offering
+  50%+ below-market products OR documenting 5+ indicia of flexible terms"* as
+  literals; `PRODUCT_FLEXIBILITY_BELOW_MARKET_PCT` and
+  `PRODUCT_FLEXIBILITY_MIN_INDICIA` exist in `benchmark_thresholds` and are not
+  imported there. **This is not cosmetic**: `test_qlici_basis.py`'s source scan
+  detects bars in two ways, and one of them — `_BAR_TOKENS_IN_SOURCE` — looks
+  for the constant NAMES precisely because the header says every federal figure
+  is written that way. A typed federal figure is visible to that scan only if
+  its literal value is one of the two distress bars; 50%, 5, 70% and 90% are
+  not, so they are outside the gate entirely. Recorded here rather than fixed
+  because interpolating the two constants changes a rendered recommendation
+  string, which moves pins this patch does not regenerate. Fixing the header
+  claim and the typed figures should travel together, and the sentence itself
+  needs review on its merits — the CY 2024-2025 Review Process states the
+  Question 15 threshold as *"100% of its QLICIs"*, with "at least 50%
+  below-market" describing a rate discount rather than a share of products.
+- **The denominator itself.** Switching the distress shares from QEI to QLICIs
+  moves every scored figure, including the Community Outcomes sub-scores —
+  `_score_higher_distress` and `_score_deep_distress` divide a QEI share by a
+  QLICI bar, and that is now stated in a comment beside each. It is a
+  methodology change that needs to be written down and hostile-audited before
+  it is made, not a patch.
+- **There is no multi-indicia measure at all.** The Fund's 85% covers severe
+  distress **or** areas characterized by multiple indicia of distress — the
+  Question 25 list of twelve. This package computes nothing for the second
+  half, so even a QLICI-denominated severe-distress share would be incomplete
+  against that bar. A missing methodology, not a bug.
+- **`core/upload_handler.py:246-247` sets `qlici_amount = qei_request` when the
+  column is absent.** *This is the mechanism that hid FIX-3 for four passes*:
+  it silently substitutes one CDE input for another, so the two denominators
+  agree on every pipeline uploaded without the column and the distinction can
+  never be observed. **A warning would be patch-safe** — it changes no accepted
+  input, no parsed value and no rendered figure, only what the CDE is told
+  while it happens. **The substitution itself is not**: removing it makes
+  previously-accepted uploads fail validation, which is an accepted-input
+  change. Recommended for 1.2.2: keep the default, warn on it, and say in the
+  warning that the substituted value is not the CDE's own QLICI total.
+- **Every fixture in the package collapses the two fields.** Both shipped
+  samples, `Pipeline.sample()`, the pin fixtures and the rendered baseline's
+  own fixture all set `qlici_amount == qei_request`. The general rule, worth
+  stating because it generalises well past this defect: *a fixture that
+  collapses two distinct inputs cannot exercise the distinction, and no gate
+  built on it ever will.* Fixing the fixtures moves the rendered baseline, so
+  it belongs with the denominator work rather than here;
+  `tests/test_qlici_basis.py` carries a divergent fixture of its own in the
+  meantime.
+- **Six more shares are computed on QEI, and how many of them the Fund defines
+  on QLICIs COULD NOT BE ESTABLISHED here.** `pct_native_area`,
+  `pct_high_migration_rural`, `pct_persistent_poverty`, `pct_us_territories`,
+  `pct_below_market_rate` and `pct_unrelated_entity` all divide `total_qei`
+  (`distress_analysis.py:179-184`). What the package itself records: only
+  `pct_unrelated_entity` has a bar whose basis is written down here at all —
+  `UNRELATED_ENTITIES_MIN_PCT`, annotated "90%+ **QEIs** to unrelated entities"
+  — and the other five have no bar in `benchmark_thresholds` beyond the shared
+  `SPECIAL_TARGETING_BONUS_PCT` 10% trigger, whose basis is likewise unrecorded.
+  **No primary source was available in this pass**: no copy of the CY 2024-2025
+  Allocation Application or Review Process is checked into the repository or
+  cached on this machine, and the count must not be asserted from recollection
+  in a file whose subject is fidelity. **None of the six currently renders
+  beside a bar, so none is a live false claim today.** But if more than the two
+  distress commitments turn out to be QLICI-denominated, **1.2.2 is a wider job
+  than a single denominator swap** — establish the count against the
+  Application's own question text, per share, before scoping it.
+- **The rendered methodology note introduces the workbook criteria with the
+  word "verbatim"** over text carrying three whitespace insertions per line.
+  See the corrected bullet at the top of this release. The substance is exact;
+  the word is not. Changing it moves a rendered line and a pinned constant, and
+  this release's rendered diff is reserved for FIX-3.
 
 ---
 
