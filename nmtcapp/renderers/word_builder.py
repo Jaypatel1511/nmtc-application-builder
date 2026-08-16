@@ -13,6 +13,7 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Pt, RGBColor, Inches, Cm
 
+from nmtcapp.renderers._cell_format import supplied_total
 from nmtcapp.renderers._disclosure import (
     is_partial_unverified, qualified_pct, unverified_banner,
     unverified_ids, unverified_qualifier,
@@ -295,7 +296,9 @@ class WordApplicationBuilder:
              _elig_metric(distress.get("pct_deep_or_severe", 0))],
             ["NMTC Eligibility Rate", _elig_metric(pr.eligibility_pct)],
             ["Jobs to Be Created", f"{impact.get('total_jobs_created', 0):,}"],
-            ["Affordable Units to Be Built", f"{impact.get('total_units_built', 0):,}"],
+            # 1.2.1 B-2: absent is not zero. See _cell_format.supplied_total.
+            ["Affordable Units to Be Built",
+             supplied_total(impact.get("total_units_built"))],
             ["Jobs per $1MM QEI", f"{impact.get('jobs_per_million_qei', 0):.1f}"],
         ]
         add_styled_table(doc, ["Metric", "Value"], metrics_data)
@@ -365,15 +368,40 @@ class WordApplicationBuilder:
         add_styled_paragraph(doc, "Appendix A (continued): Pipeline Detail — Full View",
                               level=2, color_key="secondary")
         full_df = build_pipeline_table(self.application.pipeline, self.application.cde)
-        # Key 12 columns that fit in landscape with 8pt
+        # Key 12 columns that fit in landscape with 8pt.
+        #
+        # THE NATIVE AREA HEADING IS THE TABLE'S, NOT A COPY OF IT (1.2.1 L-1).
+        # This list asked for "NMTC Native Area (Y/N)" while the pipeline table
+        # renders "NMTC Native Area (CDE-declared, Y/N)" — the heading 1.2.1
+        # widened precisely so every surface would say whose declaration the
+        # flag is. The `if c in full_df.columns` filter below then dropped the
+        # column WITHOUT A WORD: eleven columns rendered where this comment
+        # claimed twelve, and the CHANGELOG's "every surface now says so" was
+        # false for Word's Appendix A, which had stopped saying anything.
+        #
+        # A silent drop is how a disclosure disappears, so the filter is gone.
+        # An unmatched column now raises: if the pipeline table's headings
+        # change, Word fails to render rather than quietly filing a narrower
+        # attachment than the one it describes.
         landscape_cols = [
             "Project ID", "Project Name", "City", "State",
-            "Distress Level", "NMTC Eligible (Y/N)", "NMTC Native Area (Y/N)",
+            "Distress Level", "NMTC Eligible (Y/N)",
+            "NMTC Native Area (CDE-declared, Y/N)",
             "QEI Request ($)", "Total Project Cost ($)",
             "Jobs Created", "Jobs Retained", "Sector (as supplied)",
         ]
-        existing = [c for c in landscape_cols if c in full_df.columns]
-        _write_df_to_doc(doc, full_df[existing], max_rows=50, font_size=8)
+        missing = [c for c in landscape_cols if c not in full_df.columns]
+        if missing:
+            raise KeyError(
+                f"Appendix A (Word, landscape view) asks for {missing}, which "
+                "tables/pipeline_table no longer produces. This used to be "
+                "filtered out silently, which rendered a narrower table than "
+                "the caption above it describes and dropped the "
+                "'(CDE-declared)' disclosure off the Native Area column. Fix "
+                "the name here to match the table, or remove the column "
+                "deliberately."
+            )
+        _write_df_to_doc(doc, full_df[landscape_cols], max_rows=50, font_size=8)
         self._switch_to_portrait(doc)
 
     def _build_appendix_distress(self, doc: Document) -> None:

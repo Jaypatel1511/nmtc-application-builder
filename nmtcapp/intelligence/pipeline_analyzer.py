@@ -12,6 +12,7 @@ from nmtcapp.intelligence.impact_aggregator import aggregate_impact
 from nmtcapp.intelligence.sector_analysis import analyze_sector_mix
 from nmtcapp.integrations.nmtc_calc_adapter import compute_pipeline_economics
 from nmtcapp.integrations.nmtc_mapper_adapter import enrich_pipeline_eligibility
+from nmtcapp.renderers._cell_format import supplied_total
 
 if TYPE_CHECKING:
     from nmtcapp.core.pipeline import Pipeline
@@ -133,8 +134,10 @@ class PipelineAnalysisResult:
             "── Impact Projections ──────────────────────────────────",
             f"  Jobs Created:    {i.get('total_jobs_created', 0):,}",
             f"  Jobs Retained:   {i.get('total_jobs_retained', 0):,}",
-            f"  Units Built:     {i.get('total_units_built', 0):,}",
-            f"  Sq Ft:           {i.get('total_sq_ft', 0):,.0f}",
+            # 1.2.1 B-2: an absent column is not a pipeline that builds zero
+            # units. `nmtcapp analyze` is where a CDE first reads these back.
+            f"  Units Built:     {supplied_total(i.get('total_units_built'))}",
+            f"  Sq Ft:           {supplied_total(i.get('total_sq_ft'), '{:,.0f}')}",
             f"  Jobs/$MM QEI:    {i.get('jobs_per_million_qei', 0):.1f}",
             "",
             "── Deal Economics ──────────────────────────────────────",

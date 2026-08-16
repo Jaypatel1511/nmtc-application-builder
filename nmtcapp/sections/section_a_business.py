@@ -98,18 +98,50 @@ class SectionABusinessStrategy(SectionGenerator):
         # as though it had been cut off. Only elide when something was elided.
         mission_display = (mission[:200].rstrip() + "…") if len(mission) > 200 else mission
 
+        # WHO EACH FLAG BELONGS TO, SEPARATELY (1.2.1 L-2).
+        #
+        # This sentence used to attribute BOTH shares to "the flags supplied in
+        # this CDE's own pipeline submission", and for High Migration Rural
+        # that is not where the number comes from. is_high_migration_rural is a
+        # CDE-supplied CSV column, but integrations/nmtc_mapper_adapter passes
+        # it through _prefer_determinate, which returns the MAPPER's value
+        # whenever the mapper has one: _prefer_determinate(False, True) -> False.
+        # On a real filing the CDE declared 36.2% of QEI as High Migration
+        # Rural, the mapper corrected it to 12.6%, and the document printed
+        # 12.6% as the CDE's own declaration — understating what the CDE
+        # claimed while crediting the claim to them.
+        #
+        # THE MAPPER IS RIGHT and its correction stands; what was wrong was the
+        # attribution. This is the mirror image of the Native Area defect 1.2.1
+        # fixed in the other direction (where a fabricated negative overwrote a
+        # correct declaration): both are a sentence naming the wrong author of
+        # a figure that reaches a scored Special Targeting criterion.
+        #
+        # Persistent poverty is untouched by any adapter — no enrichment path
+        # assigns is_persistent_poverty — so its clause keeps the original
+        # attribution, and the two are now separate sentences rather than one
+        # sentence covering both.
         pp_pct = distress.get("pct_persistent_poverty", 0.0)
         hmr_pct = distress.get("pct_high_migration_rural", 0.0)
-        declared = []
+        clauses = []
         if not degraded and pp_pct > 0:
-            declared.append(f"{pp_pct:.0%} of QEI in tracts declared as persistent-poverty counties")
-        if not degraded and hmr_pct > 0:
-            declared.append(f"{hmr_pct:.0%} in tracts declared High Migration Rural")
-        if declared:
-            targeting = (
-                "Per the flags supplied in this CDE's own pipeline submission, the "
-                "pipeline places " + " and ".join(declared) + ".\n\n"
+            clauses.append(
+                "Per the persistent-poverty flags supplied in this CDE's own "
+                f"pipeline submission, the pipeline places {pp_pct:.0%} of QEI "
+                "in tracts declared as persistent-poverty counties."
             )
+        if not degraded and hmr_pct > 0:
+            clauses.append(
+                f"{hmr_pct:.0%} of QEI is in tracts recorded as High Migration "
+                "Rural. This share is NOT solely the CDE's declaration: the "
+                "high_migration_rural column of the pipeline submission is "
+                "overwritten wherever nmtc-mapper returned a determination for "
+                "the tract, so where the two disagree the figure above is the "
+                "tool's, not the CDE's. Check it against your own submission "
+                "before relying on it, and state which governs."
+            )
+        if clauses:
+            targeting = " ".join(clauses) + "\n\n"
         else:
             targeting = _cde_todo(
                 "State how these markets were selected and what makes them the "

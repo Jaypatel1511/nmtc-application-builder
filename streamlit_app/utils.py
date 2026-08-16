@@ -36,18 +36,15 @@ TIER_COLORS = {
 }
 
 # ---------------------------------------------------------------------------
-# Valid sectors (from schema)
+# Valid sectors — NOW ACTUALLY FROM SCHEMA (FIX-2 G-5 sweep)
+#
+# The comment above this list said "(from schema)" and the list was hand-typed.
+# It happened to agree. A sector added to nmtcapp.data.schema.TARGET_SECTORS
+# would not have appeared here, so the Streamlit uploader would have rejected
+# a sector the package itself recognises, with a message naming a vocabulary
+# nothing else in the repo holds.
 # ---------------------------------------------------------------------------
-VALID_SECTORS = [
-    "healthcare",
-    "affordable_housing",
-    "education",
-    "small_business",
-    "mixed_use",
-    "community_facility",
-    "clean_energy",
-    "other",
-]
+from nmtcapp.data.schema import VALID_SECTORS  # noqa: F401  (re-exported)
 
 
 # Identity keys parsed off an uploaded "CDE Profile" sheet. These describe WHO

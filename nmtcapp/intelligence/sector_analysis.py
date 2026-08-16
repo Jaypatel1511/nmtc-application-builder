@@ -6,15 +6,18 @@ import math
 from collections import Counter
 from typing import TYPE_CHECKING
 
-from nmtcapp.data.schema import TARGET_SECTORS
+from nmtcapp.data.schema import SECTORS_BY_PRIORITY, TARGET_SECTORS
 
 if TYPE_CHECKING:
     from nmtcapp.core.pipeline import Pipeline
 
 logger = logging.getLogger(__name__)
 
-# Priority sectors in winning applications (CDFI Fund historical data)
-_HIGH_PRIORITY_SECTORS = {"healthcare", "affordable_housing", "education"}
+# READ THE TIER, DO NOT RETYPE IT (FIX-2 G-5 sweep). This module already
+# imports TARGET_SECTORS and reads the "priority" field two functions below,
+# so one half of it derived and the other half retyped the same classification
+# — which is how visualization/maps came to disagree with both.
+_HIGH_PRIORITY_SECTORS = SECTORS_BY_PRIORITY["high"]
 
 
 def analyze_sector_mix(pipeline: "Pipeline") -> dict:

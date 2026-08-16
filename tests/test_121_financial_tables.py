@@ -305,16 +305,18 @@ def test_section_b_reports_deep_distress_alone():
     rows = next(s for s in content["subsections"]
                 if s["heading"] == "Distress Level Commitments")["body"]
 
-    deep_only = [v for k, v in rows.items() if "Deep Distress Tracts" in k]
+    deep_only = [v for k, v in rows.items() if "Deep Distress Tracts (" in k]
     assert deep_only, f"deep-only is still reported nowhere: {list(rows)}"
     # 1 of 4 equal-QEI projects is deep.
     assert deep_only[0].startswith("25.0%"), deep_only
 
-    combined = [v for k, v in rows.items() if "combined" in k.lower()]
-    assert combined and combined[0].startswith("75.0%"), combined
-    assert deep_only[0] != combined[0], (
-        "deep-only and deep-or-severe render the same string; one number is "
-        "again being left to answer both of the Fund's bars"
+    severe = [v for k, v in rows.items() if "Severely Distressed Tracts" in k]
+    assert severe, f"the severe share is reported nowhere: {list(rows)}"
+    # 3 of 4: one deep (deep IS severe) plus two severe.
+    assert severe[0].startswith("75.0%"), severe
+    assert deep_only[0] != severe[0], (
+        "deep-only and severe render the same string; one number is again "
+        "being left to answer both of the Fund's bars"
     )
 
 
@@ -511,15 +513,58 @@ def test_the_refusal_guard_is_still_multi_signal():
 # C-4: the docs hook cannot report success on a partial build
 # ---------------------------------------------------------------------------
 
+_DOCS_HOOK = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "docs", "hooks", "generate_sample_output.py",
+)
+
+# THIS TEST IS ABOUT THE DOCS BUILD, AND MANIFEST.in PRUNES docs/.
+#
+# The hook is loaded by absolute path because mkdocs loads it that way too
+# (mkdocs.yml `hooks:`), and it is not importable as a module. In a git
+# checkout that path always resolves. Inside an unpacked sdist it never can:
+# MANIFEST.in:88 is `prune docs`, so the tarball carries no docs/ at all,
+# while release.yml's sdist job runs this suite out of the tarball with no
+# checkout to fall back on. The test then raised FileNotFoundError and the
+# release job exited 1 — CI stayed green only because CI runs from a checkout.
+# A tag on that artifact would have failed before publishing anything.
+#
+# So the question this test asks — "does the docs hook fail loudly on a
+# partial build?" — is not merely unanswerable in the sdist; it is not the
+# sdist's question. The sdist does not build the docs and does not ship the
+# hook. Skip explicitly, the same way and for the same reason as
+# tests/test_no_committed_generated_artifacts.py.
+#
+# The skip is safe because its condition is unambiguous and cannot occur in
+# the repository: docs/hooks/generate_sample_output.py is tracked, and
+# tests/test_no_committed_generated_artifacts.py fails if the repo stops being
+# a git checkout. It cannot be reached by a regression in the hook — deleting
+# or renaming the hook in a CHECKOUT still fails this test, because the
+# checkout has a docs/ directory and the file is simply absent from it. What
+# it cannot distinguish is a checkout with no docs/ directory at all, which
+# would fail the mkdocs build long before this suite ran.
+#
+# NOT a try/except around the load. Swallowing the error would make the test
+# pass while asserting nothing, on every platform, forever. A skip is counted:
+# release.yml's FLOOR subtracts skips from the executed total, so a skip that
+# started firing in CI shows up as a smaller number rather than as green.
+_DOCS_HOOK_PRESENT = os.path.isfile(_DOCS_HOOK)
+
+
+@pytest.mark.skipif(
+    not _DOCS_HOOK_PRESENT,
+    reason=(
+        "docs/hooks/generate_sample_output.py is absent (this is an unpacked "
+        "sdist or an installed tree, not a checkout). MANIFEST.in prunes docs/, "
+        "the sdist does not build the documentation, and this gate is about the "
+        "docs build's own failure mode."
+    ),
+)
 def test_docs_hook_raises_when_a_configured_format_is_missing(monkeypatch, tmp_path):
     """It logged 'sample output generated' over two of four files under --strict."""
     import importlib.util
 
-    spec = importlib.util.spec_from_file_location(
-        "_gen_sample",
-        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                     "docs", "hooks", "generate_sample_output.py"),
-    )
+    spec = importlib.util.spec_from_file_location("_gen_sample", _DOCS_HOOK)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
 
@@ -592,3 +637,833 @@ def test_docs_extra_exists_and_covers_the_toolchain():
         any(op in dep for op in (">=", "==", "~="))
         for dep in deps
     ), f"an unpinned docs dependency: {deps}"
+
+
+# ---------------------------------------------------------------------------
+# L-2: no sentence may credit the CDE with a value an adapter can overwrite
+# ---------------------------------------------------------------------------
+
+_PACKAGE_SOURCE = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "nmtcapp"
+)
+
+
+@pytest.mark.skipif(
+    not os.path.isdir(_PACKAGE_SOURCE),
+    reason=(
+        "nmtcapp/ is not present next to tests/ (this is an unpacked sdist or "
+        "an installed tree, not a checkout). This test derives its subject — "
+        "the fields an adapter can assign and the columns a CDE fills in — "
+        "from the package SOURCE, and release.yml's sdist job deliberately "
+        "runs with no source tree in the working directory."
+    ),
+)
+def test_no_rendered_claim_credits_the_cde_with_an_overwritable_flag():
+    """The sweep behind the High Migration Rural fix, kept runnable.
+
+    Section A printed "Per the flags supplied in this CDE's own pipeline
+    submission, the pipeline places 13% in tracts declared High Migration
+    Rural" over a figure the mapper had CORRECTED — the CDE declared 36.2%,
+    _prefer_determinate(False, True) returned False, and the document reported
+    12.6% as the CDE's own. The mapper was right; the sentence was wrong about
+    where the number came from.
+
+    That defect is a JOIN, not a string: a field that is both a CDE-supplied
+    column and an adapter-assignable attribute, rendered under a sentence
+    crediting the CDE. This test recomputes the join rather than re-checking
+    the one sentence, so a second instance fails here the day it is written.
+
+    The current answer is two fields, and neither is falsely attributed:
+      is_high_migration_rural   attributed to BOTH authors since 1.2.1 L-2
+      is_opportunity_zone       rendered under bare headings ("Opportunity
+                                Zone (Y/N)", "OZ") that credit nobody
+    """
+    import ast
+    import re
+
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    # Fields any integration assigns onto a project.
+    assigned = set()
+    integrations = os.path.join(root, "nmtcapp", "integrations")
+    for name in sorted(os.listdir(integrations)):
+        if not name.endswith(".py"):
+            continue
+        src = open(os.path.join(integrations, name), encoding="utf-8").read()
+        assigned |= set(re.findall(r"project\.(\w+)\s*=", src))
+    assert assigned, "no adapter assigns anything — the join would be empty"
+
+    # Boolean columns the CDE fills in on the shipped template.
+    pipeline_src = open(
+        os.path.join(root, "nmtcapp", "core", "pipeline.py"), encoding="utf-8"
+    ).read()
+    cde_columns = set(re.findall(r'_optional_bool\(row\.get\("(\w+)"', pipeline_src))
+    assert cde_columns, "no CDE-declared boolean columns found — regex is stale"
+
+    overwritable = sorted({f"is_{c}" for c in cde_columns} & assigned)
+    assert overwritable == ["is_high_migration_rural", "is_opportunity_zone"], (
+        f"the set of CDE-declared, adapter-overwritable fields changed to "
+        f"{overwritable}. Each one needs its rendered attribution checked: a "
+        "sentence saying 'supplied by this CDE' over a value an adapter can "
+        "correct is wrong about its own author, and it reaches a scored "
+        "Special Targeting criterion. Adjudicate the new field, then update "
+        "this list."
+    )
+
+    # And Section A must not have gone back to crediting the CDE for HMR.
+    section_a = open(
+        os.path.join(root, "nmtcapp", "sections", "section_a_business.py"),
+        encoding="utf-8",
+    ).read()
+    rendered = "\n".join(
+        line for line in section_a.splitlines() if not line.strip().startswith("#")
+    )
+    tree = ast.parse(rendered)
+    strings = [
+        n.value for n in ast.walk(tree)
+        if isinstance(n, ast.Constant) and isinstance(n.value, str)
+    ]
+    hmr_claims = [
+        s for s in strings
+        if "High Migration Rural" in s and "CDE's own" in s
+    ]
+    assert not hmr_claims, (
+        "Section A credits the CDE with the High Migration Rural share again: "
+        f"{hmr_claims}. That share is overwritten by nmtc_mapper_adapter "
+        "wherever the mapper returned a determination."
+    )
+
+
+# ---------------------------------------------------------------------------
+# L-1: Word's Appendix A must not drop a column without saying so
+# ---------------------------------------------------------------------------
+
+def test_word_appendix_a_asks_for_columns_the_table_actually_has(pipeline):
+    """Eleven columns rendered where the comment claimed twelve.
+
+    word_builder asked for "NMTC Native Area (Y/N)". The table renders "NMTC
+    Native Area (CDE-declared, Y/N)" — the heading 1.2.1 widened so every
+    surface would say whose declaration the flag is. `[c for c in
+    landscape_cols if c in full_df.columns]` dropped it without a word, and the
+    CHANGELOG's "every surface now says so" became false for Word's Appendix A,
+    which had stopped saying anything at all.
+    """
+    import inspect
+    import re
+
+    from nmtcapp.renderers import word_builder
+
+    src = inspect.getsource(word_builder.WordApplicationBuilder._build_appendix_pipeline)
+    requested = re.findall(r'"([^"]+)"', src.split("landscape_cols = [", 1)[1].split("]", 1)[0])
+    assert len(requested) == 12, f"expected the 12-column subset, found {requested}"
+
+    produced = set(build_pipeline_table(pipeline).columns)
+    missing = [c for c in requested if c not in produced]
+    assert not missing, (
+        f"Word's Appendix A asks for {missing}, which tables/pipeline_table "
+        "does not produce. A silent drop is how a disclosure disappears."
+    )
+    assert "NMTC Native Area (CDE-declared, Y/N)" in requested, (
+        "the Native Area column must carry its (CDE-declared) disclosure into "
+        "Word's Appendix A, not just into the Excel attachment"
+    )
+
+
+def test_word_appendix_a_raises_on_an_unmatched_column(pipeline, monkeypatch):
+    """The filter is gone; a shape change must fail loudly."""
+    pytest.importorskip("docx")
+
+    from nmtcapp.core.application import Application
+    from nmtcapp.core.cde import CDEProfile
+    from nmtcapp.renderers import word_builder
+
+    real = word_builder.build_pipeline_table
+
+    def _renamed(pl, cde=None):
+        df = real(pl, cde)
+        return df.rename(columns={"NMTC Native Area (CDE-declared, Y/N)": "Native Area"})
+
+    monkeypatch.setattr(word_builder, "build_pipeline_table", _renamed)
+
+    cde = CDEProfile(
+        name="L1 Fixture CDE, LLC", cde_id="CDE-2019-0001",
+        certification_date="2019-01-01", mission="L1 fixture.",
+        target_markets=["Ohio"], prior_awards=[],
+        contact={"name": "L1", "email": "l1@example.org"},
+        governance={"board_members": 7, "community_representatives": 3},
+    )
+    app = Application(cde=cde, requested_allocation=15_000_000.0)
+    app.add_pipeline(pipeline)
+
+    with pytest.raises(KeyError, match="Native Area"):
+        word_builder.WordApplicationBuilder(app, app.analyze()).build()
+
+
+# ---------------------------------------------------------------------------
+# L-5: three smaller ones, each asserted against rendered output
+# ---------------------------------------------------------------------------
+
+def test_an_unsupplied_affordable_unit_count_is_not_a_zero(pipeline):
+    """`expected_units_built=None` used to render "0 affordable units".
+
+    A supplied zero and an absent value are different statements to a federal
+    reviewer, and the field feeds a Community Outcomes measure. Same class as
+    the "Quarterly" governance default 1.2.0 removed.
+    """
+    from nmtcapp.renderers._cell_format import NOT_SUPPLIED, format_cell
+    from nmtcapp.tables.impact_table import build_impact_table
+
+    for p in pipeline:
+        assert p.expected_units_built is None, "fixture must not supply units"
+
+    for df, column in (
+        (build_pipeline_table(pipeline), "Affordable Units Built"),
+        (build_impact_table(pipeline), "Affordable Units"),
+    ):
+        rows = df[df[df.columns[0]].astype(str).str.contains("TOTAL") == False]  # noqa: E712
+        for value in rows[column]:
+            assert format_cell(column, value) == NOT_SUPPLIED, (
+                f"{column} rendered {format_cell(column, value)!r} for a project "
+                "that supplied no unit count. A zero is a claim."
+            )
+
+    # A real zero still reads as a zero: a CDE writing 0 has said something.
+    assert format_cell("Affordable Units Built", 0) == "0"
+
+
+def test_an_unrecognised_sector_is_marked_as_unrecognised(pipeline):
+    """`retail` used to render as "Retail", exactly like a recognised sector.
+
+    The list is advisory on the way in — the project loads, and every derived
+    figure is unaffected — and declarative on the way out.
+    """
+    from nmtcapp.data.schema import VALID_SECTORS
+    from nmtcapp.tables.impact_table import build_impact_summary_table
+
+    assert "retail" not in VALID_SECTORS, "fixture assumes retail is unrecognised"
+    # A recognised sector is NOT marked. Asserted before the mutation, because
+    # `pipeline` hands out the same PipelineProject objects.
+    assert build_pipeline_table(pipeline).iloc[0]["Sector (as supplied)"] == "Healthcare"
+
+    projects = list(pipeline)
+    projects[0].sector = "retail"
+    pl = Pipeline(projects)
+    pl.eligibility_data_status = "ok"
+
+    cell = build_pipeline_table(pl).iloc[0]["Sector (as supplied)"]
+    assert cell == "Retail (not one of the sectors this tool recognises)", cell
+
+    summary = build_impact_summary_table(pl).iloc[0]["Sector"]
+    assert "not one of the sectors this tool recognises" in summary, summary
+
+
+def test_section_e_does_not_promise_detail_it_does_not_have():
+    """It printed "including states served, sectors financed, and outcomes
+    achieved" directly above rows reading "States: N/A. Sectors: N/A."."""
+    from nmtcapp.core.application import Application
+    from nmtcapp.core.cde import CDEProfile
+    from nmtcapp.sections.section_e_prior_awards import SectionEPriorAwards
+
+    cde = CDEProfile(
+        name="Section E Fixture CDE, LLC", cde_id="CDE-2015-0002",
+        certification_date="2015-02-02", mission="Section E fixture.",
+        target_markets=["Ohio"],
+        prior_awards=[{"year": 2019, "amount": 30_000_000,
+                       "deployment_status": "fully_deployed"}],
+        contact={"name": "E", "email": "e@example.org"},
+        governance={"board_members": 7, "community_representatives": 3},
+    )
+    app = Application(cde=cde, requested_allocation=20_000_000.0)
+    content = SectionEPriorAwards().generate_content(app, None)
+    body = "\n".join(
+        s["body"] if isinstance(s["body"], str) else "\n".join(s["body"])
+        for s in content["subsections"]
+    )
+
+    assert "including states served, sectors financed, and outcomes achieved" not in body, (
+        "Section E promises detail the table does not contain"
+    )
+    assert "States: N/A" not in body and "Sectors: N/A" not in body, (
+        "'N/A' reads as a value the CDE supplied; nothing was collected"
+    )
+    assert "not collected by this tool" in body, (
+        "the absence must be stated, not left as a blank or an N/A"
+    )
+
+    # And when the CDE DOES supply them, the sentence names them.
+    cde.prior_awards[0]["states"] = ["OH", "KY"]
+    cde.prior_awards[0]["sectors"] = ["healthcare"]
+    body2 = "\n".join(
+        s["body"] if isinstance(s["body"], str) else "\n".join(s["body"])
+        for s in SectionEPriorAwards().generate_content(app, None)["subsections"]
+    )
+    assert "including states served and sectors financed" in body2, body2[:400]
+
+
+# ---------------------------------------------------------------------------
+# L-4: the attribution gate does not scan docs/, so this does
+# ---------------------------------------------------------------------------
+
+_DOCS_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "docs"
+)
+
+# Claims withdrawn from the RENDERED document that the DOCUMENTATION SITE went
+# on making. Each is (phrase, why it was withdrawn).
+#
+# WHY THIS EXISTS SEPARATELY. tests/test_attributed_claims.py and
+# tests/test_no_fabricated_output.py both read artifacts they render
+# themselves into a temp directory; docs/ is outside their world, exactly as
+# examples/sample_output/ was before it was deleted. So "Net subsidy to
+# QALICB" was removed from the document in 1.2.1 and stayed on
+# docs/workflow/output-formats.md as a row the document contains — a
+# description of output that no longer exists, published on the site a CDE
+# reads before running anything.
+#
+# NOT a general fabrication scan. It is a list of claims this repository has
+# already established to be wrong, checked against the pages that describe the
+# output, so a withdrawal has to happen in both places or fail here.
+_WITHDRAWN_FROM_DOCS = (
+    ("net subsidy to the QALICB",
+     "1.2.1 B-4: the row is QEI minus the CDE fee, ~97.5% of QEI, and includes "
+     "the whole leverage loan. Renamed to 'QEI Less CDE Fees ($)'"),
+    ("Net subsidy to QALICB",
+     "1.2.1 B-4: same row, as listed in the Excel sheet contents"),
+    ("Sector (NAICS)",
+     "1.2.0: the column mapped a coarse sector label to a NAICS code this tool "
+     "invented. Deleted; the column is now 'Sector (as supplied)'"),
+    ("QLICI A Loan",
+     "1.2.1 B-2: an invented tranche. Table A5 collects one QLICI total"),
+    ("top quartile",
+     "1.2.0: a percentile claim against a distribution nothing publishes"),
+)
+
+
+@pytest.mark.skipif(
+    not os.path.isdir(_DOCS_DIR),
+    reason=(
+        "docs/ is absent (this is an unpacked sdist or an installed tree). "
+        "MANIFEST.in prunes docs/, and the sdist does not build or publish the "
+        "documentation site."
+    ),
+)
+def test_the_docs_site_does_not_still_describe_withdrawn_output():
+    """A claim removed from the document must be removed from the site too."""
+    pages = []
+    for dirpath, _dirs, files in os.walk(_DOCS_DIR):
+        for name in sorted(files):
+            if name.endswith(".md"):
+                pages.append(os.path.join(dirpath, name))
+    assert pages, "no documentation pages found — this scan would check nothing"
+
+    failures = []
+    for path in pages:
+        text = open(path, encoding="utf-8").read()
+        for lineno, line in enumerate(text.splitlines(), 1):
+            for phrase, why in _WITHDRAWN_FROM_DOCS:
+                if phrase.lower() not in line.lower():
+                    continue
+                # A page may DISCUSS a withdrawn claim, and 1.2.1 adds notes
+                # that do exactly that. What it may not do is present one as
+                # current output. The marker is the withdrawal note itself.
+                context = "\n".join(text.splitlines()[max(0, lineno - 12):lineno + 12])
+                if any(m in context for m in
+                       ("not a net subsidy", "Renamed in 1.2.1", "renamed in 1.2.1",
+                        "WAS DELETED", "was deleted", "withdrawn", "no longer")):
+                    continue
+                rel = os.path.relpath(path, os.path.dirname(_DOCS_DIR))
+                failures.append(f"  {rel}:{lineno}: {line.strip()[:100]}\n      {why}")
+
+    assert not failures, (
+        f"{len(failures)} documentation line(s) describe output this package "
+        "has withdrawn:\n\n" + "\n".join(failures) + "\n\n"
+        "The attribution and fabrication gates render artifacts into a temp "
+        "directory and never look at docs/, so a claim can be removed from the "
+        "document and left on the site indefinitely. Fix the page, or add the "
+        "withdrawal note that explains what the phrase used to mean.\n\n"
+        "NOTE: docs/ changes do not reach the published site until "
+        "`mkdocs gh-deploy` is run by hand."
+    )
+
+
+# ---------------------------------------------------------------------------
+# FIX-2 B-1: one filing may not state two different severe-distress shares
+# ---------------------------------------------------------------------------
+
+def _b1_pipeline(levels) -> Pipeline:
+    """Equal-QEI projects at the given distress levels, verified-shaped."""
+    projects = []
+    for i, level in enumerate(levels):
+        p = PipelineProject(
+            project_id=f"B1-{i}", project_name=f"B1 Project {i}",
+            qalicb_name=f"B1 {i} QALICB LLC", address=f"{100 + i} Subset Way",
+            city="Youngstown", state="OH", sector="healthcare",
+            project_type="real_estate", total_project_cost=9_000_000.0,
+            qei_request=6_000_000.0, qlici_amount=6_000_000.0,
+            expected_jobs_created=30,
+        )
+        p.census_tract = "39099810900"
+        p.is_nmtc_eligible = True
+        p.distress_level = level
+        p.geocode_success = True
+        projects.append(p)
+    pl = Pipeline(projects)
+    pl.eligibility_data_status = "ok"
+    return pl
+
+
+def _b1_application(levels):
+    from nmtcapp.core.application import Application
+
+    cde = CDEProfile(
+        name="Subset Relation CDE, LLC", cde_id="CDE-2022-0011",
+        certification_date="2022-02-02", mission="Fixture.",
+        target_markets=["Ohio"], prior_awards=[],
+        contact={"name": "S", "email": "s@example.org"},
+        governance={"board_members": 6, "community_representatives": 3},
+    )
+    app = Application(cde=cde, requested_allocation=24_000_000.0)
+    app.add_pipeline(_b1_pipeline(levels))
+    return app
+
+
+@pytest.mark.parametrize("levels", [
+    # THE SHAPE THAT SHIPPED THE CONTRADICTION: every distressed tract is deep,
+    # so the exclusive "severe" bucket is empty. Section B printed 0.0% under
+    # "QEI in Severely Distressed Tracts" while Appendix B flagged the same
+    # projects "Yes".
+    ("deep", "deep", "lic", "lic", "lic"),
+    ("deep", "severe", "severe", "lic"),
+    ("severe", "severe", "lic", "lic"),
+    ("deep",),
+])
+def test_rendered_severe_share_is_never_below_the_rendered_deep_share(levels):
+    """Deep distress is a SUBSET of severe, so severe >= deep. Always.
+
+    Verified against the CDFI Fund's own NMTC LIC Eligibility workbook
+    (2016-2020 ACS), columns O and P, over all 85,395 tracts: 8,061 rows are
+    flagged deep and every one of them is also flagged severe. The count of
+    deep-but-not-severe tracts is ZERO. See
+    intelligence/distress_analysis.DEEP_IS_SUBSET_OF_SEVERE.
+
+    THE PIN IS ON THE RENDERED STRINGS, not on the dict. 1.2.1's own arithmetic
+    was correct in every bucket; what was wrong was which bucket a label was
+    attached to, and no test that reads the dict can see that.
+    """
+    from nmtcapp.sections.section_b_outcomes import SectionBCommunityOutcomes
+
+    app = _b1_application(levels)
+    content = SectionBCommunityOutcomes().generate_content(app, app.analyze())
+    rows = next(s for s in content["subsections"]
+                if s["heading"] == "Distress Level Commitments")["body"]
+
+    def _pct(label_fragment: str) -> float:
+        hits = [v for k, v in rows.items()
+                if label_fragment in k and v.rstrip("%").replace(".", "").isdigit()]
+        assert hits, f"no row matching {label_fragment!r} in {list(rows)}"
+        return float(hits[0].rstrip("%"))
+
+    deep = _pct("Deep Distress Tracts (")
+    severe = _pct("Severely Distressed Tracts")
+
+    assert severe >= deep, (
+        f"the document states {severe}% of QEI in severely distressed tracts "
+        f"and {deep}% in deep distress tracts. Deep distress is a strict "
+        "subset of severe distress in the Fund's own workbook, so a severe "
+        "share below the deep share is arithmetically impossible and one of "
+        "the two rows is measuring a bucket its label does not describe."
+    )
+
+
+def test_section_b_severe_row_agrees_with_appendix_b_flag():
+    """Two surfaces, one fact. They disagreed in 1.2.1.
+
+    Appendix B carries a per-project "Severely Distressed Flag" that counts a
+    deep-distress tract as severely distressed — correctly. Section B carried a
+    percentage under the same words computed from a bucket that excluded them.
+    A CDE filing both was filing two answers to one question.
+    """
+    from nmtcapp.sections.section_b_outcomes import SectionBCommunityOutcomes
+    from nmtcapp.tables.distress_table import build_distress_table
+
+    levels = ("deep", "deep", "severe", "lic")
+    app = _b1_application(levels)
+    analysis = app.analyze()
+
+    content = SectionBCommunityOutcomes().generate_content(app, analysis)
+    rows = next(s for s in content["subsections"]
+                if s["heading"] == "Distress Level Commitments")["body"]
+    severe_row = next(v for k, v in rows.items()
+                      if "Severely Distressed Tracts" in k)
+
+    df = build_distress_table(app.pipeline)
+    # The last row is Appendix B's own SUMMARY line ("3/4 (75%)"), not a project.
+    project_rows = df[df["Project ID"] != "SUMMARY"]
+    flags = [str(v) for v in project_rows["Severely Distressed Flag"]]
+    flagged = sum(1 for f in flags if f == "Yes")
+
+    # Equal QEI per project, so the count share and the dollar share coincide.
+    appendix_b_pct = 100.0 * flagged / len(flags)
+    section_b_pct = float(severe_row.rstrip("%"))
+
+    assert section_b_pct == pytest.approx(appendix_b_pct, abs=0.1), (
+        f"Section B says {section_b_pct}% of QEI is in severely distressed "
+        f"tracts; Appendix B flags {flagged} of {len(flags)} projects "
+        f"({appendix_b_pct}%) as severely distressed. Same document, same "
+        "word, two numbers."
+    )
+
+
+def test_the_ambiguous_pct_severe_key_is_gone():
+    """The rename is the fix. An alias would restore the ambiguity.
+
+    'severe' meant the exclusive bucket in distress_analysis and the inclusive
+    flag in distress_table, and the package rendered a label using the third
+    meaning. Only one of the three may keep the bare word.
+    """
+    from nmtcapp.intelligence.distress_analysis import (
+        DISTRESS_SHARE_SEMANTICS, analyze_distress_concentration,
+    )
+
+    result = analyze_distress_concentration(_b1_pipeline(("deep", "severe")))
+    assert "pct_severe" not in result, (
+        "pct_severe is back. It named the severe-EXCLUDING-deep bucket while "
+        "reading as the severe share, which is how a filing came to state "
+        "both 0.0% and 40%."
+    )
+    for key in DISTRESS_SHARE_SEMANTICS:
+        assert key in result, f"{key} is documented but not emitted"
+    # The arithmetic the three names promise.
+    assert result["pct_deep"] + result["pct_severe_excluding_deep"] == pytest.approx(
+        result["pct_deep_or_severe"]
+    )
+
+
+# ---------------------------------------------------------------------------
+# FIX-2 B-2: the aggregate surface, which the L-5 gate did not reach
+# ---------------------------------------------------------------------------
+
+def test_section_b_does_not_claim_zero_units_over_an_unfilled_column():
+    """"0 affordable or mixed-income housing units developed" over no input.
+
+    The 1.2.1 gate above (test_an_unsupplied_affordable_unit_count_is_not_a_zero)
+    checks the TABLE cells and passed while this line was still wrong, because
+    the aggregate takes a different path: impact_aggregator summed
+    `p.expected_units_built or 0` and Section B formatted the result with
+    `{units:,}`. The table said "—" and the paragraph above it said "0", in one
+    document.
+    """
+    from nmtcapp.intelligence.impact_aggregator import aggregate_impact
+    from nmtcapp.sections.section_b_outcomes import SectionBCommunityOutcomes
+
+    app = _b1_application(("deep", "severe", "lic"))
+    for p in app.pipeline:
+        assert p.expected_units_built is None, "fixture must not supply units"
+
+    impact = aggregate_impact(app.pipeline)
+    assert impact["total_units_built"] is None, (
+        "an unfilled column aggregated to a number again"
+    )
+    assert impact["projects_reporting_units"] == 0
+
+    content = SectionBCommunityOutcomes().generate_content(app, app.analyze())
+    body = next(s for s in content["subsections"]
+                if s["heading"] == "Aggregate Community Impact Projections")["body"]
+    assert "0 affordable or mixed-income housing units developed" not in body, body
+    assert "not reported" in body, body
+
+
+def test_a_supplied_zero_still_renders_as_a_zero():
+    """The other half. A CDE that answers 0 has answered."""
+    from nmtcapp.intelligence.impact_aggregator import aggregate_impact
+    from nmtcapp.sections.section_b_outcomes import SectionBCommunityOutcomes
+
+    app = _b1_application(("deep", "severe", "lic"))
+    for p in app.pipeline:
+        p.expected_units_built = 0
+
+    impact = aggregate_impact(app.pipeline)
+    assert impact["total_units_built"] == 0
+    assert impact["projects_reporting_units"] == 3
+    assert impact["projects_with_units"] == 0
+
+    content = SectionBCommunityOutcomes().generate_content(app, app.analyze())
+    body = next(s for s in content["subsections"]
+                if s["heading"] == "Aggregate Community Impact Projections")["body"]
+    assert "0 affordable or mixed-income housing units developed" in body, body
+
+
+def test_projects_with_units_is_read_by_something():
+    """It was computed every run and read by nothing in the package.
+
+    A derived value nobody consumes cannot be wrong in a way anybody notices,
+    which is how the distinction it encodes stayed unused while the figure
+    beside it was collapsing a supplied zero into an absent one.
+    """
+    from nmtcapp.intelligence.impact_aggregator import aggregate_impact
+
+    app = _b1_application(("deep", "severe", "lic"))
+    projects = list(app.pipeline)
+    projects[0].expected_units_built = 40
+    projects[1].expected_units_built = 0
+    projects[2].expected_units_built = None
+
+    impact = aggregate_impact(app.pipeline)
+    assert impact["total_units_built"] == 40
+    assert impact["projects_reporting_units"] == 2, "0 is an answer; None is not"
+    assert impact["projects_with_units"] == 1, "only one project builds housing"
+
+
+# ---------------------------------------------------------------------------
+# FIX-2 B-3: a year is an identifier, not a quantity
+# ---------------------------------------------------------------------------
+
+_IDENTIFIER_COLUMNS = (
+    ("Award Year", 2019, "2019"),
+    ("Census Tract (11-digit)", 17031838200, "17031838200"),
+    ("Census Tract (GEOID)", 17031838200, "17031838200"),
+    ("ZIP Code", 60653, "60653"),
+    ("Project ID", 1042, "1042"),
+    ("State FIPS Code", 17, "17"),
+)
+
+
+@pytest.mark.parametrize("header,value,expected", _IDENTIFIER_COLUMNS)
+def test_an_identifier_column_never_takes_a_thousands_separator(header, value, expected):
+    """`f"{2019:,}"` is "2,019", and nothing is 2,019 of anything.
+
+    1.2.1's _cell_format unification correctly gave the currency columns their
+    dollar signs and gave a prior award year a thousands separator on the way
+    past. A GEOID would have been worse: 17,031,838,200 in a column citing the
+    CDFI Fund's eligibility table is not obviously a formatting fault.
+    """
+    from nmtcapp.renderers._cell_format import format_cell, is_identifier_column
+
+    assert is_identifier_column(header), f"{header!r} is not classed as an identifier"
+    assert format_cell(header, value) == expected
+
+
+def test_a_quantity_column_still_takes_its_separator():
+    """The rule must discriminate, or it is just a disabled formatter."""
+    from nmtcapp.renderers._cell_format import format_cell, is_identifier_column
+
+    for header, value, expected in (
+        ("Jobs Created", 1200, "1,200"),
+        ("Square Feet", 662900, "662,900"),
+        ("Affordable Units Built", 1500, "1,500"),
+        ("QEI ($)", 88500000, "$88,500,000"),
+        ("QEI (% of Total)", 0.307, "30.7%"),
+    ):
+        assert not is_identifier_column(header), f"{header!r} is not an identifier"
+        assert format_cell(header, value) == expected
+
+
+def test_the_track_record_year_renders_unseparated_on_every_surface():
+    """Markdown, Word, PDF and Excel each printed 2,019. All four are checked.
+
+    Excel is the one that predates 1.2.1: "Award Year" is named in no format
+    list on that sheet, so it fell through to the magnitude-based auto-detect
+    and took #,##0, which Excel displays with the separator. The three prose
+    renderers acquired it when 1.2.1 unified their cell formatting.
+    """
+    import openpyxl
+    from docx import Document
+    from pypdf import PdfReader
+
+    from nmtcapp.core.application import Application
+    from nmtcapp.renderers._cell_format import format_cell
+    from nmtcapp.renderers.excel_builder import FMT_IDENTIFIER
+    from nmtcapp.tables.track_record_table import build_track_record_table
+
+    cde = CDEProfile(
+        name="Comma Free CDE, LLC", cde_id="CDE-2014-0099",
+        certification_date="2014-04-04", mission="Fixture.",
+        target_markets=["Ohio"],
+        prior_awards=[{"year": 2019, "amount": 45_000_000,
+                       "deployment_status": "fully_deployed"}],
+        contact={"name": "C", "email": "c@example.org"},
+        governance={"board_members": 5, "community_representatives": 2},
+    )
+
+    df = build_track_record_table(cde)
+    rendered = [format_cell("Award Year", v) for v in df["Award Year"]]
+    assert "2,019" not in rendered, rendered
+    assert "2019" in rendered, rendered
+
+    app = Application(cde=cde, requested_allocation=20_000_000.0)
+    app.add_pipeline(_b1_pipeline(("deep", "severe", "lic")))
+
+    import tempfile
+    with tempfile.TemporaryDirectory() as out:
+        paths = app.generate(out, formats=["markdown", "word", "excel", "pdf"])
+        assert set(paths) == {"markdown", "word", "excel", "pdf"}, sorted(paths)
+
+        with open(paths["markdown"], encoding="utf-8") as fh:
+            assert "2,019" not in fh.read()
+
+        doc = Document(paths["word"])
+        word_text = "\n".join(
+            [p.text for p in doc.paragraphs]
+            + [c.text for t in doc.tables for r in t.rows for c in r.cells]
+        )
+        assert "2,019" not in word_text
+
+        pdf_text = "\n".join(
+            (page.extract_text() or "") for page in PdfReader(paths["pdf"]).pages
+        )
+        assert "2,019" not in pdf_text
+
+        # Excel holds a NUMBER, so the separator lives in the number format,
+        # not in the cell value. Reading the value alone would pass while the
+        # workbook still displayed 2,019 — which is exactly how it survived.
+        ws = openpyxl.load_workbook(paths["excel"])["Track Record"]
+        year_col = next(
+            c for c in range(1, ws.max_column + 1)
+            if ws.cell(row=3, column=c).value == "Award Year"
+        )
+        cell = ws.cell(row=4, column=year_col)
+        assert cell.value == 2019
+        assert cell.number_format == FMT_IDENTIFIER, (
+            f"Award Year carries number format {cell.number_format!r}; Excel "
+            "displays #,##0 as '2,019'."
+        )
+        assert "#" not in cell.number_format
+
+
+# ---------------------------------------------------------------------------
+# FIX-2 G-5 sweep: the THIRD instance of the duplicated-list class
+# ---------------------------------------------------------------------------
+
+def test_the_required_project_field_list_is_not_duplicated():
+    """Three independent statements of the same twelve names.
+
+    data/schema.REQUIRED_PROJECT_FIELDS (which validation/completeness_check
+    imports), the ``required_cols`` set inside Pipeline.from_csv, and
+    PipelineProject's own non-default dataclass fields. They agreed by hand.
+
+    The mutation profile is identical to the required-CDE-fields triplication:
+    drop a name from the schema list and completeness_check stops flagging it
+    while from_csv still demands it and the suite stays green; add one and a
+    CSV loads that later fails at render time. Only the dataclass copy fails
+    loudly.
+
+    from_csv now derives. The dataclass cannot derive — it IS the type — so it
+    is asserted against the same list here.
+    """
+    import dataclasses
+
+    from nmtcapp.data.schema import REQUIRED_PROJECT_FIELDS
+
+    assert REQUIRED_PROJECT_FIELDS, "the authoritative list is empty"
+
+    required_dataclass_fields = {
+        f.name for f in dataclasses.fields(PipelineProject)
+        if f.default is dataclasses.MISSING
+        and f.default_factory is dataclasses.MISSING
+    }
+    assert required_dataclass_fields == set(REQUIRED_PROJECT_FIELDS), (
+        "PipelineProject's mandatory fields and REQUIRED_PROJECT_FIELDS have "
+        "diverged.\n"
+        f"  dataclass only: {sorted(required_dataclass_fields - set(REQUIRED_PROJECT_FIELDS))}\n"
+        f"  schema only:    {sorted(set(REQUIRED_PROJECT_FIELDS) - required_dataclass_fields)}"
+    )
+
+    # from_csv must DERIVE, not merely agree. An equal copy is what let the
+    # CDE-field list drop 'governance' with 955 tests green.
+    import inspect
+    source = inspect.getsource(Pipeline.from_csv)
+    assert "REQUIRED_PROJECT_FIELDS" in source, (
+        "Pipeline.from_csv no longer reads REQUIRED_PROJECT_FIELDS. It held "
+        "its own hand-typed copy of the same twelve names."
+    )
+    assert '"project_id", "project_name", "qalicb_name",' not in source, (
+        "the hand-typed required-column set is back in from_csv"
+    )
+
+
+def test_from_csv_demands_exactly_the_schema_required_columns(tmp_path):
+    """The derivation has to bite: drop each column and require a refusal."""
+    from nmtcapp.data.schema import REQUIRED_PROJECT_FIELDS
+
+    values = {
+        "project_id": "P-1", "project_name": "P One",
+        "qalicb_name": "P One QALICB LLC", "address": "1 Derived Way",
+        "city": "Akron", "state": "OH", "sector": "healthcare",
+        "project_type": "real_estate", "total_project_cost": "8000000",
+        "qei_request": "5000000", "qlici_amount": "5000000",
+        "expected_jobs_created": "20",
+    }
+    assert set(values) == set(REQUIRED_PROJECT_FIELDS), (
+        "this fixture no longer matches the authoritative list"
+    )
+
+    for dropped in REQUIRED_PROJECT_FIELDS:
+        cols = [c for c in values if c != dropped]
+        path = tmp_path / f"drop_{dropped}.csv"
+        path.write_text(
+            ",".join(cols) + "\n" + ",".join(values[c] for c in cols) + "\n",
+            encoding="utf-8",
+        )
+        with pytest.raises(ValueError) as exc:
+            Pipeline.from_csv(str(path))
+        assert dropped in str(exc.value), (
+            f"dropping column {dropped!r} was not reported by name: {exc.value}"
+        )
+
+
+def test_the_sector_priority_tiers_are_derived_not_retyped():
+    """Fourth statement of one classification, and one had already drifted.
+
+    schema.TARGET_SECTORS carries a "priority" per sector. Three other places
+    restated the tiers by hand:
+
+        intelligence/sector_analysis._HIGH_PRIORITY_SECTORS   agreed
+        visualization/maps._HIGH_PRIORITY / _MED_PRIORITY     DID NOT
+        streamlit_app/utils.VALID_SECTORS                     retyped under
+            the comment "(from schema)", which it was not
+
+    maps' _MED_PRIORITY held {small_business, mixed_use} and omitted
+    community_facility and clean_energy, which schema classes medium. The
+    sector-mix chart gave those two bars the low-priority grey under a legend
+    reading "Medium Priority (Small Business/Mixed Use)", while the Streamlit
+    page rendering the same pipeline printed "Priority: Medium" for them in the
+    table beside the chart. One screen, two classifications.
+    """
+    import inspect
+
+    from nmtcapp.data.schema import (
+        SECTORS_BY_PRIORITY, TARGET_SECTORS, VALID_SECTORS,
+    )
+    from nmtcapp.intelligence import sector_analysis
+    from nmtcapp.visualization import maps
+
+    assert set(SECTORS_BY_PRIORITY) == {"high", "medium", "low"}
+    covered = set().union(*SECTORS_BY_PRIORITY.values())
+    assert covered == set(TARGET_SECTORS), (
+        f"a sector belongs to no tier: {sorted(set(TARGET_SECTORS) - covered)}"
+    )
+
+    assert sector_analysis._HIGH_PRIORITY_SECTORS is SECTORS_BY_PRIORITY["high"], (
+        "sector_analysis holds its own copy of the high-priority tier again"
+    )
+
+    source = inspect.getsource(maps.plot_sector_distribution)
+    assert "SECTORS_BY_PRIORITY" in source, (
+        "the sector-mix chart no longer reads the tiers from schema"
+    )
+    assert '{"small_business", "mixed_use"}' not in source, (
+        "the drifted hand-typed medium tier is back in visualization/maps"
+    )
+    # The legend must be built from the tiers too, or it goes on naming the
+    # old pair after the sets are corrected. Matched on the Patch call rather
+    # than the phrase: the comment recording the defect quotes it on purpose.
+    assert 'label="Medium Priority' not in source, (
+        "the legend still hard-names its sectors instead of deriving them"
+    )
+    assert "_tier_label" in source, "the legend is not built from the tiers"
+
+    from streamlit_app.utils import VALID_SECTORS as STREAMLIT_SECTORS
+    assert STREAMLIT_SECTORS is VALID_SECTORS, (
+        "streamlit_app/utils retyped the sector vocabulary again; a sector "
+        "added to schema would be rejected by the uploader"
+    )

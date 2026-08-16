@@ -29,7 +29,11 @@ Projects with pre-populated eligibility fields (as returned by `Pipeline.sample(
 
 ### Step 2: Deal economics (nmtc-calc)
 
-`compute_pipeline_economics()` calculates the NMTC deal economics for the full pipeline: total NMTCs generated (39% of QEI over 7 years), investor equity raised at the current market credit price (~$0.83/credit dollar), estimated CDE fees (2.5% of QEI), and net subsidy to the QALICB. These figures populate `deal_economics_summary` in the result.
+`compute_pipeline_economics()` calculates the NMTC deal economics for the full pipeline: total NMTCs generated (39% of QEI over 7 years), investor equity raised at the current market credit price (~$0.83/credit dollar), estimated CDE fees (2.5% of QEI), and QEI less CDE fees. These figures populate `deal_economics_summary` in the result.
+
+!!! warning "`net_subsidy` is not a net subsidy"
+
+    The `total_net_subsidy` key and the row it feeds were renamed in 1.2.1. The figure is QEI minus the CDE fee and includes the whole leverage loan, which is repaid or refinanced; a net subsidy is the benefit net of that loan. See [Output formats](output-formats.md) for the full note. The dictionary key is retained because 1.2.1 is a patch release.
 
 ### Step 3: Intelligence analyses
 

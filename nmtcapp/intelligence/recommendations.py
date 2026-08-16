@@ -11,12 +11,78 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Optional, TYPE_CHECKING
 
+from nmtcapp.data.benchmark_thresholds import (
+    BUSINESS_STRATEGY_MAX,
+    COMMUNITY_OUTCOMES_MAX,
+    DBC_PRIORITY_YEARS_MIN,
+    DBC_VOLUME_PCT_MIN,
+    DEEP_DISTRESS_MIN_PCT,
+    DEEP_DISTRESS_MAX,
+    HIGHER_DISTRESS_MAX,
+    HIGHLY_QUALIFIED_AGGREGATE_MIN,
+    HIGHLY_QUALIFIED_SECTION_MIN,
+    SEVERE_DISTRESS_MIN_PCT,
+    TOP_TIER_SECTION_MIN,
+    TRACK_RECORD_ALIGNMENT_MAX,
+    TRACK_RECORD_STRENGTH_MAX,
+    TRACK_RECORD_DEPLOYMENT_MIN,
+    TRACK_RECORD_PIPELINE_ALIGNMENT_MIN,
+    UNRELATED_ENTITIES_MIN_PCT,
+    WINNER_PATTERN_THRESHOLDS,
+)
+
 if TYPE_CHECKING:
     from nmtcapp.intelligence.benchmarks import BenchmarkComparison
     from nmtcapp.intelligence.pipeline_analyzer import PipelineAnalysisResult
     from nmtcapp.intelligence.win_probability import WinProbabilityScore
 
 _SOURCE_DOC = "CY 2024-2025 Review Process"
+
+# EVERY FEDERAL FIGURE IN THIS MODULE IS INTERPOLATED, NOT TYPED (1.2.1 L-3).
+#
+# RecommendationSet.summary() is a SEVENTH rendered surface. It is reachable
+# through the public ``app.recommendations()`` and it is what the Streamlit
+# scorer prints, and no gate in this package looked at it: the invariance gate
+# masks digits, the attribution gate normalises them, and the constant registry
+# had never named it as a surface. So the 85% CDFI Fund distress threshold —
+# which appeared three separate times below as the literal 0.85 and the literal
+# string "85%" — could be changed to 55% with 937 tests green, printing
+# "below the 55% CDFI Fund threshold for full credit" to a CDE about a bar the
+# Fund sets at 85%.
+#
+# The same defect class as win_probability's "40-point minimum" and
+# excel_builder's weight_map, both removed earlier in 1.2.1: a display literal
+# beside a comparison that reads the constant, so the printed explanation and
+# the applied rule are joined by nothing but a coincidence of typing.
+#
+# RULE, same as renderers/_methodology: no federal figure is typed here. If a
+# number in this module describes a CDFI Fund bar, it comes from
+# nmtcapp/data/benchmark_thresholds and is pinned in tests/pinned_constants.txt
+# against the string it renders.
+_SEVERE_PCT_TEXT = f"{SEVERE_DISTRESS_MIN_PCT:.0%}"
+_DEEP_PCT_TEXT = f"{DEEP_DISTRESS_MIN_PCT:.0%}"
+_UNRELATED_PCT_TEXT = f"{UNRELATED_ENTITIES_MIN_PCT:.0%}"
+_ALIGNMENT_PCT_TEXT = f"{TRACK_RECORD_PIPELINE_ALIGNMENT_MIN:.0%}"
+_DEPLOYMENT_PCT_TEXT = f"{TRACK_RECORD_DEPLOYMENT_MIN:.0%}"
+_DBC_VOLUME_PCT_TEXT = f"{DBC_VOLUME_PCT_MIN:.0%}"
+
+# The aggregate BASE denominator is the two scored sections, not a third
+# constant. Typing 100 beside two constants that sum to it is the same hazard
+# as everything above: move either section maximum and the printed denominator
+# stops describing the score it sits under.
+_AGGREGATE_MAX = BUSINESS_STRATEGY_MAX + COMMUNITY_OUTCOMES_MAX
+
+# NOT A CDFI FUND BAR, and the rendered sentence now says so. The 90%/98%
+# eligibility figures were printed as a "competitive threshold" and a target,
+# with no source; they are this package's own winner-pattern bands from
+# benchmark_thresholds.WINNER_PATTERN_THRESHOLDS, whose own section header says
+# they are "inferred from award announcements, not published by the CDFI Fund".
+# The constant now supplies the number and the sentence supplies the
+# disclaimer, so the two cannot drift apart.
+_ELIGIBLE_COMPETITIVE_PCT = WINNER_PATTERN_THRESHOLDS["min_eligible_pct"]["competitive"]
+_ELIGIBLE_STRONG_PCT = WINNER_PATTERN_THRESHOLDS["min_eligible_pct"]["strong"]
+_ELIGIBLE_COMPETITIVE_TEXT = f"{_ELIGIBLE_COMPETITIVE_PCT:.0%}"
+_ELIGIBLE_STRONG_TEXT = f"{_ELIGIBLE_STRONG_PCT:.0%}"
 
 
 @dataclass
@@ -235,7 +301,7 @@ class RecommendationEngine:
                 category="business_strategy",
                 priority="high",
                 finding=(
-                    f"Track Record Strength is {trs}/15. The CDFI Fund looks for a 5-year "
+                    f"Track Record Strength is {trs}/{TRACK_RECORD_STRENGTH_MAX}. The CDFI Fund looks for a 5-year "
                     "direct financing record and bonus credit if the applicant has committed "
                     "own capital alongside QEIs."
                 ),
@@ -257,14 +323,15 @@ class RecommendationEngine:
                 category="business_strategy",
                 priority="high",
                 finding=(
-                    f"Track Record Alignment is {tra}/10. The CDFI Fund requires 70%+ of NMTC "
-                    "pipeline to be supported by similar prior activity AND 90%+ of prior "
+                    f"Track Record Alignment is {tra}/{TRACK_RECORD_ALIGNMENT_MAX}. The CDFI Fund "
+                    f"requires {_ALIGNMENT_PCT_TEXT}+ of NMTC pipeline to be supported by "
+                    f"similar prior activity AND {_DEPLOYMENT_PCT_TEXT}+ of prior "
                     "allocation deployed on schedule."
                 ),
                 action=(
-                    "Map at least 70% of the NMTC pipeline projects to comparable prior direct "
+                    f"Map at least {_ALIGNMENT_PCT_TEXT} of the NMTC pipeline projects to comparable prior direct "
                     "financing transactions (same sector, geography, or borrower profile). "
-                    "If deployment rate is below 90%, document catch-up plan and explain any delay."
+                    f"If deployment rate is below {_DEPLOYMENT_PCT_TEXT}, document catch-up plan and explain any delay."
                 ),
                 expected_impact="Reach both Track Record Alignment thresholds for full credit.",
                 quantified_improvement=f"Estimated +{10-tra} points (Track Record Alignment: {tra}/10 → 10/10).",
@@ -316,14 +383,14 @@ class RecommendationEngine:
         # Higher Distress Targeting (15 pts) — tract-derived, skip when unassessable
         severe_pct = d.get("pct_deep_or_severe", 0.0)
         if hdt is not None and hdt < 12:
-            gap_pp = round((0.85 - severe_pct) * 100)
+            gap_pp = round((SEVERE_DISTRESS_MIN_PCT - severe_pct) * 100)
             recs.append(Recommendation(
                 category="community_outcomes",
                 priority="critical",
                 finding=(
-                    f"Higher Distress Targeting is {hdt}/15. Only {severe_pct:.0%} of QEI is "
-                    "in severe distress or multi-indicia distress tracts — below the 85% CDFI Fund "
-                    "threshold for full credit."
+                    f"Higher Distress Targeting is {hdt}/{HIGHER_DISTRESS_MAX}. Only {severe_pct:.0%} of QEI is "
+                    f"in severe distress or multi-indicia distress tracts — below the "
+                    f"{_SEVERE_PCT_TEXT} CDFI Fund threshold for full credit."
                 ),
                 action=(
                     f"Replace at least {gap_pp} percentage points of standard-LIC pipeline with "
@@ -335,43 +402,69 @@ class RecommendationEngine:
                     "Bring Higher Distress Targeting to full credit; this is the highest-weighted "
                     "Community Outcomes criterion and directly affects gating."
                 ),
-                quantified_improvement=f"Estimated +{15-hdt} points (Higher Distress: {hdt}/15 → 15/15).",
+                quantified_improvement=(
+                    f"Estimated +{HIGHER_DISTRESS_MAX - hdt} points (Higher Distress: "
+                    f"{hdt}/{HIGHER_DISTRESS_MAX} → {HIGHER_DISTRESS_MAX}/{HIGHER_DISTRESS_MAX})."
+                ),
                 citation=f"{_SOURCE_DOC}, Section II.C.1 — Community Outcomes, Higher Distress Targeting",
             ))
         elif hdt is not None and hdt < 15:
             recs.append(Recommendation(
                 category="community_outcomes",
                 priority="medium",
-                finding=f"Higher Distress Targeting is {hdt}/15 — close to but below the 85% threshold.",
+                finding=(
+                    f"Higher Distress Targeting is {hdt}/{HIGHER_DISTRESS_MAX} — close to "
+                    f"but below the {_SEVERE_PCT_TEXT} threshold."
+                ),
                 action=(
-                    f"Add {round((0.85 - severe_pct) * 100)}pp of deeper-distress projects to "
-                    "reach the 85% full-credit threshold. Target tracts at ≤60% AMI or ≥30% "
+                    f"Add {round((SEVERE_DISTRESS_MIN_PCT - severe_pct) * 100)}pp of deeper-distress projects to "
+                    f"reach the {_SEVERE_PCT_TEXT} full-credit threshold. Target tracts at ≤60% AMI or ≥30% "
                     "poverty rate to maximize the distress classification."
                 ),
                 expected_impact="Reach full Higher Distress Targeting credit.",
-                quantified_improvement=f"Estimated +{15-hdt} points (Higher Distress: {hdt}/15 → 15/15).",
+                quantified_improvement=f"Estimated +{HIGHER_DISTRESS_MAX - hdt} points (Higher Distress: {hdt}/{HIGHER_DISTRESS_MAX} → {HIGHER_DISTRESS_MAX}/{HIGHER_DISTRESS_MAX}).",
                 citation=f"{_SOURCE_DOC}, Section II.C.1 — Community Outcomes, Higher Distress Targeting",
             ))
 
         # Deep Distress Commitment (10 pts) — tract-derived, skip when unassessable
-        if ddc is not None and ddc < 7:
-            deep_pct = d.get("pct_deep", d.get("pct_deep_or_severe", 0.0) * 0.5)
-            gap_pp = round((0.20 - deep_pct) * 100)
+        if ddc is not None and ddc < 7 and "pct_deep" in d:
+            # NO SUBSTITUTE FOR pct_deep (1.2.1 B-1 sweep). The fallback here
+            # was "50% of pct_deep_or_severe" — an invented split, printed to
+            # the CDE as "Only X% of QEI is in CDFI Fund-designated Deep
+            # Distress tracts". Deep is a strict subset of severe in no fixed
+            # proportion, so no such split exists to compute. If the share is
+            # not in the breakdown, the finding cannot be stated at all and
+            # this recommendation is skipped.
+            deep_pct = d["pct_deep"]
+            gap_pp = round((DEEP_DISTRESS_MIN_PCT - deep_pct) * 100)
             recs.append(Recommendation(
                 category="community_outcomes",
                 priority="high",
                 finding=(
-                    f"Deep Distress Commitment is {ddc}/10. "
+                    f"Deep Distress Commitment is {ddc}/{DEEP_DISTRESS_MAX}. "
                     f"Only {deep_pct:.0%} of QEI is in CDFI Fund-designated Deep Distress tracts "
-                    f"— {gap_pp}pp below the 20% threshold for full credit."
+                    f"— {gap_pp}pp below the {_DEEP_PCT_TEXT} threshold for full credit."
                 ),
+                # "These are distinct from severe distress" was FALSE, and it
+                # was live text telling a CDE which tracts to go and find. Deep
+                # Distress is a strict SUBSET of severe distress in the Fund's
+                # own workbook — a deep tract is always also a severe one, and
+                # across all 85,395 tracts there is not one exception. A CDE
+                # reading "distinct" would look for tracts that do not exist as
+                # a separate category, and would not know that every deep tract
+                # it adds also counts toward the 85% higher-distress bar.
                 action=(
                     "Identify and add pipeline projects in CDFI Fund Deep Distress areas. "
-                    "These are distinct from severe distress — check the NMTC Mapping Tool for "
-                    "tracts explicitly classified as 'Deep Distress' in CY 2024-2025 data."
+                    "Deep Distress is the tighter tier INSIDE severe distress, not a "
+                    "separate category — every Deep Distress tract also counts toward the "
+                    "higher-distress commitment. Check the NMTC Mapping Tool for tracts "
+                    "flagged 'Deep distress' in the CY 2024-2025 eligibility data."
                 ),
                 expected_impact="Add Deep Distress credit; improves both section score and gating position.",
-                quantified_improvement=f"Estimated +{10-ddc} points (Deep Distress: {ddc}/10 → 10/10).",
+                quantified_improvement=(
+                    f"Estimated +{DEEP_DISTRESS_MAX - ddc} points (Deep Distress: "
+                    f"{ddc}/{DEEP_DISTRESS_MAX} → {DEEP_DISTRESS_MAX}/{DEEP_DISTRESS_MAX})."
+                ),
                 citation=f"{_SOURCE_DOC}, Section II.C.1 — Community Outcomes, Deep Distress Commitment",
             ))
 
@@ -389,9 +482,29 @@ class RecommendationEngine:
                 ),
                 action=(
                     "Add 1–2 projects in qualifying Special Targeting areas. "
-                    "Persistent Poverty Counties (100+ years at ≥20% poverty) are the most "
-                    "accessible for most CDEs. NMTC Native Areas and High Migration Rural Counties "
-                    "offer additional credit. "
+                    # THE PARENTHETICAL DEFINITION IS GONE, NOT CORRECTED.
+                    #
+                    # It read "Persistent Poverty Counties (100+ years at ≥20%
+                    # poverty)". No federal designation is defined over 100
+                    # years — a Persistent Poverty County is measured over
+                    # THREE DECADES, across consecutive decennial censuses and
+                    # the current ACS — so the figure was wrong by more than
+                    # threefold, in live text telling a CDE which targeting
+                    # category to pursue.
+                    #
+                    # It is DELETED rather than replaced with 30. This tool
+                    # does not determine the designation, holds no county list,
+                    # and cannot cite one; substituting a number nobody here
+                    # checked against a primary source would relocate the
+                    # defect rather than remove it. The sentence now points at
+                    # the authority that does publish the list, which is what
+                    # the CDE has to consult anyway.
+                    "Persistent Poverty Counties are the most accessible "
+                    "category for most CDEs. The county list is the CDFI "
+                    "Fund's, not this tool's — check a county against the "
+                    "Fund's published Persistent Poverty County designation "
+                    "before relying on it. NMTC Native Areas and High "
+                    "Migration Rural Counties offer additional credit. "
                     "All four categories are identified in the CY 2024-2025 Allocation Application."
                 ),
                 expected_impact="Gain 1–3 additional Community Outcomes points from special targeting.",
@@ -461,11 +574,11 @@ class RecommendationEngine:
                 priority="medium",
                 finding=(
                     f"DBC Track Record Priority Points are {dbc}/5. "
-                    "Full credit requires 5+ years of DBC focus AND 70%+ of direct "
+                    f"Full credit requires {DBC_PRIORITY_YEARS_MIN}+ years of DBC focus AND {_DBC_VOLUME_PCT_TEXT}+ of direct "
                     "financing volume to Disadvantaged Businesses/Communities."
                 ),
                 action=(
-                    "Document DBC lending history going back 5+ years. If volume is below 70%, "
+                    f"Document DBC lending history going back {DBC_PRIORITY_YEARS_MIN}+ years. If volume is below {_DBC_VOLUME_PCT_TEXT}, "
                     "shift the pipeline toward CDFI-certified DBCs, minority-owned businesses, "
                     "or businesses in QCTs with documented economic disadvantage."
                 ),
@@ -481,13 +594,13 @@ class RecommendationEngine:
                 priority="medium",
                 finding=(
                     f"Unrelated Entities Priority Points are {ue}/5. "
-                    "Full credit requires committing substantially all (90%+) QEIs to "
+                    f"Full credit requires committing substantially all ({_UNRELATED_PCT_TEXT}+) QEIs to "
                     "entities unrelated to the CDE."
                 ),
                 action=(
                     "Review pipeline for any related-party transactions. "
                     "If any QEIs go to CDE affiliates, replace with unrelated QALICB projects "
-                    "to reach the 90% unrelated threshold."
+                    f"to reach the {_UNRELATED_PCT_TEXT} unrelated threshold."
                 ),
                 expected_impact="Earn unrelated entity priority points with minimal pipeline changes.",
                 quantified_improvement=f"Estimated +{5-ue} priority points (Unrelated: {ue}/5 → 5/5).",
@@ -507,59 +620,82 @@ class RecommendationEngine:
             co = win_score.community_outcomes.get("section_total", 0)
             agg = win_score.aggregate_base_score
 
-            if bs < 40:
+            if bs < HIGHLY_QUALIFIED_SECTION_MIN:
                 recs.append(Recommendation(
                     category="business_strategy",
                     priority="critical",
                     finding=(
-                        f"Business Strategy section score ({bs}/50) is below the 40-point "
+                        f"Business Strategy section score ({bs}/{BUSINESS_STRATEGY_MAX}) is below "
+                        f"the {HIGHLY_QUALIFIED_SECTION_MIN}-point "
                         "minimum required to reach the Highly Qualified pool. "
                         "Applications that miss either section minimum do not advance to Phase 2."
                     ),
                     action=(
                         "Focus immediately on the lowest-scoring Business Strategy sub-criteria: "
                         "Product Flexibility, Pipeline Credibility, and Track Record. "
-                        "You need at least 40 points in this section to be considered."
+                        f"You need at least {HIGHLY_QUALIFIED_SECTION_MIN} points in this section to be considered."
                     ),
                     expected_impact="Meet the section minimum gating threshold; allow Phase 2 consideration.",
-                    quantified_improvement=f"Need {40 - bs} more Business Strategy points to reach gating minimum.",
-                    citation=f"{_SOURCE_DOC}, Highly Qualified gating — both sections must score ≥ 40",
+                    quantified_improvement=(
+                        f"Need {HIGHLY_QUALIFIED_SECTION_MIN - bs} more Business Strategy "
+                        "points to reach gating minimum."
+                    ),
+                    citation=(
+                        f"{_SOURCE_DOC}, Highly Qualified gating — both sections "
+                        f"must score ≥ {HIGHLY_QUALIFIED_SECTION_MIN}"
+                    ),
                 ))
 
-            if co < 40:
+            if co < HIGHLY_QUALIFIED_SECTION_MIN:
                 recs.append(Recommendation(
                     category="community_outcomes",
                     priority="critical",
                     finding=(
-                        f"Community Outcomes section score ({co}/50) is below the 40-point "
+                        f"Community Outcomes section score ({co}/{COMMUNITY_OUTCOMES_MAX}) is below "
+                        f"the {HIGHLY_QUALIFIED_SECTION_MIN}-point "
                         "minimum required to reach the Highly Qualified pool."
                     ),
                     action=(
-                        "Prioritize Higher Distress Targeting (15 pts max) and Deep Distress "
-                        "Commitment (10 pts max) as the largest available point pools. "
+                        f"Prioritize Higher Distress Targeting ({HIGHER_DISTRESS_MAX} pts max) and "
+                        f"Deep Distress Commitment ({DEEP_DISTRESS_MAX} pts max) as the "
+                        "largest available point pools. "
                         "Adding 1–2 deep-distress projects can rapidly close the gap."
                     ),
                     expected_impact="Meet the section minimum; allow application to advance to Phase 2.",
-                    quantified_improvement=f"Need {40 - co} more Community Outcomes points to reach gating minimum.",
-                    citation=f"{_SOURCE_DOC}, Highly Qualified gating — both sections must score ≥ 40",
+                    quantified_improvement=(
+                        f"Need {HIGHLY_QUALIFIED_SECTION_MIN - co} more Community Outcomes "
+                        "points to reach gating minimum."
+                    ),
+                    citation=(
+                        f"{_SOURCE_DOC}, Highly Qualified gating — both sections "
+                        f"must score ≥ {HIGHLY_QUALIFIED_SECTION_MIN}"
+                    ),
                 ))
 
-            if bs >= 40 and co >= 40 and agg < 85:
+            if (bs >= HIGHLY_QUALIFIED_SECTION_MIN and co >= HIGHLY_QUALIFIED_SECTION_MIN
+                    and agg < HIGHLY_QUALIFIED_AGGREGATE_MIN):
                 recs.append(Recommendation(
                     category="community_outcomes",
                     priority="critical",
                     finding=(
-                        f"Both sections meet the 40-point minimum but aggregate score ({agg}/100) "
-                        "is below 85 — the Highly Qualified threshold."
+                        f"Both sections meet the {HIGHLY_QUALIFIED_SECTION_MIN}-point minimum but "
+                        f"aggregate score ({agg}/{_AGGREGATE_MAX}) is below "
+                        f"{HIGHLY_QUALIFIED_AGGREGATE_MIN} — the Highly Qualified threshold."
                     ),
                     action=(
                         "Focus on the sub-criteria with the most remaining points in both sections. "
-                        f"You need {85 - agg} more aggregate points. Targeting 3–4 improvements "
+                        f"You need {HIGHLY_QUALIFIED_AGGREGATE_MIN - agg} more aggregate points. Targeting 3–4 improvements "
                         "across both sections is typically more achievable than maximizing one."
                     ),
-                    expected_impact="Cross the 85-point Highly Qualified threshold.",
-                    quantified_improvement=f"Need {85 - agg} more aggregate points to reach 85 (Highly Qualified).",
-                    citation=f"{_SOURCE_DOC}, Highly Qualified gating — aggregate score must be ≥ 85",
+                    expected_impact=f"Cross the {HIGHLY_QUALIFIED_AGGREGATE_MIN}-point Highly Qualified threshold.",
+                    quantified_improvement=(
+                        f"Need {HIGHLY_QUALIFIED_AGGREGATE_MIN - agg} more aggregate points "
+                        f"to reach {HIGHLY_QUALIFIED_AGGREGATE_MIN} (Highly Qualified)."
+                    ),
+                    citation=(
+                        f"{_SOURCE_DOC}, Highly Qualified gating — aggregate "
+                        f"score must be ≥ {HIGHLY_QUALIFIED_AGGREGATE_MIN}"
+                    ),
                 ))
         return recs
 
@@ -574,32 +710,41 @@ class RecommendationEngine:
         d = result.distress_breakdown
         severe_pct = d.get("pct_deep_or_severe", 0.0)
 
-        if severe_pct < 0.85:
-            gap_pp = round((0.85 - severe_pct) * 100)
+        if severe_pct < SEVERE_DISTRESS_MIN_PCT:
+            gap_pp = round((SEVERE_DISTRESS_MIN_PCT - severe_pct) * 100)
             recs.append(Recommendation(
                 category="community_outcomes",
                 priority="critical",
                 finding=(
                     f"Severe/deep distress concentration is {severe_pct:.0%} — "
-                    "below the CDFI Fund's 85% threshold for full Higher Distress Targeting credit."
+                    f"below the CDFI Fund's {_SEVERE_PCT_TEXT} threshold for full Higher Distress Targeting credit."
                 ),
                 action=(
                     f"Replace {gap_pp}pp of standard-LIC pipeline with projects in severe "
                     "distress or multi-indicia distress census tracts."
                 ),
                 expected_impact="Reach full Higher Distress Targeting credit (15/15 pts).",
-                quantified_improvement=f"Estimated 85% → {severe_pct:.0%} gap requires adding {gap_pp}pp of deep-distress QEI.",
+                quantified_improvement=(
+                    f"Estimated {_SEVERE_PCT_TEXT} → {severe_pct:.0%} gap requires adding "
+                    f"{gap_pp}pp of deep-distress QEI."
+                ),
                 citation=f"{_SOURCE_DOC}, Section II.C.1 — Higher Distress Targeting",
             ))
 
-        if result.eligibility_pct < 0.90:
+        if result.eligibility_pct < _ELIGIBLE_COMPETITIVE_PCT:
             recs.append(Recommendation(
                 category="business_strategy",
                 priority="critical",
-                finding=f"NMTC eligibility rate is {result.eligibility_pct:.0%} — below the 90% competitive threshold.",
+                finding=(
+                    f"NMTC eligibility rate is {result.eligibility_pct:.0%} — below the "
+                    f"{_ELIGIBLE_COMPETITIVE_TEXT} competitive band of this tool's own "
+                    "winner-pattern comparison (an unsourced house heuristic, not a "
+                    "CDFI Fund threshold)."
+                ),
                 action=(
                     "Verify census tract eligibility for all pipeline projects using the "
-                    "CDFI Fund NMTC Mapping Tool. Remove or replace ineligible projects. Target ≥98%."
+                    f"CDFI Fund NMTC Mapping Tool. Remove or replace ineligible projects. "
+                    f"Target ≥{_ELIGIBLE_STRONG_TEXT}."
                 ),
                 expected_impact="Ensure QEI is deployable; improve Pipeline Credibility score.",
                 quantified_improvement="Reaching 98% eligibility significantly improves Pipeline Credibility.",
@@ -639,25 +784,35 @@ class RecommendationEngine:
 
         if tier == "Top Tier":
             return (
-                f"Top Tier ({agg}/100). Business Strategy: {bs}/50, "
-                f"Community Outcomes: {co}/50. Both sections exceed the 45-point threshold. "
+                f"Top Tier ({agg}/{_AGGREGATE_MAX}). Business Strategy: {bs}/{BUSINESS_STRATEGY_MAX}, "
+                f"Community Outcomes: {co}/{COMMUNITY_OUTCOMES_MAX}. Both sections exceed the "
+                f"{TOP_TIER_SECTION_MIN}-point threshold. "
+                # "Top Tier" is this package's own label and the two cut points
+                # behind it are unsourced. The CDFI Fund publishes the Highly
+                # Qualified gate and nothing above it, so a CDE reading this
+                # line must not take the ranking for a federal one.
+                "(\"Top Tier\" is this tool's own label: the CDFI Fund publishes "
+                "no tier above Highly Qualified, and the cut points behind it "
+                "are an unsourced house heuristic, not a CDFI Fund threshold.) "
                 "Focus on Phase 2 preparation (Management Capacity, Capitalization Strategy)."
             )
         if tier == "Highly Qualified":
             return (
-                f"Highly Qualified ({agg}/100). Business Strategy: {bs}/50, "
-                f"Community Outcomes: {co}/50. Both sections meet the 40-point gating minimum. "
+                f"Highly Qualified ({agg}/{_AGGREGATE_MAX}). Business Strategy: {bs}/{BUSINESS_STRATEGY_MAX}, "
+                f"Community Outcomes: {co}/{COMMUNITY_OUTCOMES_MAX}. Both sections meet the "
+                f"{HIGHLY_QUALIFIED_SECTION_MIN}-point gating minimum. "
                 "Priority changes below can improve ranking within the Highly Qualified pool."
             )
         # Not Qualified
         gaps = []
-        if bs < 40:
-            gaps.append(f"Business Strategy {bs}/50 < 40")
-        if co < 40:
-            gaps.append(f"Community Outcomes {co}/50 < 40")
-        if agg < 85:
-            gaps.append(f"aggregate {agg}/100 < 85")
-        gap_str = "; ".join(gaps) if gaps else f"aggregate {agg}/100"
+        if bs < HIGHLY_QUALIFIED_SECTION_MIN:
+            gaps.append(f"Business Strategy {bs}/{BUSINESS_STRATEGY_MAX} < {HIGHLY_QUALIFIED_SECTION_MIN}")
+        if co < HIGHLY_QUALIFIED_SECTION_MIN:
+            gaps.append(f"Community Outcomes {co}/{COMMUNITY_OUTCOMES_MAX} < {HIGHLY_QUALIFIED_SECTION_MIN}")
+        if agg < HIGHLY_QUALIFIED_AGGREGATE_MIN:
+            gaps.append(
+                f"aggregate {agg}/{_AGGREGATE_MAX} < {HIGHLY_QUALIFIED_AGGREGATE_MIN}")
+        gap_str = "; ".join(gaps) if gaps else f"aggregate {agg}/{_AGGREGATE_MAX}"
         return (
             f"Not Qualified ({agg}/100) — {gap_str}. "
             "Address Critical recommendations first to meet gating thresholds."

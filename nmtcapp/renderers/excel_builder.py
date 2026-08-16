@@ -7,6 +7,7 @@ from datetime import date
 from typing import TYPE_CHECKING
 
 from nmtcapp.data.schema import READINESS_SCORING_WEIGHTS
+from nmtcapp.renderers._cell_format import is_identifier_column
 from nmtcapp.renderers._disclosure import (
     is_partial_unverified, qualified_pct, unverified_banner,
 )
@@ -77,6 +78,11 @@ FMT_PCT0 = "0%"
 FMT_NUMBER = "#,##0"
 FMT_DECIMAL2 = "0.00"
 FMT_TEXT = "@"
+# Digits, no separator, no decimal point — for a value that is a LABEL rather
+# than a quantity (1.2.1 B-3). "0" and not FMT_TEXT: the cell keeps its numeric
+# type so a sort on the column still sorts by year, and Excel does not stamp it
+# with the green "number stored as text" warning triangle.
+FMT_IDENTIFIER = "0"
 
 
 class ExcelApplicationBuilder:
@@ -482,6 +488,20 @@ class ExcelApplicationBuilder:
                     cell.value = val
                     cell.number_format = FMT_PCT
                     cell.alignment = _right()
+                # AN IDENTIFIER IS NOT A QUANTITY (1.2.1 B-3), AND HERE IT
+                # BEATS BOTH THE number_cols CONFIG AND THE AUTO-DETECT.
+                # "Award Year" is named in no list on the Track Record sheet,
+                # so 2019 fell to the auto-detect below and took FMT_NUMBER —
+                # which Excel displays as "2,019". That predates 1.2.1: the
+                # workbook has rendered years with a thousands separator since
+                # at least v1.2.0, and the three prose renderers joined it only
+                # when 1.2.1 unified their formatting. Same rule, one place, so
+                # a column added to number_cols by mistake still cannot put a
+                # comma in a GEOID.
+                elif is_identifier_column(col_name) and isinstance(val, (int, float)):
+                    cell.value = val
+                    cell.number_format = FMT_IDENTIFIER
+                    cell.alignment = _left()
                 elif col_name in number_cols and isinstance(val, (int, float)):
                     cell.value = val
                     cell.number_format = FMT_NUMBER

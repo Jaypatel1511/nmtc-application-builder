@@ -37,16 +37,40 @@ from nmtcapp.data.benchmark_thresholds import (
     HIGHLY_QUALIFIED_SECTION_MIN,
     TOP_TIER_AGGREGATE_MIN,
     TOP_TIER_SECTION_MIN,
+    BUSINESS_STRATEGY_MAX,
+    COMMUNITY_OUTCOMES_MAX,
+    PRIORITY_POINTS_MAX,
+    PRODUCT_FLEXIBILITY_MAX,
+    PIPELINE_CREDIBILITY_MAX,
+    TRACK_RECORD_STRENGTH_MAX,
+    TRACK_RECORD_ALIGNMENT_MAX,
+    HIGHER_DISTRESS_MAX,
+    DEEP_DISTRESS_MAX,
+    SPECIAL_TARGETING_MAX,
+    COMMUNITY_OUTCOMES_QUALITY_MAX,
+    COMMUNITY_ACCOUNTABILITY_MAX,
+    DBC_TRACK_RECORD_MAX,
+    UNRELATED_ENTITIES_MAX,
 )
 from nmtcapp.data.historical_awards import get_overall_acceptance_rate
 
 if TYPE_CHECKING:
     from nmtcapp.intelligence.pipeline_analyzer import PipelineAnalysisResult
 
+# The three section maxima are INTERPOLATED. This note is the sentence that
+# tells a CDE what the denominators in the block above mean, and it carried
+# them as literals — so moving BUSINESS_STRATEGY_MAX would have changed every
+# printed denominator while the paragraph explaining them went on naming 50.
 _METHODOLOGY = (
     "IMPORTANT: This score assesses alignment with the CDFI Fund's published CY 2024-2025 "
-    "Review Process criteria (Business Strategy 50 pts + Community Outcomes 50 pts + Priority "
-    "Points 10 pts). It is a self-assessment tool, not a guarantee of selection. Sub-score "
+    f"Review Process criteria (Business Strategy {BUSINESS_STRATEGY_MAX} pts + Community "
+    f"Outcomes {COMMUNITY_OUTCOMES_MAX} pts + Priority "
+    f"Points {PRIORITY_POINTS_MAX} pts). It is a self-assessment tool, not a guarantee of selection. "
+    "TIER NAMES: \"Highly Qualified\" is the CDFI Fund's own gate. \"Top Tier\" is "
+    "this tool's own label for an application well clear of that gate — the CDFI "
+    "Fund publishes no tier above Highly Qualified, and the 95/45 cut points "
+    "behind the label are an unsourced house heuristic, not a federal figure. "
+    "Sub-score "
     "weights within sections are this tool's interpretation — the CDFI Fund does not publish "
     "exact point values for individual sub-criteria. Phase 2 factors (Management Capacity, "
     "Capitalization Strategy) and past reporting compliance deductions are not modeled here. "
@@ -111,19 +135,25 @@ class WinProbabilityScore:
         if not self.composite_score:
             self.composite_score = float(self.aggregate_base_score)
         if not self.dimensional_scores:
-            # Divide by the FIXED structural maxima (50/50/10), never by
-            # max_available: in degraded mode Community Outcomes'
-            # max_available shrinks to 25, and dividing by it would inflate
-            # 20 earned points into 80.0 — the honest structural value is 40.0.
+            # Divide by the FIXED structural maxima, never by max_available:
+            # in degraded mode Community Outcomes' max_available shrinks to the
+            # section total less the two unscorable components, and dividing by
+            # it would inflate 20 earned points into 80.0 — the honest
+            # structural value is 40.0. The maxima are READ, not typed: three
+            # more copies of 50/50/10 here would drift from the constants the
+            # same way the max_available literals did (R-5).
             self.dimensional_scores = {
                 "business_strategy": round(
-                    self.business_strategy.get("section_total", 0) / 50 * 100, 1
+                    self.business_strategy.get("section_total", 0)
+                    / BUSINESS_STRATEGY_MAX * 100, 1
                 ),
                 "community_outcomes": round(
-                    self.community_outcomes.get("section_total", 0) / 50 * 100, 1
+                    self.community_outcomes.get("section_total", 0)
+                    / COMMUNITY_OUTCOMES_MAX * 100, 1
                 ),
                 "priority_points": round(
-                    self.priority_points.get("section_total", 0) / 10 * 100, 1
+                    self.priority_points.get("section_total", 0)
+                    / PRIORITY_POINTS_MAX * 100, 1
                 ),
             }
         if not self.competitive_tier:
@@ -141,8 +171,13 @@ class WinProbabilityScore:
             val = section.get(key, 0)
             return "n/a" if val is None else f"{val:2d} "
 
+        # The .get() defaults are the constants, not literals. A default that
+        # is a typed number is a silent second copy of the constant which fires
+        # exactly when the score dict is malformed — the moment a wrong
+        # denominator is least likely to be noticed.
         agg_denom = (
-            bs.get("max_available", 50) + co.get("max_available", 50)
+            bs.get("max_available", BUSINESS_STRATEGY_MAX)
+            + co.get("max_available", COMMUNITY_OUTCOMES_MAX)
         )
         lines = []
         if self.partial:
@@ -158,27 +193,27 @@ class WinProbabilityScore:
             "  NMTC APPLICATION SCORE  (CDFI Fund CY 2024-2025 Framework)",
             f"  Aggregate Base Score:    {self.aggregate_base_score} / {agg_denom}"
             + ("  (PARTIAL)" if self.partial else ""),
-            f"  With Priority Points:    {self.aggregate_with_priority} / {agg_denom + pp.get('max_available', 10)}"
+            f"  With Priority Points:    {self.aggregate_with_priority} / {agg_denom + pp.get('max_available', PRIORITY_POINTS_MAX)}"
             + ("  (PARTIAL)" if self.partial else ""),
             f"  Tier:                    {self.tier.upper()}",
             "=" * 70,
             "",
-            f"  BUSINESS STRATEGY:  {bs['section_total']:2d} / {bs.get('max_available', 50)}",
-            f"    Product Flexibility       {_pts(bs, 'product_flexibility')}/ 10",
-            f"    Pipeline Credibility      {_pts(bs, 'pipeline_credibility')}/ 15",
-            f"    Track Record Strength     {_pts(bs, 'track_record_strength')}/ 15",
-            f"    Track Record Alignment    {_pts(bs, 'track_record_alignment')}/ 10",
+            f"  BUSINESS STRATEGY:  {bs['section_total']:2d} / {bs.get('max_available', BUSINESS_STRATEGY_MAX)}",
+            f"    Product Flexibility       {_pts(bs, 'product_flexibility')}/{PRODUCT_FLEXIBILITY_MAX:3d}",
+            f"    Pipeline Credibility      {_pts(bs, 'pipeline_credibility')}/{PIPELINE_CREDIBILITY_MAX:3d}",
+            f"    Track Record Strength     {_pts(bs, 'track_record_strength')}/{TRACK_RECORD_STRENGTH_MAX:3d}",
+            f"    Track Record Alignment    {_pts(bs, 'track_record_alignment')}/{TRACK_RECORD_ALIGNMENT_MAX:3d}",
             "",
-            f"  COMMUNITY OUTCOMES: {co['section_total']:2d} / {co.get('max_available', 50)}",
-            f"    Higher Distress Targeting {_pts(co, 'higher_distress_targeting')}/ 15",
-            f"    Deep Distress Commitment  {_pts(co, 'deep_distress_commitment')}/ 10",
-            f"    Special Targeting         {_pts(co, 'special_targeting')}/  5",
-            f"    Community Outcomes Quality{_pts(co, 'community_outcomes_quality')}/ 10",
-            f"    Community Accountability  {_pts(co, 'community_accountability')}/ 10",
+            f"  COMMUNITY OUTCOMES: {co['section_total']:2d} / {co.get('max_available', COMMUNITY_OUTCOMES_MAX)}",
+            f"    Higher Distress Targeting {_pts(co, 'higher_distress_targeting')}/{HIGHER_DISTRESS_MAX:3d}",
+            f"    Deep Distress Commitment  {_pts(co, 'deep_distress_commitment')}/{DEEP_DISTRESS_MAX:3d}",
+            f"    Special Targeting         {_pts(co, 'special_targeting')}/{SPECIAL_TARGETING_MAX:3d}",
+            f"    Community Outcomes Quality{_pts(co, 'community_outcomes_quality')}/{COMMUNITY_OUTCOMES_QUALITY_MAX:3d}",
+            f"    Community Accountability  {_pts(co, 'community_accountability')}/{COMMUNITY_ACCOUNTABILITY_MAX:3d}",
             "",
-            f"  PRIORITY POINTS:    {pp['section_total']:2d} / {pp.get('max_available', 10)}",
-            f"    DBC Track Record          {_pts(pp, 'dbc_track_record')}/  5",
-            f"    Unrelated Entities        {_pts(pp, 'unrelated_entities')}/  5",
+            f"  PRIORITY POINTS:    {pp['section_total']:2d} / {pp.get('max_available', PRIORITY_POINTS_MAX)}",
+            f"    DBC Track Record          {_pts(pp, 'dbc_track_record')}/{DBC_TRACK_RECORD_MAX:3d}",
+            f"    Unrelated Entities        {_pts(pp, 'unrelated_entities')}/{UNRELATED_ENTITIES_MAX:3d}",
             "",
         ]
         if self.tier_gating_notes:
@@ -286,7 +321,16 @@ class WinProbabilityModel:
             "track_record_strength": trs,
             "track_record_alignment": tra,
             "section_total": bs_total,
-            "max_available": 50,
+            # R-5: READ, NOT TYPED. This dict's max_available is what
+            # WinProbabilityScore.summary() prints as the "/ 50" denominator
+            # and what the aggregate denominator is summed from, so a literal
+            # here is a second, independent copy of BUSINESS_STRATEGY_MAX. The
+            # 1.2.1 waiver for that constant was factually true BECAUSE of this
+            # duplication — "the printed denominator comes from the score
+            # dict's max_available, not from this constant" — which recorded a
+            # duplication in the same release that removed five others. Reading
+            # the constant turns the waiver into a pin.
+            "max_available": BUSINESS_STRATEGY_MAX,
         }
 
         # --- Section 2: Community Outcomes (0–50) ---
@@ -310,7 +354,15 @@ class WinProbabilityModel:
             "community_outcomes_quality": coq,
             "community_accountability": ca,
             "section_total": co_total,
-            "max_available": 25 if degraded else 50,
+            # The degraded denominator is the section maximum LESS the two
+            # tract-derived components that could not be scored, so it stays
+            # correct when any of the three constants moves. Typed, it was 25 —
+            # a number with no visible relationship to the 15 and 10 it is the
+            # complement of.
+            "max_available": (
+                COMMUNITY_OUTCOMES_MAX - (HIGHER_DISTRESS_MAX + DEEP_DISTRESS_MAX)
+                if degraded else COMMUNITY_OUTCOMES_MAX
+            ),
         }
 
         # --- Priority Points (0–10) ---
@@ -322,7 +374,7 @@ class WinProbabilityModel:
             "dbc_track_record": dbc,
             "unrelated_entities": ue,
             "section_total": pp_total,
-            "max_available": 10,
+            "max_available": PRIORITY_POINTS_MAX,
         }
 
         aggregate_base = bs_total + co_total
@@ -435,9 +487,15 @@ class WinProbabilityModel:
         return _to_int(min(15.0, pct / SEVERE_DISTRESS_MIN_PCT * 15.0))
 
     def _score_deep_distress(self, result: "PipelineAnalysisResult") -> int:
-        # Use pct_deep if available; fall back to 50% of pct_deep_or_severe
+        # NO SUBSTITUTE FOR pct_deep (1.2.1 B-1 sweep). This used to fall back
+        # to "50% of pct_deep_or_severe", a made-up split of a combined share
+        # that the Fund's nesting does not support — deep is a strict subset of
+        # severe, in no fixed proportion. analyze_distress_concentration always
+        # emits pct_deep, so the fallback only ever fired on a hand-built dict,
+        # and when it fired it invented the number this sub-score is entirely
+        # made of. Absent means unknown, and unknown scores zero.
         d = result.distress_breakdown
-        deep_pct = d.get("pct_deep", d.get("pct_deep_or_severe", 0.0) * 0.5)
+        deep_pct = d.get("pct_deep", 0.0)
         return _to_int(min(10.0, deep_pct / DEEP_DISTRESS_MIN_PCT * 10.0))
 
     def _score_special_targeting(
@@ -520,19 +578,19 @@ class WinProbabilityModel:
         # rendered sentence, and a pin over a literal pins the typing.
         if bs_total < HIGHLY_QUALIFIED_SECTION_MIN:
             notes.append(
-                f"Business Strategy section ({bs_total}/50) is below the "
+                f"Business Strategy section ({bs_total}/{BUSINESS_STRATEGY_MAX}) is below the "
                 f"{HIGHLY_QUALIFIED_SECTION_MIN}-point minimum required for "
                 "Highly Qualified status."
             )
         if co_total < HIGHLY_QUALIFIED_SECTION_MIN:
             notes.append(
-                f"Community Outcomes section ({co_total}/50) is below the "
+                f"Community Outcomes section ({co_total}/{COMMUNITY_OUTCOMES_MAX}) is below the "
                 f"{HIGHLY_QUALIFIED_SECTION_MIN}-point minimum required for "
                 "Highly Qualified status."
             )
         if not meets_aggregate and (meets_section_min or aggregate >= 70):
             notes.append(
-                f"Aggregate base score ({aggregate}/100) is below the "
+                f"Aggregate base score ({aggregate}/{BUSINESS_STRATEGY_MAX + COMMUNITY_OUTCOMES_MAX}) is below the "
                 f"{HIGHLY_QUALIFIED_AGGREGATE_MIN}-point minimum required for "
                 "Highly Qualified status."
             )
@@ -634,31 +692,31 @@ def _build_peer_comparison(score: "WinProbabilityScore") -> str:
 
     if tier == "Top Tier":
         return (
-            f"Top Tier ({agg}/100). Both sections exceed the "
+            f"Top Tier ({agg}/{BUSINESS_STRATEGY_MAX + COMMUNITY_OUTCOMES_MAX}). Both sections exceed the "
             f"{TOP_TIER_SECTION_MIN}-point threshold. "
             "High probability of Phase 2 advancement; award may approach the maximum requested."
         )
     if tier == "Highly Qualified":
         weak_section = "Business Strategy" if bs < co else "Community Outcomes"
         return (
-            f"Highly Qualified ({agg}/100). Both sections meet the "
+            f"Highly Qualified ({agg}/{BUSINESS_STRATEGY_MAX + COMMUNITY_OUTCOMES_MAX}). Both sections meet the "
             f"{HIGHLY_QUALIFIED_SECTION_MIN}-point minimum. "
-            f"Priority Points: {pp}/10. Phase 2 review of Management Capacity and "
+            f"Priority Points: {pp}/{PRIORITY_POINTS_MAX}. Phase 2 review of Management Capacity and "
             f"Capitalization Strategy will determine final ranking. "
-            f"Focus improvement on {weak_section} ({min(bs, co)}/50)."
+            f"Focus improvement on {weak_section} ({min(bs, co)}/{BUSINESS_STRATEGY_MAX})."
         )
     # Not Qualified
     below = []
     # Same rule as _classify_tier: the bar prints from the constant it gates on.
     if bs < HIGHLY_QUALIFIED_SECTION_MIN:
-        below.append(f"Business Strategy ({bs}/50 < {HIGHLY_QUALIFIED_SECTION_MIN})")
+        below.append(f"Business Strategy ({bs}/{BUSINESS_STRATEGY_MAX} < {HIGHLY_QUALIFIED_SECTION_MIN})")
     if co < HIGHLY_QUALIFIED_SECTION_MIN:
-        below.append(f"Community Outcomes ({co}/50 < {HIGHLY_QUALIFIED_SECTION_MIN})")
+        below.append(f"Community Outcomes ({co}/{COMMUNITY_OUTCOMES_MAX} < {HIGHLY_QUALIFIED_SECTION_MIN})")
     if agg < HIGHLY_QUALIFIED_AGGREGATE_MIN:
-        below.append(f"Aggregate ({agg}/100 < {HIGHLY_QUALIFIED_AGGREGATE_MIN})")
-    gap_str = "; ".join(below) if below else f"aggregate {agg}/100"
+        below.append(f"Aggregate ({agg}/{BUSINESS_STRATEGY_MAX + COMMUNITY_OUTCOMES_MAX} < {HIGHLY_QUALIFIED_AGGREGATE_MIN})")
+    gap_str = "; ".join(below) if below else f"aggregate {agg}/{BUSINESS_STRATEGY_MAX + COMMUNITY_OUTCOMES_MAX}"
     return (
-        f"Not Qualified ({agg}/100). Application does not meet the Highly Qualified "
+        f"Not Qualified ({agg}/{BUSINESS_STRATEGY_MAX + COMMUNITY_OUTCOMES_MAX}). Application does not meet the Highly Qualified "
         f"gating thresholds — {gap_str}. Significant pipeline or CDE positioning "
         "changes are needed before submission."
     )

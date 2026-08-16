@@ -135,6 +135,15 @@ def check_consistency(application: "Application",
 _AGREEMENT_TOLERANCE_PER_PROJECT = 1.0
 _AGREEMENT_TOLERANCE_FLOOR = 1.0
 
+# RATES ARE NOT DOLLARS (FIX-2 G-3). The two constants above are a per-project
+# rounding allowance in DOLLARS. A credit price is ~0.83 and a fee rate ~2.5,
+# so a $1 tolerance is larger than the whole quantity and any disagreement
+# whatsoever passes: $0.83 against $0.95 differs by 0.12 and clears nothing.
+# Rates must match to the precision the document prints them at — two decimal
+# places for the credit price, one for the fee — so the allowance is half a
+# unit in the last printed place of the coarser of the two.
+_RATE_AGREEMENT_TOLERANCE = 0.005
+
 
 class _EconomicsOnly:
     """The slice of ApplicationAnalysis that Section D reads.
@@ -154,57 +163,306 @@ class _EconomicsOnly:
         self.deal_economics = deal_economics
 
 
+class CrossSurfaceCheckError(RuntimeError):
+    """The cross-surface check could not ask its question.
+
+    Raised — not returned, not logged — when a column or row the check is
+    supposed to compare has gone missing from the renderer that produces it.
+    A missing column means the DOCUMENT CHANGED SHAPE, and a shape change is
+    precisely when two surfaces are most likely to have stopped agreeing.
+    """
+
+
+# Appendix A column -> Section D row label, for the figures both print.
+#
+# HAND-WRITTEN, AND SAID SO. Through 1.2.1-rc the docstring above this map read
+# "DERIVED FROM THE RENDERERS, NOT HAND-LISTED", which was true of the VALUES
+# and false of the map: the values are read out of the two renderers by calling
+# them, the pairing was typed here. A false claim about a gate, inside the
+# gate, is the thing this release exists to stop, so the claim is corrected
+# rather than the map quietly left.
+#
+# What CANNOT be derived is the pairing itself: "QEI Request ($)" and "Total
+# Pipeline QEI ($)" are the same figure under two names a human chose, and no
+# string comparison recovers that. What CAN be derived, and now is, is the
+# COVERAGE: _assert_pairs_cover_every_money_column below requires every
+# currency column pipeline_table publishes and every dollar row Section D
+# renders to be either paired here or listed in _UNPAIRED with a reason. A new
+# money column therefore fails this check on the day it is added, instead of
+# being silently uncompared — which is what the original claim was reaching for.
+_APPENDIX_A_TO_SECTION_D = {
+    "Total pipeline QEI": ("QEI Request ($)", "Total Pipeline QEI ($)"),
+    "Total NMTCs generated": ("Total NMTCs ($)", "Total NMTCs Generated ($)"),
+    "Estimated investor equity": (
+        "Estimated Investor Equity ($)", "Estimated Investor Equity ($)"),
+    "CDE fee income": ("CDE Fee ($)", "CDE Fee Income ($)"),
+    "Total leverage loans": ("Leverage Loan ($)", "Total Leverage Loans ($)"),
+}
+
+# Money figures that genuinely appear on ONE surface only, with the reason.
+# Listed rather than omitted: an unexplained omission and an oversight look
+# identical six months later.
+_UNPAIRED = {
+    "Total Project Cost ($)":
+        "the QALICB's total development cost, which Section D does not restate "
+        "— Section D is about the NMTC capital stack, not the project budget",
+    "Total QLICI ($)":
+        "the CDE's own supplied QLICI total, printed whole in Appendix A since "
+        "1.2.1. Section D reports the QEI and its uses, not the QLICI",
+    "Allocation Requested ($)":
+        "the cover-page ask. It is deliberately NOT the pipeline QEI — the two "
+        "were rendered under one label through 1.2.0 and are now separate rows "
+        "— so pairing it with an Appendix A total would re-assert the defect "
+        "that separation fixed",
+    "QEI Less CDE Fees ($)":
+        "a Section D-only derivation (QEI minus the CDE fee). Appendix A prints "
+        "both inputs and never their difference",
+}
+
+# ---------------------------------------------------------------------------
+# RATES, WHICH _UNPAIRED USED TO EXCUSE (FIX-2 G-3)
+#
+# "Assumed Credit Price ($/NMTC)" sat in _UNPAIRED above with the reason "a
+# per-credit rate, not a pipeline total; it is a model assumption and carries
+# its own disclaimer in the cell". Every clause of that is true and none of it
+# is a reason not to compare it. A rate is not a pipeline total, so it does
+# not belong in the Appendix-A-to-Section-D map — but it IS printed twice, in
+# Section D's economics table and again in the methodology appendix every
+# renderer emits, and those two are what have to agree.
+#
+# Measured on the branch head (probe N1): setting renderers/_methodology's
+# credit price to a literal 0.95 produced ONE FILING SAYING $0.83 IN SECTION D
+# AND $0.95 IN THE METHODOLOGY APPENDIX, with the whole suite green — the
+# registry pin passed because it asks only whether "$0.83" appears somewhere
+# on the surface, and this check passed because the figure was excused here.
+#
+# The registry states the correct rule and applied it to all nine distress
+# rows: a pin must be anchored, not merely present. This is that rule applied
+# to the rates.
+#
+# (label, Section D row, regex over the methodology text)
+_SECTION_D_TO_METHODOLOGY = {
+    "Assumed credit price": (
+        "Assumed Credit Price ($/NMTC)",
+        r"credit price \$([\d.]+)/credit",
+    ),
+    "Assumed CDE fee rate": (
+        "Assumed CDE Fee Rate",
+        r"CDE fee ([\d.]+)% of QEI",
+    ),
+}
+
+# Figures printed in more than one APPENDIX, which the 1.2.1-rc check did not
+# look at at all: its docstring promised "any figure this document prints in
+# more than one place" and its map covered Appendix A against Section D only.
+# Total QEI is printed in three appendices and Section D; Jobs Created in two.
+#
+# (table builder, totals-row selector, column) per surface.
+_APPENDIX_TOTALS = {
+    "Total pipeline QEI (across appendices)": (
+        ("Appendix A (pipeline detail)", "pipeline", "QEI Request ($)"),
+        ("Appendix C (geographic targeting)", "geographic", "QEI ($)"),
+        ("Appendix D (impact projections)", "impact", "QEI ($)"),
+    ),
+    "Jobs created (across appendices)": (
+        ("Appendix A (pipeline detail)", "pipeline", "Jobs Created"),
+        ("Appendix D (impact projections)", "impact", "Jobs Created"),
+    ),
+}
+
+
+def _assert_pairs_cover_every_money_column(appendix_a_columns, section_d_rows) -> None:
+    """Every dollar figure on either surface is paired here or excused here.
+
+    THIS IS WHAT MAKES THE MAP ABOVE HONEST. Without it, adding a money column
+    to Appendix A or a dollar row to Section D adds a figure the document
+    prints and this check does not look at, and nothing says so.
+    """
+    from nmtcapp.tables.pipeline_table import CURRENCY_COLUMNS
+
+    paired_a = {a for a, _d in _APPENDIX_A_TO_SECTION_D.values()}
+    paired_d = {d for _a, d in _APPENDIX_A_TO_SECTION_D.values()}
+
+    # CURRENCY_COLUMNS is the pipeline table's own declaration of which of its
+    # columns hold money. It was declared in 1.2.1 with the comment "Named here
+    # rather than retyped there so a column rename cannot silently drop a
+    # figure out of the check" — and then imported by nobody, while this module
+    # retyped the same names. Reading it is what that comment described.
+    missing_a = [
+        c for c in CURRENCY_COLUMNS
+        if c not in paired_a and c not in _UNPAIRED
+    ]
+    missing_d = [
+        r for r in section_d_rows
+        if r.endswith("($)") and r not in paired_d and r not in _UNPAIRED
+    ]
+    stale_a = [c for c in paired_a if c not in appendix_a_columns]
+    stale_d = [r for r in paired_d if r not in section_d_rows]
+
+    problems = []
+    if missing_a:
+        problems.append(
+            f"Appendix A publishes {missing_a} as money columns "
+            "(pipeline_table.CURRENCY_COLUMNS) and this check neither compares "
+            "them nor excuses them in _UNPAIRED"
+        )
+    if missing_d:
+        problems.append(
+            f"Section D renders {missing_d} as dollar rows and this check "
+            "neither compares them nor excuses them in _UNPAIRED"
+        )
+    if stale_a:
+        problems.append(
+            f"this check pairs Appendix A column(s) {stale_a}, which the "
+            "pipeline table no longer produces"
+        )
+    if stale_d:
+        problems.append(
+            f"this check pairs Section D row(s) {stale_d}, which the section "
+            "generator no longer produces"
+        )
+    if problems:
+        raise CrossSurfaceCheckError(
+            "the cross-surface agreement check has drifted out of step with "
+            "the renderers it checks: " + "; ".join(problems) + ". A figure "
+            "this document prints in two places and this check does not "
+            "compare is exactly the gap that let $98,000,000 and $82,846,750 "
+            "ship as one pipeline's leverage total."
+        )
+
+
+def _totals_row(kind: str, application):
+    """The TOTALS row of one appendix, by calling the table builder itself."""
+    if kind == "pipeline":
+        from nmtcapp.tables.pipeline_table import build_pipeline_table
+        df = build_pipeline_table(application.pipeline, application.cde)
+    elif kind == "geographic":
+        from nmtcapp.tables.geographic_table import build_geographic_table
+        df = build_geographic_table(application.pipeline)
+    elif kind == "impact":
+        from nmtcapp.tables.impact_table import build_impact_summary_table
+        df = build_impact_summary_table(application.pipeline)
+    else:                                              # pragma: no cover
+        raise CrossSurfaceCheckError(f"unknown appendix {kind!r}")
+    if df.empty:
+        raise CrossSurfaceCheckError(
+            f"the {kind} appendix rendered empty for a pipeline with projects"
+        )
+    return df.iloc[-1], df.columns
+
+
 def _shared_figures(application: "Application", deal_economics: dict) -> dict:
     """{label: {surface: value}} for every figure printed in more than one place.
 
-    DERIVED FROM THE RENDERERS, NOT HAND-LISTED. The Section D column is read
-    out of the section generator's own economics table, by calling it and
-    parsing the rendered cell; the Appendix A column out of the pipeline
-    table's own TOTALS row, by calling it. A hand-written list of "figures that
-    appear twice" goes stale the first time somebody adds a row; this cannot,
-    because a row that stops being produced stops being compared and a row that
-    starts being produced starts.
+    THE VALUES ARE READ OUT OF THE RENDERERS, BY CALLING THEM. The Section D
+    column comes from the section generator's own economics table, parsed out
+    of the rendered cell; each appendix column comes from that appendix's own
+    TOTALS row. Nothing here recomputes a figure — a check that recomputed
+    would agree with itself and not with the document.
+
+    THE PAIRING IS HAND-WRITTEN and _APPENDIX_A_TO_SECTION_D says so. The
+    COVERAGE is derived: see _assert_pairs_cover_every_money_column.
+
+    RAISES rather than skipping. A pair whose column or row is missing used to
+    hit a ``continue``, which quietly shrank the comparison set — the same
+    fail-silent shape that dropped the Native Area column out of Word's
+    Appendix A without a word (1.2.1 L-1). If the document has changed shape,
+    this check cannot answer its question and must say so.
     """
     from nmtcapp.sections.section_d_capitalization import SectionDCapitalizationStrategy
-    from nmtcapp.tables.pipeline_table import build_pipeline_table
 
     analysis = _EconomicsOnly(deal_economics)
-    appendix_a = build_pipeline_table(application.pipeline, application.cde)
-    if appendix_a.empty:
-        return {}
-    totals = appendix_a.iloc[-1]
+    totals, appendix_a_columns = _totals_row("pipeline", application)
 
     section_d = SectionDCapitalizationStrategy().generate_content(application, analysis)
     economics = section_d["subsections"][0]["body"]
 
+    _assert_pairs_cover_every_money_column(appendix_a_columns, economics)
+
     def _money(text) -> float:
         """Pull the leading dollar figure out of a rendered Section D cell."""
         match = re.search(r"\$([\d,]+(?:\.\d+)?)", str(text))
-        return float(match.group(1).replace(",", "")) if match else float("nan")
+        if match is None:
+            raise CrossSurfaceCheckError(
+                f"Section D cell {text!r} carries no dollar figure to compare"
+            )
+        return float(match.group(1).replace(",", ""))
 
-    # Appendix A column -> Section D row label, for the figures both print.
-    pairs = {
-        "Total pipeline QEI": ("QEI Request ($)", "Total Pipeline QEI ($)"),
-        "Total NMTCs generated": ("Total NMTCs ($)", "Total NMTCs Generated ($)"),
-        "Estimated investor equity": (
-            "Estimated Investor Equity ($)", "Estimated Investor Equity ($)"),
-        "CDE fee income": ("CDE Fee ($)", "CDE Fee Income ($)"),
-        "Total leverage loans": ("Leverage Loan ($)", "Total Leverage Loans ($)"),
-    }
     shared = {}
-    for label, (a_col, d_row) in pairs.items():
-        if a_col not in appendix_a.columns or d_row not in economics:
-            continue
+    for label, (a_col, d_row) in _APPENDIX_A_TO_SECTION_D.items():
         shared[label] = {
             "Appendix A (per-project total)": float(totals[a_col]),
             "Section D (deal economics)": _money(economics[d_row]),
         }
+
+    # The same figure across appendices. Built here rather than in a second
+    # function so one non-empty guard covers both kinds of agreement.
+    cache = {"pipeline": (totals, appendix_a_columns)}
+    for label, surfaces in _APPENDIX_TOTALS.items():
+        values = {}
+        for surface_name, kind, column in surfaces:
+            if kind not in cache:
+                cache[kind] = _totals_row(kind, application)
+            row, columns = cache[kind]
+            if column not in columns:
+                raise CrossSurfaceCheckError(
+                    f"{surface_name} no longer has a {column!r} column, so "
+                    f"{label!r} cannot be checked for agreement"
+                )
+            values[surface_name] = float(row[column])
+        shared[label] = values
+
+    # THE RATES, COMPARED RATHER THAN EXCUSED (FIX-2 G-3). Both are printed
+    # twice per filing — once in Section D's economics table, once in the
+    # methodology appendix every renderer emits — and until now nothing looked
+    # at the pair. Read from the two renderers, not recomputed: a check that
+    # recomputed would agree with itself and not with the document.
+    from nmtcapp.renderers._methodology import deal_economics_note
+
+    methodology = deal_economics_note()
+    for label, (d_row, pattern) in _SECTION_D_TO_METHODOLOGY.items():
+        if d_row not in economics:
+            raise CrossSurfaceCheckError(
+                f"Section D no longer has a {d_row!r} row, so {label!r} "
+                "cannot be checked against the methodology appendix"
+            )
+        d_match = re.search(r"([\d.]+)", str(economics[d_row]))
+        m_match = re.search(pattern, methodology)
+        if d_match is None or m_match is None:
+            raise CrossSurfaceCheckError(
+                f"{label!r} could not be read from both surfaces "
+                f"(Section D: {economics[d_row]!r}; methodology matched: "
+                f"{m_match is not None}). The check cannot answer its question "
+                "and must not report clean."
+            )
+        shared[label] = {
+            "Section D (deal economics)": float(d_match.group(1)),
+            "Methodology appendix": float(m_match.group(1)),
+        }
+
     return shared
 
 
 def check_cross_surface_agreement(application: "Application",
                                   deal_economics: dict = None) -> list:
-    """Any figure printed in more than one place in one document must agree.
+    """Every figure this check DECLARES as shared must agree across its surfaces.
+
+    THE CLAIM IS NARROWED TO WHAT THE CODE DOES, and what the code does is now
+    wider (1.2.1 S-3). Through 1.2.1-rc the docstring said "any figure this
+    document prints in more than one place must be one figure" while the
+    implementation compared five dollar figures between Appendix A and Section
+    D and nothing else. Total QEI is printed in Appendices A, C and D as well
+    as Section D, and Jobs Created in Appendices A and D; none of those was
+    ever compared. Both groups are compared now, and the claim above says
+    "declares" rather than "any" because the two are not the same sentence and
+    only one of them is checkable.
+
+    WHAT IS STILL NOT COVERED, so nobody has to re-derive it: figures that
+    appear in prose rather than in a table cell (Section B's distress shares
+    against Appendix B's rows), and any figure a renderer computes for itself
+    rather than reading from a table builder. Widening to those means giving
+    this validator a rendered document to parse, which is
+    tests/test_invariant_output.py's shape, not a validator's.
 
     THIS IS THE CHECK THAT DID NOT EXIST, and its absence is why a $10.2MM
     contradiction shipped. Section D reported leverage loans as the residual of
@@ -231,11 +489,42 @@ def check_cross_surface_agreement(application: "Application",
         deal_economics = application.analyze().deal_economics
     try:
         shared = _shared_figures(application, deal_economics)
-    except Exception as exc:                       # pragma: no cover - defensive
+    except Exception as exc:
         # A check that cannot run must SAY SO as an issue, not return clean.
         return [
             f"Cross-surface agreement check could not run ({exc}); the "
             "document's shared figures are unverified"
+        ]
+
+    # THE NON-EMPTY GUARD, IN THE SHIPPED VALIDATOR (1.2.1 S-3).
+    #
+    # It used to live only in tests/validation/test_consistency_check.py, as
+    # `len(shared) >= 4`. In a CDE's hands there is no test: forcing
+    # _shared_figures to return {} produced issues == [] and
+    # check_consistency.passed == True — a gate reporting success having
+    # compared nothing, inside the check that was built because the previous
+    # one could not fail on a $15.15MM contradiction.
+    #
+    # NOT A NUMERIC FLOOR, and deliberately. A floor of 4 against 5 declared
+    # pairs lets one drop silently, and re-deriving the number from today's
+    # count is how a floor stops being evidence. The invariant that does exist
+    # is structural: EVERY DECLARED COMPARISON MUST HAVE BEEN MADE. The
+    # declared set is itself derived — _assert_pairs_cover_every_money_column
+    # requires it to cover every money column the renderers publish — so there
+    # is no hand-chosen number anywhere in the chain.
+    expected = (set(_APPENDIX_A_TO_SECTION_D) | set(_APPENDIX_TOTALS)
+                | set(_SECTION_D_TO_METHODOLOGY))
+    if set(shared) != expected:
+        missing = sorted(expected - set(shared))
+        extra = sorted(set(shared) - expected)
+        return [
+            "Cross-surface agreement check compared "
+            f"{len(shared)} of {len(expected)} declared figure groups"
+            + (f"; never compared: {missing}" if missing else "")
+            + (f"; compared undeclared: {extra}" if extra else "")
+            + ". Every figure this document prints in more than one place must "
+            "be compared, and a check that silently compares fewer is a check "
+            "that passes on a document nobody looked at."
         ]
 
     project_count = len(list(application.pipeline)) if application.pipeline else 0
@@ -253,13 +542,30 @@ def check_cross_surface_agreement(application: "Application",
                 f"surface ({surfaces}) — it cannot be checked for agreement"
             )
             continue
-        if max(values) - min(values) > tolerance:
-            detail = "; ".join(f"{name} ${value:,.0f}" for name, value in surfaces.items())
-            issues.append(
-                f"{label} disagrees between surfaces of the same document: "
-                f"{detail} (difference ${max(values) - min(values):,.0f}). "
-                "A figure printed in two places must be one figure."
-            )
+        # A DOLLAR TOLERANCE APPLIED TO A RATE COMPARES NOTHING (FIX-2 G-3).
+        # The tolerance above is a per-project ROUNDING allowance measured in
+        # dollars; against a credit price it is roughly a thousand times the
+        # whole quantity, so $0.83 and $0.95 differ by 0.12 and sail under it.
+        # Rates are compared exactly, to the precision each surface prints.
+        is_rate = label in _SECTION_D_TO_METHODOLOGY
+        limit = _RATE_AGREEMENT_TOLERANCE if is_rate else tolerance
+        spread = max(values) - min(values)
+        if spread > limit:
+            if is_rate:
+                detail = "; ".join(f"{name} {value:g}" for name, value in surfaces.items())
+                issues.append(
+                    f"{label} disagrees between surfaces of the same document: "
+                    f"{detail} (difference {spread:g}). A rate printed in two "
+                    "places must be one rate — Section D's capital stack and "
+                    "the methodology appendix describe the same transaction."
+                )
+            else:
+                detail = "; ".join(f"{name} ${value:,.0f}" for name, value in surfaces.items())
+                issues.append(
+                    f"{label} disagrees between surfaces of the same document: "
+                    f"{detail} (difference ${spread:,.0f}). "
+                    "A figure printed in two places must be one figure."
+                )
     return issues
 
 

@@ -212,7 +212,20 @@ def _flag(value) -> str:
 
 
 def _severely_distressed_flag(p) -> str:
-    """Severely-distressed flag; an unenriched project is unverified."""
+    """Severely-distressed flag; an unenriched project is unverified.
+
+    INCLUDING "deep" HERE IS CORRECT AND MUST STAY. Deep distress is a strict
+    subset of severe distress in the CDFI Fund's own workbook — across all
+    85,395 tracts, zero are flagged deep without also being flagged severe
+    (see intelligence/distress_analysis.DEEP_IS_SUBSET_OF_SEVERE for the
+    counts). A deep-distress project IS severely distressed, so a "No" here
+    for a deep tract would be a false statement about the CDE's pipeline.
+
+    This column was the RIGHT half of 1.2.1's B-1 contradiction: Section B
+    printed a bucket that excluded deep distress under the heading "QEI in
+    Severely Distressed Tracts", and this flag disagreed with it in the same
+    filing. Section B was corrected to match this column, not the reverse.
+    """
     if p.distress_level is None:
         return "Unverified"
     return "Yes" if p.distress_level in ("deep", "severe") else "No"

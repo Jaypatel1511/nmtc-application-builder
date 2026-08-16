@@ -142,3 +142,143 @@ def test_analyze_accepts_the_filled_scaffold(tmp_path):
         f"analyze on the tool's own scaffold exited {result.returncode}\n"
         f"{result.stdout}\n{result.stderr}"
     )
+
+
+# ---------------------------------------------------------------------------
+# FIX-2 G-5: one list of required CDE fields, and every other statement of it
+# is derived
+# ---------------------------------------------------------------------------
+
+def test_the_required_cde_field_list_is_not_duplicated():
+    """Three hand-maintained copies of the same eight names agreed by luck.
+
+    core/cde._FIELD_GUIDANCE, the ``required`` set inside
+    CDEProfile.from_yaml, and validation/completeness_check._REQUIRED_CDE_FIELDS
+    each stated the list independently. Measured on the branch head: DELETING
+    "governance" FROM THE THIRD PASSED ALL 955 TESTS — a required field silently
+    stopped being validated, because every gate that could have noticed was
+    itself reading one of the three copies.
+
+    Second live instance of M5's class, after the pipeline columns
+    consistency_check retyped. There is now one list, in core/cde, and this
+    test asserts the other two are the same OBJECT rather than an equal one:
+    equality would pass again the moment somebody re-typed a matching copy.
+    """
+    from nmtcapp.core.cde import REQUIRED_CDE_FIELDS, _FIELD_GUIDANCE
+    from nmtcapp.validation import completeness_check
+
+    assert REQUIRED_CDE_FIELDS, "the authoritative list is empty"
+    assert tuple(_FIELD_GUIDANCE) == REQUIRED_CDE_FIELDS, (
+        "the guidance dict and the required list have diverged; the list is "
+        "supposed to be derived from the dict"
+    )
+    assert completeness_check._REQUIRED_CDE_FIELDS is REQUIRED_CDE_FIELDS, (
+        "completeness_check holds its own copy of the required-field list "
+        "again. Import it — an equal copy is what silently dropped "
+        "'governance' from validation with the whole suite green."
+    )
+
+
+def test_from_yaml_validates_every_required_field():
+    """The derivation has to BITE, not merely exist.
+
+    Asserting that two names point at one object proves the wiring. This
+    proves the wiring is load-bearing: drop each field in turn from an
+    otherwise complete profile and require from_yaml to refuse it by name.
+    """
+    import os
+    import tempfile
+
+    import pytest
+    import yaml
+
+    from nmtcapp.core.cde import REQUIRED_CDE_FIELDS
+
+    complete = {
+        "name": "Derivation Check CDE, LLC",
+        "cde_id": "CDE-2021-0808",
+        "certification_date": "2021-08-08",
+        "mission": "Deploy capital in distressed tracts.",
+        "target_markets": ["Ohio"],
+        "prior_awards": [],
+        "contact": {"name": "D", "email": "d@example.org"},
+        "governance": {"board_members": 7, "community_representatives": 3},
+    }
+    assert set(complete) == set(REQUIRED_CDE_FIELDS), (
+        "this fixture no longer matches the authoritative list; a field was "
+        "added or removed and this test would stop covering it"
+    )
+
+    for field in REQUIRED_CDE_FIELDS:
+        if field == "prior_awards":
+            continue          # [] is a real answer: a first-time applicant
+        partial = {k: v for k, v in complete.items() if k != field}
+        with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False) as fh:
+            yaml.safe_dump(partial, fh)
+            path = fh.name
+        try:
+            with pytest.raises(ValueError) as exc:
+                CDEProfile.from_yaml(path)
+            assert field in str(exc.value), (
+                f"dropping {field!r} was not reported by name: {exc.value}"
+            )
+        finally:
+            os.unlink(path)
+
+
+def test_completeness_check_validates_every_required_field(tmp_path):
+    """The other consumer, proved the same way.
+
+    A field can be in the list and still not be checked. This drops each one
+    from a live CDEProfile and requires check_completeness to name it.
+    """
+    from nmtcapp.core.application import Application
+    from nmtcapp.core.cde import REQUIRED_CDE_FIELDS
+    from nmtcapp.core.pipeline import Pipeline
+    from nmtcapp.validation.completeness_check import check_completeness
+
+    for field in REQUIRED_CDE_FIELDS:
+        cde = CDEProfile(
+            name="Completeness Check CDE, LLC", cde_id="CDE-2020-0909",
+            certification_date="2020-09-09", mission="Deploy capital.",
+            target_markets=["Ohio"], prior_awards=[],
+            contact={"name": "C", "email": "c@example.org"},
+            governance={"board_members": 5, "community_representatives": 2},
+        )
+        # prior_awards=[] is already the empty case, and it is a real answer;
+        # the check reports it and that is the behaviour under test.
+        object.__setattr__(cde, field, "" if isinstance(
+            getattr(cde, field), str) else type(getattr(cde, field))())
+        app = Application(cde=cde, requested_allocation=30_000_000.0)
+        app.add_pipeline(Pipeline.sample(n=3))
+        result = check_completeness(app)
+        assert any(field in issue for issue in result.issues), (
+            f"{field!r} was emptied and check_completeness said nothing. "
+            f"Issues: {result.issues}"
+        )
+
+
+def test_the_shipped_scaffold_offers_every_required_field():
+    """The fourth statement of the list: the YAML a CDE actually fills in.
+
+    `nmtcapp init` writes this file, and from_yaml refuses a profile missing
+    any required key — so a scaffold that omits one hands the CDE a file that
+    cannot load, with an error naming a key the scaffold never mentioned.
+    Derived from the same list rather than restating it.
+    """
+    import yaml
+
+    from nmtcapp.core.cde import REQUIRED_CDE_FIELDS
+    from tests.conftest import templates_dir
+
+    path = os.path.join(templates_dir(), "cde_profile_template.yaml")
+    with open(path, encoding="utf-8") as fh:
+        scaffold = yaml.safe_load(fh)
+
+    assert isinstance(scaffold, dict), f"{path} did not parse to a mapping"
+    missing = [f for f in REQUIRED_CDE_FIELDS if f not in scaffold]
+    assert not missing, (
+        f"the shipped scaffold omits required field(s) {missing}. A CDE that "
+        "fills in every key this file offers still gets a profile from_yaml "
+        "refuses, naming a key the scaffold never showed them."
+    )

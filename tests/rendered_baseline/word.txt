@@ -1,0 +1,230 @@
+P|Normal|Great Lakes Regional Capital CDE, LLC
+P|Normal|Contact: Dana Okonkwo | dokonkwo@greatlakesregional.example.org | 216-555-0142
+P|Normal|CONFIDENTIAL — Prepared for CDFI Fund Review Only | Do Not Distribute Without CDE Authorization
+P|Heading 1|Executive Summary
+P|Normal|Great Lakes Regional Capital CDE, LLC requests $70.0 million in New Markets Tax Credit allocation for CY2025. Our 8-project pipeline spans 4 states, with 85% of QEI committed to deep and severely distressed census tracts.
+P|Heading 2|Key Metrics
+P|Heading 2|Application Readiness Assessment
+P|Heading 1|Section A: Business Strategy
+P|Heading 2|Investment Thesis and Strategy
+P|Normal|Great Lakes Regional Capital CDE, LLC will deploy $70.0 million in NMTC allocation across 8 projects in 4 states — targeting 85% of QEI in deep and severely distressed census tracts. The pipeline's largest sector concentration is affordable housing.
+P|Normal|[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. CDFI Fund reviewers score on specificity, evidence, and alignment with community need. Length is governed by the limit printed on the published application form for this question, which this tool does not encode — check the form, not this draft.]
+P|Heading 2|Target Markets — Geographic and Demographic
+P|Normal|Primary geographic targets: MI, NY, OH, PA.
+P|Normal|Great Lakes Regional Capital CDE, LLC's stated mission is: "Deploy New Markets Tax Credit capital into severely distressed census tracts across the eastern Great Lakes, with a standing preference for operating businesses that hire locally."
+P|Normal|Per the persistent-poverty flags supplied in this CDE's own pipeline submission, the pipeline places 25% of QEI in tracts declared as persistent-poverty counties. 13% of QEI is in tracts recorded as High Migration Rural. This share is NOT solely the CDE's declaration: the high_migration_rural column of the pipeline submission is overwritten wherever nmtc-mapper returned a determination for the tract, so where the two disagree the figure above is the tool's, not the CDE's. Check it against your own submission before relying on it, and state which governs.
+P|Normal|[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. CDFI Fund reviewers score on specificity, evidence, and alignment with community need. Length is governed by the limit printed on the published application form for this question, which this tool does not encode — check the form, not this draft.]
+P|Heading 2|Pipeline Overview
+P|Heading 2|QEI Deployment Strategy and Timeline
+P|Normal|Great Lakes Regional Capital CDE, LLC targets a CY2025 award.
+P|Normal|[CDE TO COMPLETE: State your deployment timeline and the diligence status of each project — when you expect to close the first tranche, how the rest are sequenced, and how far each project has actually progressed through your underwriting. This tool holds neither: your pipeline submission records project economics and locations, not diligence milestones or target closing dates. Do not assert that a project has cleared underwriting review unless it has.]
+P|Normal|QEI deployment strategy: 85% of QEI committed to deep/severe distress tracts. (This tool's own internal scoring band is ≥75%; it is not a CDFI Fund threshold.)
+P|Normal|[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. CDFI Fund reviewers score on specificity, evidence, and alignment with community need. Length is governed by the limit printed on the published application form for this question, which this tool does not encode — check the form, not this draft.]
+P|Heading 2|Competitive Differentiation
+P|Normal|[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. CDFI Fund reviewers score on specificity, evidence, and alignment with community need. Length is governed by the limit printed on the published application form for this question, which this tool does not encode — check the form, not this draft.]
+P|Heading 1|Section B: Community Outcomes
+P|Heading 2|Aggregate Community Impact Projections
+P|Normal|The 8 projects in Great Lakes Regional Capital CDE, LLC's pipeline will produce the following direct community impacts upon project completion:
+P|Normal|• 532 permanent full-time-equivalent jobs created
+  • 198 existing jobs retained
+  • 142 affordable or mixed-income housing units developed
+  • 662,900 sq ft of community facility / commercial space
+  • 6.0 jobs per $1MM of QEI deployed
+P|Normal|[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. CDFI Fund reviewers score on specificity, evidence, and alignment with community need. Length is governed by the limit printed on the published application form for this question, which this tool does not encode — check the form, not this draft.]
+P|Heading 2|Distress Level Commitments
+P|Heading 2|Community Need Documentation
+P|Normal|[CDE TO COMPLETE: Document unmet capital need in the markets this pipeline serves. Supply the underlying evidence and cite each source by name, publisher and vintage — for example credit-access or lending data for your tracts, unemployment and poverty measures, business closures or disinvestment history, and community input gathered by your CDE. nmtc-application-builder does not compute, retrieve or verify community-need statistics of any kind, and supplies no figure for this subsection. No number may be entered here without a citation the CDE controls and can defend to the CDFI Fund.]
+P|Normal|[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. CDFI Fund reviewers score on specificity, evidence, and alignment with community need. Length is governed by the limit printed on the published application form for this question, which this tool does not encode — check the form, not this draft.]
+P|Heading 2|Per-Project Impact Detail
+P|Normal|(See Attachment: Impact Projections Table)
+P|Heading 2|Long-Term Community Impact Strategy
+P|Normal|[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. CDFI Fund reviewers score on specificity, evidence, and alignment with community need. Length is governed by the limit printed on the published application form for this question, which this tool does not encode — check the form, not this draft.]
+P|Heading 1|Section C: Management Capacity
+P|Heading 2|CDE History and Certification
+P|Normal|Great Lakes Regional Capital CDE, LLC was certified as a Community Development Entity by the CDFI Fund on 2016-04-11. Since certification, the organization has received 3 NMTC allocation awards totaling $160,000,000, of which 2 are recorded as fully deployed.
+P|Normal|Per this CDE's own profile declaration, no prior NMTC reporting issues have been recorded.
+P|Normal|[CDE TO COMPLETE: State the CDE's full compliance and performance history over its prior allocations — recapture or reduction events, defaults, cures, and material findings. The profile field above covers reporting issues only and is not by itself a representation about defaults or compliance violations.]
+P|Normal|[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. CDFI Fund reviewers score on specificity, evidence, and alignment with community need. Length is governed by the limit printed on the published application form for this question, which this tool does not encode — check the form, not this draft.]
+P|Heading 2|Governance and Organizational Structure
+P|Heading 2|Track Record — Prior NMTC Deployments
+P|Normal|(See Attachment: Track Record Table)
+P|Heading 2|Underwriting Process and Internal Controls
+P|Normal|[CDE TO COMPLETE: Describe your CDE's underwriting process end to end — initial screening and how eligibility is established, impact assessment, financial underwriting and credit criteria, your investment committee's composition and approval threshold, and your compliance-monitoring practice over the seven-year period. This tool holds none of these: your CDE profile records a board headcount, which is not an approval rule, and nothing in it describes a control you actually operate.]
+P|Normal|[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. CDFI Fund reviewers score on specificity, evidence, and alignment with community need. Length is governed by the limit printed on the published application form for this question, which this tool does not encode — check the form, not this draft.]
+P|Heading 2|Key Personnel and Qualifications
+P|Normal|[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. CDFI Fund reviewers score on specificity, evidence, and alignment with community need. Length is governed by the limit printed on the published application form for this question, which this tool does not encode — check the form, not this draft.]
+P|Heading 1|Section D: Capitalization Strategy
+P|Heading 2|Deal Economics Summary
+P|Heading 2|Investor Strategy and Relationships
+P|Normal|[CDE TO COMPLETE: Describe your actual investor relationships and their current status — named institutions where you have them, whether each is a term sheet, a letter of intent, a prior-round investor or a prospect, and who is expected to lead. This tool has no investor data for your CDE and cannot attest to any relationship, to investor motivation, or to how many investors will participate.]
+P|Normal|Modelled on $88.5MM of pipeline QEI at an assumed credit price of $0.83/NMTC credit, the structure implies $28.6MM of investor equity. The credit price is a market assumption of this model, not a quoted or committed price.
+P|Normal|Pipeline footprint: 4 states.
+P|Normal|[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. CDFI Fund reviewers score on specificity, evidence, and alignment with community need. Length is governed by the limit printed on the published application form for this question, which this tool does not encode — check the form, not this draft.]
+P|Heading 2|Leverage Structure
+P|Normal|Each transaction will utilize a standard leveraged NMTC structure:
+P|Normal|1. Leverage Lender provides senior debt (approx. $59.9MM total)
+  2. Tax Credit Investor contributes equity ($28.6MM)
+  3. Combined proceeds flow through the CDE as QLICI loans. 4 of 8 projects are declared below-market-rate in this CDE's own pipeline submission; the terms of the remainder are not recorded here.
+  4. QEI less CDE fees: $86.3MM. This is not the QALICB's retained benefit — the $59.9MM leverage loan inside it is repaid or refinanced after the 7-year period.
+P|Normal|Assumed CDE fee rate: 2.5% of QEI ($2.2MM) — a market assumption of this model, not a CDFI Fund parameter. Fees cover origination, compliance monitoring, and asset management over the 7-year compliance period.
+P|Normal|[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. CDFI Fund reviewers score on specificity, evidence, and alignment with community need. Length is governed by the limit printed on the published application form for this question, which this tool does not encode — check the form, not this draft.]
+P|Heading 2|Investor Commitments
+P|Normal|[CDE TO COMPLETE: This table is a blank form. nmtc-application-builder holds no investor data for your CDE and supplies no figure in it — not a name, a type, a CRA obligation, a commitment amount, a credit price or a status, and not the number of rows. Add one row per investor you can name and defend to the CDFI Fund, and delete any row you cannot.]
+
+(See Attachment: Investor Commitments Table)
+P|Heading 2|Leverage Loan Sources
+P|Normal|[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. CDFI Fund reviewers score on specificity, evidence, and alignment with community need. Length is governed by the limit printed on the published application form for this question, which this tool does not encode — check the form, not this draft.]
+P|Heading 1|Section E: Prior Awards — Deployment History
+P|Heading 2|Prior Allocation Summary
+P|Normal|Great Lakes Regional Capital CDE, LLC has 3 prior NMTC allocation awards totaling $160,000,000, of which 2 are recorded in the CDE profile as fully deployed.
+P|Normal|Per this CDE's own profile declaration, no prior NMTC reporting issues have been recorded.
+P|Normal|[CDE TO COMPLETE: State the CDE's full compliance and performance history over its prior allocations — recapture or reduction events, defaults, cures, and material findings. The profile field above covers reporting issues only and is not by itself a representation about defaults or compliance violations.]
+P|Normal|The deployment history table below lists each prior award's year, amount and deployment status. It does NOT record states served or sectors financed: neither is collected by this tool's CDE profile scaffold, so no value for them exists to print. [CDE TO COMPLETE: Add the states served and sectors financed for each prior award directly to the table below. The CDFI Fund's Section E asks for both and this tool does not hold them.]
+P|Heading 2|Award-by-Award Deployment History
+P|List Bullet|**Award 1 (FY2019):** $45,000,000 — Fully Deployed. States: [CDE TO COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this tool].
+P|List Bullet|**Award 2 (FY2021):** $60,000,000 — Fully Deployed. States: [CDE TO COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this tool].
+P|List Bullet|**Award 3 (FY2023):** $55,000,000 — Partially Deployed. States: [CDE TO COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this tool].
+P|Heading 2|Compliance and Monitoring
+P|Normal|(See Attachment: Track Record Table)
+P|Heading 2|Outcomes and Impact Achieved
+P|Normal|Outcomes across all 3 prior awards:
+P|Normal|[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. CDFI Fund reviewers score on specificity, evidence, and alignment with community need. Length is governed by the limit printed on the published application form for this question, which this tool does not encode — check the form, not this draft.]
+P|Heading 1|Appendix A: Pipeline Detail
+P|Normal|Full 33-column pipeline detail (deal economics, QLICI structure, timeline) is provided in the accompanying Excel workbook, Pipeline Detail tab. The landscape pages below contain key pipeline fields for reference.
+P|Heading 2|Appendix A (continued): Pipeline Detail — Full View
+P|Heading 1|Appendix B: Distress Documentation
+P|Heading 1|Appendix C: Geographic Targeting
+P|Heading 1|Appendix D: Impact Projections
+P|Normal|Full impact detail (units, square footage, OZ/HMR flags) is provided in the accompanying Excel workbook, Impact Projections tab.
+P|Heading 2|Section D: Investor Commitments
+P|Normal|[CDE TO COMPLETE: This table is a blank form. nmtc-application-builder holds no investor data for your CDE and supplies no figure in it — not a name, a type, a CRA obligation, a commitment amount, a credit price or a status, and not the number of rows. Add one row per investor you can name and defend to the CDFI Fund, and delete any row you cannot.]
+P|Heading 1|Appendix E: CDE Track Record
+P|Heading 1|Appendix F: Methodology
+P|Normal|Generated by nmtc-application-builder v<VERSION> on <RUNDATE>.
+
+ELIGIBILITY: CDFI Fund NMTC Eligibility Table using 2016–2020 ACS 5-Year Estimates. Tract eligibility determined by Low Income Community (LIC) criteria per IRC §45D.
+
+DISTRESS LEVELS (verbatim from the CDFI Fund NMTC LIC Eligibility workbook, 2016–2020 ACS, columns O and P — the file this tool loads to classify every tract): Severe distress = LIC AND (Poverty>30%; MFI<=60%; Unemployment>=1.5). Deep distress = LIC AND (Poverty>40%; MFI<=40%; Unemployment>=2.5). The semicolons are ORs; both tiers additionally require the tract to be a Low-Income Community. NMTC rounds are announced by a NOAA — Notice of Allocation Availability — and the CY 2026 NOAA is not yet published.
+
+DEAL ECONOMICS: computed using the nmtc-calc library, standard leveraged NMTC structure. Statutory credit rate 39% of QEI over 7 years (IRC §45D(a)(2): 5% of the QEI on each of the first three credit allowance dates and 6% on each of the remaining four). Assumed credit price $0.83/credit and CDE fee 2.5% of QEI are market assumptions of this model, not CDFI Fund parameters. The leverage loan is the residual of QEI less investor equity, so leverage plus equity equals QEI in every surface of this document.
+
+IMPACT SCREENING BANDS: THIS TOOL'S OWN BANDS (5 / 12 / 20 FTE per $1MM QEI). The CDFI Fund publishes no jobs-per-QEI benchmark in any denominator: it reports job counts and dollar counts separately and never divides them, and it publishes no distribution, so no band here is a percentile. These are not a federal figure and must not be cited as one.
+
+READINESS SCORE: An UNSOURCED HOUSE HEURISTIC of this tool (eligibility 25%, distress concentration 25%, geographic diversity 15%, impact metrics 20%, validation 10%, completeness 5%). The weights are this tool's own judgement; they are not calibrated against award data, the CDFI Fund publishes no such weighting, and the score does not predict an award outcome.
+T0|R0|NEW MARKETS TAX CREDIT\nALLOCATION APPLICATION
+T1|R0|
+T2|R0|Application Round:|CY2025
+T2|R1|Requested NMTC Allocation:|$70,000,000
+T2|R2|Preparation Date:|<RUNDATE>
+T2|R3|Readiness Assessment:|Grade B — 84.9/100
+T3|R0|Metric|Value
+T3|R1|Total Pipeline QEI|$88,500,000
+T3|R2|Total Project Cost|$125,450,000
+T3|R3|States Represented|4
+T3|R4|Deep/Severe Distress Concentration|85%
+T3|R5|NMTC Eligibility Rate|100%
+T3|R6|Jobs to Be Created|532
+T3|R7|Affordable Units to Be Built|142
+T3|R8|Jobs per $1MM QEI|6.0
+T4|R0|Grade\nB|Overall Score: 84.9/100\n  Eligibility Quality: 100/100\n  Distress Concentration: 100/100\n  Geographic Diversity: 89/100\n  Impact Metrics: 33/100\n  Validation Pass Rate: 100/100\n  Completeness: 100/100
+T5|R0|Item|Value
+T5|R1|Total Projects in Pipeline|8
+T5|R2|Total Pipeline QEI ($)|$88,500,000
+T5|R3|States Represented|4
+T5|R4|% QEI in Deep/Severe Distress|85%
+T5|R5|Dominant Sector|Affordable Housing
+T5|R6|Total Jobs to Be Created|532
+T5|R7|Sector Diversity Score|93.8/100
+T6|R0|Item|Value
+T6|R1|QEI in Deep Distress Tracts (the 20% bar's own basis)|52.2%
+T6|R2|QEI in Severely Distressed Tracts, Deep Distress included (the 85% bar's own basis)|85.3%
+T6|R3|— of which severely distressed but not also deep|33.1%
+T6|R4|QEI in LIC (Standard Eligible) Tracts|14.7%
+T6|R5|QEI in NMTC Native Areas (CDE-declared, not verified by this tool)|5.9%
+T6|R6|QEI in High Migration Rural (HMR) Tracts|12.7%
+T6|R7|CDFI Fund Higher-Distress Commitment (CY 2024-2025)|85% of QLICIs in areas of severe distress and/or multiple indicia of distress, and 20% in Deep Distress areas (CY 2024-2025 NMTC Program Review Process, Targeting Areas of Higher Distress, Question 25; the CY 2026 NOAA is not yet published). THE TWO BARS HAVE DIFFERENT BASES: the 85% covers severe distress OR multiple indicia, the 20% covers Deep Distress alone. Read each against its own row above; a combined deep-plus-severe share does not answer the 20% bar.
+T6|R8|Great Lakes Regional Capital CDE, LLC — measured against the 20% Deep Distress bar|52.2%
+T6|R9|Great Lakes Regional Capital CDE, LLC — measured against the 85% higher-distress bar (severe, deep included)|85.3%
+T7|R0|Item|Value
+T7|R1|Board Members|11
+T7|R2|Community Representatives|5
+T7|R3|Independent Directors|N/A
+T7|R4|Board Meeting Frequency|Bi-monthly
+T7|R5|CDE Certification Date|2016-04-11
+T7|R6|Prior Allocations Received|3
+T7|R7|Total Prior Allocation ($)|$160,000,000
+T7|R8|Rounds Fully Deployed|2
+T8|R0|Item|Value
+T8|R1|Allocation Requested ($)|$70,000,000
+T8|R2|Total Pipeline QEI ($)|$88,500,000
+T8|R3|Total NMTCs Generated ($)|$34,515,000
+T8|R4|Estimated Investor Equity ($)|$28,647,450
+T8|R5|Assumed Credit Price ($/NMTC)|$0.83 (market assumption, not a CDFI Fund parameter)
+T8|R6|Total Leverage Loans ($)|$59,852,550
+T8|R7|CDE Fee Income ($)|$2,212,500
+T8|R8|Assumed CDE Fee Rate|2.5% of QEI (market assumption, not a CDFI Fund parameter)
+T8|R9|QEI Less CDE Fees ($)|$86,287,500 (not the QALICB's retained benefit — the $59.9MM leverage loan inside this figure is repaid or refinanced)
+T8|R10|Compliance Period|7 years (IRC §45D)
+T9|R0|Project ID|Project Name|State|Distress Level|QEI Request ($)|Total Project Cost ($)
+T9|R1|PRJ-D01|Erie Shoreline Health Pavilion|PA|Deep Distress|$13,000,000|$18,400,000
+T9|R2|PRJ-D02|Toledo Advanced Components Plant|OH|Severely Distressed|$17,500,000|$24,750,000
+T9|R3|PRJ-D03|Buffalo East Side Grocery Anchor|NY|Severely Distressed|$6,600,000|$9,300,000
+T9|R4|PRJ-D04|Flint Riverfront Mixed-Income Lofts|MI|Deep Distress|$22,000,000|$31,200,000
+T9|R5|PRJ-D05|Youngstown Workforce Training Institute|OH|Low Income Community|$8,900,000|$12,650,000
+T9|R6|PRJ-D06|Saginaw Community Wellness Center|MI|Severely Distressed|$5,200,000|$7,450,000
+T9|R7|PRJ-D07|Scranton Solar Manufacturing Line|PA|Deep Distress|$11,200,000|$15,900,000
+T9|R8|PRJ-D08|Rochester Main Street Small Business ...|NY|Low Income Community|$4,100,000|$5,800,000
+T9|R9|TOTALS|8 projects|||$88,500,000|$125,450,000
+T10|R0|Project ID|Project Name|City|State|Distress Level|NMTC Eligible (Y/N)|NMTC Native Area (CDE-declared, Y/N)|QEI Request ($)|Total Project Cost ($)|Jobs Created|Jobs Retained|Sector (as supplied)
+T10|R1|PRJ-D01|Erie Shoreline Health Pavilion|Erie|PA|Deep Distress|Y|N|$13,000,000|$18,400,000|96|34|Healthcare
+T10|R2|PRJ-D02|Toledo Advanced Components Plant|Toledo|OH|Severely Distressed|Y|N|$17,500,000|$24,750,000|143|61|Small Business
+T10|R3|PRJ-D03|Buffalo East Side Grocery Anchor|Buffalo|NY|Severely Distressed|Y|N|$6,600,000|$9,300,000|52|18|Other
+T10|R4|PRJ-D04|Flint Riverfront Mixed-Income Lofts|Flint|MI|Deep Distress|Y|N|$22,000,000|$31,200,000|27|6|Affordable Housing
+T10|R5|PRJ-D05|Youngstown Workforce Training Institute|Youngstown|OH|Low Income Community|Y|N|$8,900,000|$12,650,000|41|15|Education
+T10|R6|PRJ-D06|Saginaw Community Wellness Center|Saginaw|MI|Severely Distressed|Y|Y|$5,200,000|$7,450,000|33|11|Community Facility
+T10|R7|PRJ-D07|Scranton Solar Manufacturing Line|Scranton|PA|Deep Distress|Y|N|$11,200,000|$15,900,000|78|29|Clean Energy
+T10|R8|PRJ-D08|Rochester Main Street Small Business Fund|Rochester|NY|Low Income Community|Y|N|$4,100,000|$5,800,000|62|24|Small Business
+T10|R9|TOTALS|TOTAL (8 projects)||||||$88,500,000|$125,450,000|532|198|
+T11|R0|Project ID|Project Name|City, State|Census Tract (GEOID)|NMTC Eligible|Distress Level|Severely Distressed Flag|NMTC Native Area (CDE-declared)|High Migration Rural (HMR)|Opportunity Zone|Poverty Rate (%)|Median Family Income|Unemployment Rate (%)|Data Source|ACS Vintage
+T11|R1|PRJ-D01|Erie Shoreline Health Pavilion|Erie, PA|42049000300|Yes|Deep Distress|Yes|No|No|Yes|See ACS|See ACS|See ACS|CDFI Fund NMTC Eligibility Table (2016–2020 ACS)|2016–2020 ACS 5-Year Estimates
+T11|R2|PRJ-D02|Toledo Advanced Components Plant|Toledo, OH|39095002400|Yes|Severely Distressed|Yes|No|No|No|See ACS|See ACS|See ACS|CDFI Fund NMTC Eligibility Table (2016–2020 ACS)|2016–2020 ACS 5-Year Estimates
+T11|R3|PRJ-D03|Buffalo East Side Grocery Anchor|Buffalo, NY|36029006702|Yes|Severely Distressed|Yes|No|No|No|See ACS|See ACS|See ACS|CDFI Fund NMTC Eligibility Table (2016–2020 ACS)|2016–2020 ACS 5-Year Estimates
+T11|R4|PRJ-D04|Flint Riverfront Mixed-Income Lofts|Flint, MI|26049000900|Yes|Deep Distress|Yes|No|No|Yes|See ACS|See ACS|See ACS|CDFI Fund NMTC Eligibility Table (2016–2020 ACS)|2016–2020 ACS 5-Year Estimates
+T11|R5|PRJ-D05|Youngstown Workforce Training Institute|Youngstown, OH|39099810900|Yes|Low Income Community|No|No|No|No|See ACS|See ACS|See ACS|CDFI Fund NMTC Eligibility Table (2016–2020 ACS)|2016–2020 ACS 5-Year Estimates
+T11|R6|PRJ-D06|Saginaw Community Wellness Center|Saginaw, MI|26145000200|Yes|Severely Distressed|Yes|Yes|No|No|See ACS|See ACS|See ACS|CDFI Fund NMTC Eligibility Table (2016–2020 ACS)|2016–2020 ACS 5-Year Estimates
+T11|R7|PRJ-D07|Scranton Solar Manufacturing Line|Scranton, PA|42069100900|Yes|Deep Distress|Yes|No|Yes|Yes|See ACS|See ACS|See ACS|CDFI Fund NMTC Eligibility Table (2016–2020 ACS)|2016–2020 ACS 5-Year Estimates
+T11|R8|PRJ-D08|Rochester Main Street Small Business Fund|Rochester, NY|36055004400|Yes|Low Income Community|No|No|No|No|See ACS|See ACS|See ACS|CDFI Fund NMTC Eligibility Table (2016–2020 ACS)|2016–2020 ACS 5-Year Estimates
+T11|R9|SUMMARY|8 total projects|||8/8||6/8 (75%)|1/8|||||||
+T12|R0|State|Project Count|QEI ($)|QEI (% of Total)|Deep/Severe Projects|Native Area Projects (CDE-declared)|HMR Projects|OZ Projects
+T12|R1|MI|2|$27,200,000|30.7%|2|1|0|1
+T12|R2|NY|2|$10,700,000|12.1%|1|0|0|0
+T12|R3|OH|2|$26,400,000|29.8%|1|0|0|0
+T12|R4|PA|2|$24,200,000|27.3%|2|0|1|2
+T12|R5|TOTAL|8|$88,500,000|100.0%|6|1|1|3
+T13|R0|Project Name|State|Sector|Jobs Created|QEI ($)|Cost per Job ($)|Distress Level
+T13|R1|Erie Shoreline Health Pavilion|PA|Healthcare|96|$13,000,000|$191,667|Deep Distress
+T13|R2|Toledo Advanced Components Plant|OH|Small Business|143|$17,500,000|$173,077|Severely Distressed
+T13|R3|Buffalo East Side Grocery Anchor|NY|Other|52|$6,600,000|$178,846|Severely Distressed
+T13|R4|Flint Riverfront Mixed-Income Lofts|MI|Affordable Housing|27|$22,000,000|$1,155,556|Deep Distress
+T13|R5|Youngstown Workforce Training In...|OH|Education|41|$8,900,000|$308,537|Low Income Community
+T13|R6|Saginaw Community Wellness Center|MI|Community Facility|33|$5,200,000|$225,758|Severely Distressed
+T13|R7|Scranton Solar Manufacturing Line|PA|Clean Energy|78|$11,200,000|$203,846|Deep Distress
+T13|R8|Rochester Main Street Small Busi...|NY|Small Business|62|$4,100,000|$93,548|Low Income Community
+T13|R9|TOTALS (8 projects)|||532|$88,500,000|$166,353|
+T14|R0|Investor Name|Investor Type|CRA Obligation|Commitment Status
+T14|R1|[CDE TO COMPLETE: investor name]|[CDE TO COMPLETE]|[CDE TO COMPLETE]|[CDE TO COMPLETE]
+T14|R2|[CDE TO COMPLETE: investor name]|[CDE TO COMPLETE]|[CDE TO COMPLETE]|[CDE TO COMPLETE]
+T15|R0|Investor Name|Commitment Amount ($)|NMTCs Allocated ($)|Credit Price ($/credit)|Notes
+T15|R1|[CDE TO COMPLETE: investor name]|[CDE TO COMPLETE]|[CDE TO COMPLETE]|[CDE TO COMPLETE]|[CDE TO COMPLETE]
+T15|R2|[CDE TO COMPLETE: investor name]|[CDE TO COMPLETE]|[CDE TO COMPLETE]|[CDE TO COMPLETE]|[CDE TO COMPLETE]
+T15|R3|TOTALS|[CDE TO COMPLETE]|[CDE TO COMPLETE]||[CDE TO COMPLETE: This table is a blank form. nmtc-application-builder holds no investor data for your CDE and supplies no figure in it — not a name, a type, a CRA obligation, a commitment amount, a credit price or a status, and not the number of rows. Add one row per investor you can name and defend to the CDFI Fund, and delete any row you cannot.]
+T16|R0|Award Year|Allocation ($)|Deployment Status|States Deployed|Sectors|Notes
+T16|R1|2019|$45,000,000|Fully Deployed|||
+T16|R2|2021|$60,000,000|Fully Deployed|||
+T16|R3|2023|$55,000,000|Partially Deployed|||
+T16|R4|TOTALS|$160,000,000|2 rounds fully deployed|0 states||$160,000,000 total prior allocation
+FTR|  |  Great Lakes Regional Capital CDE, LLC — NMTC CY2025 Application  |  CONFIDENTIAL
+FTR|  |  Great Lakes Regional Capital CDE, LLC — NMTC CY2025 Application  |  CONFIDENTIAL
+FTR|  |  Great Lakes Regional Capital CDE, LLC — NMTC CY2025 Application  |  CONFIDENTIAL
+FTR|  |  Great Lakes Regional Capital CDE, LLC — NMTC CY2025 Application  |  CONFIDENTIAL
+FTR|  |  Great Lakes Regional Capital CDE, LLC — NMTC CY2025 Application  |  CONFIDENTIAL

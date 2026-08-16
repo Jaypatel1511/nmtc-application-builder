@@ -22,10 +22,24 @@ from typing import List, Optional
 
 # ---------------------------------------------------------------------------
 # Distress level codes — values used by nmtc-mapper library
+#
+# THE "deep" ENTRY STATED THE SEVERE CRITERION (1.2.1 B-1). It read
+# "poverty >30% or unemployment >1.5× national avg", which is column O of the
+# CDFI Fund's eligibility workbook — the SEVERE flag. Deep distress is column
+# P and is a strictly tighter test. Nothing in this package renders this dict,
+# so no filing carried the wrong definition, but it is exported as
+# ``nmtcapp.data.DISTRESS_LEVELS`` and a caller printing it would have.
+#
+# Both criteria are now quoted from the workbook's own column headers, which
+# is the same wording renderers/_methodology puts in the filing. The two are
+# NESTED, not disjoint: every deep-distress tract is also severely distressed
+# (see intelligence/distress_analysis.DEEP_IS_SUBSET_OF_SEVERE).
 # ---------------------------------------------------------------------------
 DISTRESS_LEVELS = {
-    "deep":       "Deep Distress (poverty >30% or unemployment >1.5× national avg)",
-    "severe":     "Severe Distress (LIC plus additional qualifying distress factors)",
+    "deep":       ("Deep Distress — LIC AND (Poverty>40%; MFI<=40%; "
+                   "Unemployment>=2.5). A subset of Severe Distress."),
+    "severe":     ("Severe Distress — LIC AND (Poverty>30%; MFI<=60%; "
+                   "Unemployment>=1.5). Includes every Deep Distress tract."),
     "lic":        "Low Income Community (AMI ≤80% or poverty ≥20%)",
     "ineligible": "Not NMTC Eligible",
 }
@@ -66,6 +80,28 @@ TARGET_SECTORS = {
     "community_facility": {"description": "Libraries, rec centers, food access", "priority": "medium"},
     "clean_energy":       {"description": "Solar, wind, efficiency in LICs", "priority": "medium"},
     "other":              {"description": "Other NMTC-eligible uses", "priority": "low"},
+}
+
+# THE PRIORITY TIERS, DERIVED (FIX-2 G-5 sweep, third instance). Four places
+# stated them independently and one had already drifted:
+#
+#   intelligence/sector_analysis._HIGH_PRIORITY_SECTORS  hand-typed, agreed
+#   visualization/maps._HIGH_PRIORITY / _MED_PRIORITY    hand-typed, WRONG —
+#       _MED_PRIORITY held {small_business, mixed_use} and omitted
+#       community_facility and clean_energy, which this dict classes medium.
+#       The sector-mix chart therefore coloured those two bars with the
+#       low-priority grey under a legend reading "Medium Priority (Small
+#       Business/Mixed Use)", while the Streamlit page rendering the same
+#       pipeline printed "Priority: Medium" for them in the table beside it —
+#       one screen, two classifications.
+#   streamlit_app/utils.VALID_SECTORS                    retyped under the
+#       comment "(from schema)". It was not from schema.
+#
+# Same shape as the required-CDE-fields triplication, and the same fix: one
+# statement, everything else derived.
+SECTORS_BY_PRIORITY = {
+    tier: frozenset(k for k, v in TARGET_SECTORS.items() if v["priority"] == tier)
+    for tier in ("high", "medium", "low")
 }
 
 VALID_SECTORS: List[str] = list(TARGET_SECTORS.keys())

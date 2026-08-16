@@ -115,7 +115,22 @@ The Excel workbook contains multiple sheets, each formatted with headers, data v
 - NMTC credit calculation (39% × QEI over 7 years)
 - Investor equity at current market price
 - CDE fee estimate
-- Net subsidy to QALICB
+- QEI less CDE fees
+
+!!! note "Renamed in 1.2.1: this row is not a net subsidy"
+
+    This page listed the row as "Net subsidy to QALICB" through 1.2.0, and the
+    document itself printed it under that name. It is QEI minus the CDE's fee —
+    roughly 97.5% of QEI — and it includes the whole leverage loan, which the
+    QALICB or its affiliate repays or refinances after the seven-year
+    compliance period. "Net subsidy" is a term of art for the benefit NET OF
+    that loan. On the shipped sample the row read $121,582,500 against a
+    $124,700,000 QEI.
+
+    No replacement formula is substituted, because no primary source defines
+    one: the CY 2024-2025 Allocation Application does not use the phrase at all
+    (zero occurrences across 142 pages). The computation is unchanged and the
+    label now describes it.
 
 **Sheet: Track Record**
 - Prior NMTC award history from CDEProfile
