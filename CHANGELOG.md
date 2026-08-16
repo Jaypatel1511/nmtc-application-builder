@@ -644,6 +644,27 @@ three text formats. It also scans `RecommendationSet.summary()` and the
 `nmtcapp analyze` block, which the rendered baseline's fixture cannot reach
 because that fixture scores full credit on both distress sub-scores.
 
+**THE EXCEL WORKBOOK IS NOT COVERED BY THIS FIX, AND THAT IS KNOWN.** The
+BASIS NOTE lands on markdown, Word and PDF. `excel.txt` is byte-unchanged, and
+the reason recorded for that — "Excel does not render this subsection" — is
+true of the **subsection** and false of the **figure**. `Summary Dashboard!A12`
+reads `Deep/Severe Distress Concentration` and `C12` carries the share as a raw
+float under a `0.0%` number format. **The label names no denominator, and the
+workbook contains no basis note anywhere**: zero occurrences of "BASIS NOTE",
+"a share of QEI" or "not of QLICIs" across all sheets, and its only "QLICI" is
+Appendix A's `Total QLICI ($)` column heading. **A CDE copying that cell into
+Question 25 would file a QEI figure against a QLICI bar** — which is the exact
+harm FIX-3 exists to prevent, on the surface most likely to be copied from.
+Two things follow. The cell is invisible to the rendered gate by construction:
+the baseline stores it as `|float|fmt=0.0%|0.8531073446327684`, so a scan keyed
+on the string "85%" cannot see it, and the label carries none of the framing
+words the rule requires. And the figure is not wrong — it is an accurate share
+of QEI — so nothing here is a false statement; it is an **unlabelled** one.
+**Not fixed in this release** (adding a note to the workbook moves the Excel
+baseline, which this patch does not regenerate) and **first in the 1.2.2
+queue**, ahead of the denominator swap: it is the shortest path from this
+package to a wrong number on a federal application.
+
 **And a fixture whose two denominators actually differ.** Every fixture in the
 package sets `qlici_amount == qei_request` — both shipped samples,
 `Pipeline.sample()`, the pin fixtures, and the baseline gate's own fixture.
@@ -720,6 +741,39 @@ Two further items, both recorded for the next release rather than patched:
 
 Recorded by FIX-3, all of them **1.2.2** and none of them patch-safe:
 
+- **FIRST IN THE QUEUE — the Excel workbook's distress figure carries no
+  denominator and no basis note.** `Summary Dashboard!A12` /
+  `C12`: `Deep/Severe Distress Concentration`, the share as a raw float under a
+  `0.0%` format, with nothing in the workbook naming what it is a share of and
+  no basis note on any sheet. **A CDE copying that cell into Question 25 would
+  file a QEI figure against a QLICI bar.** The number is correct as a share of
+  QEI; what is missing is the label. It is ranked first because it is the
+  shortest path from this package to a wrong number on a federal application,
+  and because Excel is the surface a CDE is most likely to copy from. It also
+  cannot be caught by the gate FIX-3 added: the baseline stores the cell as
+  `|float|fmt=0.0%|…`, so a scan keyed on the rendered "85%" cannot see it.
+  Deferred only because writing the note moves the Excel rendered baseline,
+  which this patch deliberately does not regenerate — **not** because it is
+  judged low-risk.
+- **`intelligence/recommendations.py:41` asserts an invariant its own module
+  breaks, and a gate leans on it.** The module header states *"EVERY FEDERAL
+  FIGURE IN THIS MODULE IS INTERPOLATED, NOT TYPED (1.2.1 L-3)"*. Line 232
+  types both figures in *"The CDFI Fund awards full credit for CDEs offering
+  50%+ below-market products OR documenting 5+ indicia of flexible terms"* as
+  literals; `PRODUCT_FLEXIBILITY_BELOW_MARKET_PCT` and
+  `PRODUCT_FLEXIBILITY_MIN_INDICIA` exist in `benchmark_thresholds` and are not
+  imported there. **This is not cosmetic**: `test_qlici_basis.py`'s source scan
+  detects bars in two ways, and one of them — `_BAR_TOKENS_IN_SOURCE` — looks
+  for the constant NAMES precisely because the header says every federal figure
+  is written that way. A typed federal figure is visible to that scan only if
+  its literal value is one of the two distress bars; 50%, 5, 70% and 90% are
+  not, so they are outside the gate entirely. Recorded here rather than fixed
+  because interpolating the two constants changes a rendered recommendation
+  string, which moves pins this patch does not regenerate. Fixing the header
+  claim and the typed figures should travel together, and the sentence itself
+  needs review on its merits — the CY 2024-2025 Review Process states the
+  Question 15 threshold as *"100% of its QLICIs"*, with "at least 50%
+  below-market" describing a rate discount rather than a share of products.
 - **The denominator itself.** Switching the distress shares from QEI to QLICIs
   moves every scored figure, including the Community Outcomes sub-scores —
   `_score_higher_distress` and `_score_deep_distress` divide a QEI share by a
