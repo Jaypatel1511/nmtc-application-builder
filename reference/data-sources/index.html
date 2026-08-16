@@ -1324,25 +1324,38 @@ Data File.</p>
 <h2 id="distress-level-definitions-added-120">Distress-level definitions (added 1.2.0)<a class="headerlink" href="#distress-level-definitions-added-120" title="Permanent link">&para;</a></h2>
 <p>The two distress tiers this tool reports come from the <strong>CDFI Fund NMTC LIC Eligibility workbook</strong>
 itself — the <code>.xlsb</code> the package downloads and loads — not from a prose description of it.
-Columns 14 and 15, verbatim:</p>
+Columns <strong>O</strong> and <strong>P</strong>, verbatim — the letters the Fund's own NOTES sheet uses:</p>
 <table>
 <thead>
 <tr>
 <th>Column</th>
+<th>NOTES sheet label</th>
 <th>Header, verbatim</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>14</td>
+<td>O</td>
+<td><code>Column O. Severe Distress</code></td>
 <td><code>Severe distress=LIC AND (Poverty&gt;30%; MFI&lt;=60%;Unemployment&gt;=1.5)</code></td>
 </tr>
 <tr>
-<td>15</td>
+<td>P</td>
+<td><code>Column P. Deep Distress</code></td>
 <td><code>Deep distress=LIC AND (Poverty&gt;40%; MFI&lt;=40%;Unemployment&gt;=2.5)</code></td>
 </tr>
 </tbody>
 </table>
+<div class="admonition warning">
+<p class="admonition-title">Corrected in 1.2.1</p>
+<p>This page, and the generated methodology appendix, cited these as
+"columns 14 and 15" through 1.2.0. Those are the <strong>0-based positional
+indices</strong> of the same two columns in the data sheet's header row — correct
+as array offsets, and not what the Fund calls them. A reader opening the
+workbook to check the quotation would look at columns N and O and find the
+unemployment ratio and severe distress. It was a citation-precision defect
+inside the text added to fix a citation defect.</p>
+</div>
 <p>The semicolons read as <strong>or</strong>; both tiers additionally require the tract to be a Low-Income Community.
 Through 1.2.0-rc the generated methodology note printed severe distress's thresholds under the <em>deep</em>
 label, omitted the median-family-income limb from both, and credited the result to documents that do

@@ -1861,12 +1861,12 @@
 <tr>
 <td>Higher Distress Targeting</td>
 <td>15</td>
-<td>85%+ of QEI in severe distress or multi-indicia distress areas</td>
+<td>85%+ of <strong>QEI</strong> in severely distressed areas — a proxy, see the basis note below</td>
 </tr>
 <tr>
 <td>Deep Distress Commitment</td>
 <td>10</td>
-<td>20%+ of QEI in CDFI Fund-designated Deep Distress areas</td>
+<td>20%+ of <strong>QEI</strong> in CDFI Fund-designated Deep Distress areas — a proxy, see the basis note below</td>
 </tr>
 <tr>
 <td>Special Targeting</td>
@@ -1890,6 +1890,22 @@
 </tr>
 </tbody>
 </table>
+<p><strong>BASIS NOTE — the Fund's two distress commitments are measured on QLICIs, this
+tool's sub-scores are measured on QEI.</strong> The CY 2024-2025 NMTC Program Review
+Process (Targeting Areas of Higher Distress, Question 25) states that the
+Applicant commits to providing <em>"at least 85% of its QLICIs in specified areas
+of severe distress and/or areas characterized by multiple indicia of distress"</em>
+and <em>"at least 20% of its QLICIs to 'Deep Distress' areas"</em>. Both are shares of
+<strong>QLICIs</strong>. Every distress share this package computes is a share of <strong>QEI</strong>
+(<code>intelligence/distress_analysis.py</code>); <code>qlici_amount</code> is read only to print it
+in Appendix A and to check that it does not exceed its project's QEI, and feeds
+no percentage, no score and no bar. The two sub-scores above are therefore
+QEI-based <em>proxies</em> for the Fund's QLICI-denominated commitments, not
+computations of them, and no figure this tool renders answers either
+commitment. The 85% commitment carries a second mismatch: it covers severe
+distress <strong>or multiple indicia</strong> of distress, and this package computes no
+multi-indicia measure at all. Computing the QLICI-denominated shares is 1.2.2
+work, behind a written methodology — see CHANGELOG.md.</p>
 <h3 id="priority-points-10-bonus-points">Priority Points (10 bonus points)<a class="headerlink" href="#priority-points-10-bonus-points" title="Permanent link">&para;</a></h3>
 <p>Bonus points that increase an application's ranking within the Highly Qualified pool.</p>
 <table>
@@ -1968,7 +1984,7 @@
 </tr>
 <tr>
 <td>Non-Metro commitment</td>
-<td>≥ 20% non-metro required; ≥ 50% if applying as Rural CDE</td>
+<td>≥ 20% non-metro required; ≥ 50% if applying as Rural CDE. <strong>Basis not established by this tool</strong> — see the note below</td>
 </tr>
 <tr>
 <td>Fee/compensation structure</td>
@@ -1980,6 +1996,15 @@
 </tr>
 </tbody>
 </table>
+<p><strong>Note on the non-metro basis.</strong> <code>phase2_flags["non_metro_commitment_pct"]</code> is
+computed from <code>geographic_diversity["rural_pct"]</code>, which is a share of <strong>QEI</strong>
+(<code>geographic_analysis.py:96</code>), and the 20% figure above is quoted here without a
+denominator at all. The Fund states
+its two distress commitments on QLICIs (see the Community Outcomes basis note),
+and whether the non-metro commitment is QLICI-, QEI- or count-denominated <strong>has
+not been checked against the Application's own question text</strong>. Surfaced by
+<code>tests/test_qlici_basis.py</code> during the FIX-3 sweep and recorded rather than
+guessed. Do not read the flag as an answer to the Fund's requirement.</p>
 <hr />
 <h2 id="sub-score-formulas-business-strategy">Sub-score formulas (Business Strategy)<a class="headerlink" href="#sub-score-formulas-business-strategy" title="Permanent link">&para;</a></h2>
 <h3 id="product-flexibility-010-pts">Product Flexibility (0–10 pts)<a class="headerlink" href="#product-flexibility-010-pts" title="Permanent link">&para;</a></h3>
@@ -2013,11 +2038,21 @@
 <h3 id="higher-distress-targeting-015-pts">Higher Distress Targeting (0–15 pts)<a class="headerlink" href="#higher-distress-targeting-015-pts" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>score = min(15, pct_deep_or_severe / 0.85 × 15)
 </code></pre></div>
-<p>At 85%+ in severe or multi-indicia distress: full 15 pts. Proportional credit below.</p>
+<p>At 85%+ of <strong>QEI</strong> in severely distressed tracts (deep distress included): full
+15 pts, proportional credit below. The 0.85 is the Fund's bar used as this
+tool's scale factor; the Fund measures it on QLICIs and over severe distress
+<strong>or multiple indicia</strong>, neither of which this package computes. See the basis
+note above.</p>
 <h3 id="deep-distress-commitment-010-pts">Deep Distress Commitment (0–10 pts)<a class="headerlink" href="#deep-distress-commitment-010-pts" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>score = min(10, pct_deep / 0.20 × 10)
 </code></pre></div>
-<p>At 20%+ in CDFI Fund Deep Distress areas: full 10 pts. Uses <code>pct_deep</code> from distress analysis; falls back to 50% of <code>pct_deep_or_severe</code> if not available separately.</p>
+<p>At 20%+ of <strong>QEI</strong> in CDFI Fund Deep Distress tracts: full 10 pts, proportional
+credit below. Uses <code>pct_deep</code> from distress analysis and has no fallback — the
+"50% of <code>pct_deep_or_severe</code>" substitute this file used to document was removed
+in 1.2.1 (deep distress is a strict subset of severe distress in no fixed
+proportion, so no such split exists to compute); an absent <code>pct_deep</code> now scores
+zero. The 0.20 is the Fund's bar used as this tool's scale factor; the Fund
+measures it on QLICIs. See the basis note above.</p>
 <h3 id="special-targeting-05-pts">Special Targeting (0–5 pts)<a class="headerlink" href="#special-targeting-05-pts" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>partial = Σ min(1.25, category_pct / 0.10 × 1.25)  for each of 4 categories
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>score   = min(5, partial)
