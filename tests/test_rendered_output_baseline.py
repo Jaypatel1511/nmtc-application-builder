@@ -94,6 +94,29 @@ _MIN_BASELINE_LINES = {
 #   tract     11-digit GEOIDs, which must never acquire a thousands separator
 #   awards    three prior awards, whose YEARS are the identifier column that
 #             regressed
+#
+# NO DATE IN THIS FIXTURE MAY EVER EQUAL THE DAY THE SUITE RUNS. THAT IS A
+# CONSTRAINT, NOT A COINCIDENCE — DO NOT ADD A ROW DATED NEAR TODAY.
+#
+# The project dates are in 2099/2100 for that reason and no other. They are
+# deliberately absurd: a closing target seventy-odd years out is unmistakably
+# synthetic, and it cannot collide with `date.today()` in any working lifetime.
+# The CDE's certification_date and its three award years are historical, which
+# is the same protection running the other way.
+#
+# The first version of this fixture dated PRJ-D08's closing target 2026-08-15,
+# the day the baseline happened to be generated. The normaliser then replaced
+# today's value blindly wherever it appeared, so that CELL normalised to a
+# placeholder on the 15th and rendered literally on the 16th, and two of the
+# four baselines went red for a reason with nothing to do with the document.
+#
+# The normaliser no longer looks at the value, so a collision is survivable —
+# but a fixture date equal to the run date also makes the committed baseline
+# ambiguous to read, and belt and braces is the right number of belts here.
+# test_no_fixture_date_could_be_mistaken_for_the_run_date enforces it.
+#
+# Ordering constraint that must be preserved: validation/consistency_check
+# requires construction_start <= operations_start per project.
 # ---------------------------------------------------------------------------
 
 def _cde() -> CDEProfile:
@@ -186,10 +209,13 @@ def _pipeline() -> Pipeline:
             expected_units_built=units,
             expected_sq_ft=sqft,
             # Fixed, not derived from today — a date that moves would make
-            # every run a diff.
-            closing_target_date=f"2026-{(i % 12) + 1:02d}-15",
-            construction_start=f"2026-{(i % 12) + 1:02d}-28",
-            operations_start=f"2027-{(i % 12) + 1:02d}-01",
+            # every run a diff. 2099/2100 so that none of them can EVER equal
+            # the run date; see the fixture header. Ordering preserved:
+            # construction_start <= operations_start, which consistency_check
+            # requires, and "2099-.." sorts before "2100-.." as a string.
+            closing_target_date=f"2099-{(i % 12) + 1:02d}-15",
+            construction_start=f"2099-{(i % 12) + 1:02d}-28",
+            operations_start=f"2100-{(i % 12) + 1:02d}-01",
         )
         p.census_tract = tract
         p.is_nmtc_eligible = eligible
@@ -278,39 +304,92 @@ def _extract(fmt: str, path: str) -> str:
 
 
 _ISO_TS = re.compile(r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?")
-_DATE_LONG = re.compile(
-    r"\b(January|February|March|April|May|June|July|August|September|"
-    r"October|November|December) \d{1,2}, \d{4}\b"
+
+# Either form a renderer stamps the run date in.
+_ANY_DATE = (
+    r"(?:\d{4}-\d{2}-\d{2}"
+    r"|(?:January|February|March|April|May|June|July|August|September"
+    r"|October|November|December) \d{1,2}, \d{4})"
 )
+
+# ---------------------------------------------------------------------------
+# THE RUN-DATE STAMP, MATCHED BY WHERE IT SITS — NOT BY WHAT IT SAYS.
+#
+# This was `text.replace(date.today().isoformat(), "<TODAY>")`: a blind
+# value replace across the whole document. It made the SUITE'S RESULT DEPEND ON
+# THE CALENDAR.
+#
+# The fixture's PRJ-D08 carried closing_target_date "2026-08-15". The baseline
+# was generated on 2026-08-15, so that literal matched today and normalised to
+# "<TODAY>"; on 2026-08-16 the same cell rendered literally and the markdown
+# and excel baselines mismatched. Two formats red, for a reason with nothing to
+# do with what the gate exists to watch — which is the recorded reason gates
+# get bypassed, and the exact inverse of every defect this release closed.
+#
+# So the value is never consulted. Each pattern below is anchored to the words
+# a renderer puts BESIDE its stamp, and names the emission site it covers. A
+# fixture date can now equal the run date without being touched, because
+# nothing looks at what the date says.
+#
+# Coverage is asserted, not assumed: test_every_generation_stamp_site_is_
+# anchored walks the renderers for `date.today()` call sites and fails if one
+# is not matched by a pattern here.
+# ---------------------------------------------------------------------------
+_STAMP_ON_LINE = re.compile(
+    r"(?P<lead>"
+    r"Prepared:\s*"                                   # markdown:112, excel:171
+    r"|Generated\s+"                                  # excel:369, excel:437
+    r"|nmtc-application-builder v[\d.]+\*{0,2}\s+on\s+"   # markdown:246,
+    r"|Preparation Date:\|"                           # word:178  word:518,
+    r")"                                              #            pdf:715
+    r"(?P<date>" + _ANY_DATE + r")"
+)
+
+# pdf:468 is the one stamp with no lead word ON ITS OWN LINE. The PDF cover
+# table extracts as two lines — the label, then the date alone — so it is
+# anchored to the PRECEDING line instead. A bare date is normalised only
+# directly under this label, never on its own.
+_PDF_STAMP_LABEL = "Preparation Date:"
+_BARE_DATE = re.compile(r"^\s*" + _ANY_DATE + r"\s*$")
+
+RUN_DATE = "<RUNDATE>"
 
 
 def _normalise(text: str, outdir: str) -> str:
     """Erase ONLY what is genuinely non-deterministic.
 
     Deliberately narrow. Every normalisation is a line this gate stops
-    watching, so the list is timestamps, temp paths and today's date — and
-    nothing else. The fixture's own dates (certification_date, closing target,
-    construction start) are fixed values and must survive: they are output.
+    watching, so the list is temp paths, ISO timestamps and the run-date stamp
+    — and nothing else. The fixture's own dates (certification_date, closing
+    target, construction start) are OUTPUT and must survive verbatim; that is
+    what the anchoring above protects.
     """
     text = text.replace(outdir, "<OUTDIR>")
     text = re.sub(r"/(?:private/)?(?:tmp|var)/[^\s\"']*", "<TMPPATH>", text)
     text = _ISO_TS.sub("<TIMESTAMP>", text)
-    text = _DATE_LONG.sub("<DATE>", text)
-    text = text.replace(datetime.date.today().isoformat(), "<TODAY>")
-    return text
+
+    out = []
+    previous = ""
+    for line in text.split("\n"):
+        if previous.strip() == _PDF_STAMP_LABEL and _BARE_DATE.match(line):
+            out.append(RUN_DATE)
+        else:
+            out.append(_STAMP_ON_LINE.sub(
+                lambda m: m.group("lead") + RUN_DATE, line
+            ))
+        previous = line
+    return "\n".join(out)
 
 
-@pytest.fixture(scope="module")
-def rendered(tmp_path_factory) -> dict:
-    """{format: normalised text projection} for the one fixed fixture."""
-    out = str(tmp_path_factory.mktemp("baseline"))
+def _render_projections(outdir: str) -> dict:
+    """Render the fixture into outdir and return {format: normalised text}."""
     app = Application(
         cde=_cde(),
         requested_allocation=REQUESTED_ALLOCATION,
         application_round=APPLICATION_ROUND,
     )
     app.add_pipeline(_pipeline())
-    paths = app.generate(out, formats=list(FORMATS))
+    paths = app.generate(outdir, formats=list(FORMATS))
 
     assert set(paths) == set(FORMATS), (
         f"rendered {sorted(paths)}, expected all of {sorted(FORMATS)}. A "
@@ -321,7 +400,7 @@ def rendered(tmp_path_factory) -> dict:
     projected = {}
     for fmt in FORMATS:
         assert os.path.exists(paths[fmt]), f"{fmt} was not written"
-        text = _normalise(_extract(fmt, paths[fmt]), out)
+        text = _normalise(_extract(fmt, paths[fmt]), outdir)
         assert text.strip(), (
             f"{fmt} extracted as empty text. The diff would then be empty and "
             "this gate would report no change on a document that renders "
@@ -329,6 +408,48 @@ def rendered(tmp_path_factory) -> dict:
         )
         projected[fmt] = text.rstrip("\n") + "\n"
     return projected
+
+
+# The four modules that stamp the run date. Frozen together, because a stamp
+# left un-frozen in one of them is exactly what the date-independence test
+# below is looking for.
+_STAMPING_MODULES = (
+    "nmtcapp.renderers.markdown_builder",
+    "nmtcapp.renderers.word_builder",
+    "nmtcapp.renderers.excel_builder",
+    "nmtcapp.renderers.pdf_builder",
+)
+
+
+def _freeze_today(monkeypatch, iso: str) -> None:
+    """Make every renderer believe today is `iso`.
+
+    Each module does `from datetime import date`, so each holds its own
+    binding and each must be patched. No dependency on freezegun or on a
+    faked system clock — the point is that this runs anywhere, including CI.
+    """
+    import importlib
+
+    year, month, day = (int(part) for part in iso.split("-"))
+
+    class _Frozen(datetime.date):
+        @classmethod
+        def today(cls):
+            return datetime.date(year, month, day)
+
+    for name in _STAMPING_MODULES:
+        module = importlib.import_module(name)
+        assert hasattr(module, "date"), (
+            f"{name} no longer imports `date`; the freeze would silently miss "
+            "whatever stamps the run date there now"
+        )
+        monkeypatch.setattr(module, "date", _Frozen)
+
+
+@pytest.fixture(scope="module")
+def rendered(tmp_path_factory) -> dict:
+    """{format: normalised text projection} for the one fixed fixture."""
+    return _render_projections(str(tmp_path_factory.mktemp("baseline")))
 
 
 # ---------------------------------------------------------------------------
@@ -383,6 +504,182 @@ def test_a_baseline_exists_for_every_format():
             f"{_MIN_BASELINE_LINES[fmt]} floor. A truncated baseline is a "
             "diff that compares almost nothing."
         )
+
+
+# ---------------------------------------------------------------------------
+# THE RUN DATE MUST NOT REACH THE COMPARISON (FIX-2 follow-up)
+#
+# The first version of this gate normalised the stamp with
+#
+#     text.replace(datetime.date.today().isoformat(), "<TODAY>")
+#
+# and the fixture dated PRJ-D08's closing target 2026-08-15. The baseline was
+# generated on 2026-08-15, so that CELL matched today and normalised away; on
+# 2026-08-16 it rendered literally and markdown and excel went red. The suite's
+# result depended on the calendar — a gate failing for a reason unrelated to
+# its subject, which is the recorded reason gates get bypassed.
+#
+# These three tests exist so that cannot recur, and so that nobody has to take
+# "it passed on the day I wrote it" as evidence.
+# ---------------------------------------------------------------------------
+
+# Three distinct dates, and the THIRD IS ONE THE FIXTURE ITSELF CONTAINS
+# (PRJ-D08's closing_target_date). That is the case the old normaliser got
+# wrong, so it is the case this test must cover explicitly rather than by luck.
+_PROOF_DATES = ("2026-08-16", "2027-03-01", "2099-08-15")
+
+
+def test_the_projection_is_independent_of_the_run_date(tmp_path, monkeypatch):
+    """Render under three different "todays" and require identical output.
+
+    THE INVARIANT, STATED DIRECTLY: nothing about the day the suite runs may
+    survive into the text this gate compares. Freezing the four stamping
+    modules and rendering three times is the only way to establish that; a
+    gate that has only ever been run on one day has been tested on one day.
+    """
+    projections = {}
+    for iso in _PROOF_DATES:
+        with monkeypatch.context() as frozen:
+            _freeze_today(frozen, iso)
+            out = tmp_path / iso
+            out.mkdir()
+            projections[iso] = _render_projections(str(out))
+
+    reference_iso = _PROOF_DATES[0]
+    reference = projections[reference_iso]
+    for iso in _PROOF_DATES[1:]:
+        for fmt in FORMATS:
+            diff = list(difflib.unified_diff(
+                reference[fmt].splitlines(), projections[iso][fmt].splitlines(),
+                fromfile=f"{fmt} rendered on {reference_iso}",
+                tofile=f"{fmt} rendered on {iso}",
+                lineterm="", n=1,
+            ))
+            assert not diff, (
+                f"the {fmt} projection changed when only the RUN DATE changed "
+                f"({reference_iso} -> {iso}). Either a generation stamp is not "
+                "anchored in _STAMP_ON_LINE, or a fixture value collided with "
+                "one of these dates and was normalised away. Both make this "
+                "gate's result depend on the calendar.\n\n" + "\n".join(diff)
+            )
+
+    # And it must not pass by normalising everything into oblivion.
+    for fmt in FORMATS:
+        assert RUN_DATE in reference[fmt], (
+            f"no run-date stamp was found in the {fmt} projection at all. "
+            "Three identical renders prove nothing if the normaliser has "
+            "erased the stamps along with everything else."
+        )
+
+
+# The fixture's dates must sit OUTSIDE any window a run could plausibly fall
+# in. Stated as a window rather than as "!= today" on purpose: see the test.
+_RUN_WINDOW = (2026, 2098)
+
+
+def test_no_fixture_date_could_be_mistaken_for_the_run_date():
+    """The fixture's own constraint, enforced rather than commented.
+
+    NOTE WHAT THIS TEST DOES NOT DO: it never calls ``date.today()``.
+
+    The obvious form of this check is ``assert no fixture date == today``, and
+    that form is itself the defect being fixed — it passes on 364 days and
+    fails on one, so the suite's result would again depend on the calendar.
+    Measured, before this was rewritten: with the fixture dated 2099-08-15 and
+    the clock faked to 2099-08-15, the baseline comparison PASSED (the
+    normaliser no longer reads the value) and this check was the only thing
+    red. A guard that manufactures the failure mode it is guarding against is
+    worse than no guard.
+
+    So the property asserted is structural and calendar-free: every date in the
+    fixture is either clearly historical or clearly synthetic — outside
+    _RUN_WINDOW, the span a run could plausibly fall in. A row added with a
+    near-today date fails here on every day, including the day it is added,
+    which is when it is cheap to fix.
+    """
+    dates = {"cde.certification_date": _cde().certification_date}
+    for award in _cde().prior_awards:
+        dates[f"award.{award['year']}"] = f"{award['year']}-01-01"
+    for project in _pipeline():
+        for field in ("closing_target_date", "construction_start",
+                      "operations_start"):
+            dates[f"{project.project_id}.{field}"] = getattr(project, field)
+
+    assert len(dates) > 20, (
+        f"only {len(dates)} fixture dates were collected; this check is not "
+        "reaching the fixture and would pass having examined almost nothing"
+    )
+
+    low, high = _RUN_WINDOW
+    inside = sorted(
+        f"{label}={value}" for label, value in dates.items()
+        if low <= int(str(value)[:4]) <= high
+    )
+    assert not inside, (
+        f"{len(inside)} fixture date(s) fall inside the plausible run window "
+        f"{low}-{high}: {inside}\n\n"
+        "The fixture header states this constraint. Dates in it are 2099/2100 "
+        "(projects) or historical (the CDE's certification and award years) "
+        "SO THAT none of them can be confused with the day the suite runs — "
+        "in the committed baseline a reader has to be able to tell a fixture "
+        "value from a normalised stamp at a glance. Move the value."
+    )
+
+    # The ordering consistency_check enforces, asserted here so a date edit
+    # cannot quietly produce a document that fails validation.
+    for project in _pipeline():
+        assert project.construction_start <= project.operations_start, (
+            f"{project.project_id}: construction_start "
+            f"{project.construction_start} is after operations_start "
+            f"{project.operations_start}; consistency_check rejects that"
+        )
+
+
+def test_every_generation_stamp_site_is_anchored():
+    """A new `date.today()` in a renderer must not silently leak into the diff.
+
+    test_the_projection_is_independent_of_the_run_date catches any stamp that
+    RENDERS under this fixture. It cannot catch one on a branch the fixture
+    does not take. So the renderers are also read directly: every
+    ``date.today()`` call site must carry one of the anchor phrases
+    _STAMP_ON_LINE keys on, within the call's own line or the one above it
+    (pdf_builder puts the lead text on the preceding line).
+    """
+    import importlib
+
+    anchors = ("Prepared:", "Generated ", "Generated by",
+               "nmtc-application-builder", "Preparation Date:")
+
+    unanchored = []
+    sites = 0
+    for name in _STAMPING_MODULES:
+        module = importlib.import_module(name)
+        path = module.__file__
+        with open(path, encoding="utf-8") as fh:
+            lines = fh.read().splitlines()
+        for i, line in enumerate(lines):
+            if "date.today()" not in line:
+                continue
+            sites += 1
+            window = (lines[i - 1] if i else "") + "\n" + line
+            if not any(a in window for a in anchors):
+                unanchored.append(
+                    f"  {os.path.basename(path)}:{i + 1}: {line.strip()[:90]}"
+                )
+
+    assert sites, (
+        "no `date.today()` call sites were found in any renderer. Either the "
+        "stamps moved somewhere this scan cannot see — in which case the "
+        "normaliser's anchors are guarding nothing — or the scan is broken."
+    )
+    assert not unanchored, (
+        f"{len(unanchored)} of {sites} run-date stamp(s) carry none of the "
+        f"anchor phrases {anchors}:\n" + "\n".join(unanchored)
+        + "\n\nAn un-anchored stamp is a moving value in the committed "
+        "baseline: it normalises on the day the baseline is written and "
+        "renders literally every day after. Give it a lead word and add the "
+        "pattern to _STAMP_ON_LINE."
+    )
 
 
 # ---------------------------------------------------------------------------

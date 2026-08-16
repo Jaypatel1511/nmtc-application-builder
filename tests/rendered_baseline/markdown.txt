@@ -4,7 +4,7 @@
 
 Application Round: CY2025  
 Requested Allocation: **$70,000,000**  
-Prepared: <TODAY>  
+Prepared: <RUNDATE>  
 Readiness Grade: **B** (84.9/100)  
 
 ---
@@ -314,14 +314,14 @@ Outcomes across all 3 prior awards:
 
 | Project ID | QALICB Name | Project Name | Street Address | City | State | ZIP Code | Census Tract (11-digit) | NMTC Eligible (Y/N) | Distress Level | NMTC Native Area (CDE-declared, Y/N) | High Migration Rural (Y/N) | Opportunity Zone (Y/N) | Sector (as supplied) | Project Type | Total Project Cost ($) | QEI Request ($) | Total QLICI ($) | Leverage Loan ($) | Total NMTCs ($) | Estimated Investor Equity ($) | CDE Fee ($) | Construction Start | Operations Start | Closing Target Date | Jobs Created | Jobs Retained | Affordable Units Built | Square Feet |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| PRJ-D01 | Erie Shoreline Health Pavilion QALICB, LLC | Erie Shoreline Health Pavilion | 1100 Commerce Street | Erie | PA |  | 42049000300 | Y | Deep Distress | N | N | Y | Healthcare | Real Estate | $18,400,000 | $13,000,000 | $13,000,000 | $8,791,900 | $5,070,000 | $4,208,100 | $325,000 | 2026-01-28 | 2027-01-01 | 2026-01-15 | 96 | 34 | — | 74,500 |
-| PRJ-D02 | Toledo Advanced Components Plant QALICB, LLC | Toledo Advanced Components Plant | 1125 Commerce Street | Toledo | OH |  | 39095002400 | Y | Severely Distressed | N | N | N | Small Business | Operating Business | $24,750,000 | $17,500,000 | $17,500,000 | $11,835,250 | $6,825,000 | $5,664,750 | $437,500 | 2026-02-28 | 2027-02-01 | 2026-02-15 | 143 | 61 | — | 210,000 |
-| PRJ-D03 | Buffalo East Side Grocery Anchor QALICB, LLC | Buffalo East Side Grocery Anchor | 1150 Commerce Street | Buffalo | NY |  | 36029006702 | Y | Severely Distressed | N | N | N | Other | Operating Business | $9,300,000 | $6,600,000 | $6,600,000 | $4,463,580 | $2,574,000 | $2,136,420 | $165,000 | 2026-03-28 | 2027-03-01 | 2026-03-15 | 52 | 18 | 0 | 31,200 |
-| PRJ-D04 | Flint Riverfront Mixed-Income Lofts QALICB, LLC | Flint Riverfront Mixed-Income Lofts | 1175 Commerce Street | Flint | MI |  | 26049000900 | Y | Deep Distress | N | N | Y | Affordable Housing | Real Estate | $31,200,000 | $22,000,000 | $22,000,000 | $14,878,600 | $8,580,000 | $7,121,400 | $550,000 | 2026-04-28 | 2027-04-01 | 2026-04-15 | 27 | 6 | 118 | 165,000 |
-| PRJ-D05 | Youngstown Workforce Training Institute QALICB, LLC | Youngstown Workforce Training Institute | 1200 Commerce Street | Youngstown | OH |  | 39099810900 | Y | Low Income Community | N | N | N | Education | Real Estate | $12,650,000 | $8,900,000 | $8,900,000 | $6,019,070 | $3,471,000 | $2,880,930 | $222,500 | 2026-05-28 | 2027-05-01 | 2026-05-15 | 41 | 15 | — | 44,800 |
-| PRJ-D06 | Saginaw Community Wellness Center QALICB, LLC | Saginaw Community Wellness Center | 1225 Commerce Street | Saginaw | MI |  | 26145000200 | Y | Severely Distressed | Y | N | N | Community Facility | Real Estate | $7,450,000 | $5,200,000 | $5,200,000 | $3,516,760 | $2,028,000 | $1,683,240 | $130,000 | 2026-06-28 | 2027-06-01 | 2026-06-15 | 33 | 11 | 24 | 28,300 |
-| PRJ-D07 | Scranton Solar Manufacturing Line QALICB, LLC | Scranton Solar Manufacturing Line | 1250 Commerce Street | Scranton | PA |  | 42069100900 | Y | Deep Distress | N | Y | Y | Clean Energy | Operating Business | $15,900,000 | $11,200,000 | $11,200,000 | $7,574,560 | $4,368,000 | $3,625,440 | $280,000 | 2026-07-28 | 2027-07-01 | 2026-07-15 | 78 | 29 | — | 96,400 |
-| PRJ-D08 | Rochester Main Street Small Business Fund QALICB, LLC | Rochester Main Street Small Business Fund | 1275 Commerce Street | Rochester | NY |  | 36055004400 | Y | Low Income Community | N | N | N | Small Business | Operating Business | $5,800,000 | $4,100,000 | $4,100,000 | $2,772,830 | $1,599,000 | $1,327,170 | $102,500 | 2026-08-28 | 2027-08-01 | <TODAY> | 62 | 24 | — | 12,700 |
+| PRJ-D01 | Erie Shoreline Health Pavilion QALICB, LLC | Erie Shoreline Health Pavilion | 1100 Commerce Street | Erie | PA |  | 42049000300 | Y | Deep Distress | N | N | Y | Healthcare | Real Estate | $18,400,000 | $13,000,000 | $13,000,000 | $8,791,900 | $5,070,000 | $4,208,100 | $325,000 | 2099-01-28 | 2100-01-01 | 2099-01-15 | 96 | 34 | — | 74,500 |
+| PRJ-D02 | Toledo Advanced Components Plant QALICB, LLC | Toledo Advanced Components Plant | 1125 Commerce Street | Toledo | OH |  | 39095002400 | Y | Severely Distressed | N | N | N | Small Business | Operating Business | $24,750,000 | $17,500,000 | $17,500,000 | $11,835,250 | $6,825,000 | $5,664,750 | $437,500 | 2099-02-28 | 2100-02-01 | 2099-02-15 | 143 | 61 | — | 210,000 |
+| PRJ-D03 | Buffalo East Side Grocery Anchor QALICB, LLC | Buffalo East Side Grocery Anchor | 1150 Commerce Street | Buffalo | NY |  | 36029006702 | Y | Severely Distressed | N | N | N | Other | Operating Business | $9,300,000 | $6,600,000 | $6,600,000 | $4,463,580 | $2,574,000 | $2,136,420 | $165,000 | 2099-03-28 | 2100-03-01 | 2099-03-15 | 52 | 18 | 0 | 31,200 |
+| PRJ-D04 | Flint Riverfront Mixed-Income Lofts QALICB, LLC | Flint Riverfront Mixed-Income Lofts | 1175 Commerce Street | Flint | MI |  | 26049000900 | Y | Deep Distress | N | N | Y | Affordable Housing | Real Estate | $31,200,000 | $22,000,000 | $22,000,000 | $14,878,600 | $8,580,000 | $7,121,400 | $550,000 | 2099-04-28 | 2100-04-01 | 2099-04-15 | 27 | 6 | 118 | 165,000 |
+| PRJ-D05 | Youngstown Workforce Training Institute QALICB, LLC | Youngstown Workforce Training Institute | 1200 Commerce Street | Youngstown | OH |  | 39099810900 | Y | Low Income Community | N | N | N | Education | Real Estate | $12,650,000 | $8,900,000 | $8,900,000 | $6,019,070 | $3,471,000 | $2,880,930 | $222,500 | 2099-05-28 | 2100-05-01 | 2099-05-15 | 41 | 15 | — | 44,800 |
+| PRJ-D06 | Saginaw Community Wellness Center QALICB, LLC | Saginaw Community Wellness Center | 1225 Commerce Street | Saginaw | MI |  | 26145000200 | Y | Severely Distressed | Y | N | N | Community Facility | Real Estate | $7,450,000 | $5,200,000 | $5,200,000 | $3,516,760 | $2,028,000 | $1,683,240 | $130,000 | 2099-06-28 | 2100-06-01 | 2099-06-15 | 33 | 11 | 24 | 28,300 |
+| PRJ-D07 | Scranton Solar Manufacturing Line QALICB, LLC | Scranton Solar Manufacturing Line | 1250 Commerce Street | Scranton | PA |  | 42069100900 | Y | Deep Distress | N | Y | Y | Clean Energy | Operating Business | $15,900,000 | $11,200,000 | $11,200,000 | $7,574,560 | $4,368,000 | $3,625,440 | $280,000 | 2099-07-28 | 2100-07-01 | 2099-07-15 | 78 | 29 | — | 96,400 |
+| PRJ-D08 | Rochester Main Street Small Business Fund QALICB, LLC | Rochester Main Street Small Business Fund | 1275 Commerce Street | Rochester | NY |  | 36055004400 | Y | Low Income Community | N | N | N | Small Business | Operating Business | $5,800,000 | $4,100,000 | $4,100,000 | $2,772,830 | $1,599,000 | $1,327,170 | $102,500 | 2099-08-28 | 2100-08-01 | 2099-08-15 | 62 | 24 | — | 12,700 |
 | TOTALS |  | TOTAL (8 projects) |  |  |  |  |  |  |  |  |  |  |  |  | $125,450,000 | $88,500,000 | $88,500,000 | $59,852,550 | $34,515,000 | $28,647,450 | $2,212,500 |  |  |  | 532 | 198 | 142 | 662,900 |
 
 
@@ -388,7 +388,7 @@ Outcomes across all 3 prior awards:
 
 ## Methodology Note
 
-Generated by **nmtc-application-builder v1.2.1** on <TODAY>.
+Generated by **nmtc-application-builder v1.2.1** on <RUNDATE>.
 
 - Eligibility data: CDFI Fund NMTC Eligibility Table, 2016–2020 ACS 5-Year Estimates
 - DEAL ECONOMICS: computed using the nmtc-calc library, standard leveraged NMTC structure. Statutory credit rate 39% of QEI over 7 years (IRC §45D(a)(2): 5% of the QEI on each of the first three credit allowance dates and 6% on each of the remaining four). Assumed credit price $0.83/credit and CDE fee 2.5% of QEI are market assumptions of this model, not CDFI Fund parameters. The leverage loan is the residual of QEI less investor equity, so leverage plus equity equals QEI in every surface of this document.
