@@ -144,9 +144,19 @@ QUOTE:IRC_45D | word | 26 U.S.C. 45D is the New Markets Tax Credit section of th
 # --- Eligibility data vintage ----------------------------------------------
 distress_table._ACS_YEAR | markdown,word,excel,pdf | The CDFI Fund NMTC LIC Eligibility workbook this package downloads and loads is NMTC_LIC_Eligibility_2016_2020.xlsb; its data sheet is named "2016-2020" and its NOTES sheet says "based on 2016-2020 ACS data" | 2016–2020 ACS 5-Year Estimates
 
-# --- Distress-tier definitions, verbatim from the file this tool loads ------
-QUOTE:SEVERE_DISTRESS_DEFINITION | word,pdf | CDFI Fund NMTC LIC Eligibility workbook (NMTC_LIC_Eligibility_2016_2020.xlsb), NOTES sheet, "Column O. Severe Distress", value quoted verbatim | Severe distress = LIC AND (Poverty>30%; MFI<=60%; Unemployment>=1.5)
-QUOTE:DEEP_DISTRESS_DEFINITION | word,pdf | CDFI Fund NMTC LIC Eligibility workbook (NMTC_LIC_Eligibility_2016_2020.xlsb), NOTES sheet, "Column P. Deep Distress", value quoted verbatim | Deep distress = LIC AND (Poverty>40%; MFI<=40%; Unemployment>=2.5)
+# --- Distress-tier definitions, quoted from the file this tool loads --------
+# NOT BYTE-IDENTICAL, AND THESE ROWS NO LONGER CLAIM TO BE. Read off the
+# .xlsb, the NOTES sheet holds
+#     Severe distress=LIC AND (Poverty>30%; MFI<=60%;Unemployment>=1.5)
+# and the document renders a space either side of the '=' and after the second
+# semicolon — three insertions per line, six across both. Every threshold,
+# operator and separator is the workbook's; only the spacing is not. The source
+# column below said 'value quoted verbatim' and the rendered sentence said
+# 'verbatim from the CDFI Fund … workbook' until FIX-4. The pinned strings in
+# the last column are UNCHANGED by that fix — what changed is the claim made
+# about them.
+QUOTE:SEVERE_DISTRESS_DEFINITION | word,pdf | CDFI Fund NMTC LIC Eligibility workbook (NMTC_LIC_Eligibility_2016_2020.xlsb), NOTES sheet, "Column O. Severe Distress", value quoted with spacing normalised for legibility (the workbook has no space around the "=" or after the second ";"; every threshold and operator is unchanged) | Severe distress = LIC AND (Poverty>30%; MFI<=60%; Unemployment>=1.5)
+QUOTE:DEEP_DISTRESS_DEFINITION | word,pdf | CDFI Fund NMTC LIC Eligibility workbook (NMTC_LIC_Eligibility_2016_2020.xlsb), NOTES sheet, "Column P. Deep Distress", value quoted with spacing normalised for legibility (the workbook has no space around the "=" or after the second ";"; every threshold and operator is unchanged) | Deep distress = LIC AND (Poverty>40%; MFI<=40%; Unemployment>=2.5)
 _methodology.DISTRESS_COLUMN_LETTERS | word,pdf | CDFI Fund NMTC LIC Eligibility workbook, NOTES sheet rows headed "Column O. Severe Distress" and "Column P. Deep Distress". The workbook's own letters; 1.2.0 cited "columns 14 and 15", which are the 0-based positional indices of those two columns and are not what the Fund calls them | columns O and P
 
 # --- Market assumptions of this model ---------------------------------------

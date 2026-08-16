@@ -65,15 +65,25 @@ def distress_definitions() -> str:
     Not interpolated from a constant, because the package HAS no constant for
     them: the thresholds live in the CDFI Fund's workbook and reach the code as
     a classification (``distress_level``), never as numbers. The string below is
-    a quotation, and tests/pinned_constants.txt pins it verbatim against the
-    workbook's own cells.
+    a quotation, and tests/pinned_constants.txt pins it against the workbook's
+    own cells.
+
+    NOT BYTE-IDENTICAL, AND IT NO LONGER SAYS IT IS. The workbook's NOTES sheet
+    holds ``Severe distress=LIC AND (Poverty>30%; MFI<=60%;Unemployment>=1.5)``;
+    this renders it with a space either side of the ``=`` and after the second
+    semicolon — three insertions per line, six across both. Every threshold,
+    operator and separator is the workbook's. The word in the rendered sentence
+    was "verbatim" until FIX-4, which is a fidelity claim the text does not meet,
+    inside the one paragraph whose whole job is fidelity.
     """
     return (
-        "DISTRESS LEVELS (verbatim from the CDFI Fund NMTC LIC Eligibility "
+        "DISTRESS LEVELS (quoted from the CDFI Fund NMTC LIC Eligibility "
         f"workbook, {ACS_VINTAGE.replace(' 5-Year Estimates', '')}, "
         f"{DISTRESS_COLUMN_LETTERS} — the file this tool loads to classify "
-        "every tract): Severe distress = LIC AND (Poverty>30%; MFI<=60%; "
-        "Unemployment>=1.5). Deep distress = LIC AND (Poverty>40%; MFI<=40%; "
+        "every tract; the criteria are the workbook's own, with spacing "
+        "normalised for legibility): Severe distress = LIC AND (Poverty>30%; "
+        "MFI<=60%; Unemployment>=1.5). Deep distress = LIC AND (Poverty>40%; "
+        "MFI<=40%; "
         "Unemployment>=2.5). The semicolons are ORs; both tiers additionally "
         "require the tract to be a Low-Income Community."
     )
