@@ -16,6 +16,78 @@ plus six more found by running the published wheel from a clean venv after the
 tag landed, plus what recomputing every derived figure in Appendix A and
 Section D from the CDE's own inputs turned up.
 
+> ### Two things that had survived three passes unestablished, now established
+>
+> **The attribution allowlist's 25-line diff has been audited.** It had never
+> been. Every claim in it checks out against primary sources rather than
+> against the previous round's note:
+>
+> - The two `CITED` rows were rewritten from "column headers 14 and 15" to
+>   "columns O and P". BOTH descriptions are accurate — 14 and 15 are the
+>   0-based positional indices the loader binds, O and P are the spreadsheet
+>   letters — but a reader who opened the workbook at "column 14" would land on
+>   N. **Verified by opening `NMTC_LIC_Eligibility_2016_2020.xlsb` directly**:
+>   the NOTES sheet reads `Column O. Severe Distress` and `Column P. Deep
+>   Distress`, and the criterion strings the rows quote are byte-identical to
+>   the workbook's own. The amendment is correct and it is an improvement.
+> - The corresponding docs page (`docs/reference/data-sources.md`) carries the
+>   same correction, as a table keyed by letter. `gh-pages` still needs a
+>   manual `mkdocs gh-deploy`.
+> - The two new `HOUSE` rows and the new `PLACEHO` row were each checked
+>   against the rendered document: the credit-price/fee-rate disclaimer renders
+>   and does disclaim, the statutory 39% beside it carries its IRC §45D(a)(2)
+>   citation inline, and the Section E clause renders inside a
+>   `[CDE TO COMPLETE]` block.
+>
+> **A standing portfolio claim was backwards, and is corrected here.**
+> `nmtc-mapper` **does** pin the CDFI Fund workbook's shape:
+> `ELIGIBILITY_XLSB_COLUMN_COUNT = 16`, nine exact header strings at indices
+> 0, 1, 2, 3, 5, 7, 13, 14 and 15, and `_validate_xlsb_header` raising
+> `EligibilitySchemaError` with no bypass. **Verified by executing the guard**:
+> it fires on a wrong header string and on a wrong column count.
+>
+> ### Found and left alone (FIX-2), with the evidence
+>
+> - **The shipped `pipeline_sample_strong.csv` fails its own eligibility
+>   check.** Parked by the re-audit as a claim; now established by running the
+>   real enrichment against the live CDFI Fund table (85,395 tracts):
+>   `check_eligibility(...).passed is False`, on **PRJ-S012** (tract
+>   26163515700, Detroit), **PRJ-S013** (18097353300, Indianapolis) and
+>   **PRJ-S015** (29510118600, St. Louis) — three of twenty projects in tracts
+>   that do not qualify as Low-Income Communities. Note it PASSES on the
+>   unenriched path, with warnings, because eligibility is unknown there rather
+>   than negative. Not fixed here: changing a shipped sample's tracts is an
+>   input change, and choosing replacements is Jay's call.
+> - **`styles.SECTION_META` is dead data and has already drifted.** Read by
+>   nothing repo-wide. Its `max_words` values duplicate each section class's
+>   `word_limit`, and the unit is wrong — the application enforces CHARACTERS.
+>   Its `"E"` title now disagrees with `SectionEPriorAwards.title`. Filed
+>   `KNOWN` in the pin registry rather than deleted: removing a public name is
+>   not a patch-release change.
+> - Other duplicated-list instances found by the G-5 sweep and NOT fixed, all
+>   outside this pass's scope: the win-probability sub-score keys and nine
+>   maxima retyped as magic integers in `streamlit_app/pages/
+>   2_Win_Alignment_Scorer.py` (fail-silent through `.get(k, 0)`);
+>   `upload_handler._CDE_FIELD_MAP` against the shipped `.xlsx`, whose parser
+>   `continue`s past a drifted label so a scoring attribute silently never
+>   arrives; `_BOOL_FIELDS` and the int/float key subsets hand-derived from
+>   that map; `streamlit_app/utils._IDENTITY_KEYS` as a denylist, which
+>   defaults a new key to "scoring attribute"; `excel_builder`'s retyped
+>   currency-column list and distress labels; `markdown_builder`'s table of
+>   contents against the headings it emits (already divergent, and its anchors
+>   do not match the generated slugs); and `utils.TIER_COLORS`, whose keys
+>   match no tier the model has produced since the tier vocabulary changed.
+>
+> **This package pins nothing about that file.** Its only reference to the
+> workbook's structure is a comment. So the flagship is protected transitively
+> — a re-published file with a changed layout fails inside the dependency
+> before any verdict reaches an application — but the criterion TEXT this
+> package quotes into the filing (`renderers/_methodology`) is a hand-typed
+> copy of the workbook's NOTES sheet, pinned as a `QUOTE:` row against the
+> rendered document and against nothing upstream. **The dependency guards the
+> file; the flagship quotes it.** Recorded that way rather than the other way
+> round, which is how the portfolio has described it for three rounds.
+
 ### The constant gate (new)
 
 **Every published constant is now pinned to the string it prints.**
