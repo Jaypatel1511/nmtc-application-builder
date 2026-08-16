@@ -261,7 +261,7 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 157 constants are swept
+colour". The rendered-string sweep demands **19**, and 158 constants are swept
 where 49 were.
 
 > **Corrected in FIX-2 (G-1).** This paragraph shipped saying **133**, and three

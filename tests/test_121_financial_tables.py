@@ -1328,3 +1328,142 @@ def test_the_track_record_year_renders_unseparated_on_every_surface():
             "displays #,##0 as '2,019'."
         )
         assert "#" not in cell.number_format
+
+
+# ---------------------------------------------------------------------------
+# FIX-2 G-5 sweep: the THIRD instance of the duplicated-list class
+# ---------------------------------------------------------------------------
+
+def test_the_required_project_field_list_is_not_duplicated():
+    """Three independent statements of the same twelve names.
+
+    data/schema.REQUIRED_PROJECT_FIELDS (which validation/completeness_check
+    imports), the ``required_cols`` set inside Pipeline.from_csv, and
+    PipelineProject's own non-default dataclass fields. They agreed by hand.
+
+    The mutation profile is identical to the required-CDE-fields triplication:
+    drop a name from the schema list and completeness_check stops flagging it
+    while from_csv still demands it and the suite stays green; add one and a
+    CSV loads that later fails at render time. Only the dataclass copy fails
+    loudly.
+
+    from_csv now derives. The dataclass cannot derive — it IS the type — so it
+    is asserted against the same list here.
+    """
+    import dataclasses
+
+    from nmtcapp.data.schema import REQUIRED_PROJECT_FIELDS
+
+    assert REQUIRED_PROJECT_FIELDS, "the authoritative list is empty"
+
+    required_dataclass_fields = {
+        f.name for f in dataclasses.fields(PipelineProject)
+        if f.default is dataclasses.MISSING
+        and f.default_factory is dataclasses.MISSING
+    }
+    assert required_dataclass_fields == set(REQUIRED_PROJECT_FIELDS), (
+        "PipelineProject's mandatory fields and REQUIRED_PROJECT_FIELDS have "
+        "diverged.\n"
+        f"  dataclass only: {sorted(required_dataclass_fields - set(REQUIRED_PROJECT_FIELDS))}\n"
+        f"  schema only:    {sorted(set(REQUIRED_PROJECT_FIELDS) - required_dataclass_fields)}"
+    )
+
+    # from_csv must DERIVE, not merely agree. An equal copy is what let the
+    # CDE-field list drop 'governance' with 955 tests green.
+    import inspect
+    source = inspect.getsource(Pipeline.from_csv)
+    assert "REQUIRED_PROJECT_FIELDS" in source, (
+        "Pipeline.from_csv no longer reads REQUIRED_PROJECT_FIELDS. It held "
+        "its own hand-typed copy of the same twelve names."
+    )
+    assert '"project_id", "project_name", "qalicb_name",' not in source, (
+        "the hand-typed required-column set is back in from_csv"
+    )
+
+
+def test_from_csv_demands_exactly_the_schema_required_columns(tmp_path):
+    """The derivation has to bite: drop each column and require a refusal."""
+    from nmtcapp.data.schema import REQUIRED_PROJECT_FIELDS
+
+    values = {
+        "project_id": "P-1", "project_name": "P One",
+        "qalicb_name": "P One QALICB LLC", "address": "1 Derived Way",
+        "city": "Akron", "state": "OH", "sector": "healthcare",
+        "project_type": "real_estate", "total_project_cost": "8000000",
+        "qei_request": "5000000", "qlici_amount": "5000000",
+        "expected_jobs_created": "20",
+    }
+    assert set(values) == set(REQUIRED_PROJECT_FIELDS), (
+        "this fixture no longer matches the authoritative list"
+    )
+
+    for dropped in REQUIRED_PROJECT_FIELDS:
+        cols = [c for c in values if c != dropped]
+        path = tmp_path / f"drop_{dropped}.csv"
+        path.write_text(
+            ",".join(cols) + "\n" + ",".join(values[c] for c in cols) + "\n",
+            encoding="utf-8",
+        )
+        with pytest.raises(ValueError) as exc:
+            Pipeline.from_csv(str(path))
+        assert dropped in str(exc.value), (
+            f"dropping column {dropped!r} was not reported by name: {exc.value}"
+        )
+
+
+def test_the_sector_priority_tiers_are_derived_not_retyped():
+    """Fourth statement of one classification, and one had already drifted.
+
+    schema.TARGET_SECTORS carries a "priority" per sector. Three other places
+    restated the tiers by hand:
+
+        intelligence/sector_analysis._HIGH_PRIORITY_SECTORS   agreed
+        visualization/maps._HIGH_PRIORITY / _MED_PRIORITY     DID NOT
+        streamlit_app/utils.VALID_SECTORS                     retyped under
+            the comment "(from schema)", which it was not
+
+    maps' _MED_PRIORITY held {small_business, mixed_use} and omitted
+    community_facility and clean_energy, which schema classes medium. The
+    sector-mix chart gave those two bars the low-priority grey under a legend
+    reading "Medium Priority (Small Business/Mixed Use)", while the Streamlit
+    page rendering the same pipeline printed "Priority: Medium" for them in the
+    table beside the chart. One screen, two classifications.
+    """
+    import inspect
+
+    from nmtcapp.data.schema import (
+        SECTORS_BY_PRIORITY, TARGET_SECTORS, VALID_SECTORS,
+    )
+    from nmtcapp.intelligence import sector_analysis
+    from nmtcapp.visualization import maps
+
+    assert set(SECTORS_BY_PRIORITY) == {"high", "medium", "low"}
+    covered = set().union(*SECTORS_BY_PRIORITY.values())
+    assert covered == set(TARGET_SECTORS), (
+        f"a sector belongs to no tier: {sorted(set(TARGET_SECTORS) - covered)}"
+    )
+
+    assert sector_analysis._HIGH_PRIORITY_SECTORS is SECTORS_BY_PRIORITY["high"], (
+        "sector_analysis holds its own copy of the high-priority tier again"
+    )
+
+    source = inspect.getsource(maps.plot_sector_distribution)
+    assert "SECTORS_BY_PRIORITY" in source, (
+        "the sector-mix chart no longer reads the tiers from schema"
+    )
+    assert '{"small_business", "mixed_use"}' not in source, (
+        "the drifted hand-typed medium tier is back in visualization/maps"
+    )
+    # The legend must be built from the tiers too, or it goes on naming the
+    # old pair after the sets are corrected. Matched on the Patch call rather
+    # than the phrase: the comment recording the defect quotes it on purpose.
+    assert 'label="Medium Priority' not in source, (
+        "the legend still hard-names its sectors instead of deriving them"
+    )
+    assert "_tier_label" in source, "the legend is not built from the tiers"
+
+    from streamlit_app.utils import VALID_SECTORS as STREAMLIT_SECTORS
+    assert STREAMLIT_SECTORS is VALID_SECTORS, (
+        "streamlit_app/utils retyped the sector vocabulary again; a sector "
+        "added to schema would be rejected by the uploader"
+    )

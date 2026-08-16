@@ -82,6 +82,28 @@ TARGET_SECTORS = {
     "other":              {"description": "Other NMTC-eligible uses", "priority": "low"},
 }
 
+# THE PRIORITY TIERS, DERIVED (FIX-2 G-5 sweep, third instance). Four places
+# stated them independently and one had already drifted:
+#
+#   intelligence/sector_analysis._HIGH_PRIORITY_SECTORS  hand-typed, agreed
+#   visualization/maps._HIGH_PRIORITY / _MED_PRIORITY    hand-typed, WRONG —
+#       _MED_PRIORITY held {small_business, mixed_use} and omitted
+#       community_facility and clean_energy, which this dict classes medium.
+#       The sector-mix chart therefore coloured those two bars with the
+#       low-priority grey under a legend reading "Medium Priority (Small
+#       Business/Mixed Use)", while the Streamlit page rendering the same
+#       pipeline printed "Priority: Medium" for them in the table beside it —
+#       one screen, two classifications.
+#   streamlit_app/utils.VALID_SECTORS                    retyped under the
+#       comment "(from schema)". It was not from schema.
+#
+# Same shape as the required-CDE-fields triplication, and the same fix: one
+# statement, everything else derived.
+SECTORS_BY_PRIORITY = {
+    tier: frozenset(k for k, v in TARGET_SECTORS.items() if v["priority"] == tier)
+    for tier in ("high", "medium", "low")
+}
+
 VALID_SECTORS: List[str] = list(TARGET_SECTORS.keys())
 VALID_PROJECT_TYPES: List[str] = ["real_estate", "operating_business", "mixed_use"]
 

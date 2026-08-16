@@ -912,6 +912,37 @@ def _sweep_census() -> dict:
     }
 
 
+def _resolves(dotted: str) -> bool:
+    """Can this dotted name be imported and walked to a real object?
+
+    ``module.NAME`` for a module-level constant, ``module.Class.attr`` for a
+    class attribute. Used by test_every_pinned_constant_name_resolves, which
+    must not reduce "exists" to "was collected by the constant sweep" —
+    the sweep only walks UPPERCASE module-level assignments, and a rendered
+    heading is allowed to come from somewhere else.
+    """
+    import importlib
+
+    parts = dotted.split(".")
+    root = _repo_root()
+    for dirpath, _dirs, files in os.walk(os.path.join(root, PACKAGE_ROOT)):
+        if f"{parts[0]}.py" not in files:
+            continue
+        rel = os.path.relpath(os.path.join(dirpath, parts[0]), root)
+        modname = rel.replace(os.sep, ".")
+        try:
+            obj = importlib.import_module(modname)
+        except Exception:                                  # pragma: no cover
+            continue
+        for attr in parts[1:]:
+            obj = getattr(obj, attr, None)
+            if obj is None:
+                break
+        else:
+            return True
+    return False
+
+
 def _consumer_roots() -> list:
     """The trees a constant can be consumed from. Raises if one is missing.
 
@@ -1279,11 +1310,28 @@ def test_every_pinned_constant_name_resolves():
     has to say so. The QUOTE: prefix is that statement.
     """
     known = set(_package_constants())
-    unknown = sorted({
-        p.constant for p in PINS
-        if not p.constant.startswith("QUOTE:")
-        and p.constant.split("[", 1)[0] not in known
-    })
+    unknown = []
+    for pin in PINS:
+        name = pin.constant
+        if name.startswith("QUOTE:"):
+            continue
+        base = name.split("[", 1)[0]
+        if base in known:
+            continue
+        # A PRODUCER NEED NOT BE A MODULE-LEVEL CONSTANT (FIX-2 G-5 sweep).
+        # _package_constants() walks module-level UPPERCASE assignments, which
+        # is the right scope for the SWEEP — but it is the wrong test for
+        # "does this name exist". The five section headings a reviewer
+        # navigates by come from a class attribute
+        # (SectionEPriorAwards.title), not from a constant; they were pinned
+        # against styles.SECTION_META, a dict READ BY NOTHING whose "E" entry
+        # had already drifted from the class, and the pins passed anyway. So
+        # this resolves the dotted name for real instead of asking whether the
+        # sweep happens to have collected it.
+        if _resolves(base):
+            continue
+        unknown.append(name)
+    unknown = sorted(set(unknown))
     assert not unknown, (
         "these pin rows name a constant that does not exist anywhere under "
         f"{PACKAGE_ROOT}/, so no sweep can ever reach them:\n  "

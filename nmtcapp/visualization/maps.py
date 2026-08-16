@@ -22,6 +22,8 @@ import numpy as np
 
 from typing import TYPE_CHECKING
 
+from nmtcapp.data.schema import SECTORS_BY_PRIORITY
+
 if TYPE_CHECKING:
     from nmtcapp.core.application import Application
 
@@ -354,8 +356,14 @@ def plot_sector_distribution(application: "Application", output_path: str) -> st
     sector_breakdown = sector_analysis.get("sector_breakdown", {})
     total_qei = sector_analysis.get("total_qei", 1.0) or 1.0
 
-    _HIGH_PRIORITY = {"healthcare", "affordable_housing", "education"}
-    _MED_PRIORITY = {"small_business", "mixed_use"}
+    # READ THE TIERS (FIX-2 G-5 sweep). _MED_PRIORITY was hand-typed as
+    # {small_business, mixed_use} and had already drifted from schema, which
+    # classes community_facility and clean_energy medium too. Those two bars
+    # took the LOW-priority grey under a legend announcing "Medium Priority
+    # (Small Business/Mixed Use)", while the Streamlit page rendering the same
+    # pipeline printed "Priority: Medium" for them in the table alongside.
+    _HIGH_PRIORITY = SECTORS_BY_PRIORITY["high"]
+    _MED_PRIORITY = SECTORS_BY_PRIORITY["medium"]
 
     # Sort sectors by QEI descending
     sorted_sectors = sorted(
@@ -439,10 +447,19 @@ def plot_sector_distribution(application: "Application", output_path: str) -> st
         bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="#CCCCCC", alpha=0.85),
     )
 
-    # Legend
+    # THE LEGEND IS BUILT FROM THE SAME TIERS THE BARS ARE (FIX-2 G-5 sweep).
+    # It was a hand-written parenthetical naming two of the four medium
+    # sectors, so it stayed wrong in exactly the way _MED_PRIORITY was — and
+    # would have gone on naming the old pair after the sets were corrected.
+    def _tier_label(tier: str) -> str:
+        names = ", ".join(
+            s.replace("_", " ").title() for s in sorted(SECTORS_BY_PRIORITY[tier])
+        )
+        return f"{tier.title()} Priority ({names})"
+
     legend_items = [
-        mpatches.Patch(color=_PRIMARY, label="High Priority (Healthcare/Housing/Education)"),
-        mpatches.Patch(color=_SECONDARY, label="Medium Priority (Small Business/Mixed Use)"),
+        mpatches.Patch(color=_PRIMARY, label=_tier_label("high")),
+        mpatches.Patch(color=_SECONDARY, label=_tier_label("medium")),
         mpatches.Patch(facecolor=_ROW_EVEN, edgecolor=_SECONDARY, label="Other Sectors"),
     ]
     ax.legend(

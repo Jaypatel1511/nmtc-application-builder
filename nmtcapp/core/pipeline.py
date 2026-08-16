@@ -8,7 +8,9 @@ from typing import Iterator, List, Optional
 
 import pandas as pd
 
-from nmtcapp.data.schema import VALID_PROJECT_TYPES, VALID_SECTORS
+from nmtcapp.data.schema import (
+    REQUIRED_PROJECT_FIELDS, VALID_PROJECT_TYPES, VALID_SECTORS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -252,13 +254,21 @@ class Pipeline:
 
             pipeline = Pipeline.from_csv("pipeline.csv")
         """
-        required_cols = {
-            "project_id", "project_name", "qalicb_name",
-            "address", "city", "state",
-            "sector", "project_type",
-            "total_project_cost", "qei_request", "qlici_amount",
-            "expected_jobs_created",
-        }
+        # READ THE LIST, DO NOT RETYPE IT (FIX-2 G-5 sweep, third instance).
+        #
+        # These twelve names were stated in three independent places —
+        # data/schema.REQUIRED_PROJECT_FIELDS (which validation/
+        # completeness_check imports), this set, and PipelineProject's own
+        # non-default dataclass fields. They agreed, by hand and by luck, and
+        # the mutation profile is identical to the required-CDE-fields
+        # triplication fixed in this same pass: dropping a name from the
+        # SCHEMA list stops completeness_check flagging it while from_csv
+        # still demands it and every test passes, and adding one to the schema
+        # lets a CSV load that later fails at render time.
+        #
+        # Now derived. The dataclass is checked against the same list by
+        # tests/test_121_financial_tables — three statements, one authority.
+        required_cols = set(REQUIRED_PROJECT_FIELDS)
         # Skip LEADING '#' lines before the header row. The shipped sample CSVs
         # carry their fictional-data notice at the top, where a human reads it
         # first; pandas would otherwise take that notice as the header and
