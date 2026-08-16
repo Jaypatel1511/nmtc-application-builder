@@ -86,10 +86,18 @@ def check_eligibility(pipeline: "Pipeline") -> ValidationResult:
         min_thresh = TARGET_DISTRESS_THRESHOLDS["min_deep_distress"]
         if deep_pct < min_thresh:
             warnings.append(
-                f"Deep/severe distress concentration ({deep_pct:.0%}) is below "
-                f"this tool's internal screening band of {min_thresh:.0%} "
-                "(a house heuristic, not a CDFI Fund threshold — the published "
-                "CY 2024-2025 severe-distress bar for full credit is 85%)"
+                # FIX-3: the published bar named here is a share of QLICIs and
+                # deep_pct is a share of QEI, so the two are not comparable and
+                # the warning used to invite exactly that comparison — it named
+                # the 85% with no denominator, two clauses after printing a QEI
+                # share. The house-heuristic disclosure was already right; the
+                # Fund figure beside it was the half that was missing its basis.
+                f"Deep/severe distress concentration ({deep_pct:.0%} of QEI) is "
+                f"below this tool's internal screening band of {min_thresh:.0%} "
+                "(a house heuristic, not a CDFI Fund threshold). The published "
+                "CY 2024-2025 severe-distress bar for full credit is 85% of "
+                "QLICIs, which this tool does not compute — do not read the "
+                "figure above as an answer to it"
             )
 
     passed = len(issues) == 0

@@ -443,7 +443,10 @@ with tabs[1]:
             "CDFI Fund publishes no distribution of applicant distress "
             "concentration, so no such percentile exists. The published CY "
             "2024-2025 bar for full Community Outcomes credit is 85% of QLICIs "
-            "in areas of higher distress (Allocation Application, Question 25(a))."
+            "in areas of higher distress (Allocation Application, Question 25(a)) "
+            "— **a share of QLICIs, while the bars above are shares of QEI**. "
+            "This tool computes no QLICI-denominated share, so nothing on this "
+            "chart answers that bar or may be compared to it."
         )
 
 

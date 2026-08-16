@@ -43,9 +43,11 @@ logger = logging.getLogger(__name__)
 # flag means.
 #
 # Hence the key names below. The exclusive bucket says "excluding deep" in its
-# own name, and the inclusive share — the one that answers the Fund's 85%
-# higher-distress bar and the one Appendix B's "Severely Distressed Flag"
-# column reports per project — is ``pct_deep_or_severe``.
+# own name, and the inclusive share — this tool's proxy for the Fund's 85%
+# higher-distress commitment, and the one Appendix B's "Severely Distressed
+# Flag" column reports per project — is ``pct_deep_or_severe``. Proxy, not
+# answer: the Fund's commitment is a share of QLICIs and every share in this
+# module is a share of QEI. See DISTRESS_SHARE_SEMANTICS.
 #
 # 1.2.1 shipped ``pct_severe`` for the exclusive bucket while rendering it
 # under the label "QEI in Severely Distressed Tracts". On a pipeline whose
@@ -57,21 +59,40 @@ DEEP_IS_SUBSET_OF_SEVERE = True
 #: What each rendered label must be computed from. Consulted by the pin in
 #: tests/test_121_financial_tables.py so the relation cannot be re-broken
 #: silently by a renaming.
+#:
+#: EVERY ONE OF THESE IS A SHARE OF QEI, and none of them answers a CDFI Fund
+#: commitment. The Fund's 85% and 20% bars are shares of QLICIs (CY 2024-2025
+#: Review Process, Question 25); ``qlici_amount`` reaches no percentage in this
+#: package. These strings said "the basis of the Fund's 20% bar" until FIX-3,
+#: which is the sentence Section B's labels were written from.
 DISTRESS_SHARE_SEMANTICS = {
-    "pct_deep": "deep distress only — the basis of the Fund's 20% bar",
+    "pct_deep": (
+        "deep distress only, as a share of QEI — this tool's proxy for the "
+        "Fund's 20%-of-QLICIs commitment, not that commitment's own basis"
+    ),
     "pct_severe_excluding_deep": (
-        "severely distressed but NOT also deep — an internal residual, not a "
-        "figure any CDFI Fund question asks for"
+        "severely distressed but NOT also deep, as a share of QEI — an "
+        "internal residual, not a figure any CDFI Fund question asks for"
     ),
     "pct_deep_or_severe": (
-        "severely distressed, deep distress included — the basis of the Fund's "
-        "85% bar and the share Appendix B's per-project flag reports"
+        "severely distressed, deep distress included, as a share of QEI — "
+        "this tool's proxy for the Fund's 85%-of-QLICIs commitment, and the "
+        "share Appendix B's per-project flag reports"
     ),
 }
 
 
 def analyze_distress_concentration(pipeline: "Pipeline") -> dict:
     """Compute distress level breakdown for a pipeline.
+
+    EVERY SHARE RETURNED HERE HAS ``total_qei`` AS ITS DENOMINATOR — the sum of
+    ``qei_request`` over the whole pipeline. ``qlici_amount`` is never read by
+    this module. That matters because several of the CDFI Fund's own
+    commitments are stated as shares of QLICIs rather than of QEI (CY 2024-2025
+    Review Process, Question 25: "at least 85% of its QLICIs ... at least 20%
+    of its QLICIs"), so these figures are PROXIES for those commitments and no
+    caller may render one as an answer to a bar. Changing the denominator moves
+    every scored figure and is 1.2.2 work behind a written methodology.
 
     Returns a dict with:
     - ``pct_deep`` – fraction of QEI in deep-distress tracts
@@ -81,8 +102,10 @@ def analyze_distress_concentration(pipeline: "Pipeline") -> dict:
       workbook (see :data:`DEEP_IS_SUBSET_OF_SEVERE`), so this is a residual
       and NOT "the severe share".
     - ``pct_deep_or_severe`` – THE severe share, deep included. This is what
-      the Fund's severe-distress flag means and what the 85% higher-distress
-      commitment is measured against.
+      the Fund's severe-distress flag means. It is NOT what the 85%
+      higher-distress commitment is measured against: that is a share of
+      QLICIs, over severe distress OR multiple indicia of distress, and this
+      package computes no multi-indicia measure either.
     - ``pct_lic`` – fraction of QEI in standard LIC tracts
     - ``pct_non_lic`` – fraction of QEI in ineligible tracts
     - ``pct_native_area`` – fraction of QEI in NMTC Native Areas

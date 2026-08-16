@@ -54,10 +54,15 @@ def unverified_banner(pr) -> str:
 
     THE ARITHMETIC IS THE HALF THAT STAYS. Two reasons, and the second decides:
 
-      1. It matches the basis the Fund scores on. CY 2024-2025 Allocation
-         Application, Question 25(a): "at least 85% of its QLICIs (in terms of
-         aggregate dollar amounts)". Aggregate over all QLICIs — not over the
-         subset whose geocoding happened to succeed.
+      1. It aggregates over the WHOLE pipeline, which is the shape the Fund's
+         own commitment takes. CY 2024-2025 Allocation Application, Question
+         25(a): "at least 85% of its QLICIs (in terms of aggregate dollar
+         amounts)" — aggregate over all of them, not over the subset whose
+         geocoding happened to succeed. THE SHAPE, NOT THE BASIS: the Fund's
+         denominator is QLICIs and this package's is QEI, and this line used to
+         say the two "match", which is the claim FIX-3 removed from the
+         rendered document. It is not the reason the denominator is what it is
+         — reason 2 is.
       2. A verified-only denominator OVERSTATES, in the direction that flatters
          the applicant. One verified deep-distress project out of twenty would
          file "100% of QEI in deep/severe tracts". Understating is the only

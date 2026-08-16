@@ -102,11 +102,25 @@ st.markdown(
 
 | Sub-criterion | Max | Key threshold |
 |---|---|---|
-| **Higher Distress Targeting** | 15 | ≥ {SEVERE_DISTRESS_MIN_PCT:.0%} of QEI in severe distress or multi-indicia distress |
-| **Deep Distress Commitment** | 10 | ≥ {DEEP_DISTRESS_MIN_PCT:.0%} of QEI in Deep Distress areas |
+| **Higher Distress Targeting** | 15 | ≥ {SEVERE_DISTRESS_MIN_PCT:.0%} of **QEI** in severely distressed tracts — a proxy, see below |
+| **Deep Distress Commitment** | 10 | ≥ {DEEP_DISTRESS_MIN_PCT:.0%} of **QEI** in Deep Distress areas — a proxy, see below |
 | **Special Targeting** | 5 | QEI in U.S. Territories, High Migration Rural, NMTC Native Areas, Persistent Poverty Counties |
 | **Community Outcomes Quality** | 10 | Quantified outcomes (jobs, units, sq ft) with third-party methodology |
 | **Community Accountability** | 10 | LIC board representation + community engagement track record |
+
+**Basis note — the Fund's two distress commitments are measured on QLICIs, these
+sub-scores are measured on QEI.** The CY 2024-2025 Review Process (Targeting
+Areas of Higher Distress, Question 25) commits an applicant to *"at least
+{SEVERE_DISTRESS_MIN_PCT:.0%} of its QLICIs in specified areas of severe distress
+and/or areas characterized by multiple indicia of distress"* and *"at least
+{DEEP_DISTRESS_MIN_PCT:.0%} of its QLICIs to 'Deep Distress' areas"* — shares of
+**QLICIs**. Every distress share this tool computes is a share of **QEI**;
+`qlici_amount` is read only to print it in Appendix A and to check it does not
+exceed its project's QEI, and feeds no percentage, no score and no bar. The two
+sub-scores above are QEI-based *proxies*, and no figure this tool renders answers
+either commitment. The {SEVERE_DISTRESS_MIN_PCT:.0%} carries a second mismatch:
+it covers severe distress **or multiple indicia** of distress, and this package
+computes no multi-indicia measure at all.
 """
 )
 
@@ -164,7 +178,7 @@ This tool reports these as informational flags (`phase2_flags`) but does not sco
 |---|---|
 | **Management Capacity** | Staffing, systems, organizational capability to deploy capital |
 | **Capitalization Strategy** | QEI-raising track record; investor relationships; feasibility |
-| **Non-Metro Commitment** | ≥ 20% non-metro required; ≥ 50% for Rural CDE designation |
+| **Non-Metro Commitment** | ≥ 20% non-metro required; ≥ 50% for Rural CDE designation. **Basis not established by this tool** — the Fund states its distress commitments on QLICIs and this tool computes only QEI shares; whether the non-metro commitment is QLICI- or QEI-denominated has not been checked against the Application's own question text. |
 | **Fee / Compensation Structure** | Fee levels favorable to QALICBs |
 | **Prior Reporting Compliance** | Late or inaccurate prior-round reports → potential point deductions |
 """

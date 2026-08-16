@@ -53,12 +53,29 @@ Evaluates the depth of community impact and accountability.
 
 | Sub-criterion | Max points | Key threshold |
 |---|---|---|
-| Higher Distress Targeting | 15 | 85%+ of QEI in severe distress or multi-indicia distress areas |
-| Deep Distress Commitment | 10 | 20%+ of QEI in CDFI Fund-designated Deep Distress areas |
+| Higher Distress Targeting | 15 | 85%+ of **QEI** in severely distressed areas — a proxy, see the basis note below |
+| Deep Distress Commitment | 10 | 20%+ of **QEI** in CDFI Fund-designated Deep Distress areas — a proxy, see the basis note below |
 | Special Targeting | 5 | QEI in U.S. Territories, High Migration Rural Counties, NMTC Native Areas, or Persistent Poverty Counties (CY 2024-2025 priority) |
 | Community Outcomes Quality | 10 | Quantified outcomes (jobs, units, sq ft) with third-party methodology |
 | Community Accountability | 10 | LIC representation on board; community engagement track record |
 | **Section total** | **50** | — |
+
+**BASIS NOTE — the Fund's two distress commitments are measured on QLICIs, this
+tool's sub-scores are measured on QEI.** The CY 2024-2025 NMTC Program Review
+Process (Targeting Areas of Higher Distress, Question 25) states that the
+Applicant commits to providing *"at least 85% of its QLICIs in specified areas
+of severe distress and/or areas characterized by multiple indicia of distress"*
+and *"at least 20% of its QLICIs to 'Deep Distress' areas"*. Both are shares of
+**QLICIs**. Every distress share this package computes is a share of **QEI**
+(`intelligence/distress_analysis.py`); `qlici_amount` is read only to print it
+in Appendix A and to check that it does not exceed its project's QEI, and feeds
+no percentage, no score and no bar. The two sub-scores above are therefore
+QEI-based *proxies* for the Fund's QLICI-denominated commitments, not
+computations of them, and no figure this tool renders answers either
+commitment. The 85% commitment carries a second mismatch: it covers severe
+distress **or multiple indicia** of distress, and this package computes no
+multi-indicia measure at all. Computing the QLICI-denominated shares is 1.2.2
+work, behind a written methodology — see CHANGELOG.md.
 
 ### Priority Points (10 bonus points)
 
@@ -98,9 +115,19 @@ Phase 2 evaluates qualitative factors that cannot be quantified from pipeline da
 |---|---|
 | Management Capacity | Organizational capacity to deploy capital; staffing and systems |
 | Capitalization Strategy | QEI-raising track record; investor relationships; capitalization feasibility |
-| Non-Metro commitment | ≥ 20% non-metro required; ≥ 50% if applying as Rural CDE |
+| Non-Metro commitment | ≥ 20% non-metro required; ≥ 50% if applying as Rural CDE. **Basis not established by this tool** — see the note below |
 | Fee/compensation structure | Favorable fee structures to QALICBs viewed positively |
 | Prior reporting compliance | Late or inaccurate prior-round reports may result in point deductions |
+
+**Note on the non-metro basis.** `phase2_flags["non_metro_commitment_pct"]` is
+computed from `geographic_diversity["rural_pct"]`, which is a share of **QEI**
+(`geographic_analysis.py:96`), and the 20% figure above is quoted here without a
+denominator at all. The Fund states
+its two distress commitments on QLICIs (see the Community Outcomes basis note),
+and whether the non-metro commitment is QLICI-, QEI- or count-denominated **has
+not been checked against the Application's own question text**. Surfaced by
+`tests/test_qlici_basis.py` during the FIX-3 sweep and recorded rather than
+guessed. Do not read the flag as an answer to the Fund's requirement.
 
 ---
 
@@ -155,7 +182,11 @@ score        = align_score + deploy_score
 score = min(15, pct_deep_or_severe / 0.85 × 15)
 ```
 
-At 85%+ in severe or multi-indicia distress: full 15 pts. Proportional credit below.
+At 85%+ of **QEI** in severely distressed tracts (deep distress included): full
+15 pts, proportional credit below. The 0.85 is the Fund's bar used as this
+tool's scale factor; the Fund measures it on QLICIs and over severe distress
+**or multiple indicia**, neither of which this package computes. See the basis
+note above.
 
 ### Deep Distress Commitment (0–10 pts)
 
@@ -163,7 +194,13 @@ At 85%+ in severe or multi-indicia distress: full 15 pts. Proportional credit be
 score = min(10, pct_deep / 0.20 × 10)
 ```
 
-At 20%+ in CDFI Fund Deep Distress areas: full 10 pts. Uses `pct_deep` from distress analysis; falls back to 50% of `pct_deep_or_severe` if not available separately.
+At 20%+ of **QEI** in CDFI Fund Deep Distress tracts: full 10 pts, proportional
+credit below. Uses `pct_deep` from distress analysis and has no fallback — the
+"50% of `pct_deep_or_severe`" substitute this file used to document was removed
+in 1.2.1 (deep distress is a strict subset of severe distress in no fixed
+proportion, so no such split exists to compute); an absent `pct_deep` now scores
+zero. The 0.20 is the Fund's bar used as this tool's scale factor; the Fund
+measures it on QLICIs. See the basis note above.
 
 ### Special Targeting (0–5 pts)
 
