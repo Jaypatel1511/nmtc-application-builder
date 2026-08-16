@@ -305,16 +305,18 @@ def test_section_b_reports_deep_distress_alone():
     rows = next(s for s in content["subsections"]
                 if s["heading"] == "Distress Level Commitments")["body"]
 
-    deep_only = [v for k, v in rows.items() if "Deep Distress Tracts" in k]
+    deep_only = [v for k, v in rows.items() if "Deep Distress Tracts (" in k]
     assert deep_only, f"deep-only is still reported nowhere: {list(rows)}"
     # 1 of 4 equal-QEI projects is deep.
     assert deep_only[0].startswith("25.0%"), deep_only
 
-    combined = [v for k, v in rows.items() if "combined" in k.lower()]
-    assert combined and combined[0].startswith("75.0%"), combined
-    assert deep_only[0] != combined[0], (
-        "deep-only and deep-or-severe render the same string; one number is "
-        "again being left to answer both of the Fund's bars"
+    severe = [v for k, v in rows.items() if "Severely Distressed Tracts" in k]
+    assert severe, f"the severe share is reported nowhere: {list(rows)}"
+    # 3 of 4: one deep (deep IS severe) plus two severe.
+    assert severe[0].startswith("75.0%"), severe
+    assert deep_only[0] != severe[0], (
+        "deep-only and severe render the same string; one number is again "
+        "being left to answer both of the Fund's bars"
     )
 
 
@@ -982,3 +984,347 @@ def test_the_docs_site_does_not_still_describe_withdrawn_output():
         "NOTE: docs/ changes do not reach the published site until "
         "`mkdocs gh-deploy` is run by hand."
     )
+
+
+# ---------------------------------------------------------------------------
+# FIX-2 B-1: one filing may not state two different severe-distress shares
+# ---------------------------------------------------------------------------
+
+def _b1_pipeline(levels) -> Pipeline:
+    """Equal-QEI projects at the given distress levels, verified-shaped."""
+    projects = []
+    for i, level in enumerate(levels):
+        p = PipelineProject(
+            project_id=f"B1-{i}", project_name=f"B1 Project {i}",
+            qalicb_name=f"B1 {i} QALICB LLC", address=f"{100 + i} Subset Way",
+            city="Youngstown", state="OH", sector="healthcare",
+            project_type="real_estate", total_project_cost=9_000_000.0,
+            qei_request=6_000_000.0, qlici_amount=6_000_000.0,
+            expected_jobs_created=30,
+        )
+        p.census_tract = "39099810900"
+        p.is_nmtc_eligible = True
+        p.distress_level = level
+        p.geocode_success = True
+        projects.append(p)
+    pl = Pipeline(projects)
+    pl.eligibility_data_status = "ok"
+    return pl
+
+
+def _b1_application(levels):
+    from nmtcapp.core.application import Application
+
+    cde = CDEProfile(
+        name="Subset Relation CDE, LLC", cde_id="CDE-2022-0011",
+        certification_date="2022-02-02", mission="Fixture.",
+        target_markets=["Ohio"], prior_awards=[],
+        contact={"name": "S", "email": "s@example.org"},
+        governance={"board_members": 6, "community_representatives": 3},
+    )
+    app = Application(cde=cde, requested_allocation=24_000_000.0)
+    app.add_pipeline(_b1_pipeline(levels))
+    return app
+
+
+@pytest.mark.parametrize("levels", [
+    # THE SHAPE THAT SHIPPED THE CONTRADICTION: every distressed tract is deep,
+    # so the exclusive "severe" bucket is empty. Section B printed 0.0% under
+    # "QEI in Severely Distressed Tracts" while Appendix B flagged the same
+    # projects "Yes".
+    ("deep", "deep", "lic", "lic", "lic"),
+    ("deep", "severe", "severe", "lic"),
+    ("severe", "severe", "lic", "lic"),
+    ("deep",),
+])
+def test_rendered_severe_share_is_never_below_the_rendered_deep_share(levels):
+    """Deep distress is a SUBSET of severe, so severe >= deep. Always.
+
+    Verified against the CDFI Fund's own NMTC LIC Eligibility workbook
+    (2016-2020 ACS), columns O and P, over all 85,395 tracts: 8,061 rows are
+    flagged deep and every one of them is also flagged severe. The count of
+    deep-but-not-severe tracts is ZERO. See
+    intelligence/distress_analysis.DEEP_IS_SUBSET_OF_SEVERE.
+
+    THE PIN IS ON THE RENDERED STRINGS, not on the dict. 1.2.1's own arithmetic
+    was correct in every bucket; what was wrong was which bucket a label was
+    attached to, and no test that reads the dict can see that.
+    """
+    from nmtcapp.sections.section_b_outcomes import SectionBCommunityOutcomes
+
+    app = _b1_application(levels)
+    content = SectionBCommunityOutcomes().generate_content(app, app.analyze())
+    rows = next(s for s in content["subsections"]
+                if s["heading"] == "Distress Level Commitments")["body"]
+
+    def _pct(label_fragment: str) -> float:
+        hits = [v for k, v in rows.items()
+                if label_fragment in k and v.rstrip("%").replace(".", "").isdigit()]
+        assert hits, f"no row matching {label_fragment!r} in {list(rows)}"
+        return float(hits[0].rstrip("%"))
+
+    deep = _pct("Deep Distress Tracts (")
+    severe = _pct("Severely Distressed Tracts")
+
+    assert severe >= deep, (
+        f"the document states {severe}% of QEI in severely distressed tracts "
+        f"and {deep}% in deep distress tracts. Deep distress is a strict "
+        "subset of severe distress in the Fund's own workbook, so a severe "
+        "share below the deep share is arithmetically impossible and one of "
+        "the two rows is measuring a bucket its label does not describe."
+    )
+
+
+def test_section_b_severe_row_agrees_with_appendix_b_flag():
+    """Two surfaces, one fact. They disagreed in 1.2.1.
+
+    Appendix B carries a per-project "Severely Distressed Flag" that counts a
+    deep-distress tract as severely distressed — correctly. Section B carried a
+    percentage under the same words computed from a bucket that excluded them.
+    A CDE filing both was filing two answers to one question.
+    """
+    from nmtcapp.sections.section_b_outcomes import SectionBCommunityOutcomes
+    from nmtcapp.tables.distress_table import build_distress_table
+
+    levels = ("deep", "deep", "severe", "lic")
+    app = _b1_application(levels)
+    analysis = app.analyze()
+
+    content = SectionBCommunityOutcomes().generate_content(app, analysis)
+    rows = next(s for s in content["subsections"]
+                if s["heading"] == "Distress Level Commitments")["body"]
+    severe_row = next(v for k, v in rows.items()
+                      if "Severely Distressed Tracts" in k)
+
+    df = build_distress_table(app.pipeline)
+    # The last row is Appendix B's own SUMMARY line ("3/4 (75%)"), not a project.
+    project_rows = df[df["Project ID"] != "SUMMARY"]
+    flags = [str(v) for v in project_rows["Severely Distressed Flag"]]
+    flagged = sum(1 for f in flags if f == "Yes")
+
+    # Equal QEI per project, so the count share and the dollar share coincide.
+    appendix_b_pct = 100.0 * flagged / len(flags)
+    section_b_pct = float(severe_row.rstrip("%"))
+
+    assert section_b_pct == pytest.approx(appendix_b_pct, abs=0.1), (
+        f"Section B says {section_b_pct}% of QEI is in severely distressed "
+        f"tracts; Appendix B flags {flagged} of {len(flags)} projects "
+        f"({appendix_b_pct}%) as severely distressed. Same document, same "
+        "word, two numbers."
+    )
+
+
+def test_the_ambiguous_pct_severe_key_is_gone():
+    """The rename is the fix. An alias would restore the ambiguity.
+
+    'severe' meant the exclusive bucket in distress_analysis and the inclusive
+    flag in distress_table, and the package rendered a label using the third
+    meaning. Only one of the three may keep the bare word.
+    """
+    from nmtcapp.intelligence.distress_analysis import (
+        DISTRESS_SHARE_SEMANTICS, analyze_distress_concentration,
+    )
+
+    result = analyze_distress_concentration(_b1_pipeline(("deep", "severe")))
+    assert "pct_severe" not in result, (
+        "pct_severe is back. It named the severe-EXCLUDING-deep bucket while "
+        "reading as the severe share, which is how a filing came to state "
+        "both 0.0% and 40%."
+    )
+    for key in DISTRESS_SHARE_SEMANTICS:
+        assert key in result, f"{key} is documented but not emitted"
+    # The arithmetic the three names promise.
+    assert result["pct_deep"] + result["pct_severe_excluding_deep"] == pytest.approx(
+        result["pct_deep_or_severe"]
+    )
+
+
+# ---------------------------------------------------------------------------
+# FIX-2 B-2: the aggregate surface, which the L-5 gate did not reach
+# ---------------------------------------------------------------------------
+
+def test_section_b_does_not_claim_zero_units_over_an_unfilled_column():
+    """"0 affordable or mixed-income housing units developed" over no input.
+
+    The 1.2.1 gate above (test_an_unsupplied_affordable_unit_count_is_not_a_zero)
+    checks the TABLE cells and passed while this line was still wrong, because
+    the aggregate takes a different path: impact_aggregator summed
+    `p.expected_units_built or 0` and Section B formatted the result with
+    `{units:,}`. The table said "—" and the paragraph above it said "0", in one
+    document.
+    """
+    from nmtcapp.intelligence.impact_aggregator import aggregate_impact
+    from nmtcapp.sections.section_b_outcomes import SectionBCommunityOutcomes
+
+    app = _b1_application(("deep", "severe", "lic"))
+    for p in app.pipeline:
+        assert p.expected_units_built is None, "fixture must not supply units"
+
+    impact = aggregate_impact(app.pipeline)
+    assert impact["total_units_built"] is None, (
+        "an unfilled column aggregated to a number again"
+    )
+    assert impact["projects_reporting_units"] == 0
+
+    content = SectionBCommunityOutcomes().generate_content(app, app.analyze())
+    body = next(s for s in content["subsections"]
+                if s["heading"] == "Aggregate Community Impact Projections")["body"]
+    assert "0 affordable or mixed-income housing units developed" not in body, body
+    assert "not reported" in body, body
+
+
+def test_a_supplied_zero_still_renders_as_a_zero():
+    """The other half. A CDE that answers 0 has answered."""
+    from nmtcapp.intelligence.impact_aggregator import aggregate_impact
+    from nmtcapp.sections.section_b_outcomes import SectionBCommunityOutcomes
+
+    app = _b1_application(("deep", "severe", "lic"))
+    for p in app.pipeline:
+        p.expected_units_built = 0
+
+    impact = aggregate_impact(app.pipeline)
+    assert impact["total_units_built"] == 0
+    assert impact["projects_reporting_units"] == 3
+    assert impact["projects_with_units"] == 0
+
+    content = SectionBCommunityOutcomes().generate_content(app, app.analyze())
+    body = next(s for s in content["subsections"]
+                if s["heading"] == "Aggregate Community Impact Projections")["body"]
+    assert "0 affordable or mixed-income housing units developed" in body, body
+
+
+def test_projects_with_units_is_read_by_something():
+    """It was computed every run and read by nothing in the package.
+
+    A derived value nobody consumes cannot be wrong in a way anybody notices,
+    which is how the distinction it encodes stayed unused while the figure
+    beside it was collapsing a supplied zero into an absent one.
+    """
+    from nmtcapp.intelligence.impact_aggregator import aggregate_impact
+
+    app = _b1_application(("deep", "severe", "lic"))
+    projects = list(app.pipeline)
+    projects[0].expected_units_built = 40
+    projects[1].expected_units_built = 0
+    projects[2].expected_units_built = None
+
+    impact = aggregate_impact(app.pipeline)
+    assert impact["total_units_built"] == 40
+    assert impact["projects_reporting_units"] == 2, "0 is an answer; None is not"
+    assert impact["projects_with_units"] == 1, "only one project builds housing"
+
+
+# ---------------------------------------------------------------------------
+# FIX-2 B-3: a year is an identifier, not a quantity
+# ---------------------------------------------------------------------------
+
+_IDENTIFIER_COLUMNS = (
+    ("Award Year", 2019, "2019"),
+    ("Census Tract (11-digit)", 17031838200, "17031838200"),
+    ("Census Tract (GEOID)", 17031838200, "17031838200"),
+    ("ZIP Code", 60653, "60653"),
+    ("Project ID", 1042, "1042"),
+    ("State FIPS Code", 17, "17"),
+)
+
+
+@pytest.mark.parametrize("header,value,expected", _IDENTIFIER_COLUMNS)
+def test_an_identifier_column_never_takes_a_thousands_separator(header, value, expected):
+    """`f"{2019:,}"` is "2,019", and nothing is 2,019 of anything.
+
+    1.2.1's _cell_format unification correctly gave the currency columns their
+    dollar signs and gave a prior award year a thousands separator on the way
+    past. A GEOID would have been worse: 17,031,838,200 in a column citing the
+    CDFI Fund's eligibility table is not obviously a formatting fault.
+    """
+    from nmtcapp.renderers._cell_format import format_cell, is_identifier_column
+
+    assert is_identifier_column(header), f"{header!r} is not classed as an identifier"
+    assert format_cell(header, value) == expected
+
+
+def test_a_quantity_column_still_takes_its_separator():
+    """The rule must discriminate, or it is just a disabled formatter."""
+    from nmtcapp.renderers._cell_format import format_cell, is_identifier_column
+
+    for header, value, expected in (
+        ("Jobs Created", 1200, "1,200"),
+        ("Square Feet", 662900, "662,900"),
+        ("Affordable Units Built", 1500, "1,500"),
+        ("QEI ($)", 88500000, "$88,500,000"),
+        ("QEI (% of Total)", 0.307, "30.7%"),
+    ):
+        assert not is_identifier_column(header), f"{header!r} is not an identifier"
+        assert format_cell(header, value) == expected
+
+
+def test_the_track_record_year_renders_unseparated_on_every_surface():
+    """Markdown, Word, PDF and Excel each printed 2,019. All four are checked.
+
+    Excel is the one that predates 1.2.1: "Award Year" is named in no format
+    list on that sheet, so it fell through to the magnitude-based auto-detect
+    and took #,##0, which Excel displays with the separator. The three prose
+    renderers acquired it when 1.2.1 unified their cell formatting.
+    """
+    import openpyxl
+    from docx import Document
+    from pypdf import PdfReader
+
+    from nmtcapp.core.application import Application
+    from nmtcapp.renderers._cell_format import format_cell
+    from nmtcapp.renderers.excel_builder import FMT_IDENTIFIER
+    from nmtcapp.tables.track_record_table import build_track_record_table
+
+    cde = CDEProfile(
+        name="Comma Free CDE, LLC", cde_id="CDE-2014-0099",
+        certification_date="2014-04-04", mission="Fixture.",
+        target_markets=["Ohio"],
+        prior_awards=[{"year": 2019, "amount": 45_000_000,
+                       "deployment_status": "fully_deployed"}],
+        contact={"name": "C", "email": "c@example.org"},
+        governance={"board_members": 5, "community_representatives": 2},
+    )
+
+    df = build_track_record_table(cde)
+    rendered = [format_cell("Award Year", v) for v in df["Award Year"]]
+    assert "2,019" not in rendered, rendered
+    assert "2019" in rendered, rendered
+
+    app = Application(cde=cde, requested_allocation=20_000_000.0)
+    app.add_pipeline(_b1_pipeline(("deep", "severe", "lic")))
+
+    import tempfile
+    with tempfile.TemporaryDirectory() as out:
+        paths = app.generate(out, formats=["markdown", "word", "excel", "pdf"])
+        assert set(paths) == {"markdown", "word", "excel", "pdf"}, sorted(paths)
+
+        with open(paths["markdown"], encoding="utf-8") as fh:
+            assert "2,019" not in fh.read()
+
+        doc = Document(paths["word"])
+        word_text = "\n".join(
+            [p.text for p in doc.paragraphs]
+            + [c.text for t in doc.tables for r in t.rows for c in r.cells]
+        )
+        assert "2,019" not in word_text
+
+        pdf_text = "\n".join(
+            (page.extract_text() or "") for page in PdfReader(paths["pdf"]).pages
+        )
+        assert "2,019" not in pdf_text
+
+        # Excel holds a NUMBER, so the separator lives in the number format,
+        # not in the cell value. Reading the value alone would pass while the
+        # workbook still displayed 2,019 — which is exactly how it survived.
+        ws = openpyxl.load_workbook(paths["excel"])["Track Record"]
+        year_col = next(
+            c for c in range(1, ws.max_column + 1)
+            if ws.cell(row=3, column=c).value == "Award Year"
+        )
+        cell = ws.cell(row=4, column=year_col)
+        assert cell.value == 2019
+        assert cell.number_format == FMT_IDENTIFIER, (
+            f"Award Year carries number format {cell.number_format!r}; Excel "
+            "displays #,##0 as '2,019'."
+        )
+        assert "#" not in cell.number_format

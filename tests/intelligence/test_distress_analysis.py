@@ -45,7 +45,14 @@ def test_analyze_distress_mixed():
     pipeline = Pipeline(projects)
     result = analyze_distress_concentration(pipeline)
     assert result["pct_deep"] == pytest.approx(0.40)
-    assert result["pct_severe"] == pytest.approx(0.20)
+    # Renamed from "pct_severe" in 1.2.1 B-1: the bucket is disjoint from
+    # "deep" while the Fund's severe flag is not, so this is the residual and
+    # the key says so. pct_deep_or_severe is the severe share.
+    assert result["pct_severe_excluding_deep"] == pytest.approx(0.20)
+    assert "pct_severe" not in result, (
+        "the ambiguous key is back. 'severe' meant the exclusive bucket here "
+        "and the inclusive flag in Appendix B, and one filing printed both."
+    )
     assert result["pct_deep_or_severe"] == pytest.approx(0.60)
     assert result["pct_lic"] == pytest.approx(0.20)
 

@@ -102,7 +102,7 @@ def _pipeline(n: int) -> Pipeline:
                 sector="small_business", project_type="operating_business",
                 distress=["severe"], count=6,
                 cost=4_700_000, qei=3_300_000, jobs=27, tract="22109040300",
-                units=140, sqft=0, eligible=[True] * 6),
+                units=140, sqft=9_500, eligible=[True] * 6),
         3: dict(states=["OR", "WA", "ID"], city="Warm Springs",
                 sector="community_facility", project_type="real_estate",
                 distress=["lic", "ineligible", "lic"], count=3,
@@ -112,7 +112,7 @@ def _pipeline(n: int) -> Pipeline:
                 city="Jamestown", sector="clean_energy",
                 project_type="operating_business", distress=["deep"], count=7,
                 cost=15_800_000, qei=11_900_000, jobs=64, tract="38093960200",
-                units=0, sqft=310_000, eligible=[True] * 7),
+                units=55, sqft=310_000, eligible=[True] * 7),
     }[n]
     projects = []
     for i in range(spec["count"]):
@@ -128,8 +128,14 @@ def _pipeline(n: int) -> Pipeline:
             qlici_amount=float(spec["qei"] + i),
             expected_jobs_created=spec["jobs"] + i,
             expected_jobs_retained=n + i,
-            expected_units_built=spec["units"] + i if spec["units"] else None,
-            expected_sq_ft=float(spec["sqft"] + i) if spec["sqft"] else None,
+            # SUPPLIED, INCLUDING A SUPPLIED ZERO (FIX-2 B-2). This read
+            # `spec["units"] + i if spec["units"] else None`, so scenario 1's
+            # declared units=0 became "the CDE supplied nothing" — the exact
+            # collapse B-2 removed from impact_aggregator, reproduced in the
+            # fixture that is supposed to exercise it. Scenario 1 now supplies
+            # a genuine 0 and every scenario supplies a real square footage.
+            expected_units_built=spec["units"] + i,
+            expected_sq_ft=float(spec["sqft"] + i),
         )
         p.census_tract = spec["tract"]
         p.is_nmtc_eligible = spec["eligible"][i]

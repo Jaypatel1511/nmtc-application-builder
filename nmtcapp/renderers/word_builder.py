@@ -13,6 +13,7 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Pt, RGBColor, Inches, Cm
 
+from nmtcapp.renderers._cell_format import supplied_total
 from nmtcapp.renderers._disclosure import (
     is_partial_unverified, qualified_pct, unverified_banner,
     unverified_ids, unverified_qualifier,
@@ -295,7 +296,9 @@ class WordApplicationBuilder:
              _elig_metric(distress.get("pct_deep_or_severe", 0))],
             ["NMTC Eligibility Rate", _elig_metric(pr.eligibility_pct)],
             ["Jobs to Be Created", f"{impact.get('total_jobs_created', 0):,}"],
-            ["Affordable Units to Be Built", f"{impact.get('total_units_built', 0):,}"],
+            # 1.2.1 B-2: absent is not zero. See _cell_format.supplied_total.
+            ["Affordable Units to Be Built",
+             supplied_total(impact.get("total_units_built"))],
             ["Jobs per $1MM QEI", f"{impact.get('jobs_per_million_qei', 0):.1f}"],
         ]
         add_styled_table(doc, ["Metric", "Value"], metrics_data)

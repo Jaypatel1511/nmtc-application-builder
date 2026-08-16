@@ -427,8 +427,15 @@ class RecommendationEngine:
             ))
 
         # Deep Distress Commitment (10 pts) — tract-derived, skip when unassessable
-        if ddc is not None and ddc < 7:
-            deep_pct = d.get("pct_deep", d.get("pct_deep_or_severe", 0.0) * 0.5)
+        if ddc is not None and ddc < 7 and "pct_deep" in d:
+            # NO SUBSTITUTE FOR pct_deep (1.2.1 B-1 sweep). The fallback here
+            # was "50% of pct_deep_or_severe" — an invented split, printed to
+            # the CDE as "Only X% of QEI is in CDFI Fund-designated Deep
+            # Distress tracts". Deep is a strict subset of severe in no fixed
+            # proportion, so no such split exists to compute. If the share is
+            # not in the breakdown, the finding cannot be stated at all and
+            # this recommendation is skipped.
+            deep_pct = d["pct_deep"]
             gap_pp = round((DEEP_DISTRESS_MIN_PCT - deep_pct) * 100)
             recs.append(Recommendation(
                 category="community_outcomes",
@@ -438,10 +445,20 @@ class RecommendationEngine:
                     f"Only {deep_pct:.0%} of QEI is in CDFI Fund-designated Deep Distress tracts "
                     f"— {gap_pp}pp below the {_DEEP_PCT_TEXT} threshold for full credit."
                 ),
+                # "These are distinct from severe distress" was FALSE, and it
+                # was live text telling a CDE which tracts to go and find. Deep
+                # Distress is a strict SUBSET of severe distress in the Fund's
+                # own workbook — a deep tract is always also a severe one, and
+                # across all 85,395 tracts there is not one exception. A CDE
+                # reading "distinct" would look for tracts that do not exist as
+                # a separate category, and would not know that every deep tract
+                # it adds also counts toward the 85% higher-distress bar.
                 action=(
                     "Identify and add pipeline projects in CDFI Fund Deep Distress areas. "
-                    "These are distinct from severe distress — check the NMTC Mapping Tool for "
-                    "tracts explicitly classified as 'Deep Distress' in CY 2024-2025 data."
+                    "Deep Distress is the tighter tier INSIDE severe distress, not a "
+                    "separate category — every Deep Distress tract also counts toward the "
+                    "higher-distress commitment. Check the NMTC Mapping Tool for tracts "
+                    "flagged 'Deep distress' in the CY 2024-2025 eligibility data."
                 ),
                 expected_impact="Add Deep Distress credit; improves both section score and gating position.",
                 quantified_improvement=(

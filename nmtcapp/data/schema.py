@@ -22,10 +22,24 @@ from typing import List, Optional
 
 # ---------------------------------------------------------------------------
 # Distress level codes — values used by nmtc-mapper library
+#
+# THE "deep" ENTRY STATED THE SEVERE CRITERION (1.2.1 B-1). It read
+# "poverty >30% or unemployment >1.5× national avg", which is column O of the
+# CDFI Fund's eligibility workbook — the SEVERE flag. Deep distress is column
+# P and is a strictly tighter test. Nothing in this package renders this dict,
+# so no filing carried the wrong definition, but it is exported as
+# ``nmtcapp.data.DISTRESS_LEVELS`` and a caller printing it would have.
+#
+# Both criteria are now quoted from the workbook's own column headers, which
+# is the same wording renderers/_methodology puts in the filing. The two are
+# NESTED, not disjoint: every deep-distress tract is also severely distressed
+# (see intelligence/distress_analysis.DEEP_IS_SUBSET_OF_SEVERE).
 # ---------------------------------------------------------------------------
 DISTRESS_LEVELS = {
-    "deep":       "Deep Distress (poverty >30% or unemployment >1.5× national avg)",
-    "severe":     "Severe Distress (LIC plus additional qualifying distress factors)",
+    "deep":       ("Deep Distress — LIC AND (Poverty>40%; MFI<=40%; "
+                   "Unemployment>=2.5). A subset of Severe Distress."),
+    "severe":     ("Severe Distress — LIC AND (Poverty>30%; MFI<=60%; "
+                   "Unemployment>=1.5). Includes every Deep Distress tract."),
     "lic":        "Low Income Community (AMI ≤80% or poverty ≥20%)",
     "ineligible": "Not NMTC Eligible",
 }

@@ -11,10 +11,19 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-_REQUIRED_CDE_FIELDS = [
-    "name", "cde_id", "certification_date", "mission",
-    "target_markets", "prior_awards", "contact", "governance",
-]
+# READ THE LIST, DO NOT RETYPE IT (FIX-2 G-5).
+#
+# This was the THIRD hand-maintained copy of the same eight field names, after
+# core/cde._FIELD_GUIDANCE and the `required` set inside CDEProfile.from_yaml.
+# Measured on the branch head: deleting "governance" from this list passed all
+# 955 tests. A required field stopped being validated and no gate saw it,
+# because every gate that could have compared the lists was itself reading one
+# of them. Second live instance of M5's class, after the pipeline columns
+# consistency_check retyped.
+#
+# The import is the fix: there is now one list, and this module has no opinion
+# about its contents.
+from nmtcapp.core.cde import REQUIRED_CDE_FIELDS as _REQUIRED_CDE_FIELDS
 
 
 def check_completeness(application: "Application") -> ValidationResult:

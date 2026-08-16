@@ -77,9 +77,14 @@
 #                                              value read returns 6000000
 #                                              whether the cell prints
 #                                              $6,000,000 or 600000000.0%, so
-#                                              the eight FMT_* constants were
+#                                              every FMT_* constant was
 #                                              invisible to every text-based
-#                                              gate.
+#                                              gate. (How many there are is
+#                                              derived by _sweep_census, not
+#                                              stated here: the "eight" this
+#                                              line used to carry was measured
+#                                              on the rejected 324e9cd and the
+#                                              tree held seven — FIX-2 G-1.)
 #   SOURCE     a citation that names a document AND carries a digit (year,
 #              section, question, column) — OR the literal prefix "HOUSE:"
 #              followed by what the rendered text must itself say. A HOUSE row
@@ -110,7 +115,9 @@
 #
 # Every label row below is therefore anchored to the fixture project whose
 # distress_level produced it, so the swap moves the label off the anchor.
-# Verified by executing the swap: eight of the twelve go red.
+# Verified by executing the swap: the majority go red. The count is derived
+# (_sweep_census()['distress_label_pins']); the "twelve" this line used to
+# carry was measured on the rejected 324e9cd and the file holds nine.
 #
 # FAILS CLOSED. An empty file, a row that no longer renders, a row with no
 # source, a HOUSE row without its disclosure, a name with no constant behind
@@ -204,6 +211,7 @@ pipeline_table.CURRENCY_COLUMNS | excel | The financial subset of TABLE A5, name
 excel_builder.FMT_CURRENCY | excel_cell_formats | CY 2024-2025 NMTC Allocation Application, TABLE A5 rows (f)-(i): every one is a dollar amount. A percent or plain format on this column changes what every figure in Appendix A means while leaving the extracted text byte-identical | Pipeline Detail · QEI Request ($) · "$"#,##0
 excel_builder.FMT_NUMBER | excel_cell_formats | TABLE A5 row (k): projected jobs, a count and not a currency. A currency format here would print "$40" FTE | Pipeline Detail · Jobs Created · #,##0
 excel_builder.FMT_PCT | excel_cell_formats | Appendix C reports each state's QEI as a SHARE. 1.2.1 B-1 fixed this column after it shipped as a pre-multiplied integer under a percent format, which printed every state's share as 0%; the format and the stored float have to agree, and this row pins the format half | Geographic Targeting · QEI (% of Total) · 0.0%
+excel_builder.FMT_IDENTIFIER | excel_cell_formats | CDFI Fund NMTC LIC Eligibility workbook, 2016-2020 ACS: a tract GEOID and an award year are LABELS the Fund matches on, not quantities. Under #,##0 this column printed a prior award as 2,019 — the workbook has done so since at least v1.2.0 — and the same format on an 11-digit GEOID prints 17,031,838,200, which matches no tract in the Fund's table. The value read is 2019 either way, so only the format can be pinned | Track Record · Award Year · 0
 
 # --- The score block's own denominators and tier labels ---------------------
 benchmark_thresholds.BUSINESS_STRATEGY_MAX | win_score | CY 2024-2025 NMTC Program Review Process: Business Strategy is scored out of 50. R-5: win_probability hardcoded "max_available": 50 beside this constant, so the 1.2.1 waiver ("the printed denominator comes from the score dict's max_available, not from this constant") was TRUE — a duplication recorded in the release that removed five others. The score dict now reads the constant and the methodology note interpolates it, so this row bites | Business Strategy 50 pts
@@ -237,21 +245,10 @@ WAIVE | benchmark_thresholds.DBC_VOLUME_PCT_MIN | Feeds a win_probability sub-sc
 WAIVE | benchmark_thresholds.UNRELATED_ENTITIES_MIN_PCT | Feeds a win_probability sub-score; the 90% renders nowhere.
 
 # --- Waivers added or rewritten in 1.2.1 S-2 --------------------------------
-WAIVE | schema.NMTC_PROGRAM_CONSTRAINTS | The DICT ITSELF renders nowhere; six of its keys are adjudicated individually above (credit_rate, compliance_period_years, standard_credit_price and cde_fee_rate_typical pinned; leverage_ratio_typical and min_qei_per_project waived). This bare-name row exists because a subscripted pin no longer adjudicates its siblings: through 1.2.1-rc the sweep stripped the subscript, so pinning [credit_rate] silently adjudicated every other key including any added later.
+WAIVE | schema.NMTC_PROGRAM_CONSTRAINTS | The DICT ITSELF renders nowhere; its six keys are adjudicated individually above (credit_rate, compliance_period_years, standard_credit_price and cde_fee_rate_typical pinned; leverage_ratio_typical and min_qei_per_project waived). CORRECTED IN FIX-2 (G-2): this row used to close with the claim that the key sweep now covers every key "including any added later". THAT WAS FALSE FOR THE WHOLE OF 1.2.1. test_every_dict_key_the_package_reads_is_adjudicated opened with `if _adjudicated(name): continue`, and this very row is what satisfied it — so the ten dicts in DATA_MODULES contributed 0 dicts and 0 keys to the sweep, and a seventh key added to this dict AND RENDERED INTO THE METHODOLOGY APPENDIX passed with nothing red (re-verified as N3 on the branch head). The bare name adjudicates the dict OBJECT. It adjudicates no key, added later or otherwise, and the sweep no longer pretends it does.
 WAIVE | schema.TARGET_DISTRESS_THRESHOLDS | The dict itself renders nowhere. [target_deep_distress] is pinned above with its HOUSE disclosure; [min_deep_distress] is waived below. Bare-name row for the same reason as NMTC_PROGRAM_CONSTRAINTS.
 WAIVE | schema.TARGET_DISTRESS_THRESHOLDS[min_deep_distress] | The 50% floor is read by validation/eligibility_check and validation/readiness_score to decide whether a pipeline PASSES an internal band; the band's own number never prints, only the pass/fail and the score it feeds. Its sibling [target_deep_distress] does print ("internal scoring band is ≥75%") and is pinned. Both are house heuristics and neither is a CDFI Fund threshold — see the header on nmtcapp/data/schema.py, which exists because a prior release printed these two under the labels "CDFI Fund Competitive Minimum" and "CDFI Fund Target".
 WAIVE | schema.TARGET_SECTORS | Its eight sector KEYS render, as the CDE's own supplied sector title-cased in the "Sector (as supplied)" column — but that column prints whatever the CDE wrote, not this dict; an unrecognised sector renders too (see the 1.2.1 notes on `retail`). What the dict itself contributes is the "priority" grading behind PipelineAnalysisResult.summary()'s "High Priority: NN%", which prints as a share and never as the labels. Pinning the share would pin the fixture. The unsourced priority grading is recorded as an open defect rather than pinned, because the fix is to source or delete the grading, not to freeze it.
-WAIVE | benchmark_thresholds.PRODUCT_FLEXIBILITY_MAX | Renders as the "/ 10" denominator of a sub-score line in WinProbabilityScore.summary(). NOT PINNED, and the reason is the registry's own rule that a pin must prove the CONSTANT produced the string: win_probability's sub-scorers cap at hardcoded literals (min(10.0, ...) at win_probability.py:424-425, and twelve more like it), so the numerator beside this denominator comes from a typed number either way. Pinning the denominator alone would freeze half of a pair whose other half is a literal — a pin that looks like coverage and is not. The thirteen hardcoded caps are recorded for the next release; removing them is a change to scoring behaviour, which a patch is not the place for. The three SECTION maxima are pinned above, where the methodology sentence interpolates them and no literal sits beside them.
-WAIVE | benchmark_thresholds.PIPELINE_CREDIBILITY_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with a hardcoded cap at win_probability.py:449.
-WAIVE | benchmark_thresholds.TRACK_RECORD_STRENGTH_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with a hardcoded cap at win_probability.py:460.
-WAIVE | benchmark_thresholds.TRACK_RECORD_ALIGNMENT_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with hardcoded caps at win_probability.py:466-467.
-WAIVE | benchmark_thresholds.HIGHER_DISTRESS_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with a hardcoded cap at win_probability.py:476.
-WAIVE | benchmark_thresholds.DEEP_DISTRESS_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with a hardcoded cap at win_probability.py:482.
-WAIVE | benchmark_thresholds.SPECIAL_TARGETING_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with a hardcoded cap at win_probability.py:503.
-WAIVE | benchmark_thresholds.COMMUNITY_OUTCOMES_QUALITY_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with a hardcoded cap in _score_outcomes_quality.
-WAIVE | benchmark_thresholds.COMMUNITY_ACCOUNTABILITY_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with a hardcoded cap at win_probability.py:520.
-WAIVE | benchmark_thresholds.DBC_TRACK_RECORD_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with a hardcoded cap in _score_dbc_track_record.
-WAIVE | benchmark_thresholds.UNRELATED_ENTITIES_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with a hardcoded cap at win_probability.py:541.
 WAIVE | benchmark_thresholds.TOTAL_APPLICANTS_CY2024_25 | Reaches no generated artifact and no CLI output. Its only consumer is streamlit_app/pages/4_About_and_Methodology.py, a page of the local app, which this gate's six document surfaces do not cover. Surfaced by 1.2.1 S-2's widening of the consumer scan to streamlit_app/; before that it counted as consumed by nobody. Recorded rather than pinned because pinning it would mean giving this gate a seventh renderer to drive, and the Streamlit pages have their own smoke tests.
 WAIVE | benchmark_thresholds.TOTAL_REQUEST_CY2024_25_B | As TOTAL_APPLICANTS_CY2024_25: Streamlit About page only.
 WAIVE | benchmark_thresholds.TOTAL_AVAILABLE_CY2024_25_B | As TOTAL_APPLICANTS_CY2024_25: Streamlit About page only.
@@ -259,7 +256,6 @@ WAIVE | upload_handler._CDE_FIELD_MAP | Spreadsheet HEADERS the uploader reads, 
 WAIVE | upload_handler._XLSX_PIPELINE_COL_MAP | As _CDE_FIELD_MAP: pipeline-sheet headers on the way IN. tests/test_template_roundtrip.py asserts every template column maps to a field.
 WAIVE | upload_handler._BOOL_FIELDS | Field NAMES, used to coerce Y/N cells on upload. "has_prior_reporting_issues" reaches the document only inside the [CDE TO COMPLETE] block that names the field the CDE must answer, which sections/base.py composes; this list decides parsing, not printing.
 WAIVE | benchmarks._METHODOLOGY | Reaches HistoricalBenchmarks.compare(), which app.benchmark() calls and app.generate() never does — so it is absent from all four document surfaces and from both CLI blocks. The rendering sweep confirms this on every run rather than taking this sentence's word for it: the constant's strings do not appear in the rendered blob. If benchmark output is ever folded into the generated application, the sweep will demand a pin the same day.
-WAIVE | consistency_check._QEI_COVERAGE_BOUNDS | The 30%/95% band produces a WARNING string that interpolates the bounds ("typical NMTC deals are 30%-95%"), and ValidationResult warnings are not carried into any of the four generated artifacts — check_consistency's warnings reach the CLI validation block, not the document. The bounds are unsourced: no CDFI Fund publication states a typical QEI-to-project-cost range, and the warning says "seems low" rather than asserting a threshold. Recorded as an unsourced house band for the next release rather than pinned, because pinning it would freeze a number that should be sourced or removed.
 WAIVE | pipeline_table._CREDIT_RATE | Assigned from schema.NMTC_PROGRAM_CONSTRAINTS["credit_rate"], which is pinned. A pin here would assert the same string twice and could not fail independently of it.
 WAIVE | pipeline_table._CREDIT_PRICE | Assigned from schema.NMTC_PROGRAM_CONSTRAINTS["standard_credit_price"], which is pinned.
 WAIVE | pipeline_table._CDE_FEE_RATE | Assigned from schema.NMTC_PROGRAM_CONSTRAINTS["cde_fee_rate_typical"], which is pinned.
@@ -272,3 +268,54 @@ WAIVE | consistency_check._APPENDIX_A_TO_SECTION_D | Column and row NAMES the cr
 WAIVE | consistency_check._APPENDIX_TOTALS | As _APPENDIX_A_TO_SECTION_D: appendix column names the check reads by. A column that disappears raises CrossSurfaceCheckError rather than being silently dropped.
 WAIVE | consistency_check._UNPAIRED | The money figures that genuinely appear on one surface only, each with the reason. Same class again: names read by, not text written. Its purpose is that an unexplained omission and an oversight stop looking identical, and _assert_pairs_cover_every_money_column fails if a money column is in neither this dict nor the pairing above.
 WAIVE | section_e_prior_awards._NOT_COLLECTED | HOUSE: the marker printed where a prior award carries no states-served or sectors-financed list. It is the bracketed [CDE TO COMPLETE] convention, already pinned in its own right through investor_table._TODO and sections/base._PLACEHOLDER — a fourth pin on the same bracket would assert the convention a fourth time and could not fail independently of the other three. What is new here is only WHERE it appears; that is asserted by tests/sections/test_section_generators.py, which fails if Section E goes back to printing "N/A" over a field nobody collected.
+
+# --- Per-key rows the repaired key sweep demands (FIX-2 G-2) -----------------
+# test_every_dict_key_the_package_reads_is_adjudicated examined ZERO dicts and
+# ZERO keys for the whole of 1.2.1: the bare-name rows S-2 added to enable key
+# checking were what short-circuited it. With the short-circuit removed, these
+# eight keys are subscripted by the package and had no row of their own. Each
+# says what its PARENT row could not: the parent adjudicates the dict object,
+# these adjudicate what the package reads out of it.
+schema.IMPACT_BENCHMARKS[jobs_per_million_qei_low] | markdown,word,pdf | HOUSE: the low band of this tool's own jobs-per-QEI screen. The CDFI Fund publishes no jobs-per-QEI benchmark in any denominator; the rendered line says so and names the value | 5 / 12 / 20 FTE per $1MM QEI
+schema.IMPACT_BENCHMARKS[jobs_per_million_qei_avg] | markdown,word,pdf | HOUSE: the middle band of the same house screen; same disclosure, same rendered line | 5 / 12 / 20 FTE per $1MM QEI
+schema.IMPACT_BENCHMARKS[jobs_per_million_qei_high] | markdown,word,pdf | HOUSE: the high band of the same house screen; same disclosure, same rendered line | 5 / 12 / 20 FTE per $1MM QEI
+WAIVE | schema.GRADE_THRESHOLDS[A] | The grade LETTER renders ("Grade A"); this cut point does not. Pinning it would pin the fixture's score rather than the constant — move the fixture and the letter changes while the constant is untouched. Same reason as the bare-name row, restated per key because a bare-name row adjudicates the dict and not its keys.
+WAIVE | schema.GRADE_THRESHOLDS[B] | As [A]: the letter renders, the 70 cut point does not.
+WAIVE | schema.GRADE_THRESHOLDS[C] | As [A]: the letter renders, the 55 cut point does not.
+WAIVE | schema.GRADE_THRESHOLDS[D] | As [A]: the letter renders, the 40 cut point does not.
+WAIVE | benchmark_thresholds.WINNER_PATTERN_THRESHOLDS[min_eligible_pct] | Read by optimizer/objectives and by HistoricalBenchmarks.compare(), both reached only through app.benchmark() and app.optimize() — neither is part of app.generate() or of the CLI summary, so the value reaches no artifact a CDE files. Same surface as the bare-name row, restated per key.
+WAIVE | consistency_check._SECTION_D_TO_METHODOLOGY | Added in FIX-2 (G-3). It holds the SECTION D ROW NAMES the cross-surface check reads — "Assumed Credit Price ($/NMTC)" and "Assumed CDE Fee Rate" — so the sweep sees its strings in the document. They render because section_d_capitalization prints them as row labels, not because this dict does: this dict is a lookup key, and mutating a name here breaks the check loudly (_shared_figures raises CrossSurfaceCheckError on a row it cannot find) rather than changing a word on the page. The labels themselves are adjudicated where they are produced.
+
+
+# --- Known and left alone: these DO render, and are not being fixed here ----
+#
+# NOT WAIVERS (FIX-2 G-4). Every row below sat under the header
+# "Waivers: consumed constants that reach no rendered surface" while its own
+# text opened "Renders as the '/ 10' denominator of a sub-score line in
+# WinProbabilityScore.summary()". The section header and the row contradicted
+# each other on the same screen, and the header is the part a reviewer skims.
+#
+# THE REASONING IN THESE ROWS IS RIGHT AND IS KEPT VERBATIM. What was wrong is
+# the shelf they were put on. A waiver says "there is nothing here to guard".
+# These say "there is something here, it is not guarded, and here is why not"
+# — which is a deferred defect, and a reader is entitled to see it filed as
+# one. Format: KNOWN | CONSTANT | reason.
+#
+# The eleven *_MAX rows share one cause: thirteen win_probability sub-scorers
+# cap at hardcoded literals (min(15.0, ...), min(10.0, ...)), so the numerator
+# printed beside each of these denominators comes from a typed number either
+# way. Pinning the denominator alone would freeze half of a pair whose other
+# half is a literal — coverage that looks like coverage and is not. Unifying
+# them changes scoring behaviour, which a PATCH release is not the place for.
+KNOWN | benchmark_thresholds.PRODUCT_FLEXIBILITY_MAX | Renders as the "/ 10" denominator of a sub-score line in WinProbabilityScore.summary(). NOT PINNED, and the reason is the registry's own rule that a pin must prove the CONSTANT produced the string: win_probability's sub-scorers cap at hardcoded literals (min(10.0, ...) at win_probability.py:424-425, and twelve more like it), so the numerator beside this denominator comes from a typed number either way. Pinning the denominator alone would freeze half of a pair whose other half is a literal — a pin that looks like coverage and is not. The thirteen hardcoded caps are recorded for the next release; removing them is a change to scoring behaviour, which a patch is not the place for. The three SECTION maxima are pinned above, where the methodology sentence interpolates them and no literal sits beside them.
+KNOWN | benchmark_thresholds.PIPELINE_CREDIBILITY_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with a hardcoded cap at win_probability.py:449.
+KNOWN | benchmark_thresholds.TRACK_RECORD_STRENGTH_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with a hardcoded cap at win_probability.py:460.
+KNOWN | benchmark_thresholds.TRACK_RECORD_ALIGNMENT_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with hardcoded caps at win_probability.py:466-467.
+KNOWN | benchmark_thresholds.HIGHER_DISTRESS_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with a hardcoded cap at win_probability.py:476.
+KNOWN | benchmark_thresholds.DEEP_DISTRESS_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with a hardcoded cap at win_probability.py:482.
+KNOWN | benchmark_thresholds.SPECIAL_TARGETING_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with a hardcoded cap at win_probability.py:503.
+KNOWN | benchmark_thresholds.COMMUNITY_OUTCOMES_QUALITY_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with a hardcoded cap in _score_outcomes_quality.
+KNOWN | benchmark_thresholds.COMMUNITY_ACCOUNTABILITY_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with a hardcoded cap at win_probability.py:520.
+KNOWN | benchmark_thresholds.DBC_TRACK_RECORD_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with a hardcoded cap in _score_dbc_track_record.
+KNOWN | benchmark_thresholds.UNRELATED_ENTITIES_MAX | As PRODUCT_FLEXIBILITY_MAX: sub-score denominator, paired with a hardcoded cap at win_probability.py:541.
+KNOWN | consistency_check._QEI_COVERAGE_BOUNDS | The 30%/95% band produces a WARNING string that interpolates the bounds ("typical NMTC deals are 30%-95%"), and ValidationResult warnings are not carried into any of the four generated artifacts — check_consistency's warnings reach the CLI validation block, not the document. The bounds are unsourced: no CDFI Fund publication states a typical QEI-to-project-cost range, and the warning says "seems low" rather than asserting a threshold. Recorded as an unsourced house band for the next release rather than pinned, because pinning it would freeze a number that should be sourced or removed.

@@ -135,6 +135,15 @@ def check_consistency(application: "Application",
 _AGREEMENT_TOLERANCE_PER_PROJECT = 1.0
 _AGREEMENT_TOLERANCE_FLOOR = 1.0
 
+# RATES ARE NOT DOLLARS (FIX-2 G-3). The two constants above are a per-project
+# rounding allowance in DOLLARS. A credit price is ~0.83 and a fee rate ~2.5,
+# so a $1 tolerance is larger than the whole quantity and any disagreement
+# whatsoever passes: $0.83 against $0.95 differs by 0.12 and clears nothing.
+# Rates must match to the precision the document prints them at — two decimal
+# places for the credit price, one for the fee — so the allowance is half a
+# unit in the last printed place of the coarser of the two.
+_RATE_AGREEMENT_TOLERANCE = 0.005
+
 
 class _EconomicsOnly:
     """The slice of ApplicationAnalysis that Section D reads.
@@ -208,9 +217,39 @@ _UNPAIRED = {
     "QEI Less CDE Fees ($)":
         "a Section D-only derivation (QEI minus the CDE fee). Appendix A prints "
         "both inputs and never their difference",
-    "Assumed Credit Price ($/NMTC)":
-        "a per-credit rate, not a pipeline total; it is a model assumption and "
-        "carries its own disclaimer in the cell",
+}
+
+# ---------------------------------------------------------------------------
+# RATES, WHICH _UNPAIRED USED TO EXCUSE (FIX-2 G-3)
+#
+# "Assumed Credit Price ($/NMTC)" sat in _UNPAIRED above with the reason "a
+# per-credit rate, not a pipeline total; it is a model assumption and carries
+# its own disclaimer in the cell". Every clause of that is true and none of it
+# is a reason not to compare it. A rate is not a pipeline total, so it does
+# not belong in the Appendix-A-to-Section-D map — but it IS printed twice, in
+# Section D's economics table and again in the methodology appendix every
+# renderer emits, and those two are what have to agree.
+#
+# Measured on the branch head (probe N1): setting renderers/_methodology's
+# credit price to a literal 0.95 produced ONE FILING SAYING $0.83 IN SECTION D
+# AND $0.95 IN THE METHODOLOGY APPENDIX, with the whole suite green — the
+# registry pin passed because it asks only whether "$0.83" appears somewhere
+# on the surface, and this check passed because the figure was excused here.
+#
+# The registry states the correct rule and applied it to all nine distress
+# rows: a pin must be anchored, not merely present. This is that rule applied
+# to the rates.
+#
+# (label, Section D row, regex over the methodology text)
+_SECTION_D_TO_METHODOLOGY = {
+    "Assumed credit price": (
+        "Assumed Credit Price ($/NMTC)",
+        r"credit price \$([\d.]+)/credit",
+    ),
+    "Assumed CDE fee rate": (
+        "Assumed CDE Fee Rate",
+        r"CDE fee ([\d.]+)% of QEI",
+    ),
 }
 
 # Figures printed in more than one APPENDIX, which the 1.2.1-rc check did not
@@ -373,6 +412,34 @@ def _shared_figures(application: "Application", deal_economics: dict) -> dict:
             values[surface_name] = float(row[column])
         shared[label] = values
 
+    # THE RATES, COMPARED RATHER THAN EXCUSED (FIX-2 G-3). Both are printed
+    # twice per filing — once in Section D's economics table, once in the
+    # methodology appendix every renderer emits — and until now nothing looked
+    # at the pair. Read from the two renderers, not recomputed: a check that
+    # recomputed would agree with itself and not with the document.
+    from nmtcapp.renderers._methodology import deal_economics_note
+
+    methodology = deal_economics_note()
+    for label, (d_row, pattern) in _SECTION_D_TO_METHODOLOGY.items():
+        if d_row not in economics:
+            raise CrossSurfaceCheckError(
+                f"Section D no longer has a {d_row!r} row, so {label!r} "
+                "cannot be checked against the methodology appendix"
+            )
+        d_match = re.search(r"([\d.]+)", str(economics[d_row]))
+        m_match = re.search(pattern, methodology)
+        if d_match is None or m_match is None:
+            raise CrossSurfaceCheckError(
+                f"{label!r} could not be read from both surfaces "
+                f"(Section D: {economics[d_row]!r}; methodology matched: "
+                f"{m_match is not None}). The check cannot answer its question "
+                "and must not report clean."
+            )
+        shared[label] = {
+            "Section D (deal economics)": float(d_match.group(1)),
+            "Methodology appendix": float(m_match.group(1)),
+        }
+
     return shared
 
 
@@ -445,7 +512,8 @@ def check_cross_surface_agreement(application: "Application",
     # declared set is itself derived — _assert_pairs_cover_every_money_column
     # requires it to cover every money column the renderers publish — so there
     # is no hand-chosen number anywhere in the chain.
-    expected = set(_APPENDIX_A_TO_SECTION_D) | set(_APPENDIX_TOTALS)
+    expected = (set(_APPENDIX_A_TO_SECTION_D) | set(_APPENDIX_TOTALS)
+                | set(_SECTION_D_TO_METHODOLOGY))
     if set(shared) != expected:
         missing = sorted(expected - set(shared))
         extra = sorted(set(shared) - expected)
@@ -474,13 +542,30 @@ def check_cross_surface_agreement(application: "Application",
                 f"surface ({surfaces}) — it cannot be checked for agreement"
             )
             continue
-        if max(values) - min(values) > tolerance:
-            detail = "; ".join(f"{name} ${value:,.0f}" for name, value in surfaces.items())
-            issues.append(
-                f"{label} disagrees between surfaces of the same document: "
-                f"{detail} (difference ${max(values) - min(values):,.0f}). "
-                "A figure printed in two places must be one figure."
-            )
+        # A DOLLAR TOLERANCE APPLIED TO A RATE COMPARES NOTHING (FIX-2 G-3).
+        # The tolerance above is a per-project ROUNDING allowance measured in
+        # dollars; against a credit price it is roughly a thousand times the
+        # whole quantity, so $0.83 and $0.95 differ by 0.12 and sail under it.
+        # Rates are compared exactly, to the precision each surface prints.
+        is_rate = label in _SECTION_D_TO_METHODOLOGY
+        limit = _RATE_AGREEMENT_TOLERANCE if is_rate else tolerance
+        spread = max(values) - min(values)
+        if spread > limit:
+            if is_rate:
+                detail = "; ".join(f"{name} {value:g}" for name, value in surfaces.items())
+                issues.append(
+                    f"{label} disagrees between surfaces of the same document: "
+                    f"{detail} (difference {spread:g}). A rate printed in two "
+                    "places must be one rate — Section D's capital stack and "
+                    "the methodology appendix describe the same transaction."
+                )
+            else:
+                detail = "; ".join(f"{name} ${value:,.0f}" for name, value in surfaces.items())
+                issues.append(
+                    f"{label} disagrees between surfaces of the same document: "
+                    f"{detail} (difference ${spread:,.0f}). "
+                    "A figure printed in two places must be one figure."
+                )
     return issues
 
 

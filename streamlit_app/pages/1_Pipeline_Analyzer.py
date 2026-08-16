@@ -644,15 +644,22 @@ with tabs[4]:
     total_jobs = i.get("total_jobs_created", 0)
     total_retained = i.get("total_jobs_retained", 0)
     jpm = i.get("jobs_per_million_qei", 0.0)
-    total_units = i.get("total_units_built", 0)
-    total_sqft = i.get("total_sq_ft", 0.0)
+    # 1.2.1 B-2: aggregate_impact returns None when no project supplied a
+    # figure, and a supplied 0 when one did. `if total_units:` collapsed the
+    # two — a CDE that entered 0 for every project saw the metric vanish, the
+    # same as a CDE that entered nothing.
+    total_units = i.get("total_units_built")
+    total_sqft = i.get("total_sq_ft")
 
     c1, c2, c3 = st.columns(3)
     c1.metric("Total jobs created", f"{total_jobs:,}")
     c2.metric("Jobs retained", f"{total_retained:,}")
     c3.metric("Jobs per $1MM QEI", f"{jpm:.1f}")
 
-    if total_units:
+    if total_units is None:
+        st.metric("Affordable housing units", "—",
+                  help="No project in this pipeline supplied a units figure.")
+    else:
         st.metric("Affordable housing units", f"{total_units:,}")
 
     st.markdown("---")
@@ -703,7 +710,9 @@ with tabs[4]:
         st.markdown(f"- Total jobs retained: **{total_retained:,}**")
         if total_units:
             st.markdown(f"- Affordable units: **{total_units:,}**")
-        if total_sqft:
+        if total_sqft is None:
+            st.markdown("- Commercial sq ft: **—** (not supplied by any project)")
+        else:
             st.markdown(f"- Commercial sq ft: **{total_sqft:,.0f}**")
         st.markdown(f"- Jobs / $1MM QEI: **{jpm:.1f}**")
 

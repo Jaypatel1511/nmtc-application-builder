@@ -111,9 +111,18 @@ class SectionEPriorAwards(SectionGenerator):
             # "N/A" read as a value the CDE supplied. It is the absence of one.
             states = ", ".join(award.get("states") or []) or _NOT_COLLECTED
             sectors = ", ".join(award.get("sectors") or []) or _NOT_COLLECTED
+            # `award.get("amount", 0)` printed "$0" for an award whose amount
+            # the CDE left out — a statement that the round was worth nothing,
+            # in the section the Fund reads to assess deployment history
+            # (FIX-2 B-2 sweep, same fix as tables/track_record_table).
+            amount = award.get("amount")
+            amount_text = (
+                f"${amount:,.0f}" if amount is not None
+                else "[CDE TO COMPLETE: allocation amount]"
+            )
             award_details.append(
                 f"**Award {i+1} (FY{award.get('year', 'N/A')}):** "
-                f"${award.get('amount', 0):,.0f} — {status}. "
+                f"{amount_text} — {status}. "
                 f"States: {states}. Sectors: {sectors}."
                 + (" " + award.get("notes", "") if award.get("notes") else "")
             )

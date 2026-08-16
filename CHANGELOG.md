@@ -261,8 +261,22 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 133 constants are swept
+colour". The rendered-string sweep demands **19**, and 157 constants are swept
 where 49 were.
+
+> **Corrected in FIX-2 (G-1).** This paragraph shipped saying **133**, and three
+> sites in `tests/test_pinned_constants.py` said the same. All four figures were
+> measured on `324e9cd` — the artifact the hostile audit rejected — and carried
+> forward without being remeasured; the branch head held 149. The same round's
+> other published scope figures were wrong the same way: *outside `data/`* read
+> 77 and was 93, *with `streamlit_app/`* read 108 and was 124, *`FMT_*`* read 8
+> and was 7, and the distress-label pin count read twelve and was nine. A
+> hand-typed count inside a gate is a claim like any other, and none of these
+> could fail. Every scope figure is now derived by `_sweep_census()` on the tree
+> under test, the module's prose may state none of them (a structural guard
+> fails on the claim shape, not on the digit), and
+> `test_the_changelogs_sweep_figures_match_the_tree` fails this very sentence if
+> it drifts from the tree again.
 
 Two structural holes closed with it: the consumer scan now includes
 `streamlit_app/`, and a subscripted pin adjudicates **one** key — through
@@ -272,7 +286,7 @@ Two structural holes closed with it: the consumer scan now includes
 A seventh surface (`RecommendationSet.summary()`, reachable through the public
 `app.recommendations()`) and an eighth (`excel_cell_formats`) are now gated. The
 second is not text: openpyxl returns `6000000` whether the cell prints
-`$6,000,000` or `600000000.0%`, so the eight `FMT_*` number formats were
+`$6,000,000` or `600000000.0%`, so every `FMT_*` number format was
 invisible to every text-based gate. They are now pinned to the column they
 format.
 
@@ -327,6 +341,31 @@ does with the remaining gap stated.
   defect — a field that is both a CDE-supplied column and adapter-assignable —
   returns exactly two, `is_high_migration_rural` and `is_opportunity_zone`, and
   is now a test rather than a one-off search.
+- **A fabricated definition of a federal designation was deleted from live
+  recommendation text, and this file did not mention it.** `recommendations.py`
+  told a CDE which targeting category to pursue and named one as
+
+  > Persistent Poverty Counties (100+ years at ≥20% poverty)
+
+  **There is no federal designation measured over 100 years.** A Persistent
+  Poverty County is measured over THREE DECADES — consecutive decennial
+  censuses plus the current ACS — so the parenthetical was wrong by more than
+  threefold, in a sentence advising a CDE where to source projects. A CDE
+  reading it would look for a century of data that does not exist, or would
+  repeat the definition in its own application.
+
+  It was **deleted rather than corrected to 30**: this tool does not determine
+  the designation, holds no county list, and cannot cite one, so substituting a
+  number nobody here checked against a primary source would have relocated the
+  defect rather than removed it. The sentence now points at the authority that
+  publishes the list, which is what the CDE has to consult anyway.
+
+  **Recorded here in FIX-2 (G-6).** The deletion shipped in 1.2.1 with a
+  fifteen-line note in the source explaining exactly this, and no line at all
+  in the release notes — so a CDE holding a 1.2.0 draft containing the
+  fabricated definition was never told to remove it. If you have a draft
+  generated before this release, delete that parenthetical from it.
+
 - **`RecommendationSet.summary()` printed "below the 85% CDFI Fund threshold"
   from a hardcoded literal.** Every federal figure in `recommendations.py` is
   now interpolated — the 85% and 20% distress bars, the 40/85/45 gating points,

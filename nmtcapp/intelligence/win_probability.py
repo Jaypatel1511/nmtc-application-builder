@@ -487,9 +487,15 @@ class WinProbabilityModel:
         return _to_int(min(15.0, pct / SEVERE_DISTRESS_MIN_PCT * 15.0))
 
     def _score_deep_distress(self, result: "PipelineAnalysisResult") -> int:
-        # Use pct_deep if available; fall back to 50% of pct_deep_or_severe
+        # NO SUBSTITUTE FOR pct_deep (1.2.1 B-1 sweep). This used to fall back
+        # to "50% of pct_deep_or_severe", a made-up split of a combined share
+        # that the Fund's nesting does not support — deep is a strict subset of
+        # severe, in no fixed proportion. analyze_distress_concentration always
+        # emits pct_deep, so the fallback only ever fired on a hand-built dict,
+        # and when it fired it invented the number this sub-score is entirely
+        # made of. Absent means unknown, and unknown scores zero.
         d = result.distress_breakdown
-        deep_pct = d.get("pct_deep", d.get("pct_deep_or_severe", 0.0) * 0.5)
+        deep_pct = d.get("pct_deep", 0.0)
         return _to_int(min(10.0, deep_pct / DEEP_DISTRESS_MIN_PCT * 10.0))
 
     def _score_special_targeting(

@@ -26,6 +26,21 @@ _FIELD_GUIDANCE = {
     "governance": "a mapping describing your board, e.g. board_members: 7",
 }
 
+#: THE ONE LIST. Every other statement of "what a CDE profile must contain"
+#: is derived from this one (FIX-2 G-5).
+#:
+#: There were three, maintained by hand and agreeing by luck: this module's
+#: _FIELD_GUIDANCE, the ``required`` set inside from_yaml a hundred lines
+#: below, and validation/completeness_check._REQUIRED_CDE_FIELDS. Measured:
+#: deleting "governance" from the third passed the entire suite. A required
+#: field silently stopped being validated and nothing anywhere noticed — the
+#: second live instance of the class M5 named, after the pipeline columns
+#: consistency_check retyped.
+#:
+#: Ordered, because _missing_fields_message walks it to print the missing
+#: fields in the order the shipped scaffold lists them. A set would lose that.
+REQUIRED_CDE_FIELDS = tuple(_FIELD_GUIDANCE)
+
 
 def _missing_fields_message(path: str, missing: set, data: dict) -> str:
     """Name what the CDE must complete, in the order the scaffold lists it."""
@@ -114,8 +129,10 @@ class CDEProfile:
                 "'cde_id'."
             )
 
-        required = {"name", "cde_id", "certification_date", "mission",
-                    "target_markets", "prior_awards", "contact", "governance"}
+        # READ THE LIST, DO NOT RETYPE IT (FIX-2 G-5). This was a second
+        # hand-maintained copy of REQUIRED_CDE_FIELDS, forty lines below the
+        # first one in the same file.
+        required = set(REQUIRED_CDE_FIELDS)
         # A key present but left blank is NOT completed. The scaffold ships
         # every required key with an empty value, so an untouched scaffold has
         # no absent keys at all — checking only for absence let it through to

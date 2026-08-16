@@ -71,7 +71,9 @@ renderers/styles.DISTRESS_DISPLAY and both phrases still appear, on each
 other's projects, and a "Deep Distress" pin passes. Every label pin below is
 therefore anchored to the fixture project whose distress_level produced it, so
 the swap moves the label away from the anchor and the pin fails. Verified by
-executing the swap: eight of the twelve distress-label pins go red.
+executing the swap: the majority of the distress-label pins go red. The number
+of such pins is DERIVED by _sweep_census()['distress_label_pins'] and is not
+stated here — see test_the_sweep_states_no_count_it_has_not_derived.
 
 WHAT WAS NEVER A CANDIDATE FOR PINNING, AND IS NOW (1.2.1 S-2)
 
@@ -136,8 +138,8 @@ TEXT_SURFACES = (
 # and no text extractor can: openpyxl's data_only read returns 6000000 whether
 # the cell prints "$6,000,000", "600000000.0%" or "6000000". FMT_PCT landing on
 # a dollar column is a units defect that changes every figure on the page and
-# leaves the extracted text byte-identical, so the eight excel_builder.FMT_*
-# constants were invisible to a gate built on extracted text. This surface is
+# leaves the extracted text byte-identical, so every excel_builder.FMT_*
+# constant was invisible to a gate built on extracted text. This surface is
 # "<sheet> · <column header> · <number format>", one line per column, which
 # makes a format pinnable TO A COLUMN rather than merely present in the file.
 SHAPE_SURFACES = ("excel_cell_formats",)
@@ -206,8 +208,29 @@ class Pin:
 
 
 def _load_registry():
-    """Parse tests/pinned_constants.txt into (pins, waivers)."""
+    """Parse tests/pinned_constants.txt into (pins, waivers, known).
+
+    THREE ROW TYPES, NOT TWO (FIX-2 G-4).
+
+        CONSTANT | ...   a PIN: this string must render, here
+        WAIVE | ...      nothing to guard: the constant reaches no surface
+        KNOWN | ...      it DOES reach a surface, it is not guarded, and the
+                         row says why not
+
+    The third exists because twelve rows were filed as waivers under a section
+    header reading "consumed constants that reach no rendered surface" while
+    their own text opened "Renders as the '/ 10' denominator of a sub-score
+    line". Both statements were on the same screen and they contradicted each
+    other; the header is the half a reviewer skims. Splitting the row type
+    makes the distinction structural instead of a convention, and
+    test_no_waiver_describes_something_that_renders keeps it that way.
+
+    KNOWN adjudicates for the sweep exactly as WAIVE does — the point is not to
+    demand different behaviour from the gate, it is to stop a deferred defect
+    being filed as an absence.
+    """
     pins, waivers = [], {}
+    known = {}
     with open(PIN_PATH, encoding="utf-8") as fh:
         for lineno, raw in enumerate(fh, start=1):
             line = raw.rstrip("\n")
@@ -219,13 +242,17 @@ def _load_registry():
             # this the distress-label pins could not be expressed on the
             # markdown surface at all. Missing fields still error: len < 3 or
             # len < 4 below.
-            if line.lstrip().startswith("WAIVE | "):
-                parts = line.split(" | ", 2)
-                assert len(parts) == 3, (
-                    f"{PIN_PATH}:{lineno}: a WAIVE row is "
-                    f"'WAIVE | CONSTANT | reason', got {len(parts)} fields"
-                )
-                waivers[parts[1].strip()] = parts[2].strip()
+            for prefix, bucket in (("WAIVE | ", waivers), ("KNOWN | ", known)):
+                if line.lstrip().startswith(prefix):
+                    parts = line.split(" | ", 2)
+                    assert len(parts) == 3, (
+                        f"{PIN_PATH}:{lineno}: a {prefix.strip(' |')} row is "
+                        f"'{prefix.strip(' |')} | CONSTANT | reason', got "
+                        f"{len(parts)} fields"
+                    )
+                    bucket[parts[1].strip()] = parts[2].strip()
+                    break
+            if line.lstrip().startswith(("WAIVE | ", "KNOWN | ")):
                 continue
             parts = line.split(" | ", 3)
             assert len(parts) == 4, (
@@ -240,10 +267,10 @@ def _load_registry():
                 expected=expected,
                 lineno=lineno,
             ))
-    return pins, waivers
+    return pins, waivers, known
 
 
-PINS, WAIVERS = _load_registry()
+PINS, WAIVERS, KNOWN = _load_registry()
 
 
 # ---------------------------------------------------------------------------
@@ -441,7 +468,7 @@ def _excel_cell_formats(path: str) -> str:
     The number format is the only thing about the Excel attachment that the
     reader sees and _extract cannot: openpyxl with data_only=True hands back
     6000000 regardless of whether the cell prints $6,000,000 or 600000000.0%.
-    Building this surface makes the eight excel_builder.FMT_* constants
+    Building this surface makes the excel_builder.FMT_* constants
     pinnable to the COLUMN they format, so swapping FMT_CURRENCY for FMT_PCT on
     the QEI column fails a pin instead of shipping a page of percentages.
 
@@ -595,10 +622,108 @@ def test_every_pin_names_a_surface_and_a_source():
 
 def test_waivers_carry_reasons():
     assert WAIVERS, "no waivers recorded; the sweep found consumed constants"
-    for constant, reason in WAIVERS.items():
+    for constant, reason in list(WAIVERS.items()) + list(KNOWN.items()):
         assert len(reason) >= 30, (
-            f"waiver for {constant} has no real reason: {reason!r}"
+            f"row for {constant} has no real reason: {reason!r}"
         )
+
+
+def test_known_rows_exist_and_are_a_separate_shelf():
+    """FIX-2 G-4. The deferred-defect shelf must not empty back into WAIVE.
+
+    If KNOWN empties, either the twelve sub-score denominators were fixed —
+    in which case they get pins, not waivers — or somebody moved them back
+    under a header that says they reach no rendered surface, which is the
+    misfiling this row type exists to prevent.
+    """
+    assert KNOWN, (
+        "no KNOWN rows. This package defers twelve rendering constants on "
+        "purpose (eleven sub-score denominators paired with hardcoded caps, "
+        "plus the QEI coverage band). If they were genuinely fixed they "
+        "belong in the pin section; they do not belong under WAIVE."
+    )
+    overlap = sorted(set(KNOWN) & set(WAIVERS))
+    assert not overlap, (
+        f"filed as both waived and known-deferred: {overlap}. One of the two "
+        "rows is wrong — a constant either reaches a surface or it does not."
+    )
+    pinned = {p.constant for p in PINS}
+    assert not (set(KNOWN) & pinned), sorted(set(KNOWN) & pinned)
+
+
+def test_every_row_sits_under_a_section_header_that_agrees_with_it():
+    """A row's TYPE and the header above it must say the same thing (FIX-2 G-4).
+
+    Twelve rows sat under
+
+        "# --- Waivers: consumed constants that reach no rendered surface ---"
+
+    while their own text opened
+
+        "Renders as the '/ 10' denominator of a sub-score line in
+         WinProbabilityScore.summary()."
+
+    Both on one screen, contradicting each other, and the header is the half a
+    reviewer skims. The REASONING in those rows is right — thirteen sub-scorers
+    cap at hardcoded literals, so pinning a denominator freezes half of a pair
+    whose other half is a typed number, and unifying them changes scoring,
+    which a patch release is not the place for. What was wrong was the filing:
+    a waiver claims there is nothing to guard, and these say there is something
+    unguarded and here is why. That is a deferred defect.
+
+    THE GUARD IS STRUCTURAL, NOT TEXTUAL. A regex over the reason prose cannot
+    tell "the constant renders" from "something adjacent to the constant
+    renders", and both sentences are legitimate — schema.GRADE_THRESHOLDS is
+    correctly waived with the words "the grade LETTER renders". So this checks
+    the one thing that is exactly checkable: a WAIVE row may not sit under the
+    known-and-deferred header, and a KNOWN row may not sit under the waiver
+    header. Moving the twelve back is then a test failure rather than a
+    judgement call.
+    """
+    waiver_header = "reach no rendered surface"
+    known_header = "Known and left alone"
+
+    section = None
+    misfiled = []
+    with open(PIN_PATH, encoding="utf-8") as fh:
+        for lineno, raw in enumerate(fh, start=1):
+            line = raw.rstrip("\n")
+            if line.startswith("# --- "):
+                section = line
+                continue
+            if not line.strip() or line.lstrip().startswith("#"):
+                continue
+            constant = line.split(" | ")[1].strip() if " | " in line else line[:40]
+            if line.startswith("KNOWN | ") and (
+                section is None or known_header not in section
+            ):
+                misfiled.append(
+                    f"  {PIN_PATH}:{lineno} KNOWN row {constant} under "
+                    f"{section!r}"
+                )
+            if line.startswith("WAIVE | ") and section and known_header in section:
+                misfiled.append(
+                    f"  {PIN_PATH}:{lineno} WAIVE row {constant} under the "
+                    "known-and-deferred header"
+                )
+            if line.startswith("KNOWN | ") and section and waiver_header in section:
+                misfiled.append(
+                    f"  {PIN_PATH}:{lineno} KNOWN row {constant} under the "
+                    "waiver header, which says these reach no rendered surface"
+                )
+
+    assert section is not None, (
+        "the registry has no '# --- ' section headers at all, so this check "
+        "has nothing to compare a row against and would pass vacuously."
+    )
+    assert not misfiled, (
+        f"{len(misfiled)} row(s) sit under a section header that contradicts "
+        "their row type:\n" + "\n".join(misfiled)
+        + "\n\nA WAIVE row says there is nothing to guard. A KNOWN row says "
+        "there is something unguarded and why. Filing the second under a "
+        "header announcing the first is how twelve deferred defects came to "
+        "read as absences."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -719,6 +844,8 @@ def _package_constants() -> dict:
 
     Same shape as _module_constants but over the whole shipped package, because
     the label dict that let the deep/severe swap through lives in a renderer.
+
+    NO CALLER MAY HAND-TYPE THIS COUNT. See :func:`_sweep_census`.
     """
     found = {}
     root = _repo_root()
@@ -739,6 +866,50 @@ def _package_constants() -> dict:
                     if isinstance(t, ast.Name) and t.id.isupper() and t.id != "__all__":
                         found[f"{mod}.{t.id}"] = os.path.relpath(path, root)
     return found
+
+
+def _sweep_census() -> dict:
+    """Every figure this module would otherwise state about its own scope.
+
+    A HAND-TYPED COUNT INSIDE A GATE IS A CLAIM LIKE ANY OTHER (FIX-2 G-1).
+
+    Three sites in this file, and one paragraph of CHANGELOG.md, said the
+    package sweep covers **133** constants. It covered 149 — and every one of
+    those figures had been measured on 324e9cd, the artifact the hostile audit
+    rejected, then carried forward unremeasured. The same round's other
+    published figures were wrong the same way: "93 outside data/" read 77,
+    "124 with streamlit_app/" read 108, "7 FMT_* constants" read 8,
+    "DISTRESS_DISPLAY has 9 rows" read 15.
+
+    Not one of them could fail. They were prose inside a file whose entire
+    premise is that its numbers are evidence — which is FLOOR=440's shape one
+    round later, and the reason this function exists rather than a corrected
+    literal.
+
+    So nothing states a count any more. Every figure is derived here, on the
+    tree under test, and the two places that need one — the fail-closed floor
+    below and the docstring shown to a reviewer — read it from this dict.
+    """
+    consts = _package_constants()
+    data_prefix = "data" + os.sep
+    fmt_names = [n for n in consts if n.startswith("excel_builder.FMT_")]
+
+    from nmtcapp.renderers.styles import DISTRESS_DISPLAY
+
+    return {
+        "package_constants": len(consts),
+        "outside_data": sum(1 for p in consts.values()
+                            if not p[len(PACKAGE_ROOT) + 1:].startswith(data_prefix)),
+        "consumer_roots": len(CONSUMER_ROOTS),
+        "fmt_constants": len(fmt_names),
+        "distress_display_rows": len(DISTRESS_DISPLAY),
+        "distress_label_pins": sum(
+            1 for p in PINS if p.constant.startswith("styles.DISTRESS_DISPLAY")
+        ),
+        "pinned_rows": len(PINS),
+        "waivers": len(WAIVERS),
+        "known_deferred": len(KNOWN),
+    }
 
 
 def _consumer_roots() -> list:
@@ -805,7 +976,8 @@ def _adjudicated(name: str) -> bool:
     adjudicates the whole constant — which is correct for a scalar and is a
     deliberate, visible choice for a dict.
     """
-    return name in {p.constant for p in PINS} or name in WAIVERS
+    return (name in {p.constant for p in PINS}
+            or name in WAIVERS or name in KNOWN)
 
 
 @_needs_source_tree
@@ -899,13 +1071,19 @@ def test_every_rendering_constant_is_pinned_or_waived(rendered):
     holds appears in the rendered document. If none does, the constant needs no
     row: the artifact says so on every run, and it cannot go stale the way a
     written waiver can. If one does, the constant publishes text and must be
-    pinned or waived by hand. Measured on this tree: 133 constants, 21 render,
-    19 of them newly adjudicated in 1.2.1.
+    pinned or waived by hand.
+
+    NO COUNT IS STATED HERE ON PURPOSE (FIX-2 G-1). This docstring used to
+    open a sentence with "Measured on this tree" and follow it with 133 — a
+    figure taken on 324e9cd, the rejected artifact, and 149 by the time
+    anybody read it. See :func:`_sweep_census` and
+    ``test_the_sweep_states_no_count_it_has_not_derived``, which prints the
+    live figures and fails if a literal comes back into this file.
 
     WHAT THIS SWEEP STILL CANNOT SEE, stated rather than implied:
 
       * A constant that shapes the artifact WITHOUT contributing text. Colours,
-        fonts and page margins are the harmless case; the eight
+        fonts and page margins are the harmless case; the
         excel_builder.FMT_* number formats are not, because a percent format on
         a dollar column changes every figure a reviewer reads and leaves the
         extracted text identical. That class is why the excel_cell_formats
@@ -917,10 +1095,18 @@ def test_every_rendering_constant_is_pinned_or_waived(rendered):
       * A string shorter than MIN_RENDERED_STRING. See that constant.
     """
     constants = _package_constants()
+    # THE FLOOR IS A FLOOR, NOT A CENSUS (FIX-2 G-1). It used to read "this
+    # tree has ~133" in its own failure message, a figure measured on a
+    # rejected artifact and never remeasured — a hand-typed count inside a
+    # fail-closed assert, in a file whose premise is that its numbers are
+    # evidence. The floor's job is to catch a walk that found nothing; it has
+    # no business asserting what the tree contains. The census is derived.
+    census = _sweep_census()
+    assert census["package_constants"] == len(constants)
     assert len(constants) >= 100, (
         f"the package sweep found only {len(constants)} constants under "
-        f"{PACKAGE_ROOT}/. This tree has ~133; a number this small means the "
-        "walk found nothing and the sweep is about to pass vacuously."
+        f"{PACKAGE_ROOT}/. A number this small means the walk found nothing "
+        "and the sweep is about to pass vacuously."
     )
 
     blob = _rendered_blob(rendered)
@@ -975,50 +1161,97 @@ def test_every_rendering_constant_is_pinned_or_waived(rendered):
 
 @_needs_source_tree
 def test_every_dict_key_the_package_reads_is_adjudicated():
-    """A subscripted pin covers ONE key. The rest are not covered by it.
+    """A subscripted row covers ONE key. Nothing else covers a key at all.
 
     ``schema.NMTC_PROGRAM_CONSTRAINTS[credit_rate]`` says nothing about
     ``[leverage_ratio_typical]``, and before 1.2.1 the sweep treated it as
     though it did — pinning any one key marked the whole dict adjudicated,
-    including keys added afterwards. This test closes that: for every dict
-    constant in nmtcapp/data/ that is not adjudicated by its bare name, every
-    key the package actually subscripts must carry its own row.
+    including keys added afterwards.
+
+    THE FIX FOR THAT DISABLED THIS GATE ENTIRELY (FIX-2 G-2). The rows S-2
+    added to enable key checking are what turned it off: every one of the ten
+    dicts acquired a BARE-NAME row, and this loop opened with
+    ``if _adjudicated(name): continue``. Measured on the branch head:
+
+        dicts in DATA_MODULES        10   (56 string keys)
+        short-circuited by bare name 10
+        dicts actually examined       0
+        keys actually examined        0
+
+    A gate that cannot fail, inside the gate built to close the last gate that
+    could not fail — and with no floor to say so.
+
+    A BARE NAME ADJUDICATES THE DICT AS A VALUE, NOT ITS KEYS. That distinction
+    is the whole point. Seven of the ten bare-name rows are WAIVERS reading
+    "the dict itself renders nowhere", which is a claim ABOUT THE DICT OBJECT;
+    whether ``IMPACT_BENCHMARKS["jobs_per_million_qei_low"]`` reaches the page
+    is a different question, and it is the question this test asks. So there is
+    no short-circuit any more: every key the package subscripts carries its own
+    row, whatever its parent says.
     """
     import importlib
     adjudicated_keys = {
-        n.split("[", 1)[0] + "[" + n.split("[", 1)[1]
-        for n in ({p.constant for p in PINS} | set(WAIVERS)) if "[" in n
+        n for n in ({p.constant for p in PINS} | set(WAIVERS) | set(KNOWN))
+        if "[" in n
     }
-    root = _repo_root()
+    # Read each consumer file once. The old loop re-read the whole tree per
+    # key — 56 keys x every .py file — which is why it was never noticed that
+    # the outer `continue` meant it read nothing at all.
+    sources = []
+    for tree_root in _consumer_roots():
+        for dirpath, _dirs, files in os.walk(tree_root):
+            for f in sorted(files):
+                if f.endswith(".py"):
+                    sources.append(
+                        open(os.path.join(dirpath, f), encoding="utf-8").read()
+                    )
+
     missing = []
+    dicts_examined = 0
+    keys_examined = 0
     for name, mod in sorted(_module_constants().items()):
-        if _adjudicated(name):
-            continue                       # bare name decided; keys inherit it
         bare = name.split(".", 1)[1]
         value = getattr(importlib.import_module(f"nmtcapp.data.{mod}"), bare, None)
         if not isinstance(value, dict):
             continue
+        dicts_examined += 1
         for key in value:
             if not isinstance(key, str):
                 continue
+            keys_examined += 1
             # Only keys the package actually reads. A declared-and-unread key
             # publishes nothing and is the dict's business, not this gate's.
-            pattern = re.compile(rf"\b{re.escape(bare)}\b\s*\[\s*[\"']{re.escape(key)}[\"']")
-            read = False
-            for tree_root in _consumer_roots():
-                for dirpath, _dirs, files in os.walk(tree_root):
-                    for f in files:
-                        if f.endswith(".py") and pattern.search(
-                            open(os.path.join(dirpath, f), encoding="utf-8").read()
-                        ):
-                            read = True
+            pattern = re.compile(
+                rf"\b{re.escape(bare)}\b\s*\[\s*[\"']{re.escape(key)}[\"']"
+            )
+            read = any(pattern.search(text) for text in sources)
             if read and f"{name}[{key}]" not in adjudicated_keys:
                 missing.append(f"  {name}[{key}]  is read but not adjudicated")
+
+    # THE FLOOR THIS GATE DID NOT HAVE. Zero examined is not zero defects; it
+    # is a gate that has stopped running, and it reported success for a whole
+    # release.
+    assert dicts_examined > 0, (
+        "this gate examined ZERO dicts. DATA_MODULES holds ten. Either the "
+        "module walk broke or a short-circuit is back — and either way the "
+        "test was about to pass having adjudicated nothing, which is the "
+        "exact failure it was built to close."
+    )
+    assert keys_examined > 0, (
+        f"this gate examined {dicts_examined} dict(s) and ZERO keys. A dict "
+        "sweep that reaches no key adjudicates nothing."
+    )
+    assert sources, (
+        "no consumer source files were read, so every key would look unread "
+        "and this gate would demand nothing of anybody."
+    )
 
     assert not missing, (
         f"{len(missing)} dict key(s) are subscripted by the package and carry "
         "no row of their own. A pin on a SIBLING key does not adjudicate "
-        "them.\n\n" + "\n".join(missing)
+        "them, and neither does a row on the BARE DICT NAME — that row is a "
+        f"claim about the dict object.\n\n(examined {dicts_examined} dicts, "
+        f"{keys_examined} keys)\n\n" + "\n".join(missing)
     )
 
 
@@ -1057,4 +1290,175 @@ def test_every_pinned_constant_name_resolves():
         + "\n  ".join(unknown)
         + "\n\nEither correct the name, or prefix it 'QUOTE:' if the row pins a "
         "quotation this package holds as inline text rather than as a constant."
+    )
+
+
+# ---------------------------------------------------------------------------
+# FIX-2 G-1: a hand-typed count inside a gate is a claim like any other
+# ---------------------------------------------------------------------------
+
+@_needs_source_tree
+def test_the_sweep_states_no_count_it_has_not_derived():
+    """Scope figures must be DERIVED here, never typed into prose.
+
+    Three sites in this file said the package sweep covers 133 constants while
+    it covered 149, and CHANGELOG.md said the same. Every one of those figures
+    was measured on 324e9cd — the artifact the hostile audit rejected — and
+    carried forward unremeasured, which is FLOOR=440's shape one round later
+    inside the file whose whole premise is that its numbers are evidence.
+
+    A literal count cannot fail. So this test does two things:
+
+      1. prints the live census, so a reviewer or a CHANGELOG author can copy
+         a figure that is true of the tree in front of them rather than of a
+         tree somebody measured once, and
+      2. fails if a bare scope integer reappears in this module's prose.
+
+    It deliberately does NOT assert an expected value for any census figure.
+    An expected value is the thing being removed.
+    """
+    census = _sweep_census()
+    for key, value in sorted(census.items()):
+        print(f"  {key:26s} {value}")
+
+    # Every figure must be positive, or the derivation itself has broken and
+    # the census would read as authoritative while measuring nothing.
+    for key, value in census.items():
+        assert value > 0, f"{key} derived as {value}; the sweep measured nothing"
+
+    # WHAT IS FORBIDDEN IS THE CLAIM SHAPE, NOT THE DIGIT. This file records
+    # the stale figures on purpose — a reader needs to know 133 was checked
+    # and found wrong — so a bare-integer denylist would forbid the history
+    # along with the claim. These patterns match a CURRENT-TENSE assertion
+    # about the tree under test, which is the thing that must be derived.
+    source = open(__file__, encoding="utf-8").read()
+    source = source.split("def test_the_sweep_states_no_count_it_has_not_derived")[0]
+    claim_shapes = {
+        r"this tree has ~?\d": "asserts a package-sweep count",
+        r"[Mm]easured on this tree: ~?\d": "asserts a measured count",
+        r"\d+ constants are swept": "asserts a swept-constant count",
+        r"the (?:eight|seven|nine|ten|eleven|twelve|\d+) (?:excel_builder\.)?FMT_\*":
+            "asserts how many number-format constants exist",
+        r"(?:eight|nine|ten|eleven|twelve|\d+) of the "
+        r"(?:eight|nine|ten|eleven|twelve|\d+)": "asserts a pin-count ratio",
+    }
+    reappeared = []
+    for pattern, why in claim_shapes.items():
+        for m in re.finditer(pattern, source):
+            line = source[:m.start()].count("\n") + 1
+            reappeared.append(f"line {line}: {m.group(0)!r} — {why}")
+    assert not reappeared, (
+        "a current-tense scope count is stated in this module's prose:\n  "
+        + "\n  ".join(reappeared) + "\n\n"
+        "Derive it in _sweep_census() and interpolate, or do not state it. "
+        "A figure a reader cannot check is a claim, and this file exists "
+        "because claims in gates are what this package keeps shipping. "
+        "Recording a PAST figure as history is fine; asserting a present one "
+        "is not."
+    )
+
+
+@_needs_source_tree
+def test_the_changelogs_sweep_figures_match_the_tree():
+    """CHANGELOG.md quoted the same rejected-artifact counts to the reader.
+
+    A release note is the one surface a CDE or a downstream maintainer reads
+    without running anything, so a figure there has to be true of the tree it
+    describes. This asserts only the figures the CHANGELOG actually states.
+    """
+    census = _sweep_census()
+    path = os.path.join(_repo_root(), "CHANGELOG.md")
+    text = open(path, encoding="utf-8").read()
+
+    claimed = re.findall(r"and (\d+) constants are swept", text)
+    assert claimed, (
+        "CHANGELOG.md no longer states a swept-constant count in the form "
+        "this test recognises. If the sentence was reworded, reword the "
+        "regex; do not delete the check."
+    )
+    for value in claimed:
+        assert int(value) == census["package_constants"], (
+            f"CHANGELOG.md says {value} constants are swept; the tree has "
+            f"{census['package_constants']}. The 1.2.1 figure (133) was "
+            "measured on 324e9cd, the rejected artifact."
+        )
+
+
+# ---------------------------------------------------------------------------
+# FIX-2 G-3: a pin must assert the VALUE, not merely its presence
+# ---------------------------------------------------------------------------
+
+# (label, the pinned literal, a regex matching every place the surface prints
+#  a value of this kind). The pattern must match the VALUE, in group 1, not
+#  the whole phrase — the test compares what it captured against the pin.
+_EXCLUSIVE_VALUES = (
+    (
+        "credit price",
+        "0.83",
+        r"credit price(?: of)? \$([\d.]+)\s*(?:/|per\s+)?(?:credit|NMTC)",
+    ),
+    (
+        "CDE fee rate",
+        "2.5",
+        r"CDE fee(?: rate)?(?: of)?[: ]+\s*([\d.]+)%\s*of QEI",
+    ),
+    (
+        "compliance period",
+        "7",
+        r"([\d]+)[- ]year compliance period",
+    ),
+)
+
+
+@pytest.mark.parametrize("label,expected,pattern", _EXCLUSIVE_VALUES,
+                         ids=[v[0] for v in _EXCLUSIVE_VALUES])
+def test_a_pinned_value_has_no_rival_on_the_same_surface(rendered, label, expected, pattern):
+    """"$0.83 appears somewhere" is not "the document says $0.83".
+
+    THE HOLE, MEASURED (probe N1, on the branch head). Setting
+    renderers/_methodology's credit price to a literal 0.95 produced ONE FILING
+    saying $0.83 in Section D and $0.95 in the methodology appendix two pages
+    later — and 955 tests stayed green. The registry pin for
+    NMTC_PROGRAM_CONSTRAINTS[standard_credit_price] passed because "$0.83" was
+    still in the document; the cross-surface check passed because the credit
+    price was excused in consistency_check._UNPAIRED as "a per-credit rate, not
+    a pipeline total".
+
+    The registry already states the correct rule and applied it to all nine
+    distress rows: a pin must be ANCHORED, not merely present. This is that
+    rule applied to the financial rates — every value of the pinned kind that
+    the surface prints must BE the pinned value.
+
+    (The shipped validator now compares the two surfaces directly as well —
+    consistency_check._SECTION_D_TO_METHODOLOGY — so a CDE with no test suite
+    gets the same protection. This test guards the registry's own claim.)
+    """
+    compiled = re.compile(pattern, re.IGNORECASE)
+    seen_anywhere = False
+    disagreements = []
+    for surface in DOCUMENT_SURFACES:
+        found = compiled.findall(rendered[surface])
+        if not found:
+            continue
+        seen_anywhere = True
+        rivals = sorted({v for v in found if v.rstrip("0").rstrip(".")
+                         != expected.rstrip("0").rstrip(".")})
+        if rivals:
+            disagreements.append(
+                f"  {surface}: prints {sorted(set(found))} for the {label}; "
+                f"the pinned value is {expected!r}"
+            )
+
+    assert seen_anywhere, (
+        f"no rendered surface prints a {label} in the form this test "
+        f"recognises ({pattern!r}). Either the wording changed — update the "
+        "pattern — or the value stopped rendering, in which case the registry "
+        "row that pins it is stale. A pattern that matches nothing is a test "
+        "that checks nothing."
+    )
+    assert not disagreements, (
+        f"the same document states more than one {label}:\n"
+        + "\n".join(disagreements)
+        + "\n\nA pin that only asks whether its literal appears SOMEWHERE "
+        "passes over this. The document has to say one thing."
     )

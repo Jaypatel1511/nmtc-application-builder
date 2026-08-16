@@ -12,13 +12,77 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+# ---------------------------------------------------------------------------
+# DEEP DISTRESS IS A STRICT SUBSET OF SEVERE DISTRESS. READ THIS BEFORE
+# TOUCHING ANY ARITHMETIC OR ANY LABEL BELOW.
+#
+# The CDFI Fund's NMTC LIC Eligibility workbook (2016–2020 ACS) publishes the
+# two flags in adjacent columns, and each states its own criterion in its own
+# header:
+#
+#   column O  Severe distress = LIC AND (Poverty>30%; MFI<=60%; Unemployment>=1.5)
+#   column P  Deep   distress = LIC AND (Poverty>40%; MFI<=40%; Unemployment>=2.5)
+#
+# Every deep prong implies its severe counterpart — >40% implies >30%, <=40%
+# implies <=60%, >=2.5 implies >=1.5 — so deep implies severe by construction.
+# VERIFIED EMPIRICALLY against the shipped file rather than inferred from the
+# headers, across all 85,395 tracts:
+#
+#   severe=NO,  deep=NO    64,213
+#   severe=YES, deep=NO    13,121
+#   severe=YES, deep=YES    8,061
+#   severe=NO,  deep=YES         0     <- the cell that would have to be
+#                                         non-empty for deep and severe to be
+#                                         disjoint. It is empty.
+#
+# THIS PACKAGE'S BUCKETS ARE DISJOINT; THE FUND'S FLAGS ARE NESTED. Each
+# project carries ONE distress_level, so a deep-distress tract lands in the
+# "deep" bucket and nowhere else. The bucket named "severe" therefore holds
+# tracts that are severe AND NOT deep — which is NOT what a reader of the
+# phrase "severely distressed" understands, and not what the Fund's severe
+# flag means.
+#
+# Hence the key names below. The exclusive bucket says "excluding deep" in its
+# own name, and the inclusive share — the one that answers the Fund's 85%
+# higher-distress bar and the one Appendix B's "Severely Distressed Flag"
+# column reports per project — is ``pct_deep_or_severe``.
+#
+# 1.2.1 shipped ``pct_severe`` for the exclusive bucket while rendering it
+# under the label "QEI in Severely Distressed Tracts". On a pipeline whose
+# distressed tracts are all deep, that row read 0.0% in Section B while
+# Appendix B flagged the same projects "Yes" — one filing, two answers.
+# ---------------------------------------------------------------------------
+DEEP_IS_SUBSET_OF_SEVERE = True
+
+#: What each rendered label must be computed from. Consulted by the pin in
+#: tests/test_121_financial_tables.py so the relation cannot be re-broken
+#: silently by a renaming.
+DISTRESS_SHARE_SEMANTICS = {
+    "pct_deep": "deep distress only — the basis of the Fund's 20% bar",
+    "pct_severe_excluding_deep": (
+        "severely distressed but NOT also deep — an internal residual, not a "
+        "figure any CDFI Fund question asks for"
+    ),
+    "pct_deep_or_severe": (
+        "severely distressed, deep distress included — the basis of the Fund's "
+        "85% bar and the share Appendix B's per-project flag reports"
+    ),
+}
+
+
 def analyze_distress_concentration(pipeline: "Pipeline") -> dict:
     """Compute distress level breakdown for a pipeline.
 
     Returns a dict with:
     - ``pct_deep`` – fraction of QEI in deep-distress tracts
-    - ``pct_severe`` – fraction of QEI in severe-distress tracts
-    - ``pct_deep_or_severe`` – combined deep + severe (key competitive metric)
+    - ``pct_severe_excluding_deep`` – fraction of QEI in tracts that are
+      severely distressed but NOT also deep. Named for what it is: deep
+      distress is a strict subset of severe distress in the Fund's own
+      workbook (see :data:`DEEP_IS_SUBSET_OF_SEVERE`), so this is a residual
+      and NOT "the severe share".
+    - ``pct_deep_or_severe`` – THE severe share, deep included. This is what
+      the Fund's severe-distress flag means and what the 85% higher-distress
+      commitment is measured against.
     - ``pct_lic`` – fraction of QEI in standard LIC tracts
     - ``pct_non_lic`` – fraction of QEI in ineligible tracts
     - ``pct_native_area`` – fraction of QEI in NMTC Native Areas
@@ -71,18 +135,21 @@ def analyze_distress_concentration(pipeline: "Pipeline") -> dict:
             unrelated_entity_qei += p.qei_request
 
     pct_deep = buckets["deep"] / total_qei
-    pct_severe = buckets["severe"] / total_qei
-    pct_deep_or_severe = pct_deep + pct_severe
+    # The bucket, not the concept. A project whose tract is deep-distress is
+    # counted in buckets["deep"] and nowhere else, so this is the severe share
+    # LESS the deep share — see DEEP_IS_SUBSET_OF_SEVERE above.
+    pct_severe_excluding_deep = buckets["severe"] / total_qei
+    pct_deep_or_severe = pct_deep + pct_severe_excluding_deep
     pct_lic = buckets["lic"] / total_qei
     pct_non_lic = (buckets["ineligible"] + buckets["unknown"]) / total_qei
-    pct_eligible = pct_deep + pct_severe + pct_lic
+    pct_eligible = pct_deep_or_severe + pct_lic
 
     min_threshold = TARGET_DISTRESS_THRESHOLDS["min_deep_distress"]
     target_threshold = TARGET_DISTRESS_THRESHOLDS["target_deep_distress"]
 
     return {
         "pct_deep": pct_deep,
-        "pct_severe": pct_severe,
+        "pct_severe_excluding_deep": pct_severe_excluding_deep,
         "pct_deep_or_severe": pct_deep_or_severe,
         "pct_lic": pct_lic,
         "pct_non_lic": pct_non_lic,
@@ -128,7 +195,7 @@ def _empty_distress_result() -> dict:
     buckets = {"deep": 0, "severe": 0, "lic": 0, "ineligible": 0, "unknown": 0}
     return {
         "pct_deep": 0.0,
-        "pct_severe": 0.0,
+        "pct_severe_excluding_deep": 0.0,
         "pct_deep_or_severe": 0.0,
         "pct_lic": 0.0,
         "pct_non_lic": 0.0,
