@@ -339,7 +339,7 @@ _STAMP_ON_LINE = re.compile(
     r"(?P<lead>"
     r"Prepared:\s*"                                   # markdown:112, excel:171
     r"|Generated\s+"                                  # excel:369, excel:437
-    r"|nmtc-application-builder v[\d.]+\*{0,2}\s+on\s+"   # markdown:246,
+    r"|nmtc-application-builder v(?:[\d.]+|<VERSION>)\*{0,2}\s+on\s+"  # md:246,
     r"|Preparation Date:\|"                           # word:178  word:518,
     r")"                                              #            pdf:715
     r"(?P<date>" + _ANY_DATE + r")"
@@ -352,6 +352,34 @@ _STAMP_ON_LINE = re.compile(
 _PDF_STAMP_LABEL = "Preparation Date:"
 _BARE_DATE = re.compile(r"^\s*" + _ANY_DATE + r"\s*$")
 
+# ---------------------------------------------------------------------------
+# THE PACKAGE VERSION IS ENVIRONMENT STATE, NOT RENDERED CONTENT.
+#
+# The renderers stamp `nmtcapp.__version__`, which resolves through
+# importlib.metadata — i.e. from the INSTALLED DISTRIBUTION'S metadata, not
+# from the code under test. Measured on one interpreter, changing only the
+# working directory:
+#
+#     run from the repo (carries nmtc_application_builder.egg-info)  v1.2.1
+#     run from a clean clone (egg-info is gitignored)                v1.2.0
+#
+# So a clean clone of this branch failed three baselines — markdown, word and
+# pdf — for a reason that has nothing to do with the document. Same class as
+# the run-date defect this file was just fixed for: the gate's result
+# depending on something other than its subject.
+#
+# The RENDERER is right; a CDE's filing should say which build produced it.
+# The GATE must not depend on it, so the version is normalised the same way
+# the run date is: anchored to the package name, so it cannot eat anything
+# else. Version correctness is gated by tests/test_version.py, which is where
+# it belongs.
+# ---------------------------------------------------------------------------
+_VERSION_STAMP = re.compile(
+    r"(?P<lead>nmtc-application-builder v)\d+\.\d+\.\d+(?:\.\w+)?"
+)
+
+VERSION_STAMP = "<VERSION>"
+
 RUN_DATE = "<RUNDATE>"
 
 
@@ -359,14 +387,16 @@ def _normalise(text: str, outdir: str) -> str:
     """Erase ONLY what is genuinely non-deterministic.
 
     Deliberately narrow. Every normalisation is a line this gate stops
-    watching, so the list is temp paths, ISO timestamps and the run-date stamp
-    — and nothing else. The fixture's own dates (certification_date, closing
+    watching, so the list is temp paths, ISO timestamps, the run-date stamp
+    and the package version — and nothing else. The last two are properties
+    of the RUN and the INSTALL, not of the document. The fixture's own dates (certification_date, closing
     target, construction start) are OUTPUT and must survive verbatim; that is
     what the anchoring above protects.
     """
     text = text.replace(outdir, "<OUTDIR>")
     text = re.sub(r"/(?:private/)?(?:tmp|var)/[^\s\"']*", "<TMPPATH>", text)
     text = _ISO_TS.sub("<TIMESTAMP>", text)
+    text = _VERSION_STAMP.sub(lambda m: m.group("lead") + VERSION_STAMP, text)
 
     out = []
     previous = ""
@@ -632,6 +662,59 @@ def test_no_fixture_date_could_be_mistaken_for_the_run_date():
             f"{project.project_id}: construction_start "
             f"{project.construction_start} is after operations_start "
             f"{project.operations_start}; consistency_check rejects that"
+        )
+
+
+def test_the_projection_is_independent_of_the_installed_version(tmp_path, monkeypatch):
+    """The clean-clone failure, reproduced and pinned.
+
+    `nmtcapp.__version__` resolves through importlib.metadata, so it is a fact
+    about the INSTALLED DISTRIBUTION rather than about the code under test. On
+    one interpreter, changing only the working directory:
+
+        run from the repo (carries an egg-info)   v1.2.1
+        run from a clean clone (egg-info ignored)  v1.2.0
+
+    Three baselines went red on a clean clone for that reason alone. Same class
+    as the run-date defect — the gate's result depending on something other
+    than its subject — and it is fixed the same way, by normalising the stamp
+    rather than by pinning an environment fact into a committed file.
+    """
+    import nmtcapp
+
+    projections = {}
+    for version in ("1.2.0", "1.2.1", "99.0.0.dev"):
+        monkeypatch.setattr(nmtcapp, "__version__", version)
+        out = tmp_path / version
+        out.mkdir()
+        projections[version] = _render_projections(str(out))
+
+    reference_version = "1.2.0"
+    reference = projections[reference_version]
+    for version, projection in projections.items():
+        if version == reference_version:
+            continue
+        for fmt in FORMATS:
+            diff = list(difflib.unified_diff(
+                reference[fmt].splitlines(), projection[fmt].splitlines(),
+                fromfile=f"{fmt} built as v{reference_version}",
+                tofile=f"{fmt} built as v{version}",
+                lineterm="", n=1,
+            ))
+            assert not diff, (
+                f"the {fmt} projection changed when only the INSTALLED "
+                f"VERSION changed (v{reference_version} -> v{version}). A "
+                "version stamp is not anchored in _VERSION_STAMP, so a clean "
+                "clone — or any install whose metadata differs from this "
+                "tree — fails this gate for a reason that has nothing to do "
+                "with the document.\n\n" + "\n".join(diff)
+            )
+
+    # And not by erasing the stamps along with everything else.
+    for fmt in ("markdown", "word", "pdf"):
+        assert VERSION_STAMP in reference[fmt], (
+            f"no version stamp was found in the {fmt} projection. Three "
+            "identical renders prove nothing if the normaliser removed them."
         )
 
 
