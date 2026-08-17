@@ -5,7 +5,231 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — 1.2.2, round 1 of 2
+## [Unreleased] — 1.2.2, round 2 of 2
+
+**The six false Fund attributions round 1 ruled are fixed, on all 20 surfaces.
+`EXPECTED_DEFECTS` goes 6 → 0.** They were inherited, not introduced here: every
+one was live on PyPI and on the published docs site for the whole 1.2.1 cycle,
+and round 1 ruled them without fixing any.
+
+**Nothing reaches the public docs site until `mkdocs gh-deploy` is run by hand.**
+CI's `docs` job proves the site *compiles*; it does not publish.
+
+### The primary sources, all three retrieved and text-extracted locally
+
+Round 1 had only the Review Process, which is why three of its rulings were
+recorded as *could not establish*. Round 2 retrieved the other two. None was
+fetched through a summarising model.
+
+| Document | Bytes | Pages |
+|---|---|---|
+| CY 2024-2025 NMTC Allocation Application | 1,525,626 | 142 |
+| CY 2024-2025 NMTC Program Review Process | 187,497 | 7 |
+| CY 2024-2025 NOAA — 89 FR 92283-92292, 21 Nov 2024 | 72,819 (FR text) | 10 |
+
+**The NOAA exists and round 1's brief was wrong to doubt it.** The Review
+Process names it — "published in the Federal Register on November 21, 2024" —
+and it was retrieved from the Federal Register's own API as document
+`2024-27029`. The *CY 2026* NOAA is a different document and is still
+unpublished; verified against the Federal Register through 2026-08-12, so the
+rendered basis note that says so remains true.
+
+Grep counts over all three, which is what the withdrawals rest on:
+
+| Term | Application | Review Process | NOAA |
+|---|---|---|---|
+| "special targeting" | 0 | 0 | 0 |
+| "bonus point" | 0 | 0 | 0 |
+| "top tier" | 0 | 0 | 0 |
+| "deployment rate" | 0 | 0 | 0 |
+| "near-100" | 0 | 0 | 0 |
+| "90%" | 0 | 3 | 0 |
+| "priority point" | 5 | 4 | 2 |
+
+### The two numeric coincidences, ruled explicitly
+
+Both are real, published, correctly-cited Fund figures that a grep would offer
+as a citation for a house constant. **Neither licenses one**, because each is a
+different *kind* of quantity:
+
+- **"up to 10 additional priority points"** (Application p.19) is a POINT COUNT
+  belonging to two other criteria. `SPECIAL_TARGETING_BONUS_PCT` was a
+  SHARE-OF-QEI trigger. Ruled: withdrawal, not citation.
+- **"at least 95% of these proceeds as QLICIs"** (Review Process p.6) is a
+  REINVESTMENT SHARE on purchased loans. `TOP_TIER_AGGREGATE_MIN` was an
+  AGGREGATE POINT SCORE out of 100. Ruled: house, not citation. **This one the
+  round-2 brief did not flag**; it was found by grepping every `95` rather than
+  only the terms under suspicion.
+
+### Fixed — the six
+
+| Tag | Surfaces | Ruling | Basis |
+|---|---|---|---|
+| D1 | 6 | **Label + three-part disclosure.** Not withdrawal. | Application pp.20-21 |
+| D2 | 3 | **Split into its two true halves.** The 70% is untouched. | Review Process p.7 II.A.4, p.4 |
+| D3 | 4 | **House label.** Denominator unchanged; NOT re-based to 85%. | Application p.34 Q23 |
+| D4 | **6** | **House label**, and two award predictions withdrawn. | Review Process p.3 Step 2 |
+| D5 | 2 | **Withdrawal of the attribution.** | NOAA §V.B(b); Application p.132 |
+| D6 | 1 | **Fixed by citation.** | IRC §45D(d); Treas. Reg. §1.45D-1(c)(5)(i) |
+
+**D1 — and a round-1 reading corrected.** Round 1 recorded Question 15 as
+"100% of QLICIs must take one of FOUR forms". That is the Review Process p.6
+description of a *highly ranked* application — the top rung only. The
+Application itself (pp.20-21) shows Q15 is a **single-select ladder**: "Choose
+one of the following options. Check only one", at 50%/5 indicia, 33%/4, 25%/3,
+15%/2. **Writing round 1's paraphrase into rendered text would have installed a
+new misattribution while fixing the old one.** Every corrected surface states
+the ladder. The disclosure does three things, not one: it says this sub-score is
+not Q15's test, states what Q15 actually asks, and says the number is this
+tool's own — because a line that only says what a number *isn't* leaves a CDE
+assuming it is a near-miss proxy.
+
+**D3 — why the denominator did not move and why 85% was refused.** Question 23
+is a **Yes/No dropdown** (Application p.34) awarded five points for answering
+Yes; the Fund's test is not a percentage at all, so this package grades a
+continuous share against a binary question. Treas. Reg. §1.45D-1(c)(5)(i) does
+put "substantially all" at 85 percent, but for the **deployment** test
+(§1.45D-1(c)(1)(ii)), QEI cash into QLICIs. Re-basing would have swapped one
+unstated number for another *while strengthening the appearance of a citation*.
+**No denominator was changed anywhere in this release.**
+
+**D5 — withdrawal, and now disproved rather than unlocated.** The NOAA settles
+it affirmatively: under IRC §45D(f)(2) the Fund ascribes points for "one or
+both of the statutory priorities", and "Applicants that meet the requirements of
+both priority categories can receive up to a total of ten additional points."
+Two priorities, ten points, both already scored separately here. A third
+five-point award would make fifteen against a published maximum of ten. The four
+categories are real but appear in the Application only inside the glossary
+definition of a **Disadvantaged Business** (p.132) — inputs to the DBC priority,
+not a criterion.
+
+### Changed — the constant rename
+
+Eight SECTION A constants carrying a false or unstated Fund attribution are now
+`HOUSE_`-prefixed, so the compiler finds every consumer and no interpolated
+surface can silently keep the old wording. This matters because
+`streamlit_app/pages/4_About_and_Methodology.py` interpolates them **live** into
+the methodology tables a CDE reads — which is how D4 stayed invisible.
+
+`HOUSE_UNRELATED_ENTITIES_MIN_PCT`, `HOUSE_TRACK_RECORD_DEPLOYMENT_MIN`,
+`HOUSE_TOP_TIER_AGGREGATE_MIN`, `HOUSE_TOP_TIER_SECTION_MIN`,
+`HOUSE_SPECIAL_TARGETING_TRIGGER_PCT`, `HOUSE_SPECIAL_TARGETING_MAX`,
+`HOUSE_PRODUCT_FLEXIBILITY_BELOW_MARKET_PCT`,
+`HOUSE_PRODUCT_FLEXIBILITY_MIN_INDICIA`.
+
+**No deprecated aliases**, because the reachability check came back negative:
+none of the eight is in `nmtcapp/__init__`'s `__all__`, and
+`benchmark_thresholds` is named nowhere in `docs/`, `mkdocs.yml` or `README.md`.
+
+**Re-derived, and deliberately NOT renamed:** eight further SECTION A constants
+are house figures by this package's own admission — the sub-score maximums
+`PRODUCT_FLEXIBILITY_MAX`, `PIPELINE_CREDIBILITY_MAX`,
+`TRACK_RECORD_STRENGTH_MAX`, `TRACK_RECORD_ALIGNMENT_MAX`, `HIGHER_DISTRESS_MAX`,
+`DEEP_DISTRESS_MAX`, `COMMUNITY_OUTCOMES_QUALITY_MAX`,
+`COMMUNITY_ACCOUNTABILITY_MAX`. They weight **real** Fund criteria and every
+surface rendering them already carries the sub-score disclosure, so no false
+wording hides behind them. Prefixing them is 1.2.3, as a decision rather than an
+oversight.
+
+### Added
+
+- **`TRACK_RECORD_TO_PROJECTION_MIN = 0.90`** — the Fund's *other* 90%, added so
+  it stops being confused with the house one. It shares a value with
+  `HOUSE_TRACK_RECORD_DEPLOYMENT_MIN` and means something else, and the two now
+  render in the same sentence five clauses apart. Pinned to the rendered string.
+- **Non-metro provenance established.** The About page shipped a note saying
+  "whether the non-metro commitment is QLICI- or QEI-denominated has not been
+  checked". The NOAA states it expressly, **on QLICIs**: "at least 20 percent of
+  their QLICIs (as measured by dollar amount) in Non-Metropolitan counties", and
+  the Rural CDE definition at "at least 50 percent". Recorded at the constants.
+
+**D4 — two surfaces round 1 never listed, found in round 2.** Its true count is
+**six**, not four. Both were invisible to the gate for the same reason: they
+name no authority token, the blind spot that let
+`docs/reference/methodology.md:42` survive the release opened to sweep its
+siblings, one detector further out.
+
+- `streamlit_app/pages/2_Win_Alignment_Scorer.py` rendered **"Top Tier gate:
+  95+ aggregate AND 45+ in each section"** directly beneath **"Highly Qualified
+  gate: 85+ ..."**, in the same weight and the same shape. A CDE read a matched
+  pair of CDFI Fund gates; only the first one was.
+- `nmtcapp/intelligence/win_probability.py` ended its Top Tier explanation
+  **"High probability of Phase 2 advancement; award may approach the maximum
+  requested"** — an award prediction, resting on an invented gate, in a package
+  that disclaims predicting selection on every other surface. It renders in
+  `WinProbabilityScore.summary()`, a **pinned** surface, so unlike the other
+  five D4 sites this one was reaching CDEs through the scored output rather
+  than only through the methodology tables.
+
+### Changed — the gate itself
+
+**X1-EXCEPT gained a second limb, because round 2 broke the first one by
+accident.** Rewriting six defect surfaces into disclosures produced strings that
+*disclaim* this tool's threshold and *quote* the Fund's real one in the same
+breath — and adding the words "publishes no" to two Streamlit blobs silently
+exempted blobs that had been **adjudicated the release before**. A token list
+could not keep up, so the rule is general: **a string that cites a document
+location — a page, a question number, a statute section, a Part/Step, a Federal
+Register cite — is asserting what that document says, and is reviewable however
+much disclaiming surrounds it.** Measured before adopting: 8 strings move from
+exempt to adjudicated, and all 8 are Fund quotations.
+
+**`AUTHORITIES` gained the two tier names, and they earned their place by
+finding something.** "Highly Qualified" is the CDFI Fund's **own name for its
+own gate**, so a sentence stating a bar "required for Highly Qualified status"
+attributes that bar to the Fund as surely as one saying so in words. "Top Tier"
+earns it for the opposite reason: it is this package's **invented** tier, and
+stating cut points for it is a provenance claim by omission. Measured before
+adopting: 9 further strings become adjudicated, all nine genuine statements of
+the gating thresholds — and the widening is what surfaced the two unlisted D4
+sites above.
+
+### Proofs
+
+- **`EXPECTED_DEFECTS` 6 → 0**, all 20 DEFECT entries reclassified: CITED where
+  the corrected text quotes a document and page, HOUSE where the number is this
+  tool's own. **Zero is not a weaker pin than six** — the assertion is equality,
+  so a seventh defect fails at 0 exactly as an eighth would have failed at 6.
+  Proved by planting a `D7` row: `1 == 0` failed as intended.
+- **Round 1's planted-defect proof re-run against the rewritten allowlist**, on
+  the exact tabular row that once passed green — `| Planted Criterion | 5 | 60%+
+  of QLICIs in planted areas |`, which the gate had classified as a *header* —
+  plus a planted prose attribution. Both caught. A gate whose allowlist has been
+  rewritten is a gate that has not been proven since.
+- **Rendered baseline byte-unchanged**, all four formats. None of the six
+  sentences renders on a packaged deliverable fixture, so this is the expected
+  result and any movement would have been collateral damage.
+- Allowlist: 56 → 76 entries; 24 dropped as dead, 44 added.
+- Swept-constant census 158 → 160: `TRACK_RECORD_TO_PROJECTION_MIN` and its
+  render-text constant. The eight renames are net-zero.
+
+### Known, and NOT covered by this release
+
+- **The below-market limb of Product Flexibility is still in the scoring
+  arithmetic.** `win_probability.py:435` divides a QEI-weighted portfolio share
+  by a per-loan rate-discount depth. That is dimensionally meaningless and no
+  label makes it sensible. It is **disclosed** on every surface and **not
+  removed**, because removing it moves scored figures and the rendered baseline.
+  1.2.3, behind a written methodology.
+- **The Special Targeting sub-score is still scored**, for the same reason. Only
+  the Fund attribution is withdrawn.
+- **The readiness score is a house heuristic carrying a limb its own author
+  calls meaningless.** After this release the docs say so plainly — but a CDE
+  deciding whether to file should read the Product Flexibility disclosure as
+  what it is: this tool cannot answer Question 15, and a high sub-score there is
+  not evidence of a strong Q15 answer.
+- **What the gate still cannot see.** It scans string literals in `nmtcapp/`,
+  `streamlit_app/` and `docs/**/*.md`. It does **not** see: `README.md`,
+  `CHANGELOG.md`, `CITATION.cff`, docstrings surfaced through `help()`, the
+  Excel/Word/PDF renderers' non-literal composition, or any claim assembled from
+  fragments at runtime. `nmtc_calc_adapter.py:16`'s docstring — round 1 recorded
+  it as reaching developers rather than CDEs — **that reasoning holds**: it is
+  not published to the docs site (mkdocs runs no mkdocstrings) and is not
+  rendered into any deliverable. Reported, not acted on.
+
+---
+
+## [1.2.2 — round 1 of 2]
 
 **Gate only. No rendered wording changed, and the six false Fund attributions
 this round ruled are still live on PyPI and on the published docs site.**
@@ -421,7 +645,7 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 158 constants are swept
+colour". The rendered-string sweep demands **19**, and 160 constants are swept
 where 49 were.
 
 > **Corrected in FIX-2 (G-1).** This paragraph shipped saying **133**, and three

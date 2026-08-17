@@ -21,13 +21,15 @@ from nmtcapp.data.benchmark_thresholds import (
     HIGHER_DISTRESS_MAX,
     HIGHLY_QUALIFIED_AGGREGATE_MIN,
     HIGHLY_QUALIFIED_SECTION_MIN,
+    HOUSE_PRODUCT_FLEXIBILITY_MIN_INDICIA,
     SEVERE_DISTRESS_MIN_PCT,
-    TOP_TIER_SECTION_MIN,
+    HOUSE_TOP_TIER_SECTION_MIN,
     TRACK_RECORD_ALIGNMENT_MAX,
     TRACK_RECORD_STRENGTH_MAX,
-    TRACK_RECORD_DEPLOYMENT_MIN,
+    HOUSE_TRACK_RECORD_DEPLOYMENT_MIN,
     TRACK_RECORD_PIPELINE_ALIGNMENT_MIN,
-    UNRELATED_ENTITIES_MIN_PCT,
+    TRACK_RECORD_TO_PROJECTION_MIN,
+    HOUSE_UNRELATED_ENTITIES_MIN_PCT,
     WINNER_PATTERN_THRESHOLDS,
 )
 
@@ -61,9 +63,10 @@ _SOURCE_DOC = "CY 2024-2025 Review Process"
 # against the string it renders.
 _SEVERE_PCT_TEXT = f"{SEVERE_DISTRESS_MIN_PCT:.0%}"
 _DEEP_PCT_TEXT = f"{DEEP_DISTRESS_MIN_PCT:.0%}"
-_UNRELATED_PCT_TEXT = f"{UNRELATED_ENTITIES_MIN_PCT:.0%}"
+_UNRELATED_PCT_TEXT = f"{HOUSE_UNRELATED_ENTITIES_MIN_PCT:.0%}"
 _ALIGNMENT_PCT_TEXT = f"{TRACK_RECORD_PIPELINE_ALIGNMENT_MIN:.0%}"
-_DEPLOYMENT_PCT_TEXT = f"{TRACK_RECORD_DEPLOYMENT_MIN:.0%}"
+_DEPLOYMENT_PCT_TEXT = f"{HOUSE_TRACK_RECORD_DEPLOYMENT_MIN:.0%}"
+_FUND_TRACK_TO_PROJECTION_TEXT = f"{TRACK_RECORD_TO_PROJECTION_MIN:.0%}"
 _DBC_VOLUME_PCT_TEXT = f"{DBC_VOLUME_PCT_MIN:.0%}"
 
 # The aggregate BASE denominator is the two scored sections, not a third
@@ -228,37 +231,82 @@ class RecommendationEngine:
             recs.append(Recommendation(
                 category="business_strategy",
                 priority="high",
+                # D1 (1.2.2 round 2). This read: "The CDFI Fund awards full
+                # credit for CDEs offering 50%+ below-market products OR
+                # documenting 5+ indicia of flexible terms." Every clause of
+                # that was wrong about the Fund. Question 15 is a single-select
+                # ladder, its percentages are per-loan discount DEPTHS and not
+                # portfolio shares, and its OR sits inside one QLICI rather
+                # than across an application. Withdrawn, and replaced with the
+                # three things a CDE needs in order to act:
+                #   (1) this sub-score is not Question 15's test;
+                #   (2) what Question 15 actually asks;
+                #   (3) whose threshold the number above is.
+                # Stating only (1) would leave a reader assuming the sub-score
+                # is a near-miss proxy for Q15 — the 1.2.0 disclosure defect.
                 finding=(
-                    f"Product Flexibility score is {pf}/10. "
-                    "The CDFI Fund awards full credit for CDEs offering 50%+ below-market "
-                    "products OR documenting 5+ indicia of flexible terms."
+                    f"Product Flexibility score is {pf}/10 — this tool's own "
+                    "sub-score, not a measure of the CDFI Fund's Question 15 "
+                    "test. Question 15 (CY 2024-2025 NMTC Allocation "
+                    "Application, pp. 20-21) asks the Applicant to check ONE "
+                    "option committing that 100% of its QLICIs will be "
+                    "provided as equity; equity-equivalent financing; debt at "
+                    "least 50% below market; or debt satisfying at least 5 "
+                    "indicia of flexible or non-traditional terms — with "
+                    "lower-scoring rungs at 33%/4 indicia, 25%/3 and 15%/2. "
+                    "Every rung is a property of each individual QLICI. This "
+                    "sub-score instead divides a QEI-weighted share of the "
+                    "portfolio priced below market by a per-loan discount "
+                    "depth, and takes the better of that and an "
+                    "application-level indicia count. Those are different "
+                    "quantities, so no figure here answers Question 15."
                 ),
                 action=(
-                    "Document 5 or more product flexibility indicia: longer maturities, "
+                    f"Document {HOUSE_PRODUCT_FLEXIBILITY_MIN_INDICIA} or more product "
+                    "flexibility indicia: longer maturities, "
                     "lower origination fees, equity-like features, reduced collateral "
                     "requirements, below-market interest rates, extended interest-only periods, "
                     "or technical assistance grants. Quantify the below-market rate discount "
-                    "as a percentage of market-rate comparables."
+                    "as a percentage of market-rate comparables. Then answer Question 15 "
+                    "directly from the CDE's own loan terms — this tool cannot answer it."
                 ),
                 expected_impact=(
-                    "Reach full Product Flexibility credit; 2–4 additional Business Strategy points."
+                    "Raise this tool's Product Flexibility sub-score toward its 10-point "
+                    "maximum. The sub-score's weight is this tool's interpretation; the "
+                    "CDFI Fund does not publish point values for individual sub-criteria."
                 ),
                 quantified_improvement=f"Estimated +{10-pf} points (Product Flexibility: {pf}/10 → 10/10).",
-                citation=f"{_SOURCE_DOC}, Section II.A — Business Strategy, Product Flexibility",
+                # Section II.A.1 describes what a HIGHLY RANKED application did.
+                # The requirement itself is Question 15 in the Application, and
+                # the citation now names both rather than implying the Review
+                # Process states a threshold this sub-score measures.
+                citation=(
+                    f"{_SOURCE_DOC}, Section II.A.1; CY 2024-2025 NMTC Allocation "
+                    "Application, Question 15 (pp. 20-21). Sub-score is this tool's own."
+                ),
             ))
         elif pf < 10:
             recs.append(Recommendation(
                 category="business_strategy",
                 priority="medium",
-                finding=f"Product Flexibility is {pf}/10 — one or two indicia short of full credit.",
+                finding=(
+                    f"Product Flexibility is {pf}/10 on this tool's own sub-score — one or "
+                    f"two indicia short of its {HOUSE_PRODUCT_FLEXIBILITY_MIN_INDICIA}-indicia "
+                    "full-credit point. That point is this tool's threshold, not the CDFI "
+                    "Fund's: Question 15 asks for a single committed option covering 100% "
+                    "of QLICIs, which this tool does not compute."
+                ),
                 action=(
                     "Add 1–2 additional flexible product features or document them more explicitly "
                     "in the narrative. Technical assistance grants or equity co-investment features "
                     "are highly credible differentiators."
                 ),
-                expected_impact="Reach full Product Flexibility score.",
+                expected_impact="Reach this tool's maximum Product Flexibility sub-score.",
                 quantified_improvement=f"Estimated +{10-pf} points (Product Flexibility: {pf}/10 → 10/10).",
-                citation=f"{_SOURCE_DOC}, Section II.A — Business Strategy, Product Flexibility",
+                citation=(
+                    f"{_SOURCE_DOC}, Section II.A.1; CY 2024-2025 NMTC Allocation "
+                    "Application, Question 15 (pp. 20-21). Sub-score is this tool's own."
+                ),
             ))
 
         # Pipeline Credibility (15 pts)
@@ -322,18 +370,40 @@ class RecommendationEngine:
             recs.append(Recommendation(
                 category="business_strategy",
                 priority="high",
+                # D2 (1.2.2 round 2). This read: "The CDFI Fund requires 70%+
+                # of NMTC pipeline to be supported by similar prior activity
+                # AND 90%+ of prior allocation deployed on schedule." Two Fund
+                # concepts had been fused into one invented bar under "The CDFI
+                # Fund requires":
+                #   * the 70% IS the Fund's, verbatim, and is UNTOUCHED here;
+                #   * the 90% is the Fund's track-record-TO-PROJECTION ratio,
+                #     re-pointed at prior-allocation deployment, which the Fund
+                #     reviews in Phase 2 with NO percentage attached.
+                # "deployment rate" returns 0 hits across all three primary
+                # documents. The two halves are now stated separately, each
+                # with its own provenance, because sweeping the true half out
+                # with the false one would be its own defect.
                 finding=(
                     f"Track Record Alignment is {tra}/{TRACK_RECORD_ALIGNMENT_MAX}. The CDFI Fund "
-                    f"requires {_ALIGNMENT_PCT_TEXT}+ of NMTC pipeline to be supported by "
-                    f"similar prior activity AND {_DEPLOYMENT_PCT_TEXT}+ of prior "
-                    "allocation deployed on schedule."
+                    f"(Review Process p.7, Part II.A.4) looks for {_ALIGNMENT_PCT_TEXT}+ of "
+                    "proposed NMTC investments to be supported by a track record of similar "
+                    "business types and activity types, and for the most recent 5-year direct "
+                    f"financing track record to be {_FUND_TRACK_TO_PROJECTION_TEXT}+ of "
+                    "projected NMTC deployment in Exhibit A. Separately, this tool scores "
+                    f"prior-allocation deployment against its own {_DEPLOYMENT_PCT_TEXT} "
+                    "point — the CDFI Fund reviews deployment of a prior allocation in "
+                    "Phase 2 (p.4) and publishes no percentage for it."
                 ),
                 action=(
                     f"Map at least {_ALIGNMENT_PCT_TEXT} of the NMTC pipeline projects to comparable prior direct "
                     "financing transactions (same sector, geography, or borrower profile). "
-                    f"If deployment rate is below {_DEPLOYMENT_PCT_TEXT}, document catch-up plan and explain any delay."
+                    f"If prior-allocation deployment is below this tool's {_DEPLOYMENT_PCT_TEXT} "
+                    "point, document catch-up plan and explain any delay."
                 ),
-                expected_impact="Reach both Track Record Alignment thresholds for full credit.",
+                expected_impact=(
+                    "Raise this tool's Track Record Alignment sub-score; strengthen the "
+                    "Exhibit A track-record-to-projection comparison the CDFI Fund does make."
+                ),
                 quantified_improvement=f"Estimated +{10-tra} points (Track Record Alignment: {tra}/10 → 10/10).",
                 citation=f"{_SOURCE_DOC}, Section II.A — Business Strategy, Track Record",
             ))
@@ -500,13 +570,58 @@ class RecommendationEngine:
             recs.append(Recommendation(
                 category="community_outcomes",
                 priority="medium",
+                # D5 — WITHDRAWN, NOT RE-CITED (1.2.2 round 2).
+                #
+                # This read: "The CDFI Fund awards up to 5 bonus points for QEI
+                # in U.S. Territories, High Migration Rural Counties, NMTC
+                # Native Areas, or Persistent Poverty Counties." Round 1 could
+                # not disprove it, having retrieved only the Review Process.
+                # Round 2 retrieved the other two documents and it is now
+                # disproved rather than unlocated: "special targeting" and
+                # "bonus point" each return ZERO hits across the CY 2024-2025
+                # Allocation Application (142pp), the Review Process (7pp) and
+                # the CY 2024-2025 NOAA (10pp).
+                #
+                # The NOAA settles it affirmatively. Section V.B(b): "as
+                # provided by IRC Sec. 45D(f)(2), the CDFI Fund will ascribe
+                # additional points to entities that meet ONE OR BOTH of the
+                # statutory priorities ... Applicants that meet the
+                # requirements of both priority categories can receive up to a
+                # total of ten additional points." Two priorities, ten points,
+                # and this package already scores both separately (DBC track
+                # record, Unrelated Entities). A third five-point award would
+                # make fifteen against a published maximum of ten.
+                #
+                # THE "10 PRIORITY POINTS" DOES NOT RESCUE THIS. The
+                # Application does say "up to 10 additional 'priority points'
+                # available under sub-sections B and E" (p.19) — a point count
+                # belonging to those two criteria. Reusing it to license a
+                # five-point Community Outcomes criterion would be the D1
+                # failure exactly: a real Fund figure re-pointed at a different
+                # kind of quantity.
+                #
+                # The four CATEGORIES are real, and the Application does name
+                # them — inside the glossary definition of "Disadvantaged
+                # Business or Disadvantaged Community" (p.132): a Disadvantaged
+                # Business is one located in "a Persistent Poverty County; a
+                # NMTC Native Area; or a U.S. Island Area". They are inputs to
+                # the DBC priority, not a criterion of their own. So the advice
+                # below still helps a CDE — it is the ATTRIBUTION that was
+                # false, and the sentence now says whose criterion this is.
                 finding=(
-                    f"Special Targeting is {st}/5. The CDFI Fund awards up to 5 bonus points "
-                    "for QEI in U.S. Territories, High Migration Rural Counties, NMTC Native Areas, "
-                    "or Persistent Poverty Counties."
+                    f"Special Targeting is {st}/5 — this tool's own criterion. The CDFI "
+                    "Fund publishes no 'Special Targeting' criterion and no bonus points "
+                    "for it: the CY 2024-2025 NOAA sets out exactly two statutory "
+                    "priorities under IRC §45D(f)(2), worth ten additional points in "
+                    "total, and this tool scores both of them elsewhere. U.S. Territories, "
+                    "High Migration Rural Counties, NMTC Native Areas and Persistent "
+                    "Poverty Counties are real NMTC concepts, but the Application uses "
+                    "them to define a Disadvantaged Business, not to award a separate "
+                    "score. Treat this sub-score as a house prompt to consider those "
+                    "areas, not as a bar the Fund will measure."
                 ),
                 action=(
-                    "Add 1–2 projects in qualifying Special Targeting areas. "
+                    "Add 1–2 projects in these areas if they fit the CDE's strategy. "
                     # THE PARENTHETICAL DEFINITION IS GONE, NOT CORRECTED.
                     #
                     # It read "Persistent Poverty Counties (100+ years at ≥20%
@@ -528,13 +643,30 @@ class RecommendationEngine:
                     "category for most CDEs. The county list is the CDFI "
                     "Fund's, not this tool's — check a county against the "
                     "Fund's published Persistent Poverty County designation "
-                    "before relying on it. NMTC Native Areas and High "
-                    "Migration Rural Counties offer additional credit. "
-                    "All four categories are identified in the CY 2024-2025 Allocation Application."
+                    "before relying on it. Where such a project also serves a "
+                    "Disadvantaged Business or Community, it counts toward the "
+                    "DBC statutory priority, which the CDFI Fund does score."
                 ),
-                expected_impact="Gain 1–3 additional Community Outcomes points from special targeting.",
+                expected_impact=(
+                    "Raise this tool's Special Targeting sub-score. No CDFI Fund points "
+                    "follow from it directly; the Fund-scored route for these areas is the "
+                    "DBC statutory priority."
+                ),
                 quantified_improvement=f"Estimated +{5-st} points (Special Targeting: {st}/5 → 5/5).",
-                citation=f"{_SOURCE_DOC}, Section II.C.1 — Community Outcomes, Special Targeting (CY 2024-2025 priority)",
+                # NO REVIEW PROCESS SECTION IS CITED, BECAUSE NONE STATES THIS.
+                # The old citation named "Section II.C.1", a real section
+                # (Targeting Areas of Higher Distress, Question 25) that does
+                # not contain the claim — a wrong pointer reads as corroboration
+                # to anyone who does not open the document. What is cited now is
+                # the document that DISPROVES the attribution, plus the glossary
+                # entry the four categories actually come from.
+                citation=(
+                    "HOUSE criterion — no CDFI Fund source. Disproved against: CY 2024-2025 "
+                    "NOAA (89 FR 92283, 21 Nov 2024), section V.B(b), two statutory "
+                    "priorities totalling 10 points; CY 2024-2025 NMTC Allocation "
+                    "Application p.132, which uses these four categories to define a "
+                    "Disadvantaged Business."
+                ),
             ))
 
         # Community Outcomes Quality (10 pts)
@@ -617,19 +749,59 @@ class RecommendationEngine:
             recs.append(Recommendation(
                 category="priority_points",
                 priority="medium",
+                # D3 (1.2.2 round 2). This read: "Full credit requires
+                # committing substantially all (90%+) QEIs to entities
+                # unrelated to the CDE." The 90% was presented as the content of
+                # "substantially all" under a "Full credit requires" stem, i.e.
+                # as the Fund's own figure. It is not, and the Fund publishes no
+                # percentage here at all.
+                #
+                # THE DENOMINATOR IS UNCHANGED. "Proceeds of its QEIs" is what
+                # Question 23 and the NOAA both say, and it is the one share
+                # this package has right. Nothing below re-bases anything.
+                #
+                # NOT RE-BASED TO 85% EITHER. Treas. Reg. §1.45D-1(c)(5)(i) does
+                # define "substantially all" as at least 85 percent, but it
+                # defines it for the DEPLOYMENT test — QEI cash into QLICIs, at
+                # §1.45D-1(c)(1)(ii). Borrowing it here would swap one unstated
+                # number for another while making the citation look stronger.
+                #
+                # WHAT THE FUND ACTUALLY ASKS IS A YES/NO. Application p.34,
+                # Question 23, is a dropdown: "Does the Applicant intend to use
+                # substantially all of the proceeds of its QEIs to make QLICIs
+                # in one or more businesses in which persons Unrelated to the
+                # Applicant hold the majority equity interest?  [ ] Yes [ ] No",
+                # and sub-section E: "An Applicant that answers 'Yes' to
+                # Question 23 will be awarded five additional points." So this
+                # package scores a continuous share against a binary question —
+                # a category error before it is a wrong number, which is why
+                # this is labelled house rather than re-based.
                 finding=(
-                    f"Unrelated Entities Priority Points are {ue}/5. "
-                    f"Full credit requires committing substantially all ({_UNRELATED_PCT_TEXT}+) QEIs to "
-                    "entities unrelated to the CDE."
+                    f"Unrelated Entities Priority Points are {ue}/5, scored against this "
+                    f"tool's own {_UNRELATED_PCT_TEXT}-of-QEI point. The CDFI Fund publishes "
+                    "no percentage here: Question 23 is a Yes/No commitment to use "
+                    "\"substantially all\" of the proceeds of the CDE's QEIs for QLICIs in "
+                    "businesses in which unrelated persons hold the majority equity "
+                    "interest, and answering Yes is awarded five additional points."
                 ),
                 action=(
                     "Review pipeline for any related-party transactions. "
-                    "If any QEIs go to CDE affiliates, replace with unrelated QALICB projects "
-                    f"to reach the {_UNRELATED_PCT_TEXT} unrelated threshold."
+                    "If any QEIs go to CDE affiliates, replace with unrelated QALICB projects. "
+                    "The commitment the Fund records is the Question 23 answer itself, and a "
+                    "CDE that answers Yes is bound to it in its Allocation Agreement — decide "
+                    f"it on the CDE's own structure, not on this tool's {_UNRELATED_PCT_TEXT} point."
                 ),
                 expected_impact="Earn unrelated entity priority points with minimal pipeline changes.",
                 quantified_improvement=f"Estimated +{5-ue} priority points (Unrelated: {ue}/5 → 5/5).",
-                citation=f"{_SOURCE_DOC}, Section III — Priority Points, Unrelated Entities",
+                # "Section III — Priority Points" is not a section of the Review
+                # Process; priority points are Part II.B there. Corrected, and
+                # the Application question is named because that is where the
+                # commitment is actually made.
+                citation=(
+                    f"{_SOURCE_DOC}, p.7 Part II.B.2; CY 2024-2025 NMTC Allocation "
+                    "Application, Question 23 and sub-section E (p.34). Percentage above "
+                    "is this tool's own."
+                ),
             ))
 
         return recs
@@ -823,7 +995,7 @@ class RecommendationEngine:
             return (
                 f"Top Tier ({agg}/{_AGGREGATE_MAX}). Business Strategy: {bs}/{BUSINESS_STRATEGY_MAX}, "
                 f"Community Outcomes: {co}/{COMMUNITY_OUTCOMES_MAX}. Both sections exceed the "
-                f"{TOP_TIER_SECTION_MIN}-point threshold. "
+                f"{HOUSE_TOP_TIER_SECTION_MIN}-point threshold. "
                 # "Top Tier" is this package's own label and the two cut points
                 # behind it are unsourced. The CDFI Fund publishes the Highly
                 # Qualified gate and nothing above it, so a CDE reading this

@@ -3,7 +3,7 @@ import pytest
 from nmtcapp.intelligence.win_probability import WinProbabilityModel, WinProbabilityScore
 from nmtcapp.data.benchmark_thresholds import (
     HIGHLY_QUALIFIED_AGGREGATE_MIN, HIGHLY_QUALIFIED_SECTION_MIN,
-    TOP_TIER_AGGREGATE_MIN, TOP_TIER_SECTION_MIN,
+    HOUSE_TOP_TIER_AGGREGATE_MIN, HOUSE_TOP_TIER_SECTION_MIN,
     SEVERE_DISTRESS_MIN_PCT, DEEP_DISTRESS_MIN_PCT,
 )
 

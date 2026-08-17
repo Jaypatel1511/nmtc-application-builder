@@ -78,13 +78,15 @@ data = score.to_dict()
 
 ## Tier classification
 
-The CDFI Fund uses section minimums to gate applications into the "Highly Qualified" pool that advances to Phase 2 review.
+The CDFI Fund uses section minimums to gate applications into the "Highly Qualified" pool that advances to Phase 2 review. It publishes **one** gate, in the first two rows. The third row is this tool's own label and is marked as such.
 
-| Tier | Aggregate Base Score | Section Minimums | Phase 2? |
-|---|---|---|---|
-| **Not Qualified** | < 85, or either section < 40 | — | No |
-| **Highly Qualified** | 85–94 | Both sections ≥ 40/50 | Yes |
-| **Top Tier** | ≥ 95 | Both sections ≥ 45/50 | Yes — stronger ranking |
+| Tier | Aggregate Base Score | Section Minimums | Phase 2? | Whose threshold |
+|---|---|---|---|---|
+| **Not Qualified** | < 85, or either section < 40 | — | No | CDFI Fund |
+| **Highly Qualified** | 85–94 | Both sections ≥ 40/50 | Yes | CDFI Fund |
+| **Top Tier** | ≥ 95 | Both sections ≥ 45/50 | Yes — same pool | **This tool** |
+
+**"Top Tier" is not a CDFI Fund tier.** The Review Process (p.3, Step 2) publishes the Highly Qualified gate — 40 per section and an aggregate base score of 85 — and **nothing above it**; "Top Tier" returns zero hits across the Allocation Application (142 pp.), the Review Process (7 pp.) and the CY 2024-2025 NOAA (10 pp.). The 95/45 cut points are an unsourced house heuristic, and an application in this row is in the *same* Highly Qualified pool as the row above it, not a further one. See [Methodology](../reference/methodology.md#top-tier-is-not-a-cdfi-fund-tier).
 
 **The section minimums are gating, not just weighted.** An application with 92 aggregate but 38 in Community Outcomes is Not Qualified — it does not advance to Phase 2 regardless of the aggregate.
 

@@ -124,8 +124,8 @@ DOCUMENT_SURFACES = ("markdown", "word", "excel", "pdf")
 # 85% survived being changed to 55% with nothing red (1.2.1 L-3).
 #
 # top_tier_*: the same two text surfaces rendered from a SECOND fixture, one
-# that actually reaches Top Tier. TOP_TIER_AGGREGATE_MIN and
-# TOP_TIER_SECTION_MIN were waived on the grounds that they "render only when a
+# that actually reaches Top Tier. HOUSE_TOP_TIER_AGGREGATE_MIN and
+# HOUSE_TOP_TIER_SECTION_MIN were waived on the grounds that they "render only when a
 # fixture reaches Top Tier", which was an admission that the fixture was too
 # weak rather than a statement that the constants reach no surface. They gate
 # the tier LABEL, the label renders, and a fixture that sits just above the bar
@@ -342,7 +342,7 @@ def _fixture_application() -> Application:
 def _top_tier_application() -> Application:
     """A pipeline strong enough to be classified Top Tier.
 
-    R-1: TOP_TIER_AGGREGATE_MIN and TOP_TIER_SECTION_MIN were waived because
+    R-1: HOUSE_TOP_TIER_AGGREGATE_MIN and HOUSE_TOP_TIER_SECTION_MIN were waived because
     "they render only when a fixture actually reaches Top Tier". That is a
     statement about the FIXTURE, not about the constants — the constants decide
     which of three tier labels a CDE is told it is in, and the label is printed
@@ -546,7 +546,7 @@ def rendered() -> dict:
     top = _top_tier_application()
     top_score = top.score_win_probability()
     # FAIL CLOSED. Every pin on the two top_tier_* surfaces exists to make
-    # TOP_TIER_AGGREGATE_MIN and TOP_TIER_SECTION_MIN bite. If the fixture stops
+    # HOUSE_TOP_TIER_AGGREGATE_MIN and HOUSE_TOP_TIER_SECTION_MIN bite. If the fixture stops
     # reaching the branch — because a sub-scorer changed, or because somebody
     # raised the constants and the fixture no longer clears them — those pins
     # would go quietly unreachable and the constants would be back to being
@@ -554,7 +554,7 @@ def rendered() -> dict:
     assert top_score.tier == "Top Tier", (
         f"the Top Tier fixture scored {top_score.aggregate_base_score}/100 and was "
         f"classified {top_score.tier!r}, not 'Top Tier'. Either a sub-scorer "
-        "changed, or TOP_TIER_AGGREGATE_MIN / TOP_TIER_SECTION_MIN moved. Both "
+        "changed, or HOUSE_TOP_TIER_AGGREGATE_MIN / HOUSE_TOP_TIER_SECTION_MIN moved. Both "
         "are release-blocking: the pins that gate those two constants hang off "
         "this branch, and a fixture that no longer reaches it un-gates them "
         "silently — which is the reason those constants were waived in the "

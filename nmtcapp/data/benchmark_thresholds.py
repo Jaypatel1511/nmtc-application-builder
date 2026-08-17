@@ -10,19 +10,44 @@ SECTION A — CY 2024-2025 scoring thresholds, MIXED PROVENANCE
 
   It read "CDFI Fund Published Thresholds" and "These are the explicit values
   the CDFI Fund uses to evaluate applications". That was the provenance claim
-  standing behind five separate false attributions found in the 1.2.2 sweep,
-  and it was false of at least four constants in this very section:
+  standing behind five separate false attributions found in the 1.2.2 sweep.
 
-    UNRELATED_ENTITIES_MIN_PCT     the Fund publishes NO percentage here
-    TRACK_RECORD_DEPLOYMENT_MIN    the Fund's 90% is a different quantity
-    TOP_TIER_AGGREGATE_MIN         no tier above Highly Qualified is published
-    TOP_TIER_SECTION_MIN           same
-    SPECIAL_TARGETING_BONUS_PCT    not located in the Review Process at all
+  THE NAME NOW CARRIES THE PROVENANCE. Every constant in this section whose
+  value the CDFI Fund does not publish is prefixed ``HOUSE_``. That is not
+  cosmetic: streamlit_app/pages/4_About_and_Methodology.py interpolates these
+  constants LIVE into the methodology tables a CDE reads, so editing a value
+  here silently rewrites rendered text, and D4 stayed invisible for two
+  releases behind exactly that mechanism. A rename breaks every consumer at
+  import time, which is the only way to guarantee no interpolated surface kept
+  the old wording. Renamed in 1.2.2 round 2:
 
-  Per-constant provenance is now stated at each constant below. A blanket
-  "published" header is how an unsourced number acquires a citation it was
-  never given: nothing was verified, but everything under the heading read as
-  though it had been.
+    HOUSE_UNRELATED_ENTITIES_MIN_PCT            the Fund publishes NO percentage
+    HOUSE_TRACK_RECORD_DEPLOYMENT_MIN           the Fund's 90% is a different quantity
+    HOUSE_TOP_TIER_AGGREGATE_MIN                no tier above Highly Qualified exists
+    HOUSE_TOP_TIER_SECTION_MIN                  same
+    HOUSE_SPECIAL_TARGETING_TRIGGER_PCT         the criterion itself does not exist
+    HOUSE_SPECIAL_TARGETING_MAX                 same
+    HOUSE_PRODUCT_FLEXIBILITY_BELOW_MARKET_PCT  Fund's 50% is a per-loan discount depth
+    HOUSE_PRODUCT_FLEXIBILITY_MIN_INDICIA       Fund's 5 is a per-loan qualifying form
+
+  NO DEPRECATED ALIASES. Checked before renaming: none of these names is
+  exported from ``nmtcapp/__init__`` (they are absent from its ``__all__``),
+  and ``benchmark_thresholds`` is named nowhere in docs/, mkdocs.yml or
+  README.md. Nothing documented can import them, so an alias would preserve
+  only the wrong number under the wrong name.
+
+  NOT RENAMED, AND WHY. Eight further constants here are house figures by this
+  package's own admission — the sub-score maximums PRODUCT_FLEXIBILITY_MAX,
+  PIPELINE_CREDIBILITY_MAX, TRACK_RECORD_STRENGTH_MAX,
+  TRACK_RECORD_ALIGNMENT_MAX, HIGHER_DISTRESS_MAX, DEEP_DISTRESS_MAX,
+  COMMUNITY_OUTCOMES_QUALITY_MAX and COMMUNITY_ACCOUNTABILITY_MAX. They differ
+  from the eight above in the way that matters to a rename: they weight REAL
+  Fund criteria, and every surface that renders them already carries the
+  sub-score disclosure ("The CDFI Fund does not publish exact point values for
+  individual sub-criteria" — win_probability.py, both methodology tables). No
+  false wording is hiding behind them, so renaming them buys nothing this
+  round and inflates a diff whose whole purpose is to be reviewable. Prefixing
+  them is deferred to 1.2.3 as a deliberate decision, not an oversight.
 
 SECTION B — Legacy winner-pattern thresholds (CY2020–2024)
   Used by HistoricalBenchmarks (benchmarks.py) for the 9-metric tier comparison.
@@ -62,40 +87,114 @@ SEVERE_DISTRESS_MIN_PCT = 0.85       # >=85% of QLICIs in areas of higher distre
 # hazard even when the two values agree today — the next editor changes one of
 # them and the other silently wins.
 DEEP_DISTRESS_MIN_PCT = 0.20         # >=20% of QLICIs in "Deep Distress" areas
-# NOT LOCATED IN THE REVIEW PROCESS. The document contains no "Special
-# Targeting" criterion and none of its four categories — grep for "special
-# targeting", "persistent poverty", "territor", "native area", "high migration"
-# returns zero hits across all seven pages. The categories are real NMTC
-# concepts and may be set out in the NOAA or the Application itself; neither
-# has been retrieved, so this is COULD-NOT-ESTABLISH, not disproved.
-SPECIAL_TARGETING_BONUS_PCT = 0.10   # 10%+ in a special targeting category triggers bonus
+# D5 — THE CRITERION DOES NOT EXIST. Round 1 filed this COULD-NOT-ESTABLISH
+# because it had retrieved only the Review Process. Round 2 retrieved the other
+# two documents and the answer is now DISPROVED, not merely unlocated:
+#
+#   "special targeting"  0 hits / 0 / 0   Application (142pp), Review Process
+#   "bonus point"        0 hits / 0 / 0   (7pp), CY 2024-2025 NOAA (10pp,
+#                                          FR vol. 89 no. 225, 92283-92292)
+#
+# The NOAA settles it affirmatively rather than by absence. Section V.B(b),
+# verbatim: "as provided by IRC Sec. 45D(f)(2), the CDFI Fund will ascribe
+# additional points to entities that meet ONE OR BOTH of the statutory
+# priorities" — DBC track record (up to five) and Unrelated Entities (five) —
+# "Thus, Applicants that meet the requirements of both priority categories can
+# receive up to a total of ten additional points." Two priorities, ten points,
+# both already scored separately by this package. There is no third.
+#
+# The four categories ARE real and DO appear in the Application — but only
+# inside the glossary definition of "Disadvantaged Business or Disadvantaged
+# Community", p.132: a Disadvantaged Business is one located in "a Persistent
+# Poverty County; a NMTC Native Area; or a U.S. Island Area". They are inputs
+# to the DBC priority this package already scores, not a criterion of their own.
+#
+# THE 10 IS A COINCIDENCE, NOT A SOURCE. The Application does state "up to 10
+# additional 'priority points' available under sub-sections B and E" (p.19).
+# That is a POINT COUNT for two other criteria. This constant is a SHARE-OF-QEI
+# trigger. Reusing a real Fund figure as a different kind of quantity is the
+# exact failure D1 is made of; it does not license this number.
+#
+# THE LIMB STAYS THIS ROUND. win_probability.py:_score_special_targeting still
+# reads this constant, and deleting the sub-score would move every Community
+# Outcomes total and the rendered baseline with it. Withdrawing the FUND
+# ATTRIBUTION is this round; withdrawing the limb is 1.2.3, behind a written
+# methodology. Every surface that named the Fund here now says this is the
+# tool's own construct.
+HOUSE_SPECIAL_TARGETING_TRIGGER_PCT = 0.10   # HOUSE: 10%+ of QEI in a category; no Fund basis
 
 # --- Business Strategy thresholds ---
 # p.7 Part II.A.4, and accurate: "At least 70% of the Applicant's proposed NMTC
 # investments were supported by a track record of similar business types and
 # activity types."
 TRACK_RECORD_PIPELINE_ALIGNMENT_MIN = 0.70   # 70%+ NMTC pipeline supported by similar prior activity
-# D2 — THE COMMENT ON THIS LINE IS WRONG AND THE FIX IS NEXT ROUND. p.7 Part
-# II.A.4 states the applicant's "most recent 5-year direct financing track
-# record was 90% or more of its projected NMTC deployment in Exhibit A" — a
-# track-record-to-projection ratio. "Prior allocation deployed on schedule" is
-# a different quantity, and the Fund attaches no percentage to it (p.4 reviews
-# whether prior-year Allocatees issued "the minimum requisite QEIs" with no
-# figure). Rendered at recommendations.py:326, methodology.md:45,
-# 4_About_and_Methodology.py:90.
-TRACK_RECORD_DEPLOYMENT_MIN = 0.90           # 90%+ of prior allocation deployed on schedule
-# D1 — NOT A PORTFOLIO SHARE. p.6 Part II.A.1: 100% of QLICIs must take one of
-# four forms, one of which is "debt with interest rates at least 50%
-# below-market". The 50% is the DEPTH OF THE DISCOUNT ON AN INDIVIDUAL LOAN.
-# This constant is divided into a QEI-weighted portfolio share at
-# win_probability.py:435, which is not a comparison the Fund's sentence
-# supports. Fix is next round; changing it moves scored figures.
-PRODUCT_FLEXIBILITY_BELOW_MARKET_PCT = 0.50  # 50%+ below-market rate for full product flexibility credit
-# D1 — p.6 Part II.A.1: "debt that otherwise satisfies at least five indicia of
-# flexible or non-traditional rates and terms". One of the four QUALIFYING
-# FORMS an individual QLICI may take, not an application-level alternative to
-# the share above. The two are rendered as an OR at the wrong level.
-PRODUCT_FLEXIBILITY_MIN_INDICIA = 5          # Or 5+ indicia of flexible terms for full credit
+# THE FUND'S OTHER 90%, ADDED IN 1.2.2 ROUND 2 SO IT STOPS BEING CONFUSED WITH
+# THE HOUSE ONE BELOW. p.7 Part II.A.4, second sentence, verbatim: "The
+# Applicant demonstrated that its most recent 5-year direct financing track
+# record was 90% or more of its projected NMTC deployment in Exhibit A."
+#
+# This is a TRACK-RECORD-TO-PROJECTION ratio: past direct financing volume
+# against projected NMTC deployment. It is the figure D2 mistook for a
+# "deployment rate". Nothing scores against it — this package computes no
+# Exhibit A projection — so it exists to be QUOTED CORRECTLY in the one place
+# that previously quoted it incorrectly. Deliberately NOT house-prefixed: the
+# Fund does publish this one. It shares a value with
+# HOUSE_TRACK_RECORD_DEPLOYMENT_MIN and means something else, which is the
+# whole of D2 in one line.
+TRACK_RECORD_TO_PROJECTION_MIN = 0.90        # Review Process p.7 II.A.4: 5-yr record vs. Exhibit A projection
+# D2 — HOUSE. TWO FUND CONCEPTS WERE FUSED INTO ONE INVENTED BAR. Review
+# Process p.7 Part II.A.4 states the applicant's "most recent 5-year direct
+# financing track record was 90% or more of its projected NMTC deployment in
+# Exhibit A" — a TRACK-RECORD-TO-PROJECTION RATIO, comparing what a CDE has
+# financed against what it projects in Exhibit A. Deployment of a PRIOR
+# allocation is a separate Phase 2 compliance matter (p.4, whether prior-year
+# Allocatees issued "the minimum requisite QEIs") and the Fund attaches NO
+# percentage to it. "90%+ deployment rate" is neither: grep "deployment rate"
+# returns 0 hits across the Application (142pp), the Review Process (7pp) and
+# the CY 2024-2025 NOAA (10pp).
+#
+# What this constant actually divides is attrs["track_record_deployment_pct"],
+# a CDE-supplied prior-allocation deployment figure (win_probability.py:478).
+# So the 90% is this tool's own bar on a quantity the Fund publishes no bar
+# for. The 70% on the same rendered line IS Fund-stated and IS correct
+# (TRACK_RECORD_PIPELINE_ALIGNMENT_MIN, above) — a sweep that took the true
+# half with the false one would be its own defect.
+HOUSE_TRACK_RECORD_DEPLOYMENT_MIN = 0.90     # HOUSE: prior-allocation deployment; no Fund bar exists
+# D1 — HOUSE. NOT A PORTFOLIO SHARE, AND THE FUND'S TEST IS A LADDER.
+#
+# Round 1 read Question 15 through the Review Process alone (p.6 Part II.A.1),
+# which describes only what a HIGHLY RANKED application did, and recorded the
+# bar as "100% of QLICIs in one of four forms". Round 2 retrieved the
+# Application itself and the question is a GRADED SINGLE-SELECT LADDER, p.20-21
+# verbatim: "Choose one of the following options. Check only one. The Applicant
+# will commit that 100% of its QLICIs will:"
+#
+#   (a) ... at least 50% below market; or ... at least 5 indicia
+#   (b) ... at least 33% below market; or ... at least 4 indicia
+#   (c) ... at least 25% below market; or ... at least 3 indicia
+#   (d) ... at least 15% below market; or ... at least 2 indicia
+#   (e) None of the above.   (f) Not Applicable.
+#
+# Rung (a) is what the Review Process describes; (b)-(d) are permitted and
+# score lower. Writing "Q15 requires 50%/5" into rendered text would therefore
+# have installed a NEW misattribution while fixing the old one — it states the
+# top rung as though it were the only rung. Every surface corrected this round
+# states the ladder.
+#
+# WHAT THE 50% IS. The DEPTH OF THE RATE DISCOUNT ON AN INDIVIDUAL LOAN, and
+# one of four QUALIFYING FORMS a QLICI may take. This constant is divided into
+# a QEI-weighted PORTFOLIO SHARE at win_probability.py:435. A share of a
+# portfolio over a per-loan discount depth is not a ratio of anything; no label
+# makes it sensible, and the rendered surfaces now say so rather than implying
+# the sub-score is a near-miss proxy for Q15. Removing the limb moves scored
+# figures and the baseline: that is 1.2.3, behind a written methodology.
+HOUSE_PRODUCT_FLEXIBILITY_BELOW_MARKET_PCT = 0.50  # HOUSE: portfolio share; Fund's 50% is a per-loan depth
+# D1 — HOUSE. Rung (a)'s "at least 5 indicia of flexible or non-traditional
+# rates and terms" is a property of an INDIVIDUAL QLICI, alternative to that
+# same loan being equity, equity-equivalent, or 50%-below-market. This package
+# renders it as an application-level alternative to the portfolio share above:
+# the Fund's OR is inside one loan, this tool's OR is across the whole book.
+HOUSE_PRODUCT_FLEXIBILITY_MIN_INDICIA = 5          # HOUSE: app-level alternative; Fund's is per-loan
 
 # --- Priority Points thresholds ---
 DBC_PRIORITY_YEARS_MIN = 5            # 5+ years DBC focus for full DBC priority points
@@ -103,20 +202,68 @@ DBC_PRIORITY_YEARS_MIN = 5            # 5+ years DBC focus for full DBC priority
 # direct financing activities has been provided to DBCs", after "five or more
 # years of experience". UPHELD by the 1.2.2 sweep — do not sweep this one.
 DBC_VOLUME_PCT_MIN = 0.70             # 70%+ of direct financing volume to DBCs for full credit
-# D3 — INVENTED. p.7 Part II.B.2 (Question 23): the Applicant commits "to using
-# substantially all of the proceeds of its QEIs" — NO PERCENTAGE, here or in
-# the corroborating sentence on p.2. The only three "90%" strings in the whole
-# document are 16.90% of awardees being Rural CDEs, 90%-of-maximum non-metro,
-# and the p.7 track-record ratio. Treas. Reg. §1.45D-1(c)(5)(i) defines
-# "substantially all" as at least 85 percent (75 in year 7), so 90% is not the
-# regulation's figure either. THE DENOMINATOR (QEI proceeds) IS CORRECT and
-# must NOT be changed — this is the one share this package has right.
-UNRELATED_ENTITIES_MIN_PCT = 0.90    # 90%+ QEIs to unrelated entities for full unrelated-entity credit
+# D3 — HOUSE. THE FUND'S TEST IS BINARY; ANY PERCENTAGE IS THE WRONG SHAPE.
+#
+# Review Process p.7 Part II.B.2 (Question 23): the Applicant commits "to using
+# substantially all of the proceeds of its QEIs" — NO PERCENTAGE, here or on
+# p.2. Round 2 retrieved the Application and the underlying question is not a
+# threshold at all, p.34 verbatim: "23. Investments in Unrelated Entities —
+# Does the Applicant intend to use substantially all of the proceeds of its
+# QEIs to make QLICIs in one or more businesses in which persons Unrelated to
+# the Applicant hold the majority equity interest?  [ ] Yes  [ ] No  (Dropdown
+# Menu)". The Application's sub-section E is explicit about what turns on it:
+# "An Applicant that answers 'Yes' to Question 23 will be awarded five
+# additional points." A yes/no intent commitment worth five priority points.
+#
+# So this package scores a CONTINUOUS share against a BINARY question. That is
+# a category error before it is a wrong number, and it is why the fix is a
+# house label rather than a better percentage.
+#
+# DO NOT RE-BASE TO 85%. Treas. Reg. §1.45D-1(c)(5)(i), verified against eCFR
+# title-26: "the term substantially all means at least 85 percent". But read
+# what it governs — §1.45D-1(c)(1)(ii), "Substantially all ... of such cash is
+# used by the CDE to make qualified low-income community investments". It is
+# the DEPLOYMENT test, QEI cash into QLICIs. It is not a bar on the unrelated
+# share. Swapping 90% for 85% would trade one unstated number for another
+# while STRENGTHENING the appearance of a citation, which is worse than the
+# defect it replaced.
+#
+# THE DENOMINATOR (QEI proceeds) IS CORRECT and must NOT be changed — it is
+# the one share this package has right, corroborated by the NOAA: "must meet
+# the requirements of IRC Sec. 45D(b)(1)(B) by investing substantially all of
+# the proceeds from its QEIs in unrelated businesses."
+#
+# The only three "90%" strings in the Review Process are 16.90% of awardees
+# being Rural CDEs, 90%-of-maximum non-metro, and the p.7 track-record ratio;
+# the Application and the NOAA contain none at all.
+HOUSE_UNRELATED_ENTITIES_MIN_PCT = 0.90    # HOUSE: Fund's Q23 is Yes/No, not a percentage
 
 # --- Non-Metro / Rural commitments ---
-NON_METRO_MIN_COMMITMENT_PCT = 0.20        # 20% minimum non-metro commitment
-NON_METRO_MAX_COMMITMENT_FACTOR = 0.90     # Must commit larger of min or 90% of max
-RURAL_CDE_NON_METRO_THRESHOLD = 0.50       # 50% non-metro to qualify as Rural CDE
+# ALL THREE UPHELD, and the basis is now on the record. 4_About_and_
+# Methodology.py:171 shipped a note saying "whether the non-metro commitment is
+# QLICI- or QEI-denominated has not been checked against the application's own
+# question text". Round 2 retrieved the CY 2024-2025 NOAA (Federal Register
+# vol. 89 no. 225, 21 Nov 2024, pp. 92283-92292) and it is stated there
+# expressly, on QLICIs:
+#
+#   "the CDFI Fund will then determine whether the pool of Allocatees will, in
+#    the aggregate, invest at least 20 percent of their QLICIs (as measured by
+#    dollar amount) in Non-Metropolitan counties"
+#
+#   "A Rural CDE is one that has a track record of at least three years of
+#    direct financing experience, has dedicated at least 50 percent of its
+#    direct financing dollars to Non-Metropolitan counties over the past five
+#    years, and has committed that at least 50 percent of its NMTC financing
+#    dollars with this NMTC Allocation will be deployed in such areas."
+#
+# NOTE THE DENOMINATOR IS QLICIs, as with Question 25. This package computes
+# QEI shares only, so the same proxy caveat applies here as everywhere else.
+NON_METRO_MIN_COMMITMENT_PCT = 0.20        # NOAA: >=20% of QLICIs, aggregate across the Allocatee pool
+# Review Process p.5: "the CDFI Fund will require Allocatees to invest the
+# larger of their 'minimum' commitment, or 90% of their 'maximum' commitment,
+# into Non-Metropolitan Counties."
+NON_METRO_MAX_COMMITMENT_FACTOR = 0.90     # Review Process p.5: larger of min, or 90% of max
+RURAL_CDE_NON_METRO_THRESHOLD = 0.50       # NOAA: 50% of direct financing dollars, and 50% committed
 
 # --- Highly Qualified gating thresholds ---
 # p.3 Step 2, verbatim: "(i) an aggregate score of at least 40 out of a
@@ -126,13 +273,31 @@ RURAL_CDE_NON_METRO_THRESHOLD = 0.50       # 50% non-metro to qualify as Rural C
 HIGHLY_QUALIFIED_AGGREGATE_MIN = 85    # 85+ aggregate base score to be "Highly Qualified"
 HIGHLY_QUALIFIED_SECTION_MIN = 40      # Each section must score 40+ to be "Highly Qualified"
 # D4 — HOUSE, NOT PUBLISHED. The Review Process publishes the gate above and
-# NOTHING ABOVE IT. "Top Tier" is this package's own label and these two cut
-# points are unsourced. recommendations.py:826 already says so in the rendered
-# text; methodology.md:99, win-alignment.md:87 and
-# 4_About_and_Methodology.py:158 do not, and both docs tables introduce
-# themselves as the CDFI Fund's gating process.
-TOP_TIER_AGGREGATE_MIN = 95            # 95+ aggregate base score for "Top Tier"
-TOP_TIER_SECTION_MIN = 45             # Each section must score 45+ for "Top Tier"
+# NOTHING ABOVE IT. Round 2 checked the other two documents: grep "top tier"
+# returns 0 hits across the Application (142pp), the Review Process (7pp) and
+# the CY 2024-2025 NOAA (10pp). The NOAA's only tier concept is the "highly
+# qualified pool", used four times; the Review Process names it seven.
+#
+# THE 95 IS A COINCIDENCE, NOT A SOURCE — and this one the round-2 brief did
+# not flag. The Review Process does contain a "95%": p.6 Part II.A.1,
+# "Applicants purchasing loans from other CDEs committed to require the selling
+# CDE to re-invest at least 95% of these proceeds as QLICIs". That is a
+# reinvestment share on purchased loans. This constant is an AGGREGATE POINT
+# SCORE out of 100. Same digits, different kind of quantity — the same trap as
+# the "10 priority points" that does not license SPECIAL_TARGETING, and it
+# would have been available to anyone looking to retro-fit a citation here.
+#
+# recommendations.py:826 and win_probability.py:65 already say "house" in
+# rendered text; methodology.md:99, win-alignment.md:87 and
+# 4_About_and_Methodology.py:158 did not, and all three tables introduce
+# themselves as the CDFI Fund's gating process. Corrected this round.
+#
+# The TIER ITSELF STAYS. These constants decide a label a CDE is shown
+# (win_probability.py:614, :684) and pinned_constants.txt pins that behaviour;
+# removing the tier moves scored output. Withdrawing the FUND ATTRIBUTION is
+# this round.
+HOUSE_TOP_TIER_AGGREGATE_MIN = 95      # HOUSE: no Fund tier above Highly Qualified
+HOUSE_TOP_TIER_SECTION_MIN = 45        # HOUSE: same; this tool's own section floor
 
 # --- Section maximums (for reference) ---
 BUSINESS_STRATEGY_MAX = 50
@@ -153,7 +318,11 @@ TRACK_RECORD_ALIGNMENT_MAX = 10
 
 HIGHER_DISTRESS_MAX = 15
 DEEP_DISTRESS_MAX = 10
-SPECIAL_TARGETING_MAX = 5
+# D5 — HOUSE. Unlike its neighbours in this block, this is not a house WEIGHT
+# on a real Fund criterion: it allocates 5 of Community Outcomes' 50 points to
+# a criterion that appears in none of the three primary documents. See
+# HOUSE_SPECIAL_TARGETING_TRIGGER_PCT above for the ruling.
+HOUSE_SPECIAL_TARGETING_MAX = 5
 COMMUNITY_OUTCOMES_QUALITY_MAX = 10
 COMMUNITY_ACCOUNTABILITY_MAX = 10
 

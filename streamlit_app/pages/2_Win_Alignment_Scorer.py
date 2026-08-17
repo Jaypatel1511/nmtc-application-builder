@@ -11,7 +11,7 @@ import streamlit as st
 from nmtcapp.core.pipeline import Pipeline
 from nmtcapp.data.benchmark_thresholds import (
     HIGHLY_QUALIFIED_AGGREGATE_MIN, HIGHLY_QUALIFIED_SECTION_MIN,
-    TOP_TIER_AGGREGATE_MIN, TOP_TIER_SECTION_MIN,
+    HOUSE_TOP_TIER_AGGREGATE_MIN, HOUSE_TOP_TIER_SECTION_MIN,
 )
 
 from utils import (
@@ -63,13 +63,28 @@ with st.sidebar:
             "to score your application."
         )
     st.markdown("---")
+    # D4, FIFTH SURFACE — found in 1.2.2 round 2, and NOT on round 1's list of
+    # four. These two lines render one under the other, in the same weight and
+    # the same shape, so a CDE reads them as a matched pair of CDFI Fund gates.
+    # Only the first one is. The second is this package's own invented tier, and
+    # nothing on the page said so.
+    #
+    # THE GATE CANNOT SEE THIS STRING. tests/test_fund_attribution_source.py
+    # requires an AUTHORITY token, and "Top Tier gate: 95+ aggregate AND 45+ in
+    # each section" names no authority at all — the same blind spot that let
+    # docs/reference/methodology.md:42 survive the release opened to sweep its
+    # siblings, one detector further out. Recorded in CHANGELOG.md under what
+    # the gate still cannot see.
     st.markdown(
-        f"**Highly Qualified gate:** {HIGHLY_QUALIFIED_AGGREGATE_MIN}+ aggregate AND "
-        f"{HIGHLY_QUALIFIED_SECTION_MIN}+ in each section"
+        f"**Highly Qualified gate (CDFI Fund):** {HIGHLY_QUALIFIED_AGGREGATE_MIN}+ "
+        f"aggregate AND {HIGHLY_QUALIFIED_SECTION_MIN}+ in each section — "
+        "CY 2024-2025 Review Process, p.3 Step 2"
     )
     st.markdown(
-        f"**Top Tier gate:** {TOP_TIER_AGGREGATE_MIN}+ aggregate AND "
-        f"{TOP_TIER_SECTION_MIN}+ in each section"
+        f"**Top Tier (this tool's label, not a CDFI Fund tier):** "
+        f"{HOUSE_TOP_TIER_AGGREGATE_MIN}+ aggregate AND {HOUSE_TOP_TIER_SECTION_MIN}+ "
+        "in each section. The CDFI Fund publishes the Highly Qualified gate and "
+        "nothing above it; these cut points are an unsourced house heuristic."
     )
 
 # ---------------------------------------------------------------------------
@@ -283,9 +298,9 @@ with right:
                 "tickwidth": 1,
                 "tickcolor": TEXT_MUTED,
                 # Shorter labels prevent right-edge clipping ("85 (HQ)" → "85 HQ")
-                "tickvals": [0, HIGHLY_QUALIFIED_AGGREGATE_MIN, TOP_TIER_AGGREGATE_MIN, 100],
+                "tickvals": [0, HIGHLY_QUALIFIED_AGGREGATE_MIN, HOUSE_TOP_TIER_AGGREGATE_MIN, 100],
                 "ticktext": ["0", f"{HIGHLY_QUALIFIED_AGGREGATE_MIN} HQ",
-                             f"{TOP_TIER_AGGREGATE_MIN} TT", "100"],
+                             f"{HOUSE_TOP_TIER_AGGREGATE_MIN} TT", "100"],
             },
             # Use ACCENT (gold) for the bar so it contrasts with every step zone colour.
             # The previous tier_color matched the HQ step background (both MID_BLUE),
@@ -297,8 +312,8 @@ with right:
             "bordercolor": "#D1D5DB",
             "steps": [
                 {"range": [0, HIGHLY_QUALIFIED_AGGREGATE_MIN], "color": hex_rgba(DANGER, 0.27)},
-                {"range": [HIGHLY_QUALIFIED_AGGREGATE_MIN, TOP_TIER_AGGREGATE_MIN], "color": hex_rgba(MID_BLUE, 0.27)},
-                {"range": [TOP_TIER_AGGREGATE_MIN, 100], "color": hex_rgba(SUCCESS, 0.27)},
+                {"range": [HIGHLY_QUALIFIED_AGGREGATE_MIN, HOUSE_TOP_TIER_AGGREGATE_MIN], "color": hex_rgba(MID_BLUE, 0.27)},
+                {"range": [HOUSE_TOP_TIER_AGGREGATE_MIN, 100], "color": hex_rgba(SUCCESS, 0.27)},
             ],
             "threshold": {
                 "line": {"color": tier_color, "width": 3},

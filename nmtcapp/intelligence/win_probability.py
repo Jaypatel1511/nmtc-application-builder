@@ -25,18 +25,18 @@ from typing import List, Optional, TYPE_CHECKING
 from nmtcapp.data.benchmark_thresholds import (
     SEVERE_DISTRESS_MIN_PCT,
     DEEP_DISTRESS_MIN_PCT,
-    SPECIAL_TARGETING_BONUS_PCT,
+    HOUSE_SPECIAL_TARGETING_TRIGGER_PCT,
     TRACK_RECORD_PIPELINE_ALIGNMENT_MIN,
-    TRACK_RECORD_DEPLOYMENT_MIN,
-    PRODUCT_FLEXIBILITY_BELOW_MARKET_PCT,
-    PRODUCT_FLEXIBILITY_MIN_INDICIA,
+    HOUSE_TRACK_RECORD_DEPLOYMENT_MIN,
+    HOUSE_PRODUCT_FLEXIBILITY_BELOW_MARKET_PCT,
+    HOUSE_PRODUCT_FLEXIBILITY_MIN_INDICIA,
     DBC_PRIORITY_YEARS_MIN,
     DBC_VOLUME_PCT_MIN,
-    UNRELATED_ENTITIES_MIN_PCT,
+    HOUSE_UNRELATED_ENTITIES_MIN_PCT,
     HIGHLY_QUALIFIED_AGGREGATE_MIN,
     HIGHLY_QUALIFIED_SECTION_MIN,
-    TOP_TIER_AGGREGATE_MIN,
-    TOP_TIER_SECTION_MIN,
+    HOUSE_TOP_TIER_AGGREGATE_MIN,
+    HOUSE_TOP_TIER_SECTION_MIN,
     BUSINESS_STRATEGY_MAX,
     COMMUNITY_OUTCOMES_MAX,
     PRIORITY_POINTS_MAX,
@@ -46,7 +46,7 @@ from nmtcapp.data.benchmark_thresholds import (
     TRACK_RECORD_ALIGNMENT_MAX,
     HIGHER_DISTRESS_MAX,
     DEEP_DISTRESS_MAX,
-    SPECIAL_TARGETING_MAX,
+    HOUSE_SPECIAL_TARGETING_MAX,
     COMMUNITY_OUTCOMES_QUALITY_MAX,
     COMMUNITY_ACCOUNTABILITY_MAX,
     DBC_TRACK_RECORD_MAX,
@@ -207,7 +207,7 @@ class WinProbabilityScore:
             f"  COMMUNITY OUTCOMES: {co['section_total']:2d} / {co.get('max_available', COMMUNITY_OUTCOMES_MAX)}",
             f"    Higher Distress Targeting {_pts(co, 'higher_distress_targeting')}/{HIGHER_DISTRESS_MAX:3d}",
             f"    Deep Distress Commitment  {_pts(co, 'deep_distress_commitment')}/{DEEP_DISTRESS_MAX:3d}",
-            f"    Special Targeting         {_pts(co, 'special_targeting')}/{SPECIAL_TARGETING_MAX:3d}",
+            f"    Special Targeting         {_pts(co, 'special_targeting')}/{HOUSE_SPECIAL_TARGETING_MAX:3d}",
             f"    Community Outcomes Quality{_pts(co, 'community_outcomes_quality')}/{COMMUNITY_OUTCOMES_QUALITY_MAX:3d}",
             f"    Community Accountability  {_pts(co, 'community_accountability')}/{COMMUNITY_ACCOUNTABILITY_MAX:3d}",
             "",
@@ -432,8 +432,8 @@ class WinProbabilityModel:
         below_mkt = below_mkt or 0.0
         indicia = attrs.get("products_flexible_indicia_count", 0)
         # Full credit if either threshold is met
-        score_from_below_mkt = min(10.0, below_mkt / PRODUCT_FLEXIBILITY_BELOW_MARKET_PCT * 10)
-        score_from_indicia = min(10.0, indicia / PRODUCT_FLEXIBILITY_MIN_INDICIA * 10)
+        score_from_below_mkt = min(10.0, below_mkt / HOUSE_PRODUCT_FLEXIBILITY_BELOW_MARKET_PCT * 10)
+        score_from_indicia = min(10.0, indicia / HOUSE_PRODUCT_FLEXIBILITY_MIN_INDICIA * 10)
         return _to_int(max(score_from_below_mkt, score_from_indicia))
 
     def _score_pipeline_credibility(
@@ -475,7 +475,7 @@ class WinProbabilityModel:
         align_pct = attrs.get("track_record_pipeline_alignment_pct", 0.0)
         deploy_pct = attrs.get("track_record_deployment_pct", 0.0)
         align_score = min(5.0, align_pct / TRACK_RECORD_PIPELINE_ALIGNMENT_MIN * 5.0)
-        deploy_score = min(5.0, deploy_pct / TRACK_RECORD_DEPLOYMENT_MIN * 5.0)
+        deploy_score = min(5.0, deploy_pct / HOUSE_TRACK_RECORD_DEPLOYMENT_MIN * 5.0)
         return _to_int(align_score + deploy_score)
 
     # ------------------------------------------------------------------
@@ -525,10 +525,10 @@ class WinProbabilityModel:
             pct_persistent,
             pct_territories,
         ]
-        qualified = sum(1 for c in categories if c >= SPECIAL_TARGETING_BONUS_PCT)
+        qualified = sum(1 for c in categories if c >= HOUSE_SPECIAL_TARGETING_TRIGGER_PCT)
         # Partial credit: weight by concentration in each category (up to 1.25 each)
         partial = sum(
-            min(1.25, c / SPECIAL_TARGETING_BONUS_PCT * 1.25) for c in categories
+            min(1.25, c / HOUSE_SPECIAL_TARGETING_TRIGGER_PCT * 1.25) for c in categories
         )
         return _to_int(min(5.0, partial))
 
@@ -568,7 +568,7 @@ class WinProbabilityModel:
         if pct is None and result is not None:
             pct = result.distress_breakdown.get("pct_unrelated_entity", 0.0)
         pct = pct or 0.0
-        return _to_int(min(5.0, pct / UNRELATED_ENTITIES_MIN_PCT * 5.0))
+        return _to_int(min(5.0, pct / HOUSE_UNRELATED_ENTITIES_MIN_PCT * 5.0))
 
     # ------------------------------------------------------------------
     # Gating / classification
@@ -610,8 +610,8 @@ class WinProbabilityModel:
 
         if meets_section_min and meets_aggregate:
             # Check top tier
-            top_sections = bs_total >= TOP_TIER_SECTION_MIN and co_total >= TOP_TIER_SECTION_MIN
-            top_agg = aggregate >= TOP_TIER_AGGREGATE_MIN
+            top_sections = bs_total >= HOUSE_TOP_TIER_SECTION_MIN and co_total >= HOUSE_TOP_TIER_SECTION_MIN
+            top_agg = aggregate >= HOUSE_TOP_TIER_AGGREGATE_MIN
             if top_sections and top_agg:
                 return "Top Tier", []
             return "Highly Qualified", notes
@@ -681,7 +681,7 @@ def _map_tier_legacy(tier: str) -> str:
 
 
 def _map_tier_legacy_from_score(score: float) -> str:
-    if score >= TOP_TIER_AGGREGATE_MIN:
+    if score >= HOUSE_TOP_TIER_AGGREGATE_MIN:
         return "strong"
     if score >= HIGHLY_QUALIFIED_AGGREGATE_MIN:
         return "competitive"
@@ -704,10 +704,36 @@ def _build_peer_comparison(score: "WinProbabilityScore") -> str:
     pp = score.priority_points.get("section_total", 0)
 
     if tier == "Top Tier":
+        # D4, SIXTH SURFACE — found in 1.2.2 round 2, on neither round 1's list
+        # of four nor the gate's radar (the string names no authority token, so
+        # tests/test_fund_attribution_source.py could not see it).
+        #
+        # This ended: "High probability of Phase 2 advancement; award may
+        # approach the maximum requested." Two claims, both wrong to make here:
+        #
+        #   * an AWARD PREDICTION, which this package disclaims in the same
+        #     breath everywhere else --- "Not a win probability calculator. The
+        #     CDFI Fund does not publish scores or application data for
+        #     non-winning applicants" (docs/reference/methodology.md) --- and
+        #   * attached to a tier the CDFI Fund does not publish, so the
+        #     prediction rested on an invented gate.
+        #
+        # What is actually true above the published gate is that ranking and the
+        # Phase 2 panel decide it, and the Review Process says ranking uses only
+        # HALF the priority points (p.3 Step 2) --- which this package does not
+        # model at all.
         return (
             f"Top Tier ({agg}/{BUSINESS_STRATEGY_MAX + COMMUNITY_OUTCOMES_MAX}). Both sections exceed the "
-            f"{TOP_TIER_SECTION_MIN}-point threshold. "
-            "High probability of Phase 2 advancement; award may approach the maximum requested."
+            f"{HOUSE_TOP_TIER_SECTION_MIN}-point threshold. "
+            "\"Top Tier\" is this tool's own label, not a CDFI Fund tier: the "
+            f"Fund publishes the Highly Qualified gate ({HIGHLY_QUALIFIED_AGGREGATE_MIN} "
+            f"aggregate, {HIGHLY_QUALIFIED_SECTION_MIN} per section) and nothing above it, and these cut "
+            "points are an unsourced house heuristic. This application is well "
+            "clear of the published gate, and is in the same Highly Qualified "
+            "pool as any other application that clears it. No award outcome "
+            "follows: above the gate the CDFI Fund ranks applicants (inclusive "
+            "of half their priority points) and an Allocation Recommendation "
+            "Panel decides, neither of which this tool models."
         )
     if tier == "Highly Qualified":
         weak_section = "Business Strategy" if bs < co else "Community Outcomes"
