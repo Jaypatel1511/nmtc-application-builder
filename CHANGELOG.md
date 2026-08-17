@@ -5,6 +5,81 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — 1.2.2, round 1 of 2
+
+**Gate only. No rendered wording changed, and the six false Fund attributions
+this round ruled are still live on PyPI and on the published docs site.**
+
+1.2.2 was scoped to close two claims that credit the CDFI Fund with thresholds
+it does not state. The brief instructed: rule every threshold against the
+primary source, and **if more than two turn up, stop and report before
+fixing**. Seven turned up. This round therefore ships the gate that enumerates
+them, so the fix round is scoped off a machine-readable list rather than off
+anyone's hand-count.
+
+### The primary source, retrieved rather than relayed
+
+The CY 2024-2025 NMTC Program Review Process (7pp) was downloaded and
+text-extracted locally, not fetched through a summarising model. Both readings
+the brief rested on are **confirmed verbatim** — p.6 Part II.A.1 for Question
+15, p.7 Part II.B.2 for Question 23. `Treas. Reg. §1.45D-1(c)(5)(i)` was
+verified against eCFR: "substantially all" is at least 85 percent, reduced to
+75 in the seventh year.
+
+### Added
+
+- **`tests/test_fund_attribution_source.py`** — a source-side attribution gate
+  over `docs/**/*.md`, the Streamlit markdown-in-Python tables, and every
+  string literal in `nmtcapp/` and `streamlit_app/`. It exists because the
+  rendered-corpus gate cannot see a claim that fires on no fixture, and
+  **neither sentence 1.2.2 was opened to close renders on any packaged
+  fixture** — so neither the invariance gate, the attribution gate, nor the D1
+  baseline had ever seen either one.
+  - Two detectors. The tabular one matters: `docs/reference/methodology.md:42`
+    contains no authority token at all, so a detector keyed on "CDFI Fund"
+    misses the exact line this release was opened for.
+  - f-strings are reconstructed before matching. `recommendations.py:326`
+    splits its authority and its bar across different AST nodes and is
+    invisible without this.
+  - Fails closed separately on each half. `docs/` is absent from the sdist
+    (`MANIFEST.in: prune docs`), so `mkdocs.yml` is the checkout marker:
+    deleting `docs/` from a checkout fails **three** tests; an unpacked sdist
+    skips two and passes.
+- **`tests/fund_attribution_allowlist.txt`** — 56 entries, every one ruled
+  against the retrieved primary source with the page or question it was read
+  from. Six outstanding defects are tagged `D1`–`D6` and pinned.
+
+### Fixed
+
+- **`nmtcapp/data/benchmark_thresholds.py` declared its own first half "CDFI
+  Fund Published Thresholds"** and "the explicit values the CDFI Fund uses to
+  evaluate applications". That was false of at least four constants in it and
+  was the provenance claim standing behind five of the seven defects.
+  Comment-only; no value changed, no rendered output moved.
+- **`tests/test_qlici_basis.py`** — the second walk loop asserted only
+  `not hits`, which a walk over zero files satisfies. Its sibling has carried
+  `scanned > 40` since 1.2.1. Added.
+
+### Known defects, ruled and NOT fixed
+
+| Tag | Claim | Surfaces |
+|---|---|---|
+| D1 | Product Flexibility "50%+ below-market OR 5+ indicia" — the 50% is the depth of the rate discount on one loan, not a portfolio share; equity and equity-equivalent are omitted; the share is QEI-weighted against a QLICI commitment | 6 |
+| D2 | "90%+ deployment rate" — the Fund's 90% is a track-record-to-projection ratio, not a deployment rate | 3 |
+| D3 | Unrelated Entities "90%" — the Fund publishes no percentage; the reg says 85% | 4 |
+| D4 | "Top Tier" 95/45 rendered as a Fund gate — the Fund publishes one gate and nothing above it | 4 |
+| D5 | Special Targeting "5 bonus points" — absent from the Review Process; the citation names a real section that lacks the claim | 2 |
+| D6 | "CDFI Fund expects near-100% eligibility" — uncited; weakest of the six | 1 |
+
+D2, D4 and D5 were not known to exist before this sweep. Every one of the six
+was found on at least one surface no prior round had listed.
+
+**Not established:** `SPECIAL_TARGETING_BONUS_PCT` and the Special Targeting
+categories themselves. Neither the CY 2024-2025 Application nor the NOAA has
+been retrieved; both are prerequisites for the fix round.
+
+---
+
 ## [1.2.1] — 2026-08-15
 
 Patch release. The financial tables, the shipped inputs, and a gate that could
