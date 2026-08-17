@@ -1325,7 +1325,7 @@
 <p>This guide walks through a complete first run — from install to generated application package — in under 60 seconds of reading. Every code block is runnable as-is.</p>
 <hr />
 <h2 id="step-1-install">Step 1: Install<a class="headerlink" href="#step-1-install" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;nmtc-application-builder[output,viz]&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"nmtc-application-builder[output,viz]"</span>
 </code></pre></div>
 <p>This installs everything: core intelligence engine, Word/Excel/PDF renderers, and matplotlib visualizations.</p>
 <hr />
@@ -1338,13 +1338,13 @@
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">cde</span> <span class="o">=</span> <span class="n">CDEProfile</span><span class="o">.</span><span class="n">sample</span><span class="p">()</span>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="nb">print</span><span class="p">(</span><span class="n">cde</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>           <span class="c1"># &quot;Riverbend Community Capital CDE, LLC&quot;</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="nb">print</span><span class="p">(</span><span class="n">cde</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>           <span class="c1"># "Riverbend Community Capital CDE, LLC"</span>
 <a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pipeline</span><span class="p">))</span>      <span class="c1"># 20</span>
 <a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="nb">print</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>           <span class="c1"># Pipeline(projects=20, total_qei=$120,500,000)</span>
 </code></pre></div>
 <p>To use your own data, load from a YAML file (CDE) and CSV (pipeline):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">cde</span> <span class="o">=</span> <span class="n">CDEProfile</span><span class="o">.</span><span class="n">from_yaml</span><span class="p">(</span><span class="s2">&quot;my_cde.yaml&quot;</span><span class="p">)</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="o">.</span><span class="n">from_csv</span><span class="p">(</span><span class="s2">&quot;my_pipeline.csv&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">cde</span> <span class="o">=</span> <span class="n">CDEProfile</span><span class="o">.</span><span class="n">from_yaml</span><span class="p">(</span><span class="s2">"my_cde.yaml"</span><span class="p">)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">pipeline</span> <span class="o">=</span> <span class="n">Pipeline</span><span class="o">.</span><span class="n">from_csv</span><span class="p">(</span><span class="s2">"my_pipeline.csv"</span><span class="p">)</span>
 </code></pre></div>
 <p>See <code>nmtcapp/templates/cde_profile_template.yaml</code> and <code>nmtcapp/templates/pipeline_template.csv</code> in the repository for the expected column structure.</p>
 <hr />
@@ -1420,17 +1420,17 @@
 <p>The optimizer selects a subset of your pipeline that maximizes alignment score subject to your constraints. It runs greedy construction followed by swap-based local search (default 500 iterations). The result shows which projects were selected and the dimensional improvement at each step.</p>
 <hr />
 <h2 id="step-7-generate-outputs">Step 7: Generate outputs<a class="headerlink" href="#step-7-generate-outputs" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">&quot;./drafts/&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">"./drafts/"</span><span class="p">)</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># {</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1">#   &quot;markdown&quot;: &quot;./drafts/CDE-2018-0117_application.md&quot;,</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="c1">#   &quot;word&quot;:     &quot;./drafts/CDE-2018-0117_application.docx&quot;,</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="c1">#   &quot;excel&quot;:    &quot;./drafts/CDE-2018-0117_application.xlsx&quot;,</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="c1">#   &quot;pdf&quot;:      &quot;./drafts/CDE-2018-0117_application.pdf&quot;</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1">#   "markdown": "./drafts/CDE-2018-0117_application.md",</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="c1">#   "word":     "./drafts/CDE-2018-0117_application.docx",</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="c1">#   "excel":    "./drafts/CDE-2018-0117_application.xlsx",</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="c1">#   "pdf":      "./drafts/CDE-2018-0117_application.pdf"</span>
 <a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="c1"># }</span>
 </code></pre></div>
 <p>To generate only specific formats:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">&quot;./drafts/&quot;</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;word&quot;</span><span class="p">,</span> <span class="s2">&quot;excel&quot;</span><span class="p">])</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">"./drafts/"</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="p">[</span><span class="s2">"word"</span><span class="p">,</span> <span class="s2">"excel"</span><span class="p">])</span>
 </code></pre></div>
 <p>The output directory is created automatically. File names are derived from the CDE's <code>cde_id</code> field.</p>
 <hr />
@@ -1444,11 +1444,11 @@
 <a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>    <span class="n">plot_winner_alignment</span><span class="p">,</span>
 <a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="p">)</span>
 <a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="n">plot_pipeline_map</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./charts/pipeline_map.png&quot;</span><span class="p">)</span>
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="n">plot_distress_heatmap</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./charts/distress_heatmap.png&quot;</span><span class="p">)</span>
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="n">plot_sector_distribution</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./charts/sector_mix.png&quot;</span><span class="p">)</span>
-<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="n">plot_readiness_radar</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./charts/readiness_radar.png&quot;</span><span class="p">)</span>
-<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="n">plot_winner_alignment</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">&quot;./charts/winner_alignment.png&quot;</span><span class="p">)</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a><span class="n">plot_pipeline_map</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">"./charts/pipeline_map.png"</span><span class="p">)</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a><span class="n">plot_distress_heatmap</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">"./charts/distress_heatmap.png"</span><span class="p">)</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="n">plot_sector_distribution</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">"./charts/sector_mix.png"</span><span class="p">)</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="n">plot_readiness_radar</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">"./charts/readiness_radar.png"</span><span class="p">)</span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a><span class="n">plot_winner_alignment</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">"./charts/winner_alignment.png"</span><span class="p">)</span>
 </code></pre></div>
 <p>Requires <code>matplotlib&gt;=3.7</code> — install with <code>pip install "nmtc-application-builder[viz]"</code>.</p>
 <hr />
