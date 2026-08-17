@@ -11,9 +11,12 @@ import streamlit as st
 from nmtcapp.data.historical_awards import NMTC_AWARD_ROUNDS, APPLICATION_VOLUME_TRENDS
 from nmtcapp.data.benchmark_thresholds import (
     HIGHLY_QUALIFIED_AGGREGATE_MIN, HIGHLY_QUALIFIED_SECTION_MIN,
-    TOP_TIER_AGGREGATE_MIN, TOP_TIER_SECTION_MIN,
+    HOUSE_TOP_TIER_AGGREGATE_MIN, HOUSE_TOP_TIER_SECTION_MIN,
     SEVERE_DISTRESS_MIN_PCT, DEEP_DISTRESS_MIN_PCT,
-    DBC_PRIORITY_YEARS_MIN, DBC_VOLUME_PCT_MIN, UNRELATED_ENTITIES_MIN_PCT,
+    DBC_PRIORITY_YEARS_MIN, DBC_VOLUME_PCT_MIN, HOUSE_UNRELATED_ENTITIES_MIN_PCT,
+    HOUSE_PRODUCT_FLEXIBILITY_BELOW_MARKET_PCT, HOUSE_PRODUCT_FLEXIBILITY_MIN_INDICIA,
+    HOUSE_TRACK_RECORD_DEPLOYMENT_MIN, TRACK_RECORD_PIPELINE_ALIGNMENT_MIN,
+    TRACK_RECORD_TO_PROJECTION_MIN,
     TOTAL_APPLICANTS_CY2024_25, TOTAL_REQUEST_CY2024_25_B, TOTAL_AVAILABLE_CY2024_25_B,
 )
 from utils import apply_theme
@@ -79,19 +82,44 @@ st.markdown("---")
 
 # Business Strategy
 st.markdown(
-    """
+    f"""
 ### Section 1 — Business Strategy (50 base points)
 
 | Sub-criterion | Max | Key threshold |
 |---|---|---|
-| **Product Flexibility** | 10 | ≥ 50% below-market rate OR ≥ 5 indicia of flexible terms |
+| **Product Flexibility** | 10 | ≥ {HOUSE_PRODUCT_FLEXIBILITY_BELOW_MARKET_PCT:.0%} of the portfolio priced below market OR ≥ {HOUSE_PRODUCT_FLEXIBILITY_MIN_INDICIA} indicia — **this tool's own test, see below** |
 | **Pipeline Credibility** | 15 | Pipeline projects identified, sized, and timed credibly |
 | **Track Record Strength** | 15 | 5-year direct financing record; bonus for own capital at risk |
-| **Track Record Alignment** | 10 | ≥ 70% pipeline supported by similar prior activity; ≥ 90% deployment rate |
+| **Track Record Alignment** | 10 | ≥ {TRACK_RECORD_PIPELINE_ALIGNMENT_MIN:.0%} pipeline supported by similar prior activity; ≥ {HOUSE_TRACK_RECORD_DEPLOYMENT_MIN:.0%} prior-allocation deployment — **the second is this tool's own, see below** |
 
 > **Sub-score disclosure:** Weights within Business Strategy (e.g., Product Flexibility 10 pts)
 > are this tool's interpretation of the Review Process document. The CDFI Fund does not
 > publish exact point values for individual sub-criteria.
+
+**Product Flexibility does not measure the CDFI Fund's Question 15 test.** Question 15
+(*CY 2024-2025 NMTC Allocation Application*, pp. 20-21) is a single-select ladder — "Choose
+one of the following options. Check only one." — in which the Applicant commits that **100%
+of its QLICIs** will be provided as equity; equity-equivalent financing; debt at least
+**50%** below market; **or** debt satisfying at least **5** indicia of flexible or
+non-traditional terms. Lower rungs commit to 33%/4 indicia, 25%/3, or 15%/2, and score
+lower. Every rung describes a property of each **individual QLICI**.
+
+This tool computes neither figure. Its sub-score divides a **QEI-weighted share of the
+portfolio** priced below market by the Fund's **per-loan discount depth**, and takes the
+better of that and an application-level indicia count — so the Fund's "or" sits inside one
+loan and this tool's sits across the whole book. Those are different quantities, and the
+share-over-depth comparison is not a ratio of anything. **No number in this row answers
+Question 15**, and it should not be read as a near-miss against it. The CDE must answer
+Question 15 from its own loan terms.
+
+**The {HOUSE_TRACK_RECORD_DEPLOYMENT_MIN:.0%} on Track Record Alignment is this tool's, not the Fund's.** The
+{TRACK_RECORD_PIPELINE_ALIGNMENT_MIN:.0%} is Fund-stated and correct (*Review Process* p.7 Part II.A.4: "At least
+{TRACK_RECORD_PIPELINE_ALIGNMENT_MIN:.0%} of the Applicant's proposed NMTC investments were supported by a track
+record of similar business types and activity types"). The Fund's own {TRACK_RECORD_TO_PROJECTION_MIN:.0%} in that
+same paragraph is a different measure — "its most recent 5-year direct financing track
+record was {TRACK_RECORD_TO_PROJECTION_MIN:.0%} or more of its **projected NMTC deployment in Exhibit A**" — a
+track-record-to-projection ratio. Deployment of a *prior* allocation is reviewed in Phase 2
+and carries **no published percentage**.
 """
 )
 
@@ -104,7 +132,7 @@ st.markdown(
 |---|---|---|
 | **Higher Distress Targeting** | 15 | ≥ {SEVERE_DISTRESS_MIN_PCT:.0%} of **QEI** in severely distressed tracts — a proxy, see below |
 | **Deep Distress Commitment** | 10 | ≥ {DEEP_DISTRESS_MIN_PCT:.0%} of **QEI** in Deep Distress areas — a proxy, see below |
-| **Special Targeting** | 5 | QEI in U.S. Territories, High Migration Rural, NMTC Native Areas, Persistent Poverty Counties |
+| **Special Targeting** | 5 | QEI in U.S. Territories, High Migration Rural, NMTC Native Areas, Persistent Poverty Counties — **this tool's own criterion, not the Fund's, see below** |
 | **Community Outcomes Quality** | 10 | Quantified outcomes (jobs, units, sq ft) with third-party methodology |
 | **Community Accountability** | 10 | LIC board representation + community engagement track record |
 
@@ -121,6 +149,23 @@ sub-scores above are QEI-based *proxies*, and no figure this tool renders answer
 either commitment. The {SEVERE_DISTRESS_MIN_PCT:.0%} carries a second mismatch:
 it covers severe distress **or multiple indicia** of distress, and this package
 computes no multi-indicia measure at all.
+
+**Special Targeting is this tool's own criterion. The CDFI Fund publishes no such
+criterion and no bonus points for it.** The CY 2024-2025 NOAA (89 FR 92283, 21 Nov 2024),
+section V.B(b), sets out the complete set of additional points under IRC §45D(f)(2):
+*"the CDFI Fund will ascribe additional points to entities that meet one or both of the
+statutory priorities"* — a DBC track record (up to five points) and Investments in
+Unrelated Entities (five points) — *"Thus, Applicants that meet the requirements of both
+priority categories can receive up to a total of ten additional points."* Two priorities,
+ten points, and both are scored separately under Priority Points below.
+
+The phrases "Special Targeting" and "bonus points" appear **nowhere** in the CY 2024-2025
+Allocation Application (142 pp.), the Review Process (7 pp.), or the NOAA (10 pp.). The
+four categories are real NMTC concepts, but the Application uses them to **define a
+Disadvantaged Business** (p.132: a Disadvantaged Business is one located in *"a Persistent
+Poverty County; a NMTC Native Area; or a U.S. Island Area"*) — they feed the DBC statutory
+priority, and are not scored on their own. Treat this row as a house prompt to consider
+those areas, not as a bar the CDFI Fund will measure.
 """
 )
 
@@ -135,7 +180,23 @@ but do not affect gating.
 | Criterion | Max | Key threshold |
 |---|---|---|
 | **DBC Track Record** | 5 | ≥ {DBC_PRIORITY_YEARS_MIN} years AND ≥ {DBC_VOLUME_PCT_MIN:.0%} of financing volume to Disadvantaged Businesses/Communities |
-| **Unrelated Entities Commitment** | 5 | ≥ {UNRELATED_ENTITIES_MIN_PCT:.0%} of QEIs to unrelated entities |
+| **Unrelated Entities Commitment** | 5 | ≥ {HOUSE_UNRELATED_ENTITIES_MIN_PCT:.0%} of QEIs to unrelated entities — **this tool's threshold; the Fund's test is Yes/No, see below** |
+
+**The {HOUSE_UNRELATED_ENTITIES_MIN_PCT:.0%} is this tool's own scoring threshold. The CDFI Fund publishes no
+percentage here, and its test is not a percentage at all.** Question 23 of the CY 2024-2025
+Allocation Application (p.34) is a dropdown: *"Does the Applicant intend to use
+substantially all of the proceeds of its QEIs to make QLICIs in one or more businesses in
+which persons Unrelated to the Applicant hold the majority equity interest?  ☐ Yes ☐ No"*,
+and sub-section E states *"An Applicant that answers 'Yes' to Question 23 will be awarded
+five additional points."* A Yes/No intent commitment, binding in the Allocation Agreement.
+
+So this tool grades a continuous share against a binary question. The {HOUSE_UNRELATED_ENTITIES_MIN_PCT:.0%} is not
+the Fund's figure, and it is **not** Treas. Reg. §1.45D-1(c)(5)(i)'s 85% either: that
+defines "substantially all" for the *deployment* test — QEI cash into QLICIs — which is a
+different requirement. Re-basing this row to 85% would swap one unstated number for another
+while making the citation look stronger, so it has deliberately not been done. The
+**denominator** (proceeds of QEIs) is correct and unchanged; that is what Question 23 and
+the NOAA both say.
 """
 )
 
@@ -149,16 +210,33 @@ st.markdown("## Highly Qualified Gating Logic")
 st.markdown(
     f"""
 The CDFI Fund uses a **two-stage gating process** to form the Highly Qualified pool
-that advances to Phase 2 review.
+that advances to Phase 2 review. It publishes **one** gate, shown in the first two rows.
+The third row is this tool's own and is marked as such.
 
-| Tier | Aggregate Base Score | Section Minimums | Outcome |
-|---|---|---|---|
-| **Not Qualified** | < {HIGHLY_QUALIFIED_AGGREGATE_MIN} | Either section < {HIGHLY_QUALIFIED_SECTION_MIN} | Does not advance to Phase 2 |
-| **Highly Qualified** | {HIGHLY_QUALIFIED_AGGREGATE_MIN}–{TOP_TIER_AGGREGATE_MIN - 1} | Both sections ≥ {HIGHLY_QUALIFIED_SECTION_MIN} | Phase 2 reviewed; award depends on ranking |
-| **Top Tier** | {TOP_TIER_AGGREGATE_MIN}–100 | Both sections ≥ {TOP_TIER_SECTION_MIN} | High probability of award at or near maximum requested |
+| Tier | Aggregate Base Score | Section Minimums | Outcome | Whose threshold |
+|---|---|---|---|---|
+| **Not Qualified** | < {HIGHLY_QUALIFIED_AGGREGATE_MIN} | Either section < {HIGHLY_QUALIFIED_SECTION_MIN} | Does not advance to Phase 2 | CDFI Fund |
+| **Highly Qualified** | {HIGHLY_QUALIFIED_AGGREGATE_MIN}–{HOUSE_TOP_TIER_AGGREGATE_MIN - 1} | Both sections ≥ {HIGHLY_QUALIFIED_SECTION_MIN} | Phase 2 reviewed; award depends on ranking | CDFI Fund |
+| **Top Tier** | {HOUSE_TOP_TIER_AGGREGATE_MIN}–100 | Both sections ≥ {HOUSE_TOP_TIER_SECTION_MIN} | Well clear of the published gate | **This tool** |
 
 **Critical rule:** An application that scores below {HIGHLY_QUALIFIED_SECTION_MIN} points in
 *either* section does not advance to Phase 2, regardless of aggregate score.
+
+**"Top Tier" is not a CDFI Fund tier.** The Review Process (p.3, Step 2) publishes the
+Highly Qualified gate verbatim — *"(i) an aggregate score of at least
+{HIGHLY_QUALIFIED_SECTION_MIN} out of a possible total of 50 points in each of the two scored Application
+sections; and (ii) an aggregate base score (excluding priority points) of at least
+{HIGHLY_QUALIFIED_AGGREGATE_MIN} points"* — and **nothing above it**. The phrase "Top Tier" returns zero hits
+across the Allocation Application (142 pp.), the Review Process (7 pp.) and the CY
+2024-2025 NOAA (10 pp.); the NOAA's only tier concept is the "highly qualified pool". The
+{HOUSE_TOP_TIER_AGGREGATE_MIN}/{HOUSE_TOP_TIER_SECTION_MIN} cut points behind the label are an unsourced house heuristic.
+
+The outcome cell for that row previously read *"High probability of award at or near
+maximum requested."* That was an award prediction resting on an invented gate, and this
+tool does not compute a probability of selection — see "This tool IS NOT", above. Above the
+published gate, ranking and the Phase 2 panel decide the award: the Review Process states
+that highly qualified Applicants are ranked *"inclusive of half of the priority points"*
+and forwarded to an Allocation Recommendation Panel, which this tool does not model.
 """
 )
 

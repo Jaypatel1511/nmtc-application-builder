@@ -67,8 +67,33 @@ def check_eligibility(pipeline: "Pipeline") -> ValidationResult:
                 if unverified_qei else ""
             )
             warnings.append(
+                # D6 (1.2.2 round 2). This read "— CDFI Fund expects near-100%
+                # eligibility": a bare Fund expectation with no citation,
+                # sixteen lines above a warning in this same function that
+                # carries a full FIX-3 disclosure. The file was half-swept in
+                # 1.2.1 and this was the half left behind. Round 2 re-checked
+                # the rest of the file: lines 1-62 and 72-104 attribute nothing
+                # else, so this was the only one remaining.
+                #
+                # FIXED BY CITATION, NOT WITHDRAWN — the weakest of the six and
+                # substantively right. "near-100%" appears in none of the three
+                # primary documents, but the underlying constraint is statutory
+                # rather than a scoring expectation, and stating it that way is
+                # both true and more useful: it is a condition of the CREDIT,
+                # not a competitive threshold a CDE can trade off.
+                #
+                # The 90% trigger is this tool's own and now says so. It is a
+                # screening band, not a bar anyone publishes.
                 f"Only {elig_pct:.0%} of verified QEI is in eligible tracts"
-                f"{unverified_note} — CDFI Fund expects near-100% eligibility"
+                f"{unverified_note}. Flagged at this tool's own 90% screening "
+                "band — not a CDFI Fund threshold. What is federal here is "
+                "structural, not a scoring expectation: IRC §45D(d) requires "
+                "each QLICI to be made in a qualified active low-income "
+                "community business, which must be located in a Low-Income "
+                "Community, and Treas. Reg. §1.45D-1(c)(5)(i) requires "
+                "substantially all — at least 85 percent — of QEI proceeds to "
+                "be invested in QLICIs. QEI attributed to ineligible tracts "
+                "cannot count toward that test"
             )
     elif total_qei > 0:
         warnings.append(

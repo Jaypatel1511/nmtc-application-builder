@@ -21,8 +21,8 @@ def test_page2_imports():
     from nmtcapp.data.benchmark_thresholds import (  # noqa: F401
         HIGHLY_QUALIFIED_AGGREGATE_MIN,
         HIGHLY_QUALIFIED_SECTION_MIN,
-        TOP_TIER_AGGREGATE_MIN,
-        TOP_TIER_SECTION_MIN,
+        HOUSE_TOP_TIER_AGGREGATE_MIN,
+        HOUSE_TOP_TIER_SECTION_MIN,
     )
 
 
@@ -38,13 +38,13 @@ def test_page4_imports():
     from nmtcapp.data.benchmark_thresholds import (  # noqa: F401
         HIGHLY_QUALIFIED_AGGREGATE_MIN,
         HIGHLY_QUALIFIED_SECTION_MIN,
-        TOP_TIER_AGGREGATE_MIN,
-        TOP_TIER_SECTION_MIN,
+        HOUSE_TOP_TIER_AGGREGATE_MIN,
+        HOUSE_TOP_TIER_SECTION_MIN,
         SEVERE_DISTRESS_MIN_PCT,
         DEEP_DISTRESS_MIN_PCT,
         DBC_PRIORITY_YEARS_MIN,
         DBC_VOLUME_PCT_MIN,
-        UNRELATED_ENTITIES_MIN_PCT,
+        HOUSE_UNRELATED_ENTITIES_MIN_PCT,
         TOTAL_APPLICANTS_CY2024_25,
         TOTAL_REQUEST_CY2024_25_B,
         TOTAL_AVAILABLE_CY2024_25_B,

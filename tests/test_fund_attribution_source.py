@@ -76,16 +76,30 @@ MIN_PY_FILES = 40
 MIN_DOCS_FILES = 8
 MIN_MATCHES = 25
 
-#: Adjudicated defects awaiting the 1.2.2 fix round, counted as DISTINCT
-#: DEFECTS and not as entries. Every one of the six lives on one to six
-#: surfaces at once --- the Product Flexibility sentence alone renders in
+#: Adjudicated-but-unfixed false Fund attributions, counted as DISTINCT
+#: DEFECTS and not as entries. Every defect lives on one to six surfaces at
+#: once --- the Product Flexibility sentence alone rendered in
 #: docs/reference/methodology.md twice, in the Streamlit About page twice and
 #: in intelligence/recommendations.py twice --- so an entry count would move
 #: whenever a sentence was duplicated or deleted and would say nothing about
-#: whether a false attribution had been found or fixed. Each DEFECT entry's
-#: citation therefore opens with its defect tag, D1..D6, and this pin counts
-#: the distinct tags.
-EXPECTED_DEFECTS = 6
+#: whether a false attribution had been found or fixed. A DEFECT entry's
+#: citation therefore opens with its defect tag, and this pin counts the
+#: distinct tags.
+#:
+#: 6 -> 0 IN 1.2.2 ROUND 2. Round 1 ruled D1-D6 against the primary source and
+#: shipped the gate WITHOUT fixing any of them; all six were live on PyPI and
+#: on the published docs site for the whole 1.2.1 cycle. Round 2 fixed all six
+#: across their 20 surfaces, so every DEFECT entry has been reclassified to the
+#: kind that states its true provenance --- CITED where the corrected text
+#: quotes a document and page, HOUSE where the number is this tool's own.
+#:
+#: ZERO IS NOT A WEAKER PIN THAN SIX. The assertion is equality, so a seventh
+#: defect appearing tomorrow makes len(tags) == 1 and fails exactly as an
+#: eighth would have failed against 6. What the pin forbids is a DEFECT entry
+#: being added without someone deliberately raising this number, and it forbids
+#: that just as firmly at 0. Proved by planting a DEFECT row and observing the
+#: failure; see CHANGELOG.md for the run.
+EXPECTED_DEFECTS = 0
 #: Matched anywhere in the citation, not anchored: each citation opens with
 #: the location the claim was first found at, and the tag follows it.
 _DEFECT_TAG = re.compile(r"\b(D[1-9]\d*):")
@@ -113,6 +127,31 @@ AUTHORITIES = (
     # substantially all (90%+) QEIs ..." , the sentence S2 was opened to close
     # --- names nobody and slips the gate entirely.
     "full credit", "priority points",
+    # IMPLICIT, ADDED 1.2.2 ROUND 2. "Highly Qualified" is the CDFI Fund's OWN
+    # NAME for its own gate, so a sentence stating a bar "required for Highly
+    # Qualified status" attributes that bar to the Fund as surely as one saying
+    # so in words. "Top Tier" earns its place for the opposite reason: it is
+    # this package's INVENTED tier, and a sentence that states cut points for it
+    # is making a provenance claim by omission.
+    #
+    # NOT THEORETICAL. Round 2 added these after finding TWO live D4 surfaces
+    # that round 1 had not listed and the gate could not see, both invisible
+    # precisely because they name no authority:
+    #
+    #   streamlit_app/pages/2_Win_Alignment_Scorer.py --- "**Top Tier gate:**
+    #     95+ aggregate AND 45+ in each section", rendered directly beneath
+    #     "**Highly Qualified gate:** 85+ ...", in the same weight and shape, so
+    #     a CDE reads a matched pair of Fund gates. Only one of them was.
+    #
+    #   intelligence/win_probability.py --- "Top Tier (100/100) ... High
+    #     probability of Phase 2 advancement; award may approach the maximum
+    #     requested." An AWARD PREDICTION, resting on an invented gate, in a
+    #     package whose docs disclaim predicting selection.
+    #
+    # Measured before adopting: 9 further strings become adjudicated, all nine
+    # genuine statements of the gating thresholds. D4's true surface count is
+    # therefore SIX, not the four round 1 recorded.
+    "highly qualified", "top tier",
 )
 
 #: A claim about what the authority DOES. Jay's rule for the 1.2.2 sweep: "A
@@ -192,12 +231,34 @@ _AFFIRMS_ANYWAY = (
     "bar for full credit", "commitment is measured", "asks for",
 )
 
+#: X1-EXCEPT, SECOND LIMB, added in 1.2.2 round 2. A token list could not keep
+#: up. Round 2 rewrote six defect surfaces into disclosures that DISCLAIM this
+#: tool's threshold and QUOTE the Fund's real one in the same string, and every
+#: one of them slipped X1 on a token the disclaimer list already held --- two of
+#: them by accident, because adding the words "publishes no" to the Streamlit
+#: Community Outcomes and Priority Points blobs silently exempted blobs that had
+#: been ADJUDICATED the release before. A round whose subject is unreviewed Fund
+#: quotations must not stop reviewing its own.
+#:
+#: The general rule, rather than more tokens: A STRING THAT CITES A DOCUMENT
+#: LOCATION IS ASSERTING WHAT THAT DOCUMENT SAYS. A page, a question number, a
+#: statute or regulation section, a Part/Step, or a Federal Register cite is a
+#: claim of provenance, and a claim of provenance is reviewable no matter how
+#: much disclaiming surrounds it. Measured before adopting: 8 strings move from
+#: exempt to adjudicated, and all 8 are Fund quotations.
+_CITES_A_LOCATION = re.compile(
+    r"\bpp?\.\s?\d|\bquestion\s+\d|§|\bpart\s+i{1,3}\b|\b\d+\s+fr\s+\d{4,}|"
+    r"\bstep\s+\d"
+)
+
 
 def _is_disclaimer(text: str) -> bool:
     low = text.lower()
     if not any(d in low for d in _DISCLAIMERS):
         return False
-    return not any(a in low for a in _AFFIRMS_ANYWAY)
+    if any(a in low for a in _AFFIRMS_ANYWAY):
+        return False
+    return not _CITES_A_LOCATION.search(low)
 
 
 #: X2. STATED SCOPE LIMIT. This gate's subject is a BAR attributed to an
@@ -498,7 +559,7 @@ def test_every_defect_entry_carries_a_defect_tag():
             continue
         assert _DEFECT_TAG.search(citation), (
             "a DEFECT entry's citation must open with its defect tag "
-            f"(D1..D{EXPECTED_DEFECTS}): {claim[:80]!r} -> {citation[:60]!r}"
+            f"(D1, D2, ...): {claim[:80]!r} -> {citation[:60]!r}"
         )
 
 

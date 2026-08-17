@@ -26,7 +26,7 @@ from nmtcapp.core.cde import CDEProfile
 from nmtcapp.core.pipeline import Pipeline
 from nmtcapp.data.benchmark_thresholds import (
     HIGHLY_QUALIFIED_AGGREGATE_MIN, HIGHLY_QUALIFIED_SECTION_MIN,
-    TOP_TIER_AGGREGATE_MIN, TOP_TIER_SECTION_MIN,
+    HOUSE_TOP_TIER_AGGREGATE_MIN, HOUSE_TOP_TIER_SECTION_MIN,
 )
 from chart_style import (
     hex_rgba, style_plotly_fig, PLOTLY_CONFIG,
@@ -133,16 +133,16 @@ class TestPage2WinAlignmentCharts:
             gauge={
                 "axis": {
                     "range": [0, 100],
-                    "tickvals": [0, HIGHLY_QUALIFIED_AGGREGATE_MIN, TOP_TIER_AGGREGATE_MIN, 100],
+                    "tickvals": [0, HIGHLY_QUALIFIED_AGGREGATE_MIN, HOUSE_TOP_TIER_AGGREGATE_MIN, 100],
                     "ticktext": ["0", f"{HIGHLY_QUALIFIED_AGGREGATE_MIN} HQ",
-                                 f"{TOP_TIER_AGGREGATE_MIN} TT", "100"],
+                                 f"{HOUSE_TOP_TIER_AGGREGATE_MIN} TT", "100"],
                 },
                 "bar": {"color": ACCENT, "thickness": 0.25},
                 "bgcolor": PANEL_BG,
                 "steps": [
                     {"range": [0, HIGHLY_QUALIFIED_AGGREGATE_MIN], "color": hex_rgba(DANGER, 0.27)},
-                    {"range": [HIGHLY_QUALIFIED_AGGREGATE_MIN, TOP_TIER_AGGREGATE_MIN], "color": hex_rgba(MID_BLUE, 0.27)},
-                    {"range": [TOP_TIER_AGGREGATE_MIN, 100], "color": hex_rgba(SUCCESS, 0.27)},
+                    {"range": [HIGHLY_QUALIFIED_AGGREGATE_MIN, HOUSE_TOP_TIER_AGGREGATE_MIN], "color": hex_rgba(MID_BLUE, 0.27)},
+                    {"range": [HOUSE_TOP_TIER_AGGREGATE_MIN, 100], "color": hex_rgba(SUCCESS, 0.27)},
                 ],
                 "threshold": {
                     "line": {"color": tier_color, "width": 3},
