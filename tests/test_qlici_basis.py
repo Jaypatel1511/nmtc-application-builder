@@ -600,6 +600,7 @@ def test_no_source_string_states_a_bar_without_its_denominator():
     """
     _WINDOW = 8
     hits = []
+    scanned = 0
     for root in _scanned_trees():
         for dirpath, dirnames, filenames in os.walk(root):
             dirnames[:] = [d for d in dirnames if d != "__pycache__"]
@@ -607,6 +608,7 @@ def test_no_source_string_states_a_bar_without_its_denominator():
                 if not fn.endswith(".py"):
                     continue
                 path = os.path.join(dirpath, fn)
+                scanned += 1
                 with open(path, encoding="utf-8") as fh:
                     lines = fh.read().splitlines()
                 inside_triple = False
@@ -646,6 +648,16 @@ def test_no_source_string_states_a_bar_without_its_denominator():
                             and not any(w in low for w in _AFFIRMS_A_FUND_BAR)):
                         continue
                     hits.append(f"{path}:{i + 1}: {line.strip()[:150]}")
+    # THE MISSING HALF. Its sibling above has carried `assert scanned > 40`
+    # since 1.2.1; this loop, walking the same two trees for the harder
+    # property, had only `assert not hits` — which a walk over zero files
+    # satisfies perfectly. A gate that cannot fail is worse than no gate,
+    # because it is also a green tick. Fourteen instances of this shape are on
+    # record in this package.
+    assert scanned > 40, (
+        f"only {scanned} source file(s) scanned — the walk is broken and this "
+        "pin would pass vacuously"
+    )
     assert not hits, (
         f"{len(hits)} source line(s) write a CDFI Fund distress bar into a "
         "string without naming its denominator anywhere nearby:\n"
