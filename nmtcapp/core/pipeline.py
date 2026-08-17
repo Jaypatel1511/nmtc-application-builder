@@ -76,6 +76,29 @@ class PipelineProject:
     declared_census_tract: Optional[str] = None
     declared_distress_level: Optional[str] = None
 
+    # ── WHETHER THE CDE ACTUALLY SUPPLIED qlici_amount (1.3.0 S3) ──────────
+    #
+    # core/upload_handler set ``qlici_amount = qei_request`` whenever the
+    # column was absent from an upload, silently, and that value then rendered
+    # as "Total QLICI ($)" — the CDE's own answer to the Fund's Table A5 row
+    # (h) — in Appendix A on markdown, Word, PDF and Excel. Four passes over
+    # this package missed it because every fixture in the tree sets the two
+    # equal anyway, so the defaulted value was indistinguishable from a real
+    # one in every test that existed.
+    #
+    # STRUCTURAL, NOT INFERRED. The obvious cheap check — ``qlici_amount ==
+    # qei_request`` — is true of both shipped samples, of Pipeline.sample(),
+    # of the pin fixtures and of the rendered baseline fixture, and would
+    # therefore fire on a CDE whose figures legitimately match. Whether the
+    # value was supplied is a fact known at read time; it is carried, in the
+    # same spirit as declared_census_tract above, rather than reconstructed.
+    #
+    # IT CROSSES A SERIALIZATION BOUNDARY, which is why from_csv reads a column
+    # for it. load_uploaded_pipeline writes its DataFrame to a temporary CSV
+    # and re-reads it through from_csv, so an attribute set on the way in would
+    # not survive; the flag rides the CSV as ``qlici_amount_supplied``.
+    qlici_amount_supplied: bool = True
+
     # Populated by analyze() — do not set manually
     census_tract: Optional[str] = None
     is_nmtc_eligible: Optional[bool] = None
@@ -198,6 +221,7 @@ class PipelineProject:
             "total_project_cost": self.total_project_cost,
             "qei_request": self.qei_request,
             "qlici_amount": self.qlici_amount,
+            "qlici_amount_supplied": self.qlici_amount_supplied,
             "expected_jobs_created": self.expected_jobs_created,
             "expected_jobs_retained": self.expected_jobs_retained,
             "expected_units_built": self.expected_units_built,
@@ -324,6 +348,17 @@ class Pipeline:
                     total_project_cost=_required_float(row["total_project_cost"], "total_project_cost"),
                     qei_request=_required_float(row["qei_request"], "qei_request"),
                     qlici_amount=_required_float(row["qlici_amount"], "qlici_amount"),
+                    # 1.3.0 S3. Absent column -> True, because a CSV that
+                    # reaches here at all carries qlici_amount (it is in
+                    # REQUIRED_PROJECT_FIELDS, checked above), so the value is
+                    # the CDE's. The column exists for the ONE writer that
+                    # knows otherwise: core/upload_handler, which synthesises
+                    # qlici_amount when an upload omits it and must say so
+                    # across the temp-CSV boundary between it and this loader.
+                    qlici_amount_supplied=(
+                        _optional_bool(row.get("qlici_amount_supplied"))
+                        is not False
+                    ),
                     expected_jobs_created=_required_int(row["expected_jobs_created"], "expected_jobs_created"),
                     expected_jobs_retained=_int_with_default(row.get("expected_jobs_retained"), 0),
                     expected_units_built=_optional_int(row.get("expected_units_built")),

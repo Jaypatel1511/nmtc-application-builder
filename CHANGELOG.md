@@ -5,7 +5,246 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — 1.2.2, round 2 of 2
+## [Unreleased] — 1.3.0
+
+**MINOR, not PATCH.** S3 changes what an existing user's document says without
+their input changing: an upload with no `qlici_amount` column used to print the
+project's QEI request under the heading **Total QLICI ($)**, and now prints
+`not supplied [CDE TO COMPLETE]`. That is the same shape as 1.1.6 → 1.2.0, where
+`analyze` began exiting 2 where it used to run. **The minor bump licenses no
+extra scope** — the deferred list at the foot of this entry is unchanged.
+
+### S1 — the basis note instructed a CDE to compute the wrong number
+
+Rounds 1 and 2 of the 1.2.2 cycle removed six claims that **overstated** what
+the CDFI Fund requires. This is the opposite, and **the first false negative in
+this package**: a shipped instruction that causes a CDE to **understate its own
+qualifying share to a federal agency**. Same class as `nmtc-mapper` 0.4.2
+reporting 168 tracts ineligible when they statutorily qualified.
+
+The shipped note quoted the *CY 2024-2025 NMTC Program Review Process* — a real
+Fund sentence, correctly attributed — and told the CDE to compute a
+deep-distress share of QLICIs and compare it to 20%. **Question 25 of the
+Allocation Application shows that instruction wrong twice over:**
+
+1. **The 20% is the top rung of a ladder, not a bar.** Question 25(b)(i)'s
+   Response column is a dropdown reading *"0 / 5 / 10 / 15 / 20, if selected
+   enter exact percentage 20-100% in 25(b)(ii)"*. A CDE that could honestly
+   commit 10% read our note as a pass/fail threshold it misses.
+2. **Question 25(b) is four area types.** Deep Distress, NMTC Native Areas,
+   High Migration Rural Counties and U.S. Island Areas. A CDE with Native
+   Area, High Migration Rural or Island Area QLICIs left them out of a
+   numerator they belong in.
+
+**Both errors push the same direction.**
+
+The corrected note also carries what the summary compresses away: Question
+25(a) is denominated in QLICIs *"in terms of aggregate dollar amounts"*, tested
+**for each QLICI**; *"multiple indicia of distress"* is specifically **at least
+two of items 6-12**, beside a **one of items 1-5** alternative; and *"A QLICI
+that meets this commitment will also automatically meet the commitment made in
+Question 25(a)."*
+
+**And it says what the tool CAN see.** "Computes neither figure" was true and
+unhelpfully pessimistic. The note now states that this package carries a
+per-project field for **five of the fourteen** distinct area types Question 25
+lists — a tool-verified distress level covering Severe and Deep Distress, plus
+CDE-declared, unverified flags for NMTC Native Areas, High Migration Rural
+Counties and U.S. territory — and **nothing** for Non-Metropolitan Counties,
+Targeted Populations, or any of items 6-12. It says so in the same paragraph as
+the sentence that denies it is an answer, because *five of fourteen* reads as a
+partial answer and is not one: the commitment is a share of QLICI **dollars**,
+this package weights nothing by QLICI dollars, and a flag that enters no
+denominator contributes nothing to a share. That sentence is pinned
+(`test_qlici_basis.REQUIRED_NOTE_CLAUSES`) so the field list can never render
+without it.
+
+The text moved to **`nmtcapp/renderers/_question_25.py`**, one authority read by
+every surface. It had been four near-identical copies, of which the workbook's
+was missing entirely — which is exactly how S4 happened.
+
+**Refuted while writing it:** the brief for this round said the package "already
+returns severe distress and non-metropolitan status". It does not return
+non-metropolitan status. `PipelineProject` has no such field; the only
+non-metro figure in the package is `geographic_diversity["rural_pct"]`, a QEI
+share over a **hard-coded twelve-state list** (`geographic_analysis.py:16`), not
+the OMB Bulletin 20-01 county definition Question 25 item 4 names. The note says
+five of fourteen, not six, for that reason.
+
+### S2 — two constants whose comments were known-incomplete
+
+`SEVERE_DISTRESS_MIN_PCT` and `DEEP_DISTRESS_MIN_PCT` were classified **CITED**
+in `tests/fund_attribution_allowlist.txt`, ruled correct against the Review
+Process, and incomplete against the Application. Both comments corrected; both
+allowlist entries re-ruled against the instrument. **Neither became a DEFECT** —
+DEFECT means *the authority does not state it*, and the Review Process does
+state both sentences. `EXPECTED_DEFECTS` stays **0**; no stop-and-report was
+triggered.
+
+Which is precisely why the gate's own documentation now says so, in
+`tests/test_fund_attribution_source.py` and at the head of the allowlist:
+
+> **`EXPECTED_DEFECTS = 0` means "no false attributions among those ruled". It
+> does not mean "none remain". A gate is exactly as good as the DOCUMENT its
+> allowlist was ruled against.**
+
+Measured, not asserted: the 1.2.2 sweep ruled every entry against a seven-page
+**summary** and went 6 → 0 honestly on that basis, and this round found two
+false-negative defects underneath a green gate reading zero.
+
+### S3 — the QLICI figure the CDE never supplied
+
+`core/upload_handler` set `qlici_amount = qei_request` whenever an upload
+omitted the column. Silently. That value rendered as **Total QLICI ($)** — the
+CDE's own answer to the Fund's Table A5 row (h) — and satisfied the QLICI ≤ QEI
+consistency rule by being exactly equal to the QEI it was copied from.
+
+- **Provenance is carried, not re-detected.** `PipelineProject.qlici_amount_supplied`.
+  The obvious cheap check (`qlici_amount == qei_request`) is true of both
+  shipped samples, of `Pipeline.sample()`, of the pin fixtures and of the
+  baseline fixture, and would misfire on a CDE whose figures legitimately
+  match. `test_provenance_is_not_inferred_from_equality` is the gate.
+- **It does cross a serialization boundary**, as the brief suspected.
+  `load_uploaded_pipeline` writes a temp CSV and re-reads it through
+  `Pipeline.from_csv`, so the flag rides the CSV as a column rather than being
+  set on the way past. `test_the_flag_survives_the_temp_csv_boundary` pins the
+  reason.
+- **Warned at upload time**, in `upload_handler` (logger) and on the Streamlit
+  uploader (read off the carried flag, not re-derived).
+- **`consistency_check`: RULED NOT-CHECKABLE AND REPORTED, NOT SKIPPED.**
+  *Rejected — skip silently.* `ValidationResult.passed` stays True either way,
+  so a reader cannot tell "checked and passed" from "not checked at all"; that
+  turns a trivially-passing check into an invisibly-absent one, which is the
+  same defect one level down and harder to see. This module already refuses
+  that shape — `CrossSurfaceCheckError` is *raised* rather than returned for
+  exactly this reason. Fourteen instances of "a gate that cannot fail is also a
+  green tick" are on record in this package.
+- **The TOTALS row refuses to sum around it.** A not-supplied cell poisons its
+  own column total and no other. An absent affordable-unit count is still NaN
+  and still sums with skipna — those are different facts and do not share a
+  rule.
+
+**Refuted:** the brief said the defaulted figure renders "markdown, Word, PDF
+**and** Excel". It renders on **markdown and Excel only**. `Total QLICI ($)` is a
+column of `build_pipeline_table`, and only those two renderers publish that
+table — Word and PDF print the six-column `build_pipeline_summary_table`, and
+Word's landscape continuation names twelve columns of which QLICI is not one.
+`grep -c "Total QLICI"` over the committed baseline returns **1, 0, 0, 1**.
+Inventing a QLICI column for two surfaces that deliberately do not carry one, in
+order to make a test pass, would have changed the shape of a federal
+attachment; instead those two carry a **disclosure sentence** beside the caption
+that already directs the reader to the workbook for "QLICI structure". So all
+four surfaces disclose it — two in a cell, two in a sentence — and
+`test_the_surface_split_is_still_what_it_was_measured_to_be` fails closed if a
+renderer ever starts or stops publishing the column.
+
+**Also refuted:** "every fixture in the package collapses the two".
+`tests/test_qlici_basis._divergent_pipeline`, added by 1.2.1's FIX-3, already
+diverges them — but it constructs `PipelineProject` objects directly, so it
+never crosses the upload path where the defaulting happens and never renders a
+document. Two new fixtures in `tests/test_qlici_not_supplied.py` close that:
+an **upload** whose QLICIs differ from its QEIs (at three distinct ratios, so a
+fixed ratio cannot hide a proportional-scaling defect), and an upload with the
+**column absent**. Converting the remaining collapsed fixtures is 1.3.1.
+
+### S4 — the Excel cell with no denominator
+
+`Summary Dashboard!A12` read **"Deep/Severe Distress Concentration"** over a raw
+float under a percent format: no denominator in the label, and **no basis note
+anywhere in the workbook**. The one artifact of the four carrying neither half
+of the 1.2.1 remedy, and the one a reviewer opens to copy figures out of. A CDE
+copying that cell into Question 25 files a QEI figure against a QLICI
+commitment.
+
+1.2.1's CHANGELOG recorded *"the workbook contains no basis note anywhere: zero
+occurrences of 'BASIS NOTE'"* as a verified fact. It was verified as the absence
+of a **spurious claim**. It was also the absence of the **remedy**, and nothing
+in the package could tell the two apart.
+
+The label now names its basis and the workbook carries the S1 note, from the
+same function Section B reads.
+
+### The rendered baseline moved — for the first time this cycle
+
+Seven insertions, five deletions, **every changed line classified, zero
+unexplained**:
+
+| Surface | Changed line | Classification |
+|---|---|---|
+| excel | `A12` label gains `(a share of QEI, not of QLICIs …)` | intended — **S4**, and this is the entry that was invisible before |
+| excel | `A27` new BASIS NOTE label | intended — S4 |
+| excel | `A28` new basis note body | intended — S4 |
+| excel | `A30` footer, was `A27` | consequential reflow of the two rows above |
+| markdown | Section B basis note body | intended — S1 |
+| word | `T6\|R7` basis note body | intended — S1 |
+| pdf | Section B basis note body | intended — S1 |
+
+`Summary Dashboard!C12` — `|float|fmt=0.0%|0.8531073446327684` — is deliberately
+**unchanged**. The value was never wrong; the label around it was, and that is
+what moved. **S3 moves no baseline line**, correctly: the baseline fixture
+supplies `qlici_amount`, so nothing about it is defaulted.
+
+### The Review Process sweep — the durable output of this round
+
+> **A summary document is a safe source for how the Fund SCORES and an unsafe
+> source for what the Applicant is asked to COMMIT TO, because the thing the
+> Applicant fills in is the Application.**
+
+**72 mentions across 68 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
+`README.md`. **13 cite the Review Process for a substantive claim** — a
+percentage, a commitment, or a list of areas. Of those 13:
+
+- **2 conflicted with the Application and are corrected here** — Question 25's
+  85% and 20%, at `benchmark_thresholds.py:81/89`, `distress_analysis.py:64/92`
+  and the three rendered notes.
+- **1 was stale rather than wrong.** `docs/reference/methodology.md` and the
+  Streamlit About page both still said the non-metro commitment's basis *"has
+  not been checked against the Application's own question text"*. **1.2.2 round
+  2 established it** — from the NOAA, recorded in `benchmark_thresholds.py` —
+  **and left the "not checked" sentence live on two rendered surfaces.** Now
+  settled a third way, from the instrument: Question 22 (printed p. 31) asks for
+  *"a minimum percentage of **QLICIs** the Applicant is willing to commit to
+  provide to Non-Metropolitan Counties"*. Both surfaces corrected, and both now
+  also disclose that this tool's non-metro figure is a QEI share over a
+  twelve-state heuristic rather than the OMB county definition.
+- **10 hold.** For seven of them the Application says nothing at all, and each
+  is a scoring or review behaviour — which is exactly what the Review Process
+  *is* authoritative for. Grep counts over the 142-page Application:
+
+  | Term | Hits in the Application |
+  |---|---|
+  | `90%` | **0** |
+  | `95%` | **0** |
+  | `Highly Qualified` | **0** |
+  | `aggregate score` | **0** |
+  | `40 out of` | **0** |
+  | `track record of similar` | **0** |
+  | `half of the priority` | **0** |
+  | `70%` | 3 — **all three inside Question 25(a) item 6**, none a track-record threshold |
+
+  The other three (Question 15's ladder, Question 23's "substantially all" with
+  no percentage, Question 22's 20%/50%) were already ruled against the
+  Application in earlier rounds and re-verified here.
+
+**Found while sweeping — REPORT ONLY, nothing is wrong today.** Question 40
+(printed p. 72) carries a **second, unrelated 85% that IS denominated in QEI**:
+*"Will more than 85% of the QEI proceeds be invested/re-invested in QLICIs?"*
+Nothing in this package cites it and no claim here is affected. It is recorded
+because this package renders an "85% of QEI" distress proxy, and a reviewer who
+knows Question 40 has a ready-made way to misread it.
+
+### Still deferred — unchanged by the minor bump
+
+- **The denominator swap** from `qei_request` to `qlici_amount` on any share.
+  Behind a written, hostile-audited methodology first.
+- **Removing the `below_mkt` limb** from Product Flexibility scoring —
+  disclosed in round 2, still arithmetically meaningless, still a scoring
+  change.
+- **The remaining collapsed fixtures** beyond the two S3 required — 1.3.1.
+
+---
+
+## [1.2.2] — round 2 of 2
 
 **The six false Fund attributions round 1 ruled are fixed, on all 20 surfaces.
 `EXPECTED_DEFECTS` goes 6 → 0.** They were inherited, not introduced here: every
@@ -645,8 +884,17 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 160 constants are swept
+colour". The rendered-string sweep demands **19**, and 169 constants are swept
 where 49 were.
+
+> **Remeasured in 1.3.0.** This sentence read **160** when 1.2.2 shipped, which
+> was true of that tree. `test_the_changelogs_sweep_figures_match_the_tree`
+> asserts the figure against the tree *under test*, not against the tree the
+> paragraph was written on, so a release that adds a constant to a swept module
+> makes the sentence false and fails the gate. 1.3.0 adds nine —
+> `renderers/_question_25` (eight) and `_cell_format.NOT_SUPPLIED_INPUT`. The
+> figure is a property of the tree and is remeasured with it; the paragraph's
+> subject, that the sweep is derived rather than hand-listed, is unchanged.
 
 > **Corrected in FIX-2 (G-1).** This paragraph shipped saying **133**, and three
 > sites in `tests/test_pinned_constants.py` said the same. All four figures were

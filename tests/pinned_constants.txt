@@ -131,8 +131,32 @@
 # package renders is a share of QEI. The pinned fragments below are the parts
 # a CDE reads, and they now carry the denominator inside the pin itself, so a
 # rewrite that drops "of QLICIs" fails here rather than shipping.
-benchmark_thresholds.SEVERE_DISTRESS_MIN_PCT | markdown,word,pdf | CY 2024-2025 NMTC Program Review Process, "Targeting Areas of Higher Distress (Question 25)", quoted verbatim: "at least 85% of its QLICIs in specified areas of severe distress and/or areas characterized by multiple indicia of distress" | at least 85% of QLICIs in specified areas of severe distress and/or areas characterized by multiple indicia of distress
-benchmark_thresholds.DEEP_DISTRESS_MIN_PCT | markdown,word,pdf | CY 2024-2025 NMTC Program Review Process, "Targeting Areas of Higher Distress (Question 25)", quoted verbatim: "at least 20% of its QLICIs to 'Deep Distress' areas" | at least 20% of QLICIs to 'Deep Distress' areas
+#
+# 1.3.0 S1 — RE-PINNED AGAINST THE INSTRUMENT, AND ONTO A FOURTH SURFACE. Both
+# rows above pinned the Review Process's one-sentence SUMMARY of each
+# commitment. Both sentences are real and both are incomplete: the 85% is
+# denominated in QLICIs "in terms of aggregate dollar amounts" over a
+# one-of-items-1-5 / two-of-items-6-12 test, and the 20% is not a bar at all
+# but the top rung of a 0/5/10/15/20 ladder over four area types. The pins now
+# quote the Allocation Application, which is what an Applicant fills in, and
+# they run on `excel` as well because the workbook carries the basis note for
+# the first time in this release (1.3.0 S4).
+benchmark_thresholds.SEVERE_DISTRESS_MIN_PCT | markdown,word,pdf,excel | CY 2024-2025 NMTC Program Allocation Application, Question 25(a), printed p. 38 (PDF 65), quoted verbatim: "Will the Applicant commit to providing at least 85% of its QLICIs (in terms of aggregate dollar amounts) in areas that are either: (1) characterized by at least one of items 1-5 on the list for each QLICI; or (2) characterized by at least two of items 6-12 on the list for each QLICI?" | at least 85% of QLICIs in areas characterized by at least ONE of items 1-5
+benchmark_thresholds.DEEP_DISTRESS_MIN_PCT | markdown,word,pdf,excel | CY 2024-2025 NMTC Program Allocation Application, Question 25(b)(i), printed p. 41 (PDF 68). The Response column is a dropdown reading "0 / 5 / 10 / 15 / 20, if selected enter exact percentage 20-100% in 25(b)(ii)", so 20 is the TOP RUNG of a selectable ladder and not a threshold. The rendered sentence says so on its face, which is why the pin reads as a denial | Question 25(b)(i) is NOT a 20% bar
+#
+# --- Question 25's own area lists, which the summary compressed away ---------
+# These three tuples are the substance of the correction: "multiple indicia of
+# distress" in the Review Process's summary is, in the Application, a specific
+# two-of-seven test over items 6-12, and Question 25(b) covers four area types
+# rather than the one this package computes. A CDE reading only the summary
+# leaves Native Area, High Migration Rural and Island Area QLICIs out of a
+# numerator they belong in. Pinned to the rendered list so a truncation shows up
+# here rather than in a filing.
+_question_25.Q25A_ITEMS_1_TO_5 | markdown,word,pdf,excel | CY 2024-2025 NMTC Program Allocation Application, Question 25(a) items 1-5, printed p. 39 (PDF 66). ONE of these is enough to qualify a QLICI | Severe Distress; NMTC Native Areas; U.S. Island Areas; Non-Metropolitan Counties; Targeted Populations
+_question_25.Q25A_ITEMS_6_TO_12 | markdown,word,pdf,excel | CY 2024-2025 NMTC Program Allocation Application, Question 25(a) items 6-12, printed pp. 39-40 (PDF 66-67). At least TWO of these are required. This seven-item list is what "areas characterized by multiple indicia of distress" means | 25% poverty / 70% median family income / 1.25x unemployment; Brownfield Sites; ARC and/or DRA Areas; Colonias Areas; Federal Medically Underserved Areas; FEMA Disaster Areas; Low-Income and Low-Access to Supermarkets
+_question_25.Q25B_AREA_TYPES | markdown,word,pdf,excel | CY 2024-2025 NMTC Program Allocation Application, Question 25(b), printed pp. 41-42 (PDF 68-69). Four area types, of which this package computes only the first | Deep Distress, NMTC Native Areas, High Migration Rural Counties and U.S. Island Areas
+_question_25.Q25_BASIS_LABEL | markdown,word,pdf,excel | The row label carrying the denominator mismatch. Its claim is confirmed most directly by Question 25(a)'s own words, "at least 85% of its QLICIs (in terms of aggregate dollar amounts)" (Allocation Application, printed p. 38) | BASIS NOTE — the CDFI Fund's two distress commitments are measured on QLICIs, not on QEI
+_question_25.Q25_QEI_BASIS_SUFFIX | markdown,word,pdf,excel | HOUSE-DISCLOSURE. Not a Fund string: it is this package stating its own denominator inline on every label that carries a distress share, so the figure cannot be read as answering Question 25. Added to the Excel Summary Dashboard's distress cell in 1.3.0 S4, which had carried the share under a percent format with no denominator in its label at all | (a share of QEI, not of QLICIs — see the basis note below)
 benchmark_thresholds.HIGHLY_QUALIFIED_SECTION_MIN | win_score | CY 2024-2025 NMTC Program Review Process, Highly Qualified gating: each of the two scored sections must reach 40 of its 50 points | is below the 40-point minimum required for Highly Qualified status
 benchmark_thresholds.HIGHLY_QUALIFIED_AGGREGATE_MIN | win_score | CY 2024-2025 NMTC Program Review Process, Highly Qualified gating: 85 of 100 aggregate base score. R-3: this row used to pin the fragment '/100 < 85)', six characters of punctuation that would survive almost any rewording of the sentence around them and say nothing about what a CDE is told. It now pins the gating clause a CDE reads, with the bar, its denominator and its name in one string | gating thresholds — Business Strategy
 

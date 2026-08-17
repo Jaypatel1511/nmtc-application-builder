@@ -174,6 +174,23 @@ if run_clicked:
             _cde_extra = _scoring_attrs_only(_cde_extra or {}, is_demo=False)
             _missing_cde = _summarise_cde_defaults(_cde_extra)
             st.success(f"Loaded {len(pipeline)} projects from {uploaded_file.name}")
+            # THE COLUMN THE CDE DID NOT SUPPLY (1.3.0 S3). Read off the flag
+            # each project carries, not re-derived from qlici_amount ==
+            # qei_request — the two are equal in every fixture this package
+            # ships and in plenty of real pipelines.
+            _no_qlici = [p.project_id for p in pipeline if not p.qlici_amount_supplied]
+            if _no_qlici:
+                st.warning(
+                    f"**No `qlici_amount` column in this file** — "
+                    f"{len(_no_qlici)} of {len(pipeline)} projects. Each "
+                    "project's QEI request was used in its place so the "
+                    "pipeline could load, but that is not your QLICI amount "
+                    "and the document does not present it as one: Appendix A's "
+                    "**Total QLICI ($)** reads *not supplied [CDE TO "
+                    "COMPLETE]*, and the QLICI ≤ QEI consistency check is "
+                    "reported as not checkable rather than passed. Add a "
+                    "`qlici_amount` column and re-upload before filing."
+                )
             if _missing_cde:
                 st.info(
                     "Some CDE Profile fields were not provided — the scorer will apply "

@@ -74,11 +74,32 @@ from __future__ import annotations
 #    that it will commit to providing at least 20% of its QLICIs to 'Deep
 #    Distress' areas."
 #
-# Note what the 85% actually covers: severe distress OR multiple indicia — the
-# Question 25 list of twelve, not the severe-distress tier alone. Rendering it
-# as a "Severe Distress Threshold" narrowed the Fund's own category, and the
-# separate 20% Deep Distress commitment was not reported at all.
-SEVERE_DISTRESS_MIN_PCT = 0.85       # >=85% of QLICIs in areas of higher distress
+# BOTH SENTENCES ARE REAL AND BOTH ARE INCOMPLETE (1.3.0 S2). They were ruled
+# CITED in tests/fund_attribution_allowlist.txt in the 1.2.2 sweep, correctly,
+# against the Review Process. The Review Process is a SUMMARY of how the Fund
+# scores; the Allocation Application is the INSTRUMENT the Applicant fills in,
+# and the sweep never opened it for this question. Re-ruled here against
+# Question 25, printed pp. 38-41 of the CY 2024-2025 Allocation Application
+# (142 pp., text-extracted locally 2026-08-17). What the summary drops:
+#
+#   85%  is denominated in QLICIs "IN TERMS OF AGGREGATE DOLLAR AMOUNTS", and
+#        "multiple indicia of distress" is a specific two-of-seven test over
+#        items 6-12, applied PER QLICI, beside a one-of-five test over items
+#        1-5. Seven of those twelve area types have nothing to do with
+#        distress tiers at all (Brownfields, Colonias, FEMA, supermarket
+#        access...).
+#   20%  IS NOT A BAR. Question 25(b)(i) is a selectable ladder — 0 / 5 / 10 /
+#        15 / 20 — and selecting 20 opens a field for any figure from 20% to
+#        100%. It covers FOUR area types (Deep Distress, NMTC Native Areas,
+#        High Migration Rural Counties, U.S. Island Areas), and a QLICI meeting
+#        it "will also automatically meet the commitment made in Question
+#        25(a)".
+#
+# So neither constant is a threshold a CDE either clears or misses. Each is the
+# figure this package scores its own QEI-denominated proxy against, and the
+# comments say that rather than restating the summary. The rendered text that
+# carries the real content is renderers/_question_25.q25_basis_note().
+SEVERE_DISTRESS_MIN_PCT = 0.85       # Q25(a)'s commitment level: >=85% of aggregate QLICI DOLLARS, one-of-items-1-5 or two-of-items-6-12 per QLICI. Scored here against a QEI proxy.
 # ASSIGNED ONCE. This name was assigned twice, on consecutive lines, with the
 # same value and two different comments. Found by the 1.2.1 mutation harness:
 # changing the first assignment to 0.05 moved nothing, because the second
@@ -86,7 +107,7 @@ SEVERE_DISTRESS_MIN_PCT = 0.85       # >=85% of QLICIs in areas of higher distre
 # over what looked like a mutated threshold. A duplicate assignment is a live
 # hazard even when the two values agree today — the next editor changes one of
 # them and the other silently wins.
-DEEP_DISTRESS_MIN_PCT = 0.20         # >=20% of QLICIs in "Deep Distress" areas
+DEEP_DISTRESS_MIN_PCT = 0.20         # Q25(b)(i)'s TOP RUNG, not a bar: the ladder is 0/5/10/15/20 over four area types, and 20 opens a 20-100% field. Scored here against a QEI proxy.
 # D5 — THE CRITERION DOES NOT EXIST. Round 1 filed this COULD-NOT-ESTABLISH
 # because it had retrieved only the Review Process. Round 2 retrieved the other
 # two documents and the answer is now DISPROVED, not merely unlocated:

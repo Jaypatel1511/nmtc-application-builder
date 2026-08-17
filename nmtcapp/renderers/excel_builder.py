@@ -12,6 +12,9 @@ from nmtcapp.renderers._disclosure import (
     is_partial_unverified, qualified_pct, unverified_banner,
 )
 from nmtcapp.renderers._methodology import readiness_weights_sheet_note
+from nmtcapp.renderers._question_25 import (
+    Q25_BASIS_LABEL, Q25_QEI_BASIS_SUFFIX, q25_basis_note,
+)
 from nmtcapp.renderers.styles import COLORS, TYPOGRAPHY, TABLE_STYLES, xl_color
 from nmtcapp.tables.distress_table import build_distress_table
 from nmtcapp.tables.geographic_table import build_geographic_table
@@ -215,7 +218,19 @@ class ExcelApplicationBuilder:
               else qualified_pct(pr.eligibility_pct, pr) if partial_unverified
               else pr.eligibility_pct),
              FMT_TEXT if (degraded or partial_unverified) else FMT_PCT, None),
-            ("Deep/Severe Distress Concentration",
+            # THE CELL WITH NO DENOMINATOR (1.3.0 S4). This label read
+            # "Deep/Severe Distress Concentration" over a raw float under a
+            # percent format, with no denominator in the label and no basis
+            # note anywhere in the workbook — the one artifact of the four that
+            # carried neither half of the 1.2.1 remedy. A CDE copying this cell
+            # into Question 25 files a QEI figure against a QLICI commitment.
+            #
+            # It was invisible to the rendered baseline because the baseline
+            # stores it as `|float|fmt=0.0%|0.8531...` — a number and a format
+            # code, with the label on the row above and no text of its own to
+            # scan. Naming the basis in the LABEL is what moves that entry's
+            # neighbour; the basis note below is what gives the reader the rest.
+            ("Deep/Severe Distress Concentration " + Q25_QEI_BASIS_SUFFIX,
              ("Unverified" if degraded
               else qualified_pct(distress.get("pct_deep_or_severe", 0), pr)
               if partial_unverified
@@ -361,8 +376,46 @@ class ExcelApplicationBuilder:
         ws.column_dimensions["E"].width = 12
         ws.column_dimensions["F"].width = 12
 
+        # --- THE BASIS NOTE, WHICH THIS WORKBOOK DID NOT CARRY (1.3.0 S4) ---
+        #
+        # 1.2.1's FIX-3 landed the basis note on markdown, Word and PDF and
+        # left excel.txt byte-unchanged, which the CHANGELOG recorded as a
+        # verified fact: "the workbook contains no basis note anywhere: zero
+        # occurrences of 'BASIS NOTE'". It was recorded as an absence of a
+        # SPURIOUS claim. It was also the absence of the remedy — and the one
+        # artifact without it is the one carrying "Deep/Severe Distress
+        # Concentration" as a bare percentage, and the one a reviewer opens to
+        # copy figures out of.
+        #
+        # Same string as Section B, from renderers/_question_25, so a future
+        # correction cannot land on three surfaces and miss the fourth. That is
+        # exactly what happened here.
+        q25_label_row = disclosure_row + 2
+        ws.merge_cells(start_row=q25_label_row, start_column=1,
+                       end_row=q25_label_row, end_column=6)
+        q25_label_cell = ws.cell(row=q25_label_row, column=1, value=Q25_BASIS_LABEL)
+        q25_label_cell.font = _font(bold=True, color=xl_color("primary"), size=9)
+        q25_label_cell.alignment = _left()
+        ws.row_dimensions[q25_label_row].height = 16
+
+        q25_row = q25_label_row + 1
+        ws.merge_cells(start_row=q25_row, start_column=1,
+                       end_row=q25_row, end_column=6)
+        q25_text = q25_basis_note()
+        q25_cell = ws.cell(row=q25_row, column=1, value=q25_text)
+        q25_cell.font = _font(italic=True, color=xl_color("text_muted"), size=8)
+        q25_cell.alignment = _left()
+        # Merged cells do not autofit, so the height is computed rather than
+        # guessed: columns A-F total ~94 characters of width, and size-8
+        # Calibri fits roughly 1.4 characters per width unit.
+        _CHARS_PER_LINE = 130
+        _LINE_HEIGHT = 11
+        ws.row_dimensions[q25_row].height = min(
+            600, _LINE_HEIGHT * (len(q25_text) // _CHARS_PER_LINE + 2)
+        )
+
         # Footer
-        footer_row = disclosure_row + 2
+        footer_row = q25_row + 2
         ws.merge_cells(f"A{footer_row}:F{footer_row}")
         ws.cell(row=footer_row, column=1,
                 value=f"CONFIDENTIAL — {app.cde.name} — NMTC {app.application_round} — "

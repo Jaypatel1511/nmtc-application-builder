@@ -4,10 +4,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from nmtcapp.data.benchmark_thresholds import (
-    DEEP_DISTRESS_MIN_PCT, SEVERE_DISTRESS_MIN_PCT,
-)
 from nmtcapp.renderers._disclosure import is_partial_unverified, unverified_qualifier
+from nmtcapp.renderers._question_25 import Q25_BASIS_LABEL, q25_basis_note
 from nmtcapp.sections.base import SectionGenerator, _cde_todo, _placeholder
 
 if TYPE_CHECKING:
@@ -181,30 +179,17 @@ class SectionBCommunityOutcomes(SectionGenerator):
             # denominator (QLICIs, not QEI) and the numerator (severe distress
             # OR MULTIPLE INDICIA, and this package computes no multi-indicia
             # measure at all).
-            "BASIS NOTE — the CDFI Fund's two distress commitments are "
-            "measured on QLICIs, not on QEI":
-                "The CY 2024-2025 NMTC Program Review Process (Targeting Areas "
-                "of Higher Distress, Question 25) states two commitments, and "
-                "both are measured on QLICIs: at least "
-                f"{SEVERE_DISTRESS_MIN_PCT:.0%} of QLICIs in specified areas of "
-                "severe distress and/or areas characterized by multiple indicia "
-                f"of distress, and at least {DEEP_DISTRESS_MIN_PCT:.0%} of "
-                "QLICIs to 'Deep Distress' areas. Every share in this table is "
-                "a share of QEI. nmtc-application-builder computes neither "
-                "QLICI-denominated figure — it reads this pipeline's QLICI "
-                "amounts only to print them in Appendix A and to check that "
-                "each is no larger than its QEI — so no figure above answers "
-                "either commitment, and none may be presented to the CDFI Fund "
-                "as doing so. Two further gaps in the higher-distress "
-                "commitment: it covers severe distress OR MULTIPLE INDICIA of "
-                "distress, and this package computes no multi-indicia measure "
-                "at all, so even the QLICI-denominated severe-distress share "
-                "would be incomplete against it; and Deep Distress is a strict "
-                "subset of severe distress, so the second row above already "
-                "includes the first. The CDE must compute both "
-                "QLICI-denominated shares from its own QLICI amounts before "
-                "stating either commitment. (The CY 2026 NOAA is not yet "
-                "published.)",
+            #
+            # 1.3.0 S1: THE TEXT MOVED OUT OF THIS FILE, and its authority
+            # moved from the Review Process to the Allocation Application. The
+            # 1.2.1 note quoted the Review Process correctly and inherited the
+            # summary's two omissions — that the 20% is the top rung of a
+            # SELECTABLE LADDER rather than a bar, and that Question 25(b)
+            # covers FOUR area types rather than one. Both omissions instructed
+            # a CDE to understate its own qualifying share. See the header of
+            # renderers/_question_25.py; the workbook now renders the same
+            # string from the same function, which it did not before.
+            Q25_BASIS_LABEL: q25_basis_note(),
         }
 
         # This tool does not retrieve, compute or verify any community-need

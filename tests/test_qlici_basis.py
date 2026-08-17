@@ -97,13 +97,32 @@ REQUIRED_LABEL_TEXT = (
 
 #: Clauses the basis note must carry: the denominator mismatch, the numerator
 #: mismatch, and the instruction not to present any of it as an answer.
+#:
+#: 1.3.0 S1 — TWO CLAUSES WERE RETIRED AND FIVE ADDED. "Every share in this
+#: table" and "no figure above" were written when the note rendered only inside
+#: Section B's two-column table; the workbook now renders the same string with
+#: nothing above it and no table around it, so both were re-worded to name the
+#: DOCUMENT. That is a wording change. The five additions are the substantive
+#: half of this round: the note used to describe the Fund's Question 25 from a
+#: seven-page summary of it, and the summary omitted that the 20% is a rung on
+#: a ladder and that Question 25(b) has four area types — omissions which
+#: instructed a CDE to understate its own qualifying share.
 REQUIRED_NOTE_CLAUSES = (
     "both are measured on QLICIs",
-    "Every share in this table is a share of QEI",
+    "Every distress share in this document is a share of QEI",
     "computes neither QLICI-denominated figure",
-    "no figure above answers either commitment",
+    "no figure in this document answers either commitment",
     "computes no multi-indicia measure at all",
     "The CDE must compute both QLICI-denominated shares",
+    # The four corrections, each pinned by the phrase that carries it.
+    "in terms of aggregate dollar amounts",
+    "at least TWO of items 6-12",
+    "selectable commitment level",
+    "FOUR qualifying area types",
+    "automatically meet the commitment made in Question 25(a)",
+    # And the honest half of "say what the tool can see": the list of visible
+    # fields may never stand without the sentence that denies it is an answer.
+    "is not a partial answer to Question 25",
 )
 
 #: Phrases removed by FIX-3. Each asserted, or instructed the reader to make,
