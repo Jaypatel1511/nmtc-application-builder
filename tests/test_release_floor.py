@@ -6,15 +6,19 @@ The sdist job asserts that the tarball's suite actually EXECUTED tests, rather
 than shipping every module and deselecting the lot. The threshold is a shell
 variable:
 
-    FLOOR=470
+    FLOOR=520
 
-and it has been stale three times in one release cycle. ``FLOOR=440`` was
-carried forward from 1.2.0 after the suite grew; ``133`` was hand-typed in
-three separate places; and 470 was derived from ``954 / -11 / 943`` when a
-fresh measurement of the same job gives a materially larger number. Every one
-of them was WRONG IN THE SAFE DIRECTION, which is the problem: a floor that is
-too low never fails, so nothing ever tells you it is stale. It sits in the file
-looking like evidence.
+and it has been stale FIVE times in one release cycle: ``FLOOR=125``; ``440``
+carried forward from 1.2.0 after the suite grew; ``133`` hand-typed in three
+separate places; ``470`` derived from ``954 / -11 / 943``; and ``500``, which
+1.3.0 re-derived to 520 from a fresh sdist — 1,068 collected, 11 skipped,
+1,057 executed, identically on 3.9.25 and 3.12.13. Every one of them was WRONG
+IN THE SAFE DIRECTION, which is the problem: a floor that is too low never
+fails, so nothing ever tells you it is stale. It sits in the file looking like
+evidence.
+
+MAX_SDIST_SKIPS below is the same shape one layer in, and 1.3.0 tightened it
+for the same reason.
 
 Deriving it inside the workflow does not work, and that is worth stating rather
 than leaving for the next person to rediscover. The floor exists to catch a
@@ -48,19 +52,37 @@ WORKFLOW = os.path.join(_REPO_ROOT, ".github", "workflows", "release.yml")
 MARKER_EXPR = "not wheel"
 
 #: Deliberate sdist-only skips, as a CEILING rather than as today's count.
-#: Measured for 1.2.1: thirteen. Four in test_no_committed_generated_artifacts
-#: (needs a git checkout), six in test_pinned_constants (the constant SWEEPS
-#: read the package SOURCE and the job runs with no source tree in the working
-#: directory), three in test_121_financial_tables (the docs hooks and the
-#: docs-withdrawal scan; MANIFEST.in prunes docs/).
 #:
 #: It is a ceiling and not the measurement because this test runs from a
-#: CHECKOUT, where none of those thirteen skip, so it cannot observe the real
-#: number. Widening the band by the ceiling is the honest way to say that. If
-#: the skip count ever approaches this, the right response is to ask why the
+#: CHECKOUT, where none of these skip, so it cannot observe the real number.
+#: Widening the band by the ceiling is the honest way to say that.
+#:
+#: TIGHTENED FROM 40 TO 20 IN 1.3.0 B1, because 40 was not a ceiling, it was an
+#: abstention. Measured against a fresh sdist, built from a clean clone and run
+#: with the release job's exact invocation: ELEVEN skips, identically on 3.9.25
+#: and 3.12.13. A ceiling of 40 against a measured 11 is 3.6x, and it widened
+#: this test's band from [520, 534] to [510, 534] — which is to say it admitted
+#: a FLOOR of 510 that no measurement of this tree produces. That is a stale
+#: count wearing the opposite mask: wrong in the safe direction, so the gate
+#: never says so. Same defect as FLOOR itself, one layer in.
+#:
+#: 20 is 1.8x the measurement. It leaves room for nine more environment-driven
+#: skips before the band moves, and the suite would have to grow by about
+#: twenty tests before FLOOR=520 falls out of the band — at which point the
+#: floor IS stale and re-deriving it is the correct response, which is the
+#: behaviour this file exists to force.
+#:
+#: What skips in the tarball and why: tests needing a git checkout
+#: (test_no_committed_generated_artifacts), the constant SWEEPS in
+#: test_pinned_constants that read the package SOURCE where the job has no
+#: source tree in the working directory, and the docs hooks and
+#: docs-withdrawal scans in test_121_financial_tables, because MANIFEST.in
+#: prunes docs/.
+#:
+#: If the skip count ever approaches this, the right response is to ask why the
 #: sdist stopped being able to answer its own suite's questions — not to raise
 #: the ceiling.
-MAX_SDIST_SKIPS = 40
+MAX_SDIST_SKIPS = 20
 
 _FLOOR_RE = re.compile(r"^\s*FLOOR=(\d+)\s*$", re.MULTILINE)
 _COLLECTED_RE = re.compile(r"(\d+)(?:/\d+)? tests? collected")

@@ -72,8 +72,54 @@ Q25_BASIS_LABEL = (
     "QLICIs, not on QEI"
 )
 
-#: Short form for a sheet label that has to state its own denominator inline.
-Q25_QEI_BASIS_SUFFIX = "(a share of QEI, not of QLICIs — see the basis note below)"
+#: The denominator correction itself, with no pointer attached. This is the
+#: half that must read identically everywhere, so it is stated once here and
+#: every suffix below is built from it.
+#:
+#: IT WAS RETYPED, TWICE (1.3.0 B1-adjacent). sections/section_b_outcomes.py
+#: carried "(a share of QEI, not of QLICIs — see the basis note below)" as two
+#: hand-typed literals in the labels of the Deep and Severe rows, in a file
+#: that already imports Q25_BASIS_LABEL and q25_basis_note from this module.
+#: Three copies of one sentence, agreeing by luck. tests/pinned_constants.txt
+#: recorded Q25_QEI_BASIS_SUFFIX as reaching markdown, word, pdf AND excel,
+#: which was true of the STRING and false of the CONSTANT: the constant reached
+#: only the workbook, and editing it — as B1 does — would have moved the
+#: workbook's wording and left the other three surfaces saying the old thing.
+#: That is the same "corrected on three surfaces, missed on the fourth" shape
+#: this cycle keeps producing, armed and waiting. Read it, do not retype it.
+Q25_QEI_BASIS_CLAUSE = "a share of QEI, not of QLICIs"
+
+#: The sheet the workbook puts the basis note on. Named here because the
+#: pointer below has to name it and the builder has to create it, and a sheet
+#: name typed in two places is a pointer that can go stale.
+Q25_BASIS_SHEET_NAME = "Q25 Basis Note"
+
+#: Suffix for the FLOWING documents — markdown, Word, PDF. There "below" is a
+#: true instruction: the note renders as the last row of the same two-column
+#: table, in the same column of the same page, a few lines under the figure.
+Q25_QEI_BASIS_SUFFIX = f"({Q25_QEI_BASIS_CLAUSE} — see the basis note below)"
+
+#: Suffix for the WORKBOOK, which has no "below" (1.3.0 B1).
+#:
+#: 1.3.0 S4 put the note on the Summary Dashboard fifteen rows under the figure
+#: and pointed at it with the flowing-document suffix. Two things were wrong
+#: with "below" there, and only one of them was the row height:
+#:
+#: 1. WHETHER IT IS BELOW-AND-VISIBLE IS THE READER'S WINDOW, NOT THE FILE.
+#:    Measured: the workbook stores no windowWidth, no windowHeight, no zoom
+#:    and no frozen pane, so the visible range on open is whatever the reader's
+#:    Excel window happens to be. The audit's window showed $A$1:$F$23 and the
+#:    note was off-screen; this session's window showed $A$1:$X$28 and it was
+#:    on-screen. A pointer whose truth depends on the monitor is not a pointer.
+#: 2. THE ROW NUMBER IS COMPUTED. The note's row is derived from the number of
+#:    readiness components, so "see row 27" would be a sixth hand-typed count
+#:    in a package whose recurring defect is hand-typed counts.
+#:
+#: A sheet NAME has neither problem. The tab strip is visible on open at every
+#: window size, and the name is this constant rather than an arithmetic result.
+Q25_QEI_BASIS_SUFFIX_SHEET = (
+    f"({Q25_QEI_BASIS_CLAUSE} — see the '{Q25_BASIS_SHEET_NAME}' sheet)"
+)
 
 #: Items 1-5 of Question 25(a): ONE is enough. Printed p. 39 (PDF 66).
 Q25A_ITEMS_1_TO_5 = (
@@ -120,8 +166,103 @@ Q25_DISTINCT_AREA_TYPES = 14
 Q25_AREA_TYPES_MODELLED = 5
 
 
+#: Longest chunk :func:`q25_basis_note_paragraphs` will emit, in characters.
+#: Sized so no chunk approaches Excel's 409-point row ceiling at the note
+#: sheet's width and font; see renderers/_sheet_geometry.
+Q25_BASIS_CHUNK_CHARS = 800
+
+
 def q25_basis_note() -> str:
-    """The basis note, rendered identically on every surface.
+    """The basis note as one string — the form every flowing surface renders.
+
+    Section B's table is two columns of Item/Value, so markdown, Word and PDF
+    each put the whole note in one cell and let the page break it. They call
+    this. The workbook calls :func:`q25_basis_note_paragraphs`, which chunks
+    THIS string; the note itself is written and stored once, here.
+
+    Example::
+
+        note = q25_basis_note()
+    """
+    return _q25_basis_note_text()
+
+
+def q25_basis_note_paragraphs() -> tuple:
+    """The note split into chunks that each fit one spreadsheet row.
+
+    WHY THE WORKBOOK NEEDS THIS (1.3.0 B1). Excel will not draw a row taller
+    than 409 points. Rendered as a single merged cell at the note sheet's
+    width, this text needs 405 — three points of headroom, on a note that has
+    grown in three of the last four rounds. The next sentence added to it
+    would have been clipped, silently, with every height check still passing:
+    the same class as B1 itself, text that is right in the source and wrong on
+    the page.
+
+    IT CHUNKS THE RENDERED STRING; IT DOES NOT SPLIT THE SOURCE. That
+    distinction was measured, not assumed. Splitting ``_q25_basis_note_text``
+    into a tuple of six source literals — the obvious way to do this — was
+    tried first and REGRESSED A GATE: tests/test_fund_attribution_source.py
+    scans string expressions with ast, and its unit of analysis is one
+    contiguous expression. Two claims that had been visible to it stopped
+    being prose attributions once the authority and the bar landed in
+    different tuple elements, and two allowlist entries went dead. The note
+    therefore stays one expression in the source, exactly as the scanner has
+    always seen it, and is divided only on the way to the page.
+
+    SPLITS ONLY AT SENTENCE ENDS, so no allowlisted quotation and no pinned
+    constant is broken mid-claim by chunking. Sentences are packed greedily up
+    to :data:`Q25_BASIS_CHUNK_CHARS`; a single sentence longer than that is
+    emitted whole rather than cut.
+
+    Example::
+
+        rows = q25_basis_note_paragraphs()
+        assert " ".join(rows) == q25_basis_note()
+    """
+    import re
+
+    text = _q25_basis_note_text()
+    # Split after a sentence-ending period only. The lookbehind is
+    # fixed-width, so the optional closing quote is handled by listing both
+    # one-character cases; the lookahead keeps "pp. 38-41", "p. 42", "U.S."
+    # and any decimal from being treated as a boundary, because none of them
+    # is followed by a capital or an opening quote after whitespace.
+    sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z(“"])'
+                         r'|(?<=[."])\s+(?=[A-Z(“])', text)
+    sentences = [s for s in sentences if s]
+    chunks, current = [], ""
+    for sentence in sentences:
+        if not current:
+            current = sentence
+        elif len(current) + 1 + len(sentence) <= Q25_BASIS_CHUNK_CHARS:
+            current += " " + sentence
+        else:
+            chunks.append(current)
+            current = sentence
+    if current:
+        chunks.append(current)
+    return tuple(chunks)
+
+
+def _q25_basis_note_text() -> str:
+    """The same note, split at its six argument boundaries.
+
+    WHY THE WORKBOOK NEEDS THIS (1.3.0 B1). Excel will not draw a row taller
+    than 409 points. Rendered as a single merged cell at the note sheet's
+    width, this text needs 405 — three points of headroom, on a note that has
+    grown in three of the last four rounds. The next sentence added to it
+    would have been clipped, silently, with every height check still passing,
+    which is the same class of defect as B1 itself: text that is right in the
+    source and wrong on the page.
+
+    The split points are the note's own argument boundaries — the six blocks
+    its source already separates with comments — not an arbitrary character
+    count. No sentence is broken, so no allowlisted quotation and no pinned
+    constant spans two of them.
+
+    Example::
+
+        rows = q25_basis_note_paragraphs()
 
     SAYS WHAT THE TOOL CAN SEE, AND THEN SAYS WHY THAT IS NOT AN ANSWER. The
     1.2.2 note's "computes neither figure" was true and unhelpfully pessimistic:
@@ -182,12 +323,22 @@ def q25_basis_note() -> str:
         # What IS visible, and why it is still not an answer.
         "WHICH OF THE CDE'S QUALIFYING ROUTES ARE VISIBLE HERE: this package "
         f"carries a per-project field for {Q25_AREA_TYPES_MODELLED} of the "
-        f"{Q25_DISTINCT_AREA_TYPES} distinct area types Question 25 lists — a "
-        "tool-verified distress level covering Severe Distress and Deep "
-        "Distress, and three CDE-declared and tool-unverified flags for NMTC "
-        "Native Areas, High Migration Rural Counties and U.S. territory (which "
-        "is the CDE's own word; the Application's U.S. Island Areas is a "
-        "specific list of five). It carries NOTHING for Non-Metropolitan "
+        f"{Q25_DISTINCT_AREA_TYPES} distinct area types Question 25 lists, and "
+        "they do NOT share one provenance, so each is stated with its own. "
+        "Severe Distress and Deep Distress: TOOL-VERIFIED — the distress level "
+        "is read from the CDFI Fund eligibility table for the tract this "
+        "package geocoded, and a CDE's own distress column is kept separately "
+        "and labelled CDE-declared wherever it is shown. High Migration Rural "
+        "Counties: CDE-DECLARED AND TOOL-VERIFIED — enrichment overwrites the "
+        "CDE's declaration whenever nmtc-mapper returns a determination for "
+        "the tract, so the declaration stands only where the tool reached "
+        "none, and where enrichment did not run at all. NMTC Native Areas and "
+        "U.S. territory: CDE-DECLARED AND TOOL-UNVERIFIED — nothing in this "
+        "package checks either one, and a Native Area determination is a "
+        "spatial intersection against the Fund's CIMS map rather than a "
+        "tract-keyed lookup this package could perform (U.S. territory is the "
+        "CDE's own word; the Application's U.S. Island Areas is a specific "
+        "list of five). It carries NOTHING for Non-Metropolitan "
         "Counties, nothing for Targeted Populations, and nothing for any of "
         "items 6-12; it computes no multi-indicia measure at all. Holding "
         "those fields is not a partial answer to Question 25 and must not be "

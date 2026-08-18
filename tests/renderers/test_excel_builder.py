@@ -17,11 +17,19 @@ class TestExcelBuilder:
 
     # ---- Sheet count and names ----
 
-    def test_has_seven_sheets(self, wb):
-        assert len(wb.sheetnames) == 7
+    def test_has_eight_sheets(self, wb):
+        # Eight since 1.3.0 B1: the Q25 basis note moved off the Summary
+        # Dashboard onto its own sheet, which the dashboard's distress label
+        # names. It was two rows at the bottom of the dashboard, pointed at by
+        # "see the basis note below" — a direction whose truth depends on the
+        # reader's window size, because the workbook stores no window geometry.
+        assert len(wb.sheetnames) == 8, wb.sheetnames
 
     def test_summary_dashboard_exists(self, wb):
         assert "Summary Dashboard" in wb.sheetnames
+
+    def test_q25_basis_sheet_exists(self, wb):
+        assert "Q25 Basis Note" in wb.sheetnames
 
     def test_pipeline_sheet_exists(self, wb):
         assert "Pipeline Detail" in wb.sheetnames
@@ -107,7 +115,7 @@ class TestExcelBuilder:
         path = str(tmp_path / "application.xlsx")
         builder.save(path)
         wb2 = load_workbook(path)
-        assert len(wb2.sheetnames) == 7
+        assert len(wb2.sheetnames) == 8, wb2.sheetnames
 
     def test_save_creates_parent_directory(self, builder, tmp_path):
         import os

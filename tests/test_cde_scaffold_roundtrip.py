@@ -233,11 +233,34 @@ def test_completeness_check_validates_every_required_field(tmp_path):
     from a live CDEProfile and requires check_completeness to name it.
     """
     from nmtcapp.core.application import Application
-    from nmtcapp.core.cde import REQUIRED_CDE_FIELDS
+    from nmtcapp.core.cde import (
+        CDE_FIELDS_WHERE_EMPTY_IS_AN_ANSWER, REQUIRED_CDE_FIELDS,
+    )
     from nmtcapp.core.pipeline import Pipeline
     from nmtcapp.validation.completeness_check import check_completeness
 
     for field in REQUIRED_CDE_FIELDS:
+        if field in CDE_FIELDS_WHERE_EMPTY_IS_AN_ANSWER:
+            # EMPTYING IT PROVES NOTHING HERE, because empty IS the answer
+            # (1.3.0 B3). This loop used to include prior_awards and require
+            # check_completeness to report [] as missing. The comment that
+            # stood where this one does said so in as many words:
+            #
+            #   "prior_awards=[] is already the empty case, and it is a real
+            #    answer; the check reports it and that is the behaviour under
+            #    test."
+            #
+            # A real answer being reported as a missing field is the defect,
+            # not the behaviour, and this test was holding it in place. The
+            # shipped scaffold tells a first-time CDE to write [],
+            # CDEProfile.from_yaml accepts it, and the validator then named
+            # prior NMTC allocations — a scored track-record item — as
+            # missing. The cheapest way to clear that error is to invent one.
+            #
+            # The field is not dropped from coverage: the two tests at the end
+            # of this module assert both halves — [] validates clean, None
+            # still fails.
+            continue
         cde = CDEProfile(
             name="Completeness Check CDE, LLC", cde_id="CDE-2020-0909",
             certification_date="2020-09-09", mission="Deploy capital.",
@@ -245,8 +268,6 @@ def test_completeness_check_validates_every_required_field(tmp_path):
             contact={"name": "C", "email": "c@example.org"},
             governance={"board_members": 5, "community_representatives": 2},
         )
-        # prior_awards=[] is already the empty case, and it is a real answer;
-        # the check reports it and that is the behaviour under test.
         object.__setattr__(cde, field, "" if isinstance(
             getattr(cde, field), str) else type(getattr(cde, field))())
         app = Application(cde=cde, requested_allocation=30_000_000.0)
@@ -281,4 +302,67 @@ def test_the_shipped_scaffold_offers_every_required_field():
         f"the shipped scaffold omits required field(s) {missing}. A CDE that "
         "fills in every key this file offers still gets a profile from_yaml "
         "refuses, naming a key the scaffold never showed them."
+    )
+
+
+def test_empty_prior_awards_is_a_complete_answer():
+    """A first-time CDE that follows the scaffold must validate clean.
+
+    1.3.0 B3. templates/cde_profile_template.yaml says, on the line itself,
+    "Prior NMTC allocations. Leave as [] if none." A CDE that did exactly that
+    loaded without error and was then told by check_completeness that its
+    profile was MISSING A REQUIRED FIELD — and the field named was its prior
+    allocation history, which the Fund scores. The cheapest way for an
+    applicant under deadline to clear that error is to put something in the
+    list.
+
+    The two consumers disagreed because the exception was a local literal
+    inside from_yaml that completeness_check could not see. They now read one
+    constant, core/cde.CDE_FIELDS_WHERE_EMPTY_IS_AN_ANSWER.
+    """
+    from nmtcapp.core.application import Application
+    from nmtcapp.core.pipeline import Pipeline
+    from nmtcapp.validation.completeness_check import check_completeness
+
+    cde = CDEProfile(
+        name="First Time Capital CDE, LLC", cde_id="CDE-2025-0001",
+        certification_date="2025-01-15", mission="Deploy capital.",
+        target_markets=["Ohio"], prior_awards=[],
+        contact={"name": "C", "email": "c@example.org"},
+        governance={"board_members": 5, "community_representatives": 2},
+    )
+    app = Application(cde=cde, requested_allocation=30_000_000.0)
+    app.add_pipeline(Pipeline.sample(n=3))
+    issues = check_completeness(app).issues
+
+    assert not any("prior_awards" in issue for issue in issues), (
+        "a first-time CDE wrote prior_awards: [] exactly as the shipped "
+        "template instructs, and the validator called it a missing required "
+        "field. The only way to clear that is to claim an allocation the CDE "
+        f"never received. Issues: {issues}"
+    )
+
+
+def test_prior_awards_is_still_required_to_be_present():
+    """[] is an answer; None is nobody answering. The exception is that narrow."""
+    from nmtcapp.core.application import Application
+    from nmtcapp.core.pipeline import Pipeline
+    from nmtcapp.validation.completeness_check import check_completeness
+
+    cde = CDEProfile(
+        name="Absent Field CDE, LLC", cde_id="CDE-2025-0002",
+        certification_date="2025-01-15", mission="Deploy capital.",
+        target_markets=["Ohio"], prior_awards=[],
+        contact={"name": "C", "email": "c@example.org"},
+        governance={"board_members": 5, "community_representatives": 2},
+    )
+    object.__setattr__(cde, "prior_awards", None)
+    app = Application(cde=cde, requested_allocation=30_000_000.0)
+    app.add_pipeline(Pipeline.sample(n=3))
+    issues = check_completeness(app).issues
+
+    assert any("prior_awards" in issue for issue in issues), (
+        "prior_awards was None — nobody answered at all — and the check said "
+        "nothing. Widening B3's exception to cover absence would be the "
+        f"opposite error. Issues: {issues}"
     )

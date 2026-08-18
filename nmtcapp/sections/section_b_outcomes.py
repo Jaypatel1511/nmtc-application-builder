@@ -5,7 +5,9 @@ import logging
 from typing import TYPE_CHECKING
 
 from nmtcapp.renderers._disclosure import is_partial_unverified, unverified_qualifier
-from nmtcapp.renderers._question_25 import Q25_BASIS_LABEL, q25_basis_note
+from nmtcapp.renderers._question_25 import (
+    Q25_BASIS_LABEL, Q25_QEI_BASIS_SUFFIX, q25_basis_note,
+)
 from nmtcapp.sections.base import SectionGenerator, _cde_todo, _placeholder
 
 if TYPE_CHECKING:
@@ -147,11 +149,17 @@ class SectionBCommunityOutcomes(SectionGenerator):
             # row INCLUDES the deep row and the third row is the arithmetic
             # between them. Reading the three together must not require the
             # reader to know the Fund's column definitions.
-            "QEI in Deep Distress Tracts (a share of QEI, not of QLICIs — "
-            "see the basis note below)":
+            #
+            # THE SUFFIX IS READ, NOT RETYPED (1.3.0 B1). These two labels
+            # carried the string as hand-typed literals while
+            # _question_25.Q25_QEI_BASIS_SUFFIX held a third copy for the
+            # workbook — three copies of one sentence in a file that already
+            # imported two other constants from that module. They agreed by
+            # luck, and tests/pinned_constants.txt read that luck as coverage.
+            f"QEI in Deep Distress Tracts {Q25_QEI_BASIS_SUFFIX}":
                 _tract_pct(deep_only_pct),
             "QEI in Severely Distressed Tracts, Deep Distress included "
-            "(a share of QEI, not of QLICIs — see the basis note below)":
+            f"{Q25_QEI_BASIS_SUFFIX}":
                 _tract_pct(deep_pct),
             "— of which severely distressed but not also deep":
                 _tract_pct(severe_not_deep_pct),

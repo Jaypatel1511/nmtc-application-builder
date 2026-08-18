@@ -190,9 +190,27 @@ supplies `qlici_amount`, so nothing about it is defaulted.
 > source for what the Applicant is asked to COMMIT TO, because the thing the
 > Applicant fills in is the Application.**
 
-**72 mentions across 68 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
+**75 mentions across 71 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
 `README.md`. **13 cite the Review Process for a substantive claim** — a
 percentage, a commitment, or a list of areas. Of those 13:
+
+> **Corrected in 1.3.0 B1.** This paragraph shipped as *"72 mentions across 68
+> lines"*, and **no tree in this repository has ever yielded 72/68**. Measured
+> with the derivation now gated by
+> `tests/test_pinned_constants.test_the_changelogs_review_process_sweep_matches_the_tree`:
+> **75/71 on `03261c1`**, the commit that made the claim, and **67/64 on
+> `63443cc`**, the pre-round base. The figure was neither the before nor the
+> after. Nothing renders off it — it is a release note — but it was the sweep's
+> own headline count, and a sweep that miscounts its own corpus is a sweep
+> whose coverage claim nobody can check. The derivation is stated below so the
+> next reader can re-run it rather than trust it:
+>
+> ```
+> grep -rn --binary-files=without-match --exclude-dir=__pycache__ \
+>      -oE "Review Process" nmtcapp streamlit_app docs README.md | wc -l   # mentions
+> grep -rn --binary-files=without-match --exclude-dir=__pycache__ \
+>      -E  "Review Process" nmtcapp streamlit_app docs README.md | wc -l   # lines
+> ```
 
 - **2 conflicted with the Application and are corrected here** — Question 25's
   85% and 20%, at `benchmark_thresholds.py:81/89`, `distress_analysis.py:64/92`
@@ -233,6 +251,43 @@ Nothing in this package cites it and no claim here is affected. It is recorded
 because this package renders an "85% of QEI" distress proxy, and a reviewer who
 knows Question 40 has a ready-made way to misread it.
 
+### `_RURAL_STATES` — the 1.3.1 blocker, recorded here because it is not one yet
+
+`intelligence/geographic_analysis._RURAL_STATES` is a **twelve-state set with no
+defensible basis**, and the module says so itself: the line above it reads
+*"States typically classified as non-metro / rural (simplified)"*, and the map
+below it reads *"(In production, this would use proper CBSA codes from census
+data.)"* An acknowledged placeholder, shipping as a live computation.
+
+**Three of the twelve are simultaneously assigned MSAs by the same module.**
+`MS`, `KS` and `NM` are in `_RURAL_STATES` and in `_STATE_MSA_MAP` — as Jackson,
+Kansas City and Albuquerque. Every dollar in those states is counted rural by
+one dict and metropolitan by the other, forty lines apart.
+
+**WHY IT IS NOT A BLOCKER, stated correctly.** The 1.3.0 brief deferred this on
+the ground that `non_metro_meets_minimum` is written into `flags` at
+`win_probability.py:633` and read by no renderer and no Streamlit page. That
+much is true — grep confirms exactly one write and no reads — **but it is not
+the reason, because it is not what `_RURAL_STATES` feeds.** The set feeds
+`rural_pct` (`geographic_analysis.py:69/96`), and `rural_pct` reaches **three
+rendered surfaces**:
+
+| Surface | Where |
+|---|---|
+| Streamlit Geographic tab | `1_Pipeline_Analyzer.py:527` "Rural share" metric, the urban/rural donut at 571, and the "Winner rural mean: 18% \| Your pipeline: …" line at 608 |
+| `nmtcapp analyze` summary | `pipeline_analyzer.py:124` "Urban/Rural: X% / Y%" |
+| Benchmark set | `benchmarks.py:242-247` "Rural % of QEI", against a winner mean |
+
+The real reason it is deferred is narrower and had to be measured: **it reaches
+none of the four generated documents.** Verified against
+`tests/rendered_baseline/` — every occurrence of "rural" in all four artifacts
+is *High Migration Rural*, which is a per-project CDE-declared/mapper field and
+has nothing to do with this set. Nothing `_RURAL_STATES` computes is filed.
+
+So it fails the harm criterion this cycle ranks by, and only that. It is live on
+three screens a CDE reads, it is internally contradictory, and it is unsourced.
+**1.3.1, and the fix is deletion or CBSA codes — not a thirteenth state.**
+
 ### Still deferred — unchanged by the minor bump
 
 - **The denominator swap** from `qei_request` to `qlici_amount` on any share.
@@ -241,6 +296,9 @@ knows Question 40 has a ready-made way to misread it.
   disclosed in round 2, still arithmetically meaningless, still a scoring
   change.
 - **The remaining collapsed fixtures** beyond the two S3 required — 1.3.1.
+- **`_score_deep_distress`, `_score_product_flexibility`, `gap_pp`** — all
+  three traced in the 1.3.0 audit and confirmed to render into no generated
+  document. They shape advice, not the filing. Still wrong, still 1.3.1.
 
 ---
 
@@ -884,7 +942,7 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 169 constants are swept
+colour". The rendered-string sweep demands **19**, and 183 constants are swept
 where 49 were.
 
 > **Remeasured in 1.3.0.** This sentence read **160** when 1.2.2 shipped, which
