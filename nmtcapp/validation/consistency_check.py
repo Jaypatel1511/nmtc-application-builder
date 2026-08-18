@@ -57,8 +57,40 @@ def check_consistency(application: "Application",
     for p in projects:
         pid = p.project_id
 
-        # QLICI must not exceed QEI — CDFI Fund hard rule
-        if p.qlici_amount > p.qei_request:
+        # QLICI must not exceed QEI — CDFI Fund hard rule.
+        #
+        # RULED: NOT-CHECKABLE, REPORTED. NOT SKIPPED (1.3.0 S3).
+        #
+        # When core/upload_handler defaulted qlici_amount to qei_request this
+        # comparison was `x > x` — a check that could not fail, on an input
+        # nobody had supplied. Two remedies were available and only one of them
+        # is consistent with the rest of this file.
+        #
+        # REJECTED — skip it silently. It turns a trivially-passing check into
+        # an invisibly-absent one, which is the same defect one level down and
+        # strictly harder to see: ValidationResult.passed stays True either
+        # way, and a reader of the validation report cannot tell "checked and
+        # passed" from "not checked at all". This module already refuses that
+        # shape twice over — CrossSurfaceCheckError is RAISED rather than
+        # returned precisely so a comparison that cannot ask its question stops
+        # being mistaken for one that asked and got yes, and the pin in
+        # tests/test_qlici_basis.py carries the rule in one line: a gate that
+        # cannot fail is worse than no gate, because it is also a green tick.
+        # Fourteen instances of it are on record in this package.
+        #
+        # CHOSEN — say so, as a warning, naming the project. The check is a
+        # WARNING and not an ISSUE because nothing is known to be wrong: the
+        # CDE has not failed the Fund's rule, the CDE has not been asked. It
+        # reads on the same surface as the result it replaces, which is the
+        # only place the absence is legible.
+        if not p.qlici_amount_supplied:
+            warnings.append(
+                f"Project {pid}: QLICI <= QEI NOT CHECKED — no qlici_amount was "
+                f"supplied for this project, so the tool has nothing to compare "
+                f"against its QEI of ${p.qei_request:,.0f}. Supply a "
+                f"qlici_amount column and re-run before filing."
+            )
+        elif p.qlici_amount > p.qei_request:
             issues.append(
                 f"Project {pid}: QLICI amount (${p.qlici_amount:,.0f}) exceeds "
                 f"QEI (${p.qei_request:,.0f}) — not permitted"
@@ -207,8 +239,11 @@ _UNPAIRED = {
         "the QALICB's total development cost, which Section D does not restate "
         "— Section D is about the NMTC capital stack, not the project budget",
     "Total QLICI ($)":
-        "the CDE's own supplied QLICI total, printed whole in Appendix A since "
-        "1.2.1. Section D reports the QEI and its uses, not the QLICI",
+        "the CDE's QLICI total, printed whole in Appendix A since 1.2.1 WHEN "
+        "THE CDE SUPPLIED IT and as 'not supplied [CDE TO COMPLETE]' when it "
+        "did not (1.3.0 S3 — this reason said 'own supplied' while an upload "
+        "missing the column silently got its QEI copied in). Section D reports "
+        "the QEI and its uses, not the QLICI",
     "Allocation Requested ($)":
         "the cover-page ask. It is deliberately NOT the pipeline QEI — the two "
         "were rendered under one label through 1.2.0 and are now separate rows "

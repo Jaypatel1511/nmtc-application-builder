@@ -1432,6 +1432,67 @@ def test_the_changelogs_sweep_figures_match_the_tree():
         )
 
 
+def test_the_changelogs_review_process_sweep_matches_the_tree():
+    """The sweep's own headline count, re-derived rather than trusted.
+
+    1.3.0 B1. The Review Process sweep reported "72 mentions across 68 lines".
+    Measured across the cycle's commits, NO TREE YIELDS 72/68: 03261c1 — the
+    commit that made the claim — gives 75/71, and 63443cc, the pre-round base,
+    gives 67/64. The figure was neither the before nor the after, and it sat
+    in the release note looking like a measurement.
+
+    Nothing renders off it. That is the point: it is the sweep's statement of
+    how much it looked at, and a sweep that miscounts its own corpus is one
+    whose coverage claim cannot be checked. Every other hand-typed count in
+    this package has gone stale — FLOOR four times, 133 in three places, the
+    swept-constant census — and each got a derivation gate instead. This is
+    that gate for this count.
+    """
+    roots = ["nmtcapp", "streamlit_app", "docs", "README.md"]
+    present = [r for r in roots
+               if os.path.exists(os.path.join(_repo_root(), r))]
+    if "docs" not in present:
+        pytest.skip("no docs/ tree — an unpacked sdist prunes it, and the "
+                    "count in the CHANGELOG is of the repository")
+
+    mentions = 0
+    lines = 0
+    for root in present:
+        full = os.path.join(_repo_root(), root)
+        paths = []
+        if os.path.isfile(full):
+            paths = [full]
+        else:
+            for dirpath, dirnames, filenames in os.walk(full):
+                dirnames[:] = [d for d in dirnames if d != "__pycache__"]
+                paths.extend(os.path.join(dirpath, f) for f in filenames)
+        for path in sorted(paths):
+            try:
+                body = open(path, encoding="utf-8").read()
+            except (UnicodeDecodeError, OSError):
+                continue  # binary; grep --binary-files=without-match skips it
+            for line in body.splitlines():
+                hits = line.count("Review Process")
+                if hits:
+                    mentions += hits
+                    lines += 1
+
+    text = open(os.path.join(_repo_root(), "CHANGELOG.md"), encoding="utf-8").read()
+    claimed = re.findall(r"\*\*(\d+) mentions across (\d+) lines\*\*", text)
+    assert claimed, (
+        "CHANGELOG.md no longer states the Review Process sweep's corpus size "
+        "in the form this test recognises. If the sentence was reworded, "
+        "reword the regex; do not delete the check."
+    )
+    for claimed_mentions, claimed_lines in claimed:
+        assert (int(claimed_mentions), int(claimed_lines)) == (mentions, lines), (
+            f"CHANGELOG.md says {claimed_mentions} mentions across "
+            f"{claimed_lines} lines; the tree has {mentions} across {lines}. "
+            "Re-derive it with the two greps recorded beside the claim, or "
+            "correct the claim. Do not widen this test."
+        )
+
+
 # ---------------------------------------------------------------------------
 # FIX-2 G-3: a pin must assert the VALUE, not merely its presence
 # ---------------------------------------------------------------------------

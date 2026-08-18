@@ -61,14 +61,22 @@ DEEP_IS_SUBSET_OF_SEVERE = True
 #: silently by a renaming.
 #:
 #: EVERY ONE OF THESE IS A SHARE OF QEI, and none of them answers a CDFI Fund
-#: commitment. The Fund's 85% and 20% bars are shares of QLICIs (CY 2024-2025
-#: Review Process, Question 25); ``qlici_amount`` reaches no percentage in this
-#: package. These strings said "the basis of the Fund's 20% bar" until FIX-3,
-#: which is the sentence Section B's labels were written from.
+#: commitment. The Fund's 85% and 20% are shares of QLICIs "in terms of
+#: aggregate dollar amounts" (CY 2024-2025 NMTC Allocation Application,
+#: Question 25, printed pp. 38-41); ``qlici_amount`` reaches no percentage in
+#: this package. These strings said "the basis of the Fund's 20% bar" until
+#: FIX-3, which is the sentence Section B's labels were written from.
+#:
+#: 1.3.0 S1: THE WORD "BAR" IS GONE FROM THE 20%. It was cited to the Review
+#: Process, which summarises Question 25(b) as "at least 20% of its QLICIs to
+#: 'Deep Distress' areas". The Application shows 20 is the TOP RUNG of a
+#: selectable 0/5/10/15/20 ladder over four area types — see
+#: renderers/_question_25.
 DISTRESS_SHARE_SEMANTICS = {
     "pct_deep": (
-        "deep distress only, as a share of QEI — this tool's proxy for the "
-        "Fund's 20%-of-QLICIs commitment, not that commitment's own basis"
+        "deep distress only, as a share of QEI — this tool's proxy for the top "
+        "rung of the Fund's 20%-of-QLICIs commitment ladder, not that "
+        "commitment's own basis"
     ),
     "pct_severe_excluding_deep": (
         "severely distressed but NOT also deep, as a share of QEI — an "
@@ -88,11 +96,12 @@ def analyze_distress_concentration(pipeline: "Pipeline") -> dict:
     EVERY SHARE RETURNED HERE HAS ``total_qei`` AS ITS DENOMINATOR — the sum of
     ``qei_request`` over the whole pipeline. ``qlici_amount`` is never read by
     this module. That matters because several of the CDFI Fund's own
-    commitments are stated as shares of QLICIs rather than of QEI (CY 2024-2025
-    Review Process, Question 25: "at least 85% of its QLICIs ... at least 20%
-    of its QLICIs"), so these figures are PROXIES for those commitments and no
-    caller may render one as an answer to a bar. Changing the denominator moves
-    every scored figure and is 1.2.2 work behind a written methodology.
+    commitments are stated as shares of QLICIs rather than of QEI — CY
+    2024-2025 NMTC Allocation Application, Question 25(a), printed p. 38: "at
+    least 85% of its QLICIs (in terms of aggregate dollar amounts)" — so these
+    figures are PROXIES for those commitments and no caller may render one as
+    an answer to a commitment. Changing the denominator moves every scored
+    figure and stays deferred behind a written methodology.
 
     Returns a dict with:
     - ``pct_deep`` – fraction of QEI in deep-distress tracts

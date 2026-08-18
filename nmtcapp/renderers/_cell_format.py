@@ -75,6 +75,26 @@ NOT_SUPPLIED = "—"
 # a table cell and the paragraph above it cannot drift apart.
 NOT_SUPPLIED_NARRATIVE = "Not reported"
 
+# A THIRD STATE, AND IT IS NOT THE EM DASH (1.3.0 S3).
+#
+# NOT_SUPPLIED above means "this optional field was left blank, which is a
+# permissible answer". The em dash is right for it: nobody owes an affordable-
+# unit count for a manufacturing deal.
+#
+# This one means "a REQUIRED field was absent from the input and the tool put a
+# number there anyway". core/upload_handler used to set qlici_amount =
+# qei_request whenever the column was missing, silently, and the result rendered
+# as the CDE's own "Total QLICI ($)" in Appendix A on all four surfaces. A
+# defaulted figure presented as a supplied one is a different and worse claim
+# than a blank: the reader has no way to see that the CDE never said it, and on
+# this particular field the number is the CDE's answer to a federal question.
+#
+# So it renders as text that cannot be mistaken for a figure, and it names the
+# action, matching the [CDE TO COMPLETE] idiom Appendix A and Section B already
+# use for the same obligation. It is deliberately NOT the em dash: a reader who
+# has learned that "—" means "optional, left blank" would read the wrong thing.
+NOT_SUPPLIED_INPUT = "not supplied [CDE TO COMPLETE]"
+
 
 def supplied_total(value, spec: str = "{:,}") -> str:
     """Format an aggregate that is ``None`` when no input was supplied.

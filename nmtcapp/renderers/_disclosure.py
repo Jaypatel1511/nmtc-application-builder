@@ -15,6 +15,46 @@ disclaimer paragraph can be stripped in editing; an inline qualifier cannot.
 from __future__ import annotations
 
 
+def qlici_not_supplied_note(pipeline) -> str:
+    """Appendix A's disclosure when no QLICI amount was supplied — or ``""``.
+
+    WHY WORD AND PDF NEED A SENTENCE AND NOT A CELL (1.3.0 S3).
+
+    ``tables/pipeline_table``'s "Total QLICI ($)" column reaches only TWO
+    surfaces, not four: markdown renders the full 33-column table and Excel
+    writes it to the Pipeline Detail sheet, while Word and PDF print the
+    six-column ``build_pipeline_summary_table`` in portrait and Word's landscape
+    continuation names twelve columns of which QLICI is not one. So the
+    defaulted figure was never printed on Word or PDF, and there is no cell
+    there to correct — which was worth establishing rather than assuming, since
+    the alternative fix (inventing a QLICI column for two surfaces that
+    deliberately do not carry one) would have changed the shape of a federal
+    attachment to make a test pass.
+
+    What Word and PDF DO carry is a caption directing the reader to the
+    workbook for "QLICI structure". A CDE reading only the filed document would
+    otherwise learn nothing about a column it never supplied, so the fact goes
+    beside that caption. One sentence, one authority, both surfaces.
+
+    Returns an empty string when every project supplied the figure, so the
+    caller can append unconditionally.
+    """
+    missing = [p.project_id for p in pipeline
+               if not getattr(p, "qlici_amount_supplied", True)]
+    if not missing:
+        return ""
+    total = sum(1 for _ in pipeline)
+    return (
+        f"NO QLICI AMOUNT WAS SUPPLIED for {len(missing)} of {total} projects "
+        f"({', '.join(missing)}). Each project's QEI request was used in its "
+        "place so this pipeline could be analysed, and that figure is NOT the "
+        "CDE's QLICI amount: the workbook's Total QLICI column reads "
+        "'not supplied [CDE TO COMPLETE]' rather than a number, and the "
+        "QLICI <= QEI consistency check is reported as not checkable rather "
+        "than passed. Supply a qlici_amount for every project before filing."
+    )
+
+
 def unverified_ids(pr) -> list:
     """Unverified project IDs from a PipelineAnalysisResult (safe getattr)."""
     return list(getattr(pr, "unverified_project_ids", []) or [])

@@ -99,6 +99,36 @@ MIN_MATCHES = 25
 #: being added without someone deliberately raising this number, and it forbids
 #: that just as firmly at 0. Proved by planting a DEFECT row and observing the
 #: failure; see CHANGELOG.md for the run.
+#:
+#: WHAT ZERO DOES NOT MEAN, AND THE 1.3.0 FINDING THAT ESTABLISHED IT.
+#:
+#:     EXPECTED_DEFECTS = 0 means "no false attributions among those RULED".
+#:     It does not mean "none remain". A gate is exactly as good as the
+#:     DOCUMENT its allowlist was ruled against.
+#:
+#: This is not a caveat, it is a measured result. The 1.2.2 sweep ruled every
+#: entry below against the CY 2024-2025 NMTC Program *Review Process* — a
+#: seven-page summary of how the CDFI Fund scores an application — and the pin
+#: went 6 -> 0 honestly on that basis. In 1.3.0 the *Allocation Application*
+#: was retrieved for the same question and two CITED entries turned out to be
+#: correct quotations of an incomplete source: the 85% is denominated in
+#: aggregate QLICI DOLLARS over a one-of-five / two-of-seven area test, and the
+#: 20% is not a bar at all but the top rung of a 0/5/10/15/20 ladder over four
+#: area types. Both errors instructed a CDE to UNDERSTATE its own qualifying
+#: share to a federal agency, and both sat under a green gate reading zero.
+#:
+#: Neither was re-tagged DEFECT, because DEFECT means "the authority does not
+#: state it" and the Review Process does state both sentences. They were
+#: re-ruled CITED against the Application instead, with the correction carried
+#: in the rendered text. So the count stayed at 0 through a round that found
+#: two real false-negative defects — which is the point of writing this here.
+#:
+#: THE RULE THIS LEAVES BEHIND: a summary document is a safe source for how the
+#: Fund SCORES and an unsafe source for what the Applicant is asked to COMMIT
+#: TO, because the thing the Applicant fills in is the Application. Every
+#: citation below that names the Review Process for a commitment, a
+#: percentage, or a list of areas is owed a check against the Application. The
+#: 1.3.0 sweep of all such citations is recorded in CHANGELOG.md.
 EXPECTED_DEFECTS = 0
 #: Matched anywhere in the citation, not anchored: each citation opens with
 #: the location the claim was first found at, and the tag follows it.

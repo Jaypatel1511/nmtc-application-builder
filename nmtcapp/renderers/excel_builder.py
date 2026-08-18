@@ -12,6 +12,13 @@ from nmtcapp.renderers._disclosure import (
     is_partial_unverified, qualified_pct, unverified_banner,
 )
 from nmtcapp.renderers._methodology import readiness_weights_sheet_note
+from nmtcapp.renderers._question_25 import (
+    Q25_BASIS_LABEL, Q25_BASIS_SHEET_NAME, Q25_QEI_BASIS_SUFFIX_SHEET,
+    q25_basis_note_paragraphs,
+)
+from nmtcapp.renderers._sheet_geometry import (
+    MAX_ROW_HEIGHT, required_row_height, span_points,
+)
 from nmtcapp.renderers.styles import COLORS, TYPOGRAPHY, TABLE_STYLES, xl_color
 from nmtcapp.tables.distress_table import build_distress_table
 from nmtcapp.tables.geographic_table import build_geographic_table
@@ -85,6 +92,29 @@ FMT_TEXT = "@"
 FMT_IDENTIFIER = "0"
 
 
+# --- Summary Dashboard geometry (1.3.0 B1) ---------------------------------
+#
+# The column widths were set at the BOTTOM of _build_summary_dashboard, forty
+# lines after the last row that had to be sized against them. Every row height
+# on the sheet therefore had to be a guess about a width the code had not set
+# yet, and the guesses were hand-typed: 18 for every metrics row, 28 for the
+# weights disclosure, and a _CHARS_PER_LINE constant for the basis note.
+#
+# They are declared here instead, once, ahead of everything that reads them,
+# so a height is DERIVED from the width it has to fit rather than guessed
+# before it exists. tests/test_excel_geometry.py re-derives both from the
+# shipped file and fails when a label cannot display in its own row.
+DASHBOARD_COL_WIDTHS = {
+    "A": 22.0, "B": 18.0, "C": 18.0, "D": 12.0, "E": 12.0, "F": 12.0,
+}
+
+#: The metrics block merges A:B for its labels; the note rows merge A:F.
+DASHBOARD_LABEL_SPAN_PTS = span_points(
+    DASHBOARD_COL_WIDTHS["A"], DASHBOARD_COL_WIDTHS["B"],
+)
+DASHBOARD_FULL_SPAN_PTS = span_points(*DASHBOARD_COL_WIDTHS.values())
+
+
 class ExcelApplicationBuilder:
     """Builds a professional Excel workbook for the NMTC application package.
 
@@ -115,6 +145,10 @@ class ExcelApplicationBuilder:
         wb.remove(wb.active)  # remove default empty sheet
 
         self._build_summary_dashboard(wb)
+        # Second tab on purpose: the Summary Dashboard's distress label names
+        # this sheet, and a pointer is only as good as how far the reader has
+        # to look for what it names.
+        self._build_q25_basis_sheet(wb)
         self._build_pipeline_sheet(wb)
         self._build_distress_sheet(wb)
         self._build_geographic_sheet(wb)
@@ -144,6 +178,10 @@ class ExcelApplicationBuilder:
     def _build_summary_dashboard(self, wb: "Workbook") -> None:
         ws = wb.create_sheet("Summary Dashboard")
         ws.sheet_view.showGridLines = False
+        # Widths first: every row height below is derived from the span it has
+        # to fit, and the span does not exist until the widths are set.
+        for col, width in DASHBOARD_COL_WIDTHS.items():
+            ws.column_dimensions[col].width = width
         app = self.application
         analysis = self.analysis
         pr = analysis.pipeline_result
@@ -215,7 +253,19 @@ class ExcelApplicationBuilder:
               else qualified_pct(pr.eligibility_pct, pr) if partial_unverified
               else pr.eligibility_pct),
              FMT_TEXT if (degraded or partial_unverified) else FMT_PCT, None),
-            ("Deep/Severe Distress Concentration",
+            # THE CELL WITH NO DENOMINATOR (1.3.0 S4). This label read
+            # "Deep/Severe Distress Concentration" over a raw float under a
+            # percent format, with no denominator in the label and no basis
+            # note anywhere in the workbook — the one artifact of the four that
+            # carried neither half of the 1.2.1 remedy. A CDE copying this cell
+            # into Question 25 files a QEI figure against a QLICI commitment.
+            #
+            # It was invisible to the rendered baseline because the baseline
+            # stores it as `|float|fmt=0.0%|0.8531...` — a number and a format
+            # code, with the label on the row above and no text of its own to
+            # scan. Naming the basis in the LABEL is what moves that entry's
+            # neighbour; the basis note below is what gives the reader the rest.
+            ("Deep/Severe Distress Concentration " + Q25_QEI_BASIS_SUFFIX_SHEET,
              ("Unverified" if degraded
               else qualified_pct(distress.get("pct_deep_or_severe", 0), pr)
               if partial_unverified
@@ -227,7 +277,18 @@ class ExcelApplicationBuilder:
 
         for i, (label, val, fmt, color_key) in enumerate(metrics):
             row = 6 + i
-            ws.row_dimensions[row].height = 18
+            # THE UNIFORM 18 IS WHAT B1 WAS. Every row of this loop got a
+            # one-line height, and 1.3.0 S4 gave row 12 a label that needs
+            # two — measured in Excel 16.112 at 30.0 pt against this exact
+            # span. The label displayed as far as "(a share of QEI, not" and
+            # stopped, so the visible half of the sentence ended mid-negation
+            # and the half that never displayed was the pointer to the note.
+            # A height that does not read its own label is a height that
+            # cannot survive the label being edited, which is the failure
+            # this loop already had once.
+            ws.row_dimensions[row].height = required_row_height(
+                label, DASHBOARD_LABEL_SPAN_PTS, 10,
+            )
             label_cell = ws.cell(row=row, column=1, value=label)
             val_cell = ws.cell(row=row, column=3, value=val)
             ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=2)
@@ -323,9 +384,11 @@ class ExcelApplicationBuilder:
         disclosure_row = tot_row + 1
         ws.merge_cells(start_row=disclosure_row, start_column=1,
                        end_row=disclosure_row, end_column=6)
-        ws.row_dimensions[disclosure_row].height = 28
-        note_cell = ws.cell(row=disclosure_row, column=1,
-                            value=readiness_weights_sheet_note())
+        disclosure_text = readiness_weights_sheet_note()
+        ws.row_dimensions[disclosure_row].height = required_row_height(
+            disclosure_text, DASHBOARD_FULL_SPAN_PTS, 8,
+        )
+        note_cell = ws.cell(row=disclosure_row, column=1, value=disclosure_text)
         note_cell.font = _font(italic=True, color=xl_color("text_muted"), size=8)
         note_cell.alignment = _left()
 
@@ -353,13 +416,32 @@ class ExcelApplicationBuilder:
         except Exception:
             pass  # chart is optional — don't fail the build
 
-        # Column widths
-        ws.column_dimensions["A"].width = 22
-        ws.column_dimensions["B"].width = 18
-        ws.column_dimensions["C"].width = 18
-        ws.column_dimensions["D"].width = 12
-        ws.column_dimensions["E"].width = 12
-        ws.column_dimensions["F"].width = 12
+        # THE BASIS NOTE IS NO LONGER ON THIS SHEET (1.3.0 B1).
+        #
+        # 1.3.0 S4 put it here, at rows 27-28, and pointed at it from the row
+        # 12 label with the flowing-document suffix "see the basis note
+        # below". Measured in Excel 16.112, that pointer was clipped — row 12
+        # needed 30.0 pt and shipped 18.0 — and the note it pointed at was
+        # fifteen rows past the readiness block, under a footer, at a row
+        # number nothing on screen names.
+        #
+        # The height half is fixed above. The REACHABILITY half is not fixable
+        # in place, and this is the finding that decided it: the workbook
+        # stores no window size, no zoom and no frozen pane, so whether row 28
+        # is "below and visible" or "below and off-screen" is a property of the
+        # reader's monitor and not of this file. The audit's window showed
+        # $A$1:$F$23 and the note was off-screen; the window this fix was
+        # measured in showed $A$1:$X$28 and it was on-screen. Sizing a row
+        # cannot repair a pointer whose truth varies by reader.
+        #
+        # So the note moves to a sheet the row 12 label names by name. A tab is
+        # visible on open at every window size, and the name is a constant
+        # rather than an arithmetic result — where "row 27" would have been a
+        # sixth hand-typed count derived from len(component_scores).
+        #
+        # It is still the same string from the same function as Section B, so
+        # a future correction still cannot land on three surfaces and miss the
+        # fourth. Only its address changed.
 
         # Footer
         footer_row = disclosure_row + 2
@@ -369,6 +451,76 @@ class ExcelApplicationBuilder:
                       f"Generated {date.today().isoformat()}")
         ws.cell(row=footer_row, column=1).font = _font(italic=True, color=xl_color("text_muted"), size=8)
         ws.cell(row=footer_row, column=1).alignment = _center()
+
+    # ------------------------------------------------------------------
+    # Sheet 2: Q25 Basis Note
+    # ------------------------------------------------------------------
+
+    def _build_q25_basis_sheet(self, wb: "Workbook") -> None:
+        """The basis note, on the sheet the dashboard's distress label names.
+
+        WHY IT IS A SHEET (1.3.0 B1). It was two rows at the bottom of the
+        Summary Dashboard, pointed at by "see the basis note below" — a
+        direction whose truth depends on the reader's window size, because the
+        workbook stores no window geometry at all. The label now names this
+        sheet instead, and a tab is visible on open regardless of monitor.
+
+        Every height here is derived from the text and the span it has to fit,
+        not typed. The version this replaces set the note's row to
+        ``11 * (len(text) // 130 + 2)`` — 275 pt against a measured 217, so
+        58 pt of blank cell below the last line, from a guess that happened to
+        err in the safe direction. The row above it, sized by the same kind of
+        guess, erred in the other one.
+        """
+        ws = wb.create_sheet(Q25_BASIS_SHEET_NAME)
+        ws.sheet_view.showGridLines = False
+        for col, width in DASHBOARD_COL_WIDTHS.items():
+            ws.column_dimensions[col].width = width
+
+        ws.merge_cells("A1:F1")
+        heading = ws.cell(row=1, column=1, value=Q25_BASIS_LABEL)
+        heading.font = _font(bold=True, color=xl_color("primary"), size=11)
+        heading.alignment = _left()
+        ws.row_dimensions[1].height = required_row_height(
+            Q25_BASIS_LABEL, DASHBOARD_FULL_SPAN_PTS, 11,
+        )
+
+        # Names the cell it qualifies, so the pointer works in both directions:
+        # the dashboard says which sheet, this sheet says which cell.
+        pointer = (
+            "This note is the basis for 'Deep/Severe Distress Concentration' "
+            "on the Summary Dashboard, and for the Deep Distress and Severely "
+            "Distressed rows of Section B."
+        )
+        ws.merge_cells("A2:F2")
+        pointer_cell = ws.cell(row=2, column=1, value=pointer)
+        pointer_cell.font = _font(color=xl_color("text_muted"), size=9)
+        pointer_cell.alignment = _left()
+        ws.row_dimensions[2].height = required_row_height(
+            pointer, DASHBOARD_FULL_SPAN_PTS, 9,
+        )
+
+        # ONE PARAGRAPH PER ROW, not one cell (1.3.0 B1). As a single merged
+        # cell this note needed 405 pt against Excel's 409-pt ceiling — three
+        # points of headroom on text that has grown in three of the last four
+        # rounds. The next sentence added to it would have clipped silently
+        # with every height check still passing.
+        #
+        # required_row_height does not clamp, so if any single paragraph ever
+        # outgrows one row, tests/test_excel_geometry.py fails on it rather
+        # than the workbook truncating it.
+        for offset, para in enumerate(q25_basis_note_paragraphs()):
+            row = 4 + offset
+            ws.merge_cells(start_row=row, start_column=1,
+                           end_row=row, end_column=6)
+            cell = ws.cell(row=row, column=1, value=para)
+            cell.font = _font(size=9)
+            cell.alignment = Alignment(horizontal="left", vertical="top",
+                                       wrap_text=True)
+            ws.row_dimensions[row].height = min(
+                MAX_ROW_HEIGHT,
+                required_row_height(para, DASHBOARD_FULL_SPAN_PTS, 9),
+            )
 
     # ------------------------------------------------------------------
     # Generic DataFrame → worksheet writer
@@ -441,14 +593,42 @@ class ExcelApplicationBuilder:
         ws.row_dimensions[2].height = 14
 
         # Header row (row 3)
+        # WIDTHS BEFORE ROWS (1.3.0 B1, second site). Auto-sizing ran forty
+        # lines BELOW the loop that set every row's height, so each height was
+        # decided against a column width that did not exist yet — and the
+        # heights were a hardcoded 16, uniformly, exactly as the dashboard's
+        # metrics loop hardcoded 18. Same defect, six more sheets.
+        #
+        # Measured on the shipped sample: Investor Commitments!G6 holds the
+        # 351-character "[CDE TO COMPLETE: This table is a blank form ...]"
+        # instruction in a 40-wide column at height 16 — one line of nine, so
+        # the half a CDE never saw included "Add one row per investor you can
+        # name and defend to the CDFI Fund, and delete any row you cannot."
+        # Distress Documentation!N8 clipped the ACS vintage off "CDFI Fund
+        # NMTC Eligibility Table (2016-2020 ACS)".
+        col_widths = {}
+        for j, col_name in enumerate(display.columns, start=1):
+            col_letter = get_column_letter(j)
+            max_len = max(
+                len(str(col_name)),
+                max((len(str(v)) for v in display.iloc[:, j - 1] if v is not None), default=0),
+            )
+            width = min(max_len + 3, 40)
+            ws.column_dimensions[col_letter].width = width
+            col_widths[j] = width
+
         header_row = 3
-        ws.row_dimensions[header_row].height = 20
         for j, col_name in enumerate(display.columns, start=1):
             cell = ws.cell(row=header_row, column=j, value=str(col_name))
             cell.font = _font(bold=True, color="FFFFFF", size=10)
             cell.fill = _fill(xl_color("primary"))
             cell.alignment = _center()
             cell.border = _thin_border()
+        ws.row_dimensions[header_row].height = max(20.0, max(
+            (required_row_height(str(c), span_points(col_widths[j]), 10)
+             for j, c in enumerate(display.columns, start=1)),
+            default=20.0,
+        ))
 
         # Enable auto-filter on header row
         ws.auto_filter.ref = (
@@ -466,7 +646,6 @@ class ExcelApplicationBuilder:
             bg = xl_color("row_total") if is_last_row else (
                 xl_color("row_even") if i % 2 == 0 else xl_color("row_odd")
             )
-            ws.row_dimensions[row_num].height = 16
 
             for j, (col_name, val) in enumerate(zip(display.columns, row_data), start=1):
                 cell = ws.cell(row=row_num, column=j)
@@ -519,14 +698,15 @@ class ExcelApplicationBuilder:
                     else:
                         cell.value = str(val) if val is not None else ""
 
-        # Auto-size columns (cap at 40 chars)
-        for j, col_name in enumerate(display.columns, start=1):
-            col_letter = get_column_letter(j)
-            max_len = max(
-                len(str(col_name)),
-                max((len(str(v)) for v in display.iloc[:, j - 1] if v is not None), default=0),
-            )
-            ws.column_dimensions[col_letter].width = min(max_len + 3, 40)
+            # Derived from the widest thing this row actually has to display,
+            # against the width its column actually got. 16 remains the floor,
+            # so a row of short values looks exactly as it did.
+            ws.row_dimensions[row_num].height = max(16.0, max(
+                (required_row_height(ws.cell(row=row_num, column=j).value,
+                                     span_points(col_widths[j]), 10)
+                 for j in range(1, len(display.columns) + 1)),
+                default=16.0,
+            ))
 
         if len(df) > max_rows:
             note_row = header_row + max_rows + 2

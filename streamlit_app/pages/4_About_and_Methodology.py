@@ -130,25 +130,51 @@ st.markdown(
 
 | Sub-criterion | Max | Key threshold |
 |---|---|---|
-| **Higher Distress Targeting** | 15 | ≥ {SEVERE_DISTRESS_MIN_PCT:.0%} of **QEI** in severely distressed tracts — a proxy, see below |
-| **Deep Distress Commitment** | 10 | ≥ {DEEP_DISTRESS_MIN_PCT:.0%} of **QEI** in Deep Distress areas — a proxy, see below |
+| **Higher Distress Targeting** | 15 | ≥ {SEVERE_DISTRESS_MIN_PCT:.0%} of **QEI** in severely distressed tracts — a proxy for a QLICI-dollar commitment, see below |
+| **Deep Distress Commitment** | 10 | ≥ {DEEP_DISTRESS_MIN_PCT:.0%} of **QEI** in Deep Distress areas — a proxy for the **top rung** of a selectable ladder, see below |
 | **Special Targeting** | 5 | QEI in U.S. Territories, High Migration Rural, NMTC Native Areas, Persistent Poverty Counties — **this tool's own criterion, not the Fund's, see below** |
 | **Community Outcomes Quality** | 10 | Quantified outcomes (jobs, units, sq ft) with third-party methodology |
 | **Community Accountability** | 10 | LIC board representation + community engagement track record |
 
 **Basis note — the Fund's two distress commitments are measured on QLICIs, these
-sub-scores are measured on QEI.** The CY 2024-2025 Review Process (Targeting
-Areas of Higher Distress, Question 25) commits an applicant to *"at least
-{SEVERE_DISTRESS_MIN_PCT:.0%} of its QLICIs in specified areas of severe distress
-and/or areas characterized by multiple indicia of distress"* and *"at least
-{DEEP_DISTRESS_MIN_PCT:.0%} of its QLICIs to 'Deep Distress' areas"* — shares of
-**QLICIs**. Every distress share this tool computes is a share of **QEI**;
-`qlici_amount` is read only to print it in Appendix A and to check it does not
-exceed its project's QEI, and feeds no percentage, no score and no bar. The two
-sub-scores above are QEI-based *proxies*, and no figure this tool renders answers
-either commitment. The {SEVERE_DISTRESS_MIN_PCT:.0%} carries a second mismatch:
-it covers severe distress **or multiple indicia** of distress, and this package
-computes no multi-indicia measure at all.
+sub-scores are measured on QEI.** Question 25 of the CY 2024-2025 **Allocation
+Application** (printed pp. 38-41) sets both, denominated in QLICIs *"in terms of
+aggregate dollar amounts"* and tested **for each QLICI**.
+
+**Question 25(a)** asks for at least {SEVERE_DISTRESS_MIN_PCT:.0%} of QLICIs in
+areas characterized by at least **one** of items 1-5 (Severe Distress; NMTC
+Native Areas; U.S. Island Areas; Non-Metropolitan Counties; Targeted
+Populations) **or** by at least **two** of items 6-12 (25% poverty / 70% median
+family income / 1.25× unemployment; Brownfield Sites; ARC and/or DRA Areas;
+Colonias Areas; Federal Medically Underserved Areas; FEMA Disaster Areas;
+Low-Income and Low-Access to Supermarkets). *"Multiple indicia of distress"* is
+that **two-of-seven** test, per QLICI.
+
+**Question 25(b)(i) is not a {DEEP_DISTRESS_MIN_PCT:.0%} bar.** It is a
+selectable commitment level — **0 / 5 / 10 / 15 / 20**, where selecting 20 opens
+a field for any figure from 20% to 100% — over **four** area types: Deep
+Distress, NMTC Native Areas, High Migration Rural Counties, U.S. Island Areas. A
+CDE that can honestly commit 10% selects 10 and has failed nothing, and *"A
+QLICI that meets this commitment will also automatically meet the commitment
+made in Question 25(a)."*
+
+Every distress share this tool computes is a share of **QEI**; `qlici_amount` is
+read only to print it in Appendix A and to check it does not exceed its
+project's QEI, and feeds no percentage, no score and no bar. The two sub-scores
+above are QEI-based *proxies*, and no figure this tool renders answers either
+commitment. This package carries a per-project field for **five of the fourteen**
+distinct area types Question 25 lists — a tool-verified distress level covering
+Severe and Deep Distress, plus CDE-declared and unverified flags for NMTC Native
+Areas, High Migration Rural Counties and U.S. territory — and nothing for
+Non-Metropolitan Counties, nothing for Targeted Populations, and nothing for any
+of items 6-12. **Holding those fields is not a partial answer to Question 25**:
+the commitment is a share of QLICI *dollars* and this tool weights nothing by
+QLICI dollars.
+
+*Corrected in 1.3.0.* Through 1.2.2 this note quoted the seven-page **Review
+Process** — accurately, and it is a summary. The summary reads as a 20% bar and
+compresses Question 25(b)'s four area types into one, which told a CDE to
+understate its own qualifying share.
 
 **Special Targeting is this tool's own criterion. The CDFI Fund publishes no such
 criterion and no bonus points for it.** The CY 2024-2025 NOAA (89 FR 92283, 21 Nov 2024),
@@ -256,7 +282,7 @@ This tool reports these as informational flags (`phase2_flags`) but does not sco
 |---|---|
 | **Management Capacity** | Staffing, systems, organizational capability to deploy capital |
 | **Capitalization Strategy** | QEI-raising track record; investor relationships; feasibility |
-| **Non-Metro Commitment** | ≥ 20% non-metro required; ≥ 50% for Rural CDE designation. **Basis not established by this tool** — the Fund states its distress commitments on QLICIs and this tool computes only QEI shares; whether the non-metro commitment is QLICI- or QEI-denominated has not been checked against the Application's own question text. |
+| **Non-Metro Commitment** | ≥ 20% non-metro; ≥ 50% for Rural CDE designation. **Both are shares of QLICIs and this tool computes a share of QEI.** Allocation Application Question 22 (printed p. 31) asks for "a minimum percentage of **QLICIs** the Applicant is willing to commit to provide to Non-Metropolitan Counties", and the CY 2024-2025 NOAA says "at least 20 percent of their QLICIs (as measured by dollar amount)". This tool's figure is a QEI share over a hard-coded twelve-state list, not the OMB Bulletin 20-01 county definition — and Question 22 is not scored in Phase I. |
 | **Fee / Compensation Structure** | Fee levels favorable to QALICBs |
 | **Prior Reporting Compliance** | Late or inaccurate prior-round reports → potential point deductions |
 """

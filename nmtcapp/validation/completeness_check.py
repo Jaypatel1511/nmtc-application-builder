@@ -23,7 +23,10 @@ logger = logging.getLogger(__name__)
 #
 # The import is the fix: there is now one list, and this module has no opinion
 # about its contents.
-from nmtcapp.core.cde import REQUIRED_CDE_FIELDS as _REQUIRED_CDE_FIELDS
+from nmtcapp.core.cde import (
+    CDE_FIELDS_WHERE_EMPTY_IS_AN_ANSWER as _EMPTY_IS_AN_ANSWER,
+    REQUIRED_CDE_FIELDS as _REQUIRED_CDE_FIELDS,
+)
 
 
 def check_completeness(application: "Application") -> ValidationResult:
@@ -45,8 +48,24 @@ def check_completeness(application: "Application") -> ValidationResult:
 
     # CDE profile completeness
     cde = application.cde
+    # AN EMPTY VALUE IS NOT ALWAYS A MISSING ONE (1.3.0 B3).
+    #
+    # This loop rejected `val == []` for every required field, including
+    # prior_awards — which the shipped scaffold explicitly instructs a CDE to
+    # leave as [], and which CDEProfile.from_yaml has always accepted as []. So
+    # a first-time CDE following the template loaded cleanly and was then told
+    # its profile was missing prior NMTC allocations: a scored track-record
+    # item, with the obvious remedy being to invent one.
+    #
+    # from_yaml knew this and this module did not, because the exception was a
+    # local literal in from_yaml. It is now one importable constant that both
+    # read. See core/cde.CDE_FIELDS_WHERE_EMPTY_IS_AN_ANSWER.
     for field in _REQUIRED_CDE_FIELDS:
         val = getattr(cde, field, None)
+        if field in _EMPTY_IS_AN_ANSWER:
+            if val is None:
+                issues.append(f"CDE profile missing required field: {field}")
+            continue
         if val is None or val == "" or val == [] or val == {}:
             issues.append(f"CDE profile missing required field: {field}")
 

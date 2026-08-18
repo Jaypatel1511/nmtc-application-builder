@@ -24,6 +24,7 @@ from nmtcapp.core.upload_handler import load_uploaded_pipeline
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from nmtcapp.core.sample_identity import SampleDataError
 from nmtcapp.data.schema import TARGET_DISTRESS_THRESHOLDS
+from nmtcapp.renderers._question_25 import Q25_QEI_BASIS_CLAUSE, q25_basis_note
 from utils import (
     fmt_millions,
     fmt_pct,
@@ -174,6 +175,23 @@ if run_clicked:
             _cde_extra = _scoring_attrs_only(_cde_extra or {}, is_demo=False)
             _missing_cde = _summarise_cde_defaults(_cde_extra)
             st.success(f"Loaded {len(pipeline)} projects from {uploaded_file.name}")
+            # THE COLUMN THE CDE DID NOT SUPPLY (1.3.0 S3). Read off the flag
+            # each project carries, not re-derived from qlici_amount ==
+            # qei_request — the two are equal in every fixture this package
+            # ships and in plenty of real pipelines.
+            _no_qlici = [p.project_id for p in pipeline if not p.qlici_amount_supplied]
+            if _no_qlici:
+                st.warning(
+                    f"**No `qlici_amount` column in this file** — "
+                    f"{len(_no_qlici)} of {len(pipeline)} projects. Each "
+                    "project's QEI request was used in its place so the "
+                    "pipeline could load, but that is not your QLICI amount "
+                    "and the document does not present it as one: Appendix A's "
+                    "**Total QLICI ($)** reads *not supplied [CDE TO "
+                    "COMPLETE]*, and the QLICI ≤ QEI consistency check is "
+                    "reported as not checkable rather than passed. Add a "
+                    "`qlici_amount` column and re-upload before filing."
+                )
             if _missing_cde:
                 st.info(
                     "Some CDE Profile fields were not provided — the scorer will apply "
@@ -332,12 +350,38 @@ with tabs[1]:
     native_pct = d.get("pct_native_area", 0.0)
     meets_target = d.get("meets_target_threshold", False)
 
+    # THE FIFTH SURFACE (1.3.0 B1 ride-along).
+    #
+    # 1.3.0 S4 swept the four GENERATED DOCUMENT renderers — markdown, Word,
+    # PDF, Excel — for a distress share printed with no denominator in its
+    # label. This screen carried the same defect and was not in that sweep,
+    # because the sweep was scoped to nmtcapp/renderers and nmtcapp/sections
+    # and this file is in streamlit_app/, a package that produces no filed
+    # artifact and so was read as out of scope. A CDE reads a figure off a
+    # screen and types it into a form exactly the way it reads one off a
+    # workbook; producing no file is not the same as reaching no filing.
+    #
+    # AND IT WAS WORSE HERE THAN ON THE FOUR. The workbook printed a bare
+    # share. This printed a bare share under a VERDICT — "Meets target" /
+    # "Below target" — against TARGET_DISTRESS_THRESHOLDS, which data/schema.py
+    # labels a HOUSE HEURISTIC in capitals and warns must not be presented as a
+    # Fund figure. The `nmtcapp analyze` block prints the same comparison and
+    # has said "this tool's own band — not a CDFI Fund threshold" since 1.2.0.
+    # This one said "target", unqualified, next to a percentage a reader has
+    # every reason to believe is the Question 25 answer.
+    _target = TARGET_DISTRESS_THRESHOLDS["target_deep_distress"]
     c1, c2, c3 = st.columns(3)
     c1.metric(
-        "Deep / Severe distress",
+        f"Deep / Severe distress ({Q25_QEI_BASIS_CLAUSE})",
         fmt_pct(deep_severe_pct),
-        delta="Meets target" if meets_target else "Below target",
+        delta=(f"{'Meets' if meets_target else 'Below'} this tool's own "
+               f"\u2265{_target:.0%} band"),
         delta_color="normal" if meets_target else "inverse",
+        help="NOT a CDFI Fund threshold, and NOT an answer to Question 25. "
+             f"The {_target:.0%} band is this tool's own heuristic. The Fund's "
+             "distress commitments are measured on QLICIs, not on QEI, and "
+             "every share on this screen is a share of QEI. See the basis "
+             "note below.",
     )
     c2.metric("LIC (standard)", fmt_pct(lic_pct))
     # CDE-DECLARED, and the label says so. This share comes from the
@@ -448,6 +492,20 @@ with tabs[1]:
             "This tool computes no QLICI-denominated share, so nothing on this "
             "chart answers that bar or may be compared to it."
         )
+
+    # THE BASIS NOTE, ON THE SCREEN THAT PRINTS THE SHARE (1.3.0 B1
+    # ride-along). The metric above points at it, so it has to be here — the
+    # defect this whole round is about is a pointer to something the reader
+    # cannot reach. Same string, from the same function, as Section B and the
+    # workbook's Q25 Basis Note sheet.
+    #
+    # Expanded by default rather than collapsed: a disclosure behind a click
+    # is a disclosure the reader under deadline does not open, and this one
+    # exists because the figure above it invites a specific wrong use.
+    st.markdown("---")
+    with st.expander("BASIS NOTE — what these shares are, and what they are "
+                     "not an answer to", expanded=True):
+        st.markdown(q25_basis_note())
 
 
 # =============================================================================

@@ -15,8 +15,8 @@ from docx.shared import Pt, RGBColor, Inches, Cm
 
 from nmtcapp.renderers._cell_format import supplied_total
 from nmtcapp.renderers._disclosure import (
-    is_partial_unverified, qualified_pct, unverified_banner,
-    unverified_ids, unverified_qualifier,
+    is_partial_unverified, qlici_not_supplied_note, qualified_pct,
+    unverified_banner, unverified_ids, unverified_qualifier,
 )
 from nmtcapp.renderers._methodology import (
     ACS_VINTAGE, deal_economics_note, distress_definitions, impact_bands_note,
@@ -362,6 +362,17 @@ class WordApplicationBuilder:
         )
         p.runs[0].font.italic = True
         p.runs[0].font.size = Pt(TYPOGRAPHY["size_caption"])
+
+        # 1.3.0 S3. The caption above sends the reader to the workbook for
+        # "QLICI structure"; if the CDE never supplied one, say so here rather
+        # than only in the workbook the caption points at. Word's landscape
+        # continuation below names twelve columns and QLICI is not one of them,
+        # so there is no cell on this surface to carry the fact.
+        _qlici_note = qlici_not_supplied_note(self.application.pipeline)
+        if _qlici_note:
+            q = doc.add_paragraph(_qlici_note)
+            q.runs[0].font.bold = True
+            q.runs[0].font.size = Pt(TYPOGRAPHY["size_caption"])
 
         # Landscape section with the full table (key 12-col subset)
         self._switch_to_landscape(doc)

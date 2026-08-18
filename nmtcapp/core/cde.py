@@ -41,6 +41,36 @@ _FIELD_GUIDANCE = {
 #: fields in the order the shipped scaffold lists them. A set would lose that.
 REQUIRED_CDE_FIELDS = tuple(_FIELD_GUIDANCE)
 
+#: Required fields for which an EMPTY VALUE IS A COMPLETE ANSWER (1.3.0 B3).
+#:
+#: THE ONE LIST, for the same reason REQUIRED_CDE_FIELDS is. This exception
+#: existed only inside ``from_yaml``, as a local named ``blank_is_answer``, and
+#: validation/completeness_check.py — which loops over REQUIRED_CDE_FIELDS and
+#: rejects ``val == []`` — could not see it. So the two disagreed about the
+#: shipped scaffold:
+#:
+#:   templates/cde_profile_template.yaml:26
+#:       prior_awards: []          # Prior NMTC allocations. Leave as [] if none.
+#:   CDEProfile.from_yaml           -> accepts it
+#:   validation.completeness_check  -> "CDE profile missing required field:
+#:                                      prior_awards"
+#:
+#: Confirmed by execution on the branch head, against a profile filled in
+#: exactly as the template instructs.
+#:
+#: WHY THAT IS A BLOCKER AND NOT A NUISANCE. The tool's core audience is a
+#: first-time CDE. It follows the scaffold, writes [], loads without error, and
+#: is then told its profile is incomplete. The only field named is prior NMTC
+#: allocations — a SCORED TRACK-RECORD ITEM — and the obvious way to clear the
+#: error is to put something in the list. That is a validator applying pressure
+#: toward a false statement about the applicant's own history, in a federal
+#: filing. It is the shipped-inputs rule running backwards: not a fabricated
+#: value leaking out of a template, but one being pushed in.
+#:
+#: An empty list here is not an absence of an answer. It IS the answer: a
+#: first-time applicant, with no prior allocation.
+CDE_FIELDS_WHERE_EMPTY_IS_AN_ANSWER = frozenset({"prior_awards"})
+
 
 def _missing_fields_message(path: str, missing: set, data: dict) -> str:
     """Name what the CDE must complete, in the order the scaffold lists it."""
@@ -140,8 +170,10 @@ class CDEProfile:
         # named exactly one of the eight things still to do.
         #
         # prior_awards is the one exception: [] is a real answer, meaning a
-        # first-time applicant with no prior allocation.
-        blank_is_answer = {"prior_awards"}
+        # first-time applicant with no prior allocation. Read from the module
+        # constant, not retyped here — completeness_check reads the same one,
+        # and when this was a local literal the two disagreed (1.3.0 B3).
+        blank_is_answer = CDE_FIELDS_WHERE_EMPTY_IS_AN_ANSWER
         missing = {
             key for key in required
             if key not in data

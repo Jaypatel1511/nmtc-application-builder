@@ -9,6 +9,7 @@ from typing import Optional
 import pandas as pd
 
 from nmtcapp.core.pipeline import Pipeline
+from nmtcapp.renderers._cell_format import NOT_SUPPLIED_INPUT
 
 logger = logging.getLogger(__name__)
 
@@ -243,8 +244,39 @@ def load_uploaded_pipeline(
         df["qalicb_name"] = df.get("project_name", "")
     if "address" not in df.columns:
         df["address"] = ""
+    # THE FIGURE THE CDE NEVER SUPPLIED (1.3.0 S3).
+    #
+    # These two lines used to be the whole of it: no flag, no warning, no trace
+    # downstream. The synthesised value then rendered as "Total QLICI ($)" in
+    # Appendix A — the CDE's own answer to the CDFI Fund's Table A5 row (h) —
+    # on markdown, Word, PDF and Excel, and satisfied validation's QLICI <= QEI
+    # rule trivially by being exactly equal to the QEI it was copied from.
+    #
+    # The default itself STAYS. qlici_amount is non-optional on
+    # PipelineProject, is in REQUIRED_PROJECT_FIELDS, and several downstream
+    # consumers dereference it; removing the value would turn a missing column
+    # into an exception on upload, which is a bigger behaviour change than this
+    # release is scoped for and is not what a CDE who omitted one column needs.
+    # What changes is that the document no longer PRESENTS it. The flag rides
+    # the temp CSV below into Pipeline.from_csv, and every surface that prints
+    # the figure reads the flag first.
     if "qlici_amount" not in df.columns and "qei_request" in df.columns:
         df["qlici_amount"] = df["qei_request"]
+        df["qlici_amount_supplied"] = "N"
+        # WARN HERE TOO. The silent default is what hid this for four passes,
+        # and a reader of the rendered document sees the consequence without
+        # seeing the cause. The Streamlit uploader surfaces the same fact from
+        # the carried flag (streamlit_app/pages/1_Pipeline_Analyzer.py).
+        logger.warning(
+            "The uploaded file has no 'qlici_amount' column. Each project's "
+            "QEI request has been used in its place so the pipeline can load, "
+            "but that figure is NOT the CDE's QLICI amount and is not "
+            "presented as one: it renders as %r wherever the document would "
+            "print Total QLICI, and the QLICI <= QEI consistency check is "
+            "reported as not checkable rather than passed. Supply a "
+            "qlici_amount column before filing.",
+            NOT_SUPPLIED_INPUT,
+        )
 
     # ── Pipeline-derived CDE pcts from per-project Y/N flags ─────────────────
     if "qei_request" in df.columns:

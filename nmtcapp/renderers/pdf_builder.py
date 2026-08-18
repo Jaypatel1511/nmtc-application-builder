@@ -7,8 +7,8 @@ from datetime import date
 from typing import TYPE_CHECKING
 
 from nmtcapp.renderers._disclosure import (
-    is_partial_unverified, qualified_pct, unverified_banner,
-    unverified_ids, unverified_qualifier,
+    is_partial_unverified, qlici_not_supplied_note, qualified_pct,
+    unverified_banner, unverified_ids, unverified_qualifier,
 )
 from nmtcapp.renderers._cell_format import format_cell, supplied_total
 from nmtcapp.renderers._methodology import (
@@ -657,6 +657,13 @@ class PDFApplicationBuilder:
             "is provided in the accompanying Excel workbook, Pipeline Detail tab.</i>",
             styles["caption"],
         ))
+        # 1.3.0 S3. The caption above sends the reader to the workbook for
+        # "QLICI structure"; if the CDE never supplied one, say so here rather
+        # than only in the workbook the caption points at.
+        _qlici_note = qlici_not_supplied_note(self.application.pipeline)
+        if _qlici_note:
+            flowables.append(Spacer(1, 6))
+            flowables.append(Paragraph(f"<b>{_qlici_note}</b>", styles["caption"]))
         return flowables
 
     def _appendix_distress(self, styles) -> list:

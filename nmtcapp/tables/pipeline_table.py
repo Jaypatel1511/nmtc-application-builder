@@ -59,6 +59,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 from nmtcapp.data.schema import NMTC_PROGRAM_CONSTRAINTS
+from nmtcapp.renderers._cell_format import NOT_SUPPLIED_INPUT
 from nmtcapp.renderers.styles import DISTRESS_DISPLAY
 
 if TYPE_CHECKING:
@@ -159,7 +160,17 @@ def build_pipeline_table(pipeline: "Pipeline", cde: "CDEProfile" = None) -> pd.D
             # The CDE's own qlici_amount, whole. It used to appear only as a
             # 20/80 A/B split this tool invented; the Fund's Table A5 row (h)
             # collects one total and defines no tranches.
-            "Total QLICI ($)":            p.qlici_amount,
+            #
+            # …AND ONLY WHEN IT IS THE CDE'S (1.3.0 S3). An upload with no
+            # qlici_amount column had the project's QEI copied into this cell
+            # by core/upload_handler, silently, and it printed here as the
+            # CDE's answer to row (h). The flag is carried from the read, not
+            # inferred from qlici_amount == qei_request — which is true of
+            # every fixture this package ships and would misfire on a CDE whose
+            # figures legitimately match.
+            "Total QLICI ($)":            (p.qlici_amount
+                                           if p.qlici_amount_supplied
+                                           else NOT_SUPPLIED_INPUT),
             "Leverage Loan ($)":          leverage_loan,
             "Total NMTCs ($)":            total_nmtcs,
             "Estimated Investor Equity ($)": investor_equity,
@@ -266,7 +277,23 @@ def _build_totals_row(df: pd.DataFrame) -> dict:
     row["Project ID"] = "TOTALS"
     row["Project Name"] = f"TOTAL ({len(df)} projects)"
     for col in numeric_cols:
-        if col in df.columns:
+        if col not in df.columns:
+            continue
+        # A NOT-SUPPLIED CELL POISONS ITS OWN TOTAL, DELIBERATELY (1.3.0 S3).
+        #
+        # NaN and NOT_SUPPLIED_INPUT are different facts and must not share a
+        # rule. An absent affordable-unit count is NaN and sums with skipna,
+        # which is right: the total is the total of what was reported, and
+        # nobody owes a unit count. A QLICI amount the tool defaulted is not a
+        # gap in an optional series — it means this column's total is unknown,
+        # and summing around it would file a partial figure under the label
+        # "TOTALS" with nothing on the page saying it is partial.
+        #
+        # Summing a column of str and float raises anyway; erroring is not the
+        # design. Propagating the marker is.
+        if (df[col].astype(str) == NOT_SUPPLIED_INPUT).any():
+            row[col] = NOT_SUPPLIED_INPUT
+        else:
             row[col] = df[col].sum()
     return row
 
