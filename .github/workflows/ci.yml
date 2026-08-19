@@ -23,6 +23,21 @@ jobs:
 
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        # FULL HISTORY, because one gate asks a question about it.
+        # tests/test_pinned_constants.test_the_changelogs_rendered_baseline_delta
+        # _matches_the_tree re-derives the CHANGELOG's rendered-baseline figures
+        # with `git diff --numstat` between the two commits the claim names. The
+        # action's default is fetch-depth: 1, under which those commits do not
+        # exist in the clone and the gate cannot answer.
+        #
+        # DO NOT "FIX" A FAILURE HERE BY MAKING THAT TEST SKIP ON A SHALLOW
+        # CLONE ALONE. It does skip, so a contributor's `--depth 1` reports
+        # "cannot answer" instead of a false red — but a skip is how a gate
+        # stops asking, and this repository has fourteen recorded instances of
+        # exactly that. test_ci_fetches_enough_history_to_answer_this_gate
+        # asserts this line, so the skip can never become the way CI passes.
+        fetch-depth: 0
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0

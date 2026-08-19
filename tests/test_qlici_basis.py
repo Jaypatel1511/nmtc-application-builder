@@ -463,16 +463,59 @@ def _toggle_triple(line: str, inside_triple: bool) -> bool:
     return inside_triple
 
 
+#: Lines the PDF extractor interleaves into a paragraph that are not part of
+#: it: the page marker the baseline extractor writes and the running footer
+#: ReportLab draws onto the canvas. Neither is prose and neither ends a block.
+_PAGE_CHROME = re.compile(r"^(?:@@PAGE \d+|Page \d+|.*\|\s*CONFIDENTIAL)\s*$")
+
+
+def _context_of(lines, index: int) -> str:
+    """The block of consecutive prose lines that ``lines[index]`` sits in.
+
+    THE UNIT OF THIS RULE IS THE PARAGRAPH, NOT THE VISUAL LINE, AND ALWAYS
+    HAS BEEN — it was only ever line-scoped by accident. In markdown and Word
+    the whole Q25 basis note is ONE line, so "does this line name QLICIs"
+    already means "does this paragraph name QLICIs" on three of the four
+    surfaces. The PDF matched them until 1.3.0 FIX-2 B1 made its table cells
+    wrap; after that the same paragraph arrived as forty short lines and
+
+        25(b)(i) is NOT a 20% bar. It is a selectable
+
+    read as an undenominated bar, with "QLICIs" two lines above it and in the
+    reader's eye the whole time. Widening the PDF to the block it was always
+    read as does not loosen the rule anywhere: markdown has been block-scoped
+    since the note was written.
+
+    WHAT IT DOES NOT DO is join across a blank line. A bar in one paragraph
+    cannot be excused by a denominator in the next.
+
+    Example::
+
+        _context_of(["a", "b", "", "c"], 0)   # -> 'a b'
+    """
+    start = index
+    while start > 0 and lines[start - 1].strip() and not _PAGE_CHROME.match(
+            lines[start - 1].strip()):
+        start -= 1
+    end = index
+    while end + 1 < len(lines) and lines[end + 1].strip() and not _PAGE_CHROME.match(
+            lines[end + 1].strip()):
+        end += 1
+    return " ".join(lines[start:end + 1])
+
+
 def _offending_lines(text: str):
-    for i, line in enumerate(text.splitlines(), 1):
+    lines = text.splitlines()
+    for i, line in enumerate(lines, 1):
         low = line.lower()
         if not _BAR_PCT.search(line):
             continue
         if not any(w in low for w in _BAR_WORDS):
             continue
-        if any(w in low for w in _DENOMINATOR_NAMED):
+        context = _context_of(lines, i - 1).lower()
+        if any(w in context for w in _DENOMINATOR_NAMED):
             continue
-        if (any(w in low for w in _NOT_A_FUND_BAR)
+        if (any(w in context for w in _NOT_A_FUND_BAR)
                 and not any(w in low for w in _AFFIRMS_A_FUND_BAR)):
             continue
         yield i, line
@@ -698,4 +741,27 @@ def test_pipeline_analysis_summary_states_its_denominator():
     assert not hits, (
         "the CLI summary states a CDFI Fund distress bar without naming its "
         "denominator:\n" + "\n".join(hits)
+    )
+
+
+def test_the_paragraph_widening_cannot_excuse_a_bar_from_the_next_paragraph():
+    """The block must stop at a blank line, or the rule stops meaning anything.
+
+    ``_context_of`` was widened in 1.3.0 FIX-2 B1 so a wrapped PDF paragraph is
+    read the way markdown has always been read. A widening nobody has seen
+    refuse is a widening that could have been "return the whole document".
+    """
+    same_paragraph = "shares of QLICIs are what is measured\nat least 20% commitment"
+    assert not list(_offending_lines(same_paragraph)), (
+        "a denominator on the line above did not excuse the bar — the wrapped "
+        "paragraph this exists for would still be reported"
+    )
+
+    across_a_break = "shares of QLICIs are what is measured\n\nat least 20% commitment"
+    assert [ln for _, ln in _offending_lines(across_a_break)] == [
+        "at least 20% commitment"
+    ], (
+        "a denominator in a DIFFERENT paragraph excused a bar. The block must "
+        "end at a blank line; otherwise one 'QLICI' anywhere buys the whole "
+        "document out and this gate asserts nothing."
     )

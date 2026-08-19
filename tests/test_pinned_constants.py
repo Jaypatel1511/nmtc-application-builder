@@ -108,6 +108,7 @@ from __future__ import annotations
 import ast
 import os
 import re
+import subprocess
 
 import pytest
 
@@ -458,8 +459,45 @@ def _extract(fmt: str, path: str) -> str:
         return "\n".join(parts)
     if fmt == "pdf":
         from pypdf import PdfReader
-        return "\n".join((page.extract_text() or "") for page in PdfReader(path).pages)
+        return "\n".join(_strip_pdf_chrome(page.extract_text() or "")
+                         for page in PdfReader(path).pages)
     raise AssertionError(f"unknown format {fmt}")
+
+
+#: The running footer ReportLab draws onto every page but the cover:
+#: "<CDE name>  —  NMTC <round> Application  |  CONFIDENTIAL" and "Page <n>",
+#: matched by shape rather than by the fixture's own strings so the pattern
+#: cannot go stale against a renamed fixture.
+_PDF_CHROME = re.compile(
+    r"^(?:.*\|\s*CONFIDENTIAL\s*|Page \d+\s*)$", re.MULTILINE
+)
+
+
+def _strip_pdf_chrome(page_text: str) -> str:
+    """Remove the running header/footer from one page's extracted text.
+
+    A PIN IS A CLAIM ABOUT THE DOCUMENT, NOT ABOUT THE PAGE IT LANDED ON.
+    1.3.0 FIX-2 B1 made the Section B key/value table wrap, and the Q25 basis
+    note is long enough that its row now breaks across a page. pypdf then
+    extracts the footer of page N BETWEEN the two halves of the sentence:
+
+        ... at least TWO of items 6-12 (25% poverty /
+        Great Lakes Regional Capital CDE, LLC — NMTC CY2025 Application |
+        CONFIDENTIAL Page 6
+        70% median family income / 1.25x unemployment; ...
+
+    ``_normalise`` collapses whitespace so a pin survives a LINE wrap; it
+    cannot survive a PAGE wrap, because what interrupts the string is not
+    whitespace but chrome. Dropping the chrome — which is drawn onto the canvas
+    and is not part of any pinned constant — restores the contiguity the pin
+    asserts, and does so for every future pin that spans a page break rather
+    than only for this one.
+
+    Example::
+
+        _strip_pdf_chrome("body text\nPage 6")   # -> 'body text'
+    """
+    return _PDF_CHROME.sub("", page_text).strip()
 
 
 def _excel_cell_formats(path: str) -> str:
@@ -1491,6 +1529,159 @@ def test_the_changelogs_review_process_sweep_matches_the_tree():
             "Re-derive it with the two greps recorded beside the claim, or "
             "correct the claim. Do not widen this test."
         )
+
+
+#: The CHANGELOG's statement of how far the rendered baseline moved, in the one
+#: form this test recognises — a blockquote, unwrapped to a single line first::
+#:
+#:     **13 insertions, 4 deletions** in `tests/rendered_baseline/`, measured
+#:     `63443cc`..`ff49064`, in `excel.txt`, `markdown.txt` and `word.txt`.
+#:
+#: BOTH ENDPOINTS ARE NAMED so the claim can still be re-derived years later,
+#: after the branch it was written on has been merged and moved past. The
+#: second may be ``HEAD``, which means the working tree and is what an open
+#: branch states.
+_BASELINE_DELTA_RE = re.compile(
+    r"\*\*(\d+) insertions?, (\d+) deletions?\*\* in `tests/rendered_baseline/`, "
+    r"measured `([0-9a-fA-F]{7,40})`\.\.`(HEAD|[0-9a-fA-F]{7,40})`, in (.+?)\.?$"
+)
+
+
+def _git(*args) -> str:
+    return subprocess.run(
+        ["git", *args], cwd=_repo_root(), capture_output=True, text=True,
+    ).stdout
+
+
+def _blockquotes(text: str):
+    """Yield each markdown blockquote as one unwrapped line.
+
+    The claim is written as a quote and wraps over three source lines; matching
+    it raw would make the regex a test of where the author pressed return.
+
+    Example::
+
+        list(_blockquotes("> a\n> b\n\nc"))   # -> ['a b']
+    """
+    current = []
+    for line in text.splitlines():
+        if line.startswith(">"):
+            current.append(line.lstrip(">").strip())
+        elif current:
+            yield " ".join(current)
+            current = []
+    if current:
+        yield " ".join(current)
+
+
+@_needs_source_tree
+def test_the_changelogs_rendered_baseline_delta_matches_the_tree():
+    """The baseline-movement figures must be the tree's, not a person's memory.
+
+    1.3.0 FIX-2 B3. The 1.3.0 entry claimed "seven insertions, five deletions"
+    of a tree that yields 13 and 4, under a table headed "every changed line
+    classified, zero unexplained" that listed three rows which have never
+    existed in this branch and omitted the eight that do. SIXTH stale
+    hand-typed count of the cycle, produced by the commit whose own narrative
+    is about the fifth.
+
+    A baseline delta is the one figure in a release note a reviewer uses to
+    decide whether to read the rendered diff. Being wrong about it in the safe
+    direction — claiming a smaller change than happened — is the direction that
+    stops the diff being read.
+
+    So it is derived. Every claim in the CHANGELOG names both endpoints and the
+    files it says moved; this re-runs ``git diff --numstat`` between them and
+    fails on either the counts or the set.
+    """
+    if not os.path.isdir(os.path.join(_repo_root(), ".git")):
+        pytest.skip("not a git checkout — this claim is about the repository")
+
+    text = open(os.path.join(_repo_root(), "CHANGELOG.md"), encoding="utf-8").read()
+    claims = [m.groups() for m in
+              (_BASELINE_DELTA_RE.search(q) for q in _blockquotes(text)) if m]
+    assert claims, (
+        "CHANGELOG.md no longer states a rendered-baseline delta in the form "
+        "this test recognises. If the sentence was reworded, reword the regex; "
+        "do not delete the check — this figure has been wrong once already."
+    )
+
+    for ins, dels, base, head, surfaces in claims:
+        # A SHALLOW CLONE CANNOT ANSWER THIS, and saying so is not the same as
+        # passing. `actions/checkout` defaults to fetch-depth: 1, under which
+        # the commits the claim names are simply absent and `git diff` returns
+        # nothing at all — indistinguishable, to an assertion, from a claim
+        # about a movement that never happened. CI is configured with
+        # fetch-depth: 0 for exactly this gate and
+        # test_ci_fetches_enough_history_to_answer_this_gate holds that line,
+        # so this skip is a courtesy to a contributor's `--depth 1` and can
+        # never become the way the suite goes green.
+        unreachable = [
+            sha for sha in (base, head) if sha != "HEAD"
+            and subprocess.run(["git", "cat-file", "-e", f"{sha}^{{commit}}"],
+                               cwd=_repo_root(), capture_output=True).returncode
+        ]
+        if unreachable:
+            pytest.skip(
+                f"{', '.join(unreachable)} not in this clone — a shallow "
+                "checkout cannot re-derive a diff between two commits. CI "
+                "sets fetch-depth: 0 so this gate runs there."
+            )
+
+        args = ["diff", "--numstat", base] + ([head] if head != "HEAD" else [])
+        raw = _git(*args, "--", "tests/rendered_baseline/")
+        assert raw.strip(), (
+            f"git produced no diff between {base} and {head} for "
+            "tests/rendered_baseline/ — both commits are present, so the claim "
+            "describes a movement that did not happen."
+        )
+        rows = [ln.split("\t") for ln in raw.strip().splitlines()]
+        got_ins = sum(int(r[0]) for r in rows if r[0] != "-")
+        got_dels = sum(int(r[1]) for r in rows if r[1] != "-")
+        got_files = {os.path.basename(r[2]) for r in rows}
+        named = set(re.findall(r"`([a-z]+\.txt)`", surfaces))
+
+        assert (got_ins, got_dels) == (int(ins), int(dels)), (
+            f"CHANGELOG.md says {ins} insertions and {dels} deletions in "
+            f"tests/rendered_baseline/ between {base} and {head}; the tree has "
+            f"{got_ins} and {got_dels}. Re-derive it:\n\n"
+            f"    git diff --numstat {base} {'' if head == 'HEAD' else head} "
+            "-- tests/rendered_baseline/\n\n"
+            "Do not widen this test. Five hand-typed counts in this package "
+            "have gone stale and every one was wrong in the direction that "
+            "never fails."
+        )
+        assert got_files == named, (
+            f"CHANGELOG.md says the movement between {base} and {head} is in "
+            f"{sorted(named)}; the tree moved {sorted(got_files)}. Which "
+            "surfaces moved is the claim a reviewer checks a renderer fix "
+            "against — B1 was asserted to touch the PDF only."
+        )
+
+
+def test_ci_fetches_enough_history_to_answer_this_gate():
+    """CI must clone deeply enough for the baseline-delta gate to run.
+
+    The gate above skips on a shallow clone rather than failing, because a
+    contributor running `--depth 1` should get "cannot answer", not a red that
+    says the CHANGELOG is wrong. That courtesy is also the way the gate could
+    quietly stop asking: `actions/checkout` defaults to fetch-depth: 1, so
+    deleting one line from ci.yml turns the check into a permanent skip and
+    nothing anywhere says so.
+
+    Fourteen instances of "a gate that cannot fail is also a green tick" are on
+    record in this package. This is the line that keeps this one honest.
+    """
+    path = os.path.join(_repo_root(), ".github", "workflows", "ci.yml")
+    if not os.path.exists(path):
+        pytest.skip("no .github/workflows/ci.yml — not a checkout of the repo")
+    text = open(path, encoding="utf-8").read()
+    assert "fetch-depth: 0" in text, (
+        "ci.yml's checkout no longer requests full history, so "
+        "test_the_changelogs_rendered_baseline_delta_matches_the_tree skips in "
+        "CI on every run and the CHANGELOG's baseline figures go back to being "
+        "unchecked prose. Restore `fetch-depth: 0` on the test job's checkout."
+    )
 
 
 # ---------------------------------------------------------------------------

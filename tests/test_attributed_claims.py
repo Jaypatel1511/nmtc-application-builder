@@ -190,10 +190,64 @@ def _load_allowlist() -> dict:
     return entries
 
 
+# ---------------------------------------------------------------------------
+# N6. A CLAUSE THAT IS A PIECE OF AN ALREADY-RULED CLAUSE IS RULED.
+#
+#     Added in 1.3.0 FIX-2 B1. Fixing the PDF's key/value tables so their cells
+#     WRAP splits sentences across visual lines, and this gate's unit is a
+#     line. Six clauses appeared that way, every one of them a contiguous piece
+#     of a clause the corpus already carries whole — four of allowlisted
+#     entries, two of N1-disclaimed ones, and the two disclaimed ones are the
+#     sharper case:
+#
+#         "$0.83 (market assumption, not a CDFI Fund parameter)"
+#
+#     is exempt because "not a cdfi fund parameter" is in _DISCLAIMERS. Wrapped
+#     after "Fund", the disclaimer is on the next line and N1 misses a
+#     disclosure that is fully present in the document. Ruling the fragment as
+#     an unattributed claim would penalise the sentence for being long enough
+#     to wrap.
+#
+#     THE PARENT MUST BE IN THIS SAME CORPUS AND MUST ITSELF BE RULED OR
+#     EXEMPT. A fragment of nothing is still reported; see
+#     test_the_wrap_narrowing_cannot_absorb_a_new_claim. The gate prints the
+#     absorbed count so it cannot grow unnoticed.
+# ---------------------------------------------------------------------------
+
+#: See tests/test_invariant_output.MIN_FRAGMENT_CHARS — same reasoning, and the
+#: clause corpus is finer-grained than the line corpus, so the floor matters
+#: more here.
+MIN_FRAGMENT_CHARS = 20
+
+
+def wrapped_fragments(clauses, ruled) -> dict:
+    """Return ``{clause: parent}`` for each clause that is a piece of a ruled one.
+
+    Example::
+
+        wrapped_fragments({"not a cdfi fund"}, {"not a cdfi fund parameter)"})
+    """
+    absorbed = {}
+    for clause in clauses:
+        if len(clause) < MIN_FRAGMENT_CHARS:
+            continue
+        for parent in ruled:
+            if len(parent) > len(clause) and clause in parent:
+                absorbed[clause] = parent
+                break
+    return absorbed
+
+
 @pytest.fixture(scope="module")
 def attributed_clauses(tmp_path_factory) -> dict:
-    """{normalised clause: (example line, triggers)} across all scenarios/formats."""
+    """{normalised clause: (example line, triggers)} across all scenarios/formats.
+
+    Clauses that N6 absorbs — pieces of a clause the same corpus carries whole
+    and already ruled or exempt — are removed here rather than in the gate, so
+    the dead-entry check sees the same set the gate does.
+    """
     found = {}
+    exempted = set()
     scanned = 0
     for sid, (cde, pipeline, requested) in SCENARIOS.items():
         out = tmp_path_factory.mktemp(f"attr{sid}")
@@ -219,8 +273,17 @@ def attributed_clauses(tmp_path_factory) -> dict:
                     if not hits:
                         continue
                     if _exempt(cl, low):
+                        exempted.add(_normalise(clause))
                         continue
                     found.setdefault(_normalise(clause), (line, sorted(set(hits))))
+    # N6: a piece of a clause this corpus carries whole, and rules or exempts
+    # there, is the same clause seen through a line break.
+    ruled = set(_load_allowlist()) | exempted
+    absorbed = wrapped_fragments(set(found) - ruled, ruled)
+    print(f"  N6 absorbed {len(absorbed)} wrapped fragment(s) of "
+          f"{len(set(absorbed.values()))} ruled or exempt clause(s)")
+    for clause in absorbed:
+        found.pop(clause, None)
     assert scanned > 200, (
         f"only {scanned} prose lines scanned across {len(SCENARIOS)} scenarios "
         "x 4 formats — extraction is broken, and this gate would pass vacuously"
@@ -295,3 +358,25 @@ def test_allowlist_has_no_dead_entries(attributed_clauses):
         "them so the list stays a description of the shipped output:\n"
         + "\n".join(f"  {d}" for d in dead)
     )
+
+
+def test_the_wrap_narrowing_cannot_absorb_a_new_claim():
+    """N6 must swallow wraps and nothing else.
+
+    Same three cases as the invariance gate's, against the real allowlist: a
+    genuine fragment is absorbed, an invented attribution is not, and a
+    fragment below the length floor is not.
+    """
+    ruled = set(_load_allowlist())
+    parent = max(ruled, key=len)
+
+    genuine = parent[: len(parent) - 10]
+    assert wrapped_fragments({genuine}, ruled) == {genuine: parent}
+
+    invented = "the cdfi fund ranks this cde in the top decile of applicants"
+    assert wrapped_fragments({invented}, ruled) == {}, (
+        "N6 absorbed a clause that is not a fragment of any ruled clause — it "
+        "would then hide an uncited attribution, which is this gate's subject"
+    )
+
+    assert wrapped_fragments({parent[:MIN_FRAGMENT_CHARS - 1]}, ruled) == {}

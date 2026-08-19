@@ -134,6 +134,19 @@ CHAR_WIDTH_FACTOR = 0.5
 #: A gate's first false positive is the moment it starts being ignored.
 MIN_ROW_HEIGHT = 16.0
 
+#: What Excel draws a row at when nobody sets a height: ``defaultRowHeight``,
+#: which openpyxl writes as 15.0 for a new sheet. It is calibrated to display
+#: exactly ONE line of the default font, which is why a one-line merged cell at
+#: an unset height is not clipped even though LINE_HEIGHT_BY_FONT_SIZE[11] is
+#: 16.0 — the 16.0 is the measured line BOX, the 15.0 is the row Excel draws it
+#: in, and Excel's own default sheet is not a clipped sheet.
+DEFAULT_ROW_HEIGHT = 15.0
+
+#: The default font size that height is calibrated for. A merged cell at a
+#: LARGER font, or one needing more than one line, gets no such exemption:
+#: merged ranges never autofit, so lines 2..n are simply not displayed.
+DEFAULT_FONT_SIZE = 11
+
 #: Excel's own hard ceiling on a row height.
 MAX_ROW_HEIGHT = 409.0
 

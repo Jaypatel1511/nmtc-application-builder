@@ -60,7 +60,8 @@ import openpyxl
 from openpyxl.utils import get_column_letter
 
 from nmtcapp.renderers._sheet_geometry import (
-    MAX_ROW_HEIGHT, MIN_ROW_HEIGHT, required_row_height, span_points,
+    DEFAULT_FONT_SIZE, DEFAULT_ROW_HEIGHT, MAX_ROW_HEIGHT, MIN_ROW_HEIGHT,
+    chars_per_line, required_row_height, span_points, wrapped_line_count,
 )
 from nmtcapp.renderers.excel_builder import ExcelApplicationBuilder
 
@@ -100,14 +101,29 @@ def _merged_span_points(ws, cell) -> float:
     return span_points(dim.width if dim.width else 8.43)
 
 
-def check_sheet_geometry(ws) -> list:
-    """Return one finding per label that cannot display in its own row.
+def _is_merged(ws, cell) -> bool:
+    """Whether ``cell`` anchors a merged range on this sheet."""
+    return any(rng.min_row == cell.row and rng.min_col == cell.column
+               for rng in ws.merged_cells.ranges)
+
+
+def check_sheet_geometry(ws) -> tuple:
+    """Return ``(findings, checked, skipped)`` for one worksheet.
+
+    ``checked`` and ``skipped`` are returned, not discarded, because
+    ``assert not findings`` is true of a sheet this function looked at and
+    found nothing wrong AND of a sheet it never looked at. Those are different
+    facts and the gate has to be able to tell them apart — see
+    ``test_the_gate_measures_every_text_cell_in_the_workbook``.
 
     Example::
 
-        assert check_sheet_geometry(wb["Summary Dashboard"]) == []
+        findings, checked, skipped = check_sheet_geometry(wb["Summary Dashboard"])
+        assert not findings and checked and not skipped
     """
     findings = []
+    checked = 0
+    skipped = []
     for row in ws.iter_rows():
         for cell in row:
             if not isinstance(cell.value, str) or not cell.value.strip():
@@ -115,14 +131,43 @@ def check_sheet_geometry(ws) -> list:
             font_size = float(cell.font.size or 11)
             span = _merged_span_points(ws, cell)
             needed = required_row_height(cell.value, span, font_size)
-            # An UNSET height is not a height of 16 — it is the absence of a
-            # customHeight flag, which is Excel's instruction to autofit the
-            # row on render. Those rows cannot clip and are not this gate's
-            # business; only a height somebody chose can be too small.
             shipped = ws.row_dimensions[cell.row].height
+            merged = _is_merged(ws, cell)
             if not shipped:
-                continue
+                # An unset height on an UNMERGED row is Excel's instruction to
+                # autofit on render; such a row cannot clip and is not this
+                # gate's business.
+                #
+                # ON A MERGED RANGE IT IS NOT. This module's own docstring says
+                # so in capitals — "MERGED CELLS DO NOT AUTOFIT ... Excel's
+                # AutoFit is a no-op on a merged range" — and the skip was
+                # written on the opposite premise, so every merged label with
+                # no explicit height was waved through by a rule the module
+                # contradicts. Such a row is drawn at the sheet's DEFAULT
+                # height, so that is what it is measured against.
+                if not merged:
+                    skipped.append(f"{ws.title}!{cell.coordinate}")
+                    continue
+                shipped = float(
+                    ws.sheet_format.defaultRowHeight or DEFAULT_ROW_HEIGHT
+                )
+                # ...with one exemption, and only one: the default row height
+                # is what Excel calibrates to ONE line of the DEFAULT font.
+                # required_row_height returns the measured line BOX (16.0 pt at
+                # font 11) which is a point over the 15.0 pt default row, and
+                # reporting the dashboard's own one-line section headings as
+                # clipped would be this gate's first false positive. A
+                # multi-line merged cell, or one at a larger font, gets no such
+                # pass — that is the case where lines 2..n genuinely never
+                # display.
+                lines = wrapped_line_count(
+                    cell.value, chars_per_line(span, font_size)
+                )
+                if lines == 1 and font_size <= DEFAULT_FONT_SIZE:
+                    checked += 1
+                    continue
             shipped = float(shipped)
+            checked += 1
             if needed > MAX_ROW_HEIGHT:
                 findings.append(
                     f"{ws.title}!{cell.coordinate} needs {needed:.1f} pt, which "
@@ -139,26 +184,122 @@ def check_sheet_geometry(ws) -> list:
                     f"({len(cell.value)} chars at {span:.0f} pt wide, "
                     f"font {font_size:g}) {cell.value[:70]!r}"
                 )
-    return findings
+    return findings, checked, skipped
 
 
-@pytest.fixture
-def workbook(sample_application, application_analysis):
-    return ExcelApplicationBuilder(sample_application, application_analysis).build()
+# ---------------------------------------------------------------------------
+# THE THREE ANALYZER STATES, ALL BUILT.
+#
+# 1.3.0's fix set A12's height from the text and left the two BANNER rows at a
+# hardcoded ``height = 28`` — in the same function, two rows above the cell it
+# fixed. Nothing in the suite had ever built the workbook with a banner, so
+# both were invisible. Measured on the shipped builder:
+#
+#     partial-unverified   A4 ships 28.0 pt, needs 75.0 pt (519 chars, font 10)
+#     degraded             A4 ships 28.0 pt, needs 30.0 pt (168 chars, font 10)
+#
+# What the partial banner never displayed, past its first two lines:
+#
+#     "... so each is a LOWER BOUND ... Do not submit until all project
+#      locations are verified."
+#
+# A gate that only ever sees the nominal fixture is a gate with one eye shut,
+# so every geometry check below runs against all three states.
+# ---------------------------------------------------------------------------
+
+STATES = ("nominal", "partial_unverified", "degraded")
+
+
+def _analysis_in_state(application_analysis, state: str):
+    """Return the analysis re-stated in one of the three renderable states."""
+    import copy
+    analysis = copy.deepcopy(application_analysis)
+    pr = analysis.pipeline_result
+    if state == "partial_unverified":
+        pr.eligibility_data_status = "ok"
+        pr.unverified_project_ids = [p.project_id for p in list(pr.__dict__.get(
+            "_projects", []))] or ["PIPE-0018", "PIPE-0019"]
+    elif state == "degraded":
+        pr.eligibility_data_status = "error"
+        pr.eligibility_data_error = (
+            "CDFI Fund eligibility table download failed: connection reset"
+        )
+    return analysis
+
+
+@pytest.fixture(params=STATES)
+def workbook(request, sample_application, application_analysis):
+    """The workbook in each analyzer state — nominal, partial, degraded."""
+    analysis = _analysis_in_state(application_analysis, request.param)
+    wb = ExcelApplicationBuilder(sample_application, analysis).build()
+    wb._nmtc_state = request.param
+    return wb
 
 
 def test_every_label_fits_its_row(workbook):
     """No label anywhere in the workbook may be taller than its own row."""
     findings = []
+    checked = 0
+    skipped = []
     for ws in workbook.worksheets:
-        findings.extend(check_sheet_geometry(ws))
-    assert not findings, (
-        f"{len(findings)} label(s) do not fit their rows. This is 1.3.0 B1's "
-        "class: a string that is correct in the source and clipped on the "
-        "page. tests/rendered_baseline/excel.txt cannot see it — it records "
-        "cell values, not geometry — so this gate is the only thing that "
-        "can.\n\n" + "\n\n".join(findings)
+        f, c, sk = check_sheet_geometry(ws)
+        findings.extend(f)
+        checked += c
+        skipped.extend(sk)
+    # VACUITY, HOLE 1: with no sheets, or no text cells, `findings` is empty
+    # and the gate reports success on a workbook it never opened.
+    assert workbook.worksheets, "the workbook has no sheets at all"
+    assert checked > 0, (
+        f"{workbook._nmtc_state}: not one text cell was measured. The gate "
+        "just passed on a workbook it did not read, which is the vacuity it "
+        "exists to refuse."
     )
+    # VACUITY, HOLE 2: every height unset means every cell skipped, and the
+    # gate passes silently. The builder sets an explicit height on every row it
+    # writes — measured, zero skips — so a skip means that stopped being true
+    # and the gate has quietly stopped covering those rows.
+    assert not skipped, (
+        f"{workbook._nmtc_state}: {len(skipped)} text cell(s) sit in unmerged "
+        "rows with no explicit height, so this gate did not measure them. The "
+        "builder sets a height on every row it writes; if that changed on "
+        "purpose, re-derive this assertion rather than deleting it.\n  "
+        + "\n  ".join(skipped[:20])
+    )
+    assert not findings, (
+        f"{workbook._nmtc_state}: {len(findings)} label(s) do not fit their "
+        f"rows, out of {checked} measured. This is 1.3.0 B1's class: a string "
+        "that is correct in the source and clipped on the page. "
+        "tests/rendered_baseline/excel.txt cannot see it — it records cell "
+        "values, not geometry — so this gate is the only thing that can.\n\n"
+        + "\n\n".join(findings)
+    )
+
+
+def test_the_banner_displays_its_whole_instruction(workbook):
+    """B2's own cells, named, in the two states that render them.
+
+    The partial banner ends "Do not submit until all project locations are
+    verified." A CDE who never sees that sentence files anyway.
+    """
+    ws = workbook["Summary Dashboard"]
+    banner = ws["A4"]
+    if workbook._nmtc_state == "nominal":
+        # ASSERTED, NOT SKIPPED. A skip here would be a third of this test
+        # reporting success while checking nothing, in the file whose subject
+        # is checks that cannot fail — and the negative is worth holding: a
+        # banner rendered in the nominal state would be a false warning on
+        # every clean run.
+        assert banner.value is None, (
+            "a banner rendered at A4 with nothing wrong: eligibility data "
+            f"loaded and no project unverified, yet A4 reads {banner.value!r}"
+        )
+        return
+    assert isinstance(banner.value, str) and banner.value.strip(), (
+        f"{workbook._nmtc_state}: no banner rendered at A4 — the state that "
+        "most needs a warning is the state with none"
+    )
+    findings, _, _ = check_sheet_geometry(ws)
+    assert not findings, "\n".join(findings)
 
 
 def test_the_distress_label_carries_its_whole_disclosure(workbook):
@@ -175,7 +316,7 @@ def test_the_distress_label_carries_its_whole_disclosure(workbook):
         "the distress label no longer states its own denominator. That "
         "disclosure is the reason the row exists in this gate."
     )
-    assert not check_sheet_geometry(ws), (
+    assert not check_sheet_geometry(ws)[0], (
         "the dashboard's distress label does not fit its row — see "
         "test_every_label_fits_its_row"
     )
@@ -194,12 +335,12 @@ def test_checker_catches_the_1_3_0_defect(workbook):
         if isinstance(c.value, str)
         and c.value.startswith("Deep/Severe Distress Concentration")
     )
-    assert not check_sheet_geometry(ws), "sheet must be clean before the defect"
+    assert not check_sheet_geometry(ws)[0], "sheet must be clean before the defect"
 
     original = ws.row_dimensions[target.row].height
     try:
         ws.row_dimensions[target.row].height = 18  # the shipped 1.3.0 value
-        findings = check_sheet_geometry(ws)
+        findings = check_sheet_geometry(ws)[0]
         assert findings, (
             "the checker did not flag a two-line label at a one-line height — "
             "it cannot catch the defect it exists for"
@@ -209,7 +350,7 @@ def test_checker_catches_the_1_3_0_defect(workbook):
     finally:
         ws.row_dimensions[target.row].height = original
 
-    assert not check_sheet_geometry(ws), "the defect must not outlive this test"
+    assert not check_sheet_geometry(ws)[0], "the defect must not outlive this test"
 
 
 def test_the_basis_note_is_reachable_by_name(workbook):
@@ -239,3 +380,68 @@ def test_the_basis_note_is_reachable_by_name(workbook):
         "the basis note sheet must sit immediately after the Summary "
         "Dashboard — a pointer is only as good as how far the reader looks"
     )
+
+
+# ---------------------------------------------------------------------------
+# THE THREE VACUITY HOLES, EACH CLOSED AND EACH PROVEN TO BE CLOSED
+#
+# Found by the confirmation pass on the 1.3.0 gate: it could report success on
+# a workbook with no sheets, on a workbook where every height had been unset,
+# and on a merged cell with no height — the last on a premise
+# renderers/_sheet_geometry's own docstring contradicts in capitals. All three
+# are the same shape as the defect the gate was built for: a check that cannot
+# fail reads exactly like a check that passed.
+# ---------------------------------------------------------------------------
+
+def test_the_gate_refuses_a_workbook_with_no_sheets():
+    """HOLE 1. Zero sheets means zero findings means, before this, a pass."""
+    import openpyxl
+
+    empty = openpyxl.Workbook()
+    empty.remove(empty.active)
+    empty._nmtc_state = "synthetic-empty"
+    assert not empty.worksheets
+    with pytest.raises(AssertionError, match="no sheets at all"):
+        test_every_label_fits_its_row(empty)
+
+
+def test_the_gate_refuses_a_workbook_whose_heights_were_all_unset(workbook):
+    """HOLE 2. Unset every height and the old checker measured nothing at all.
+
+    ``if not shipped: continue`` skipped the cell silently, so a builder that
+    stopped setting heights would have turned the gate off rather than turned
+    it red. The skip is now reported and asserted against.
+    """
+    for ws in workbook.worksheets:
+        for row_dim in list(ws.row_dimensions.values()):
+            row_dim.height = None
+
+    with pytest.raises(AssertionError, match="no explicit height"):
+        test_every_label_fits_its_row(workbook)
+
+
+def test_the_gate_measures_a_merged_cell_that_was_never_given_a_height(workbook):
+    """HOLE 3. Merged ranges do not autofit — the skip's premise was false.
+
+    ``_sheet_geometry``'s docstring: "MERGED CELLS DO NOT AUTOFIT ... Excel's
+    AutoFit is a no-op on a merged range, and every label on the dashboard is
+    merged". The gate skipped exactly those cells on the opposite premise. This
+    puts a multi-line label into a merged range with no height — the case where
+    lines 2..n are simply never displayed — and asserts it is caught.
+    """
+    ws = workbook["Summary Dashboard"]
+    row = ws.max_row + 2
+    ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
+    from openpyxl.styles import Font
+    cell = ws.cell(row=row, column=1, value="Merged and never autofitted. " * 12)
+    cell.font = Font(size=10)
+    assert ws.row_dimensions[row].height is None
+
+    findings, checked, skipped = check_sheet_geometry(ws)
+    assert not skipped, "a merged cell must never be skipped"
+    assert any(f"A{row}" in f for f in findings), (
+        "a 12-line label in a merged range at Excel's default row height was "
+        "not reported. Every dashboard label is merged, so a gate that waves "
+        "them through is a gate that covers none of them.\n" + "\n".join(findings)
+    )
+    assert checked > 0

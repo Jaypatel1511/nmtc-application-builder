@@ -11,6 +11,7 @@ from nmtcapp.renderers._disclosure import (
     unverified_banner, unverified_ids, unverified_qualifier,
 )
 from nmtcapp.renderers._cell_format import format_cell, supplied_total
+from nmtcapp.renderers._frame_geometry import usable_width
 from nmtcapp.renderers._methodology import (
     ACS_VINTAGE, deal_economics_note, distress_definitions, impact_bands_note,
     noaa_note, readiness_weights_note,
@@ -381,6 +382,23 @@ class PDFApplicationBuilder:
                          pagesize=rl_landscape(LETTER)),
         ])
 
+        doc.build(self._build_story(styles))
+        size_kb = os.path.getsize(path) // 1024
+        logger.info("PDF saved: %s (%d KB)", path, size_kb)
+
+    def _build_story(self, styles) -> list:
+        """Return the flowable story ``save`` builds the document from.
+
+        Split out of ``save`` so a gate can measure the story without writing
+        a file: ``tests/test_render_frame_geometry`` walks it and asks every
+        ``Table`` for the width it will draw at, which names the offending
+        flowable instead of the coordinates of its debris. Nothing about the
+        document changed when this moved — the rendered baseline is the proof.
+
+        Example::
+
+            story = builder._build_story(_build_styles())
+        """
         story = []
         story += self._cover_page(styles)
         story.append(PageBreak())
@@ -419,10 +437,7 @@ class PDFApplicationBuilder:
                                 build_track_record_table(self.application.cde), styles)
         story.append(PageBreak())
         story += self._methodology(styles)
-
-        doc.build(story)
-        size_kb = os.path.getsize(path) // 1024
-        logger.info("PDF saved: %s (%d KB)", path, size_kb)
+        return story
 
     # ------------------------------------------------------------------
     # Section builders
@@ -431,9 +446,7 @@ class PDFApplicationBuilder:
     def _cover_page(self, styles) -> list:
         app = self.application
         score = self.analysis.readiness_score
-        page_w, _ = LETTER
-        margin = inch * PAGE_LAYOUT["margin_left"]
-        usable_w = page_w - 2 * margin
+        usable_w = usable_width()
 
         # Banner table
         banner_data = [
@@ -591,9 +604,7 @@ class PDFApplicationBuilder:
              supplied_total(impact.get("total_units_built"))],
             ["Jobs per $1MM QEI", f"{impact.get('jobs_per_million_qei', 0):.1f}"],
         ]
-        page_w, _ = LETTER
-        margin = inch * PAGE_LAYOUT["margin_left"]
-        usable_w = page_w - 2 * margin
+        usable_w = usable_width()
         tbl = Table(metrics, colWidths=[usable_w * 0.65, usable_w * 0.35])
         tbl.setStyle(_rl_table_style(len(metrics) - 1))
         flowables += [tbl, Spacer(1, 12)]
@@ -668,9 +679,7 @@ class PDFApplicationBuilder:
 
     def _appendix_distress(self, styles) -> list:
         """Appendix B: distress table in landscape orientation."""
-        ls_w, ls_h = rl_landscape(LETTER)
-        ls_margin = 0.75 * inch
-        usable_w = ls_w - 2 * ls_margin
+        usable_w = usable_width(landscape=True)
 
         flowables = [
             NextPageTemplate("Landscape"),
@@ -738,6 +747,96 @@ class PDFApplicationBuilder:
 # Helper: content dict → ReportLab flowables
 # ---------------------------------------------------------------------------
 
+
+def _kv_table(body: dict, styles) -> "Table":
+    """Build a section's key/value table so that it fits the page (FIX-2 B1).
+
+    THIS CALL SITE USED TO BE ``Table(data)`` with bare ``str`` cells and no
+    ``colWidths``. ReportLab cannot wrap a string cell, so it sized each column
+    to the longest single line: Section D drew 691 pt into a 432 pt frame and
+    cut the caveat on "QEI Less CDE Fees — $121,582,500" mid-word, and
+    Section B drew 17,207 pt — the Q25 basis note as one unwrappable column —
+    and rendered as a header bar over four empty striped rows. The words were
+    right in the source and absent from the page.
+
+    Three things make it fit, and all three are needed:
+
+    ``colWidths``   45/55 off :func:`usable_width`, the same split the cover
+                    page's details table uses. Without it ReportLab measures
+                    the content instead of the frame.
+    ``Paragraph``   a string cell is one line however wide it is. Only a
+                    Paragraph wraps. Cells are XML-escaped on the way in
+                    because a Paragraph parses its source as mini-HTML and the
+                    section text is plain prose that may contain ``&`` or
+                    ``<``; a string cell never parsed anything.
+    ``splitInRow``  a ~4,000-character value wraps to roughly 1,000 pt, and no
+                    portrait frame is 1,000 pt tall. ReportLab splits BETWEEN
+                    rows by default and raises ``LayoutError`` on a single row
+                    taller than the page, so ``colWidths`` alone converts a
+                    silent overflow into a hard build failure. This lets the
+                    row break across pages.
+
+    AND NO ``repeatRows``, which ``_df_to_rl_table`` does set. A repeated
+    "Item | Value" header above the continuation of a single wrapped cell
+    announces a new row where there is none — the reader turns the page and is
+    told the next sentence is a fresh item. It also interleaves those two words
+    into the middle of any quoted list that spans the break, which is how
+    ``tests/test_pinned_constants`` first saw this. Word's key/value tables do
+    not repeat their header either (``_word_helpers.add_styled_table`` sets no
+    ``tblHeader``), so this is the same decision on both paginated surfaces.
+
+    WHY A TABLE AT ALL, given the note is 4,000 characters. Markdown renders
+    the same dict as a ``**key:** value`` definition list and Word renders it
+    as an autofit table whose rows break across pages (``_word_helpers.
+    write_section_to_doc``). Both carry the note correctly today. Word is the
+    surface to match: it and the PDF are the two PAGINATED renderings of this
+    dict, they are the two a CDE prints, and a reader comparing the .docx and
+    the .pdf of the same filing should not find one with a table and one with
+    a run of prose. Markdown's divergence is not a third option to copy — it
+    is what a format with no page does. So: same structure as Word, and
+    ``splitInRow`` is what gives a ReportLab row the page-breaking behaviour a
+    Word row already has.
+
+    Example::
+
+        flowables.append(_kv_table({"Item": "Value"}, _build_styles()))
+    """
+    body_pt = TYPOGRAPHY["size_table_body"]
+    cell_style = ParagraphStyle(
+        "kv_cell", parent=styles["body"],
+        fontSize=body_pt, leading=body_pt + 2,
+        spaceAfter=0, spaceBefore=0,
+        textColor=rl_hex("text_body"),
+    )
+    header_style = ParagraphStyle(
+        "kv_hdr", parent=styles["body"],
+        fontSize=TYPOGRAPHY["size_table_header"],
+        leading=TYPOGRAPHY["size_table_header"] + 2,
+        spaceAfter=0, spaceBefore=0,
+        textColor=rl_colors.white, fontName="Helvetica-Bold",
+        alignment=TA_CENTER,
+    )
+
+    data = [[Paragraph("Item", header_style), Paragraph("Value", header_style)]]
+    for key, value in body.items():
+        data.append([
+            Paragraph(_rl_escape(str(key)), cell_style),
+            Paragraph(_rl_escape(str(value)), cell_style),
+        ])
+
+    usable_w = usable_width()
+    tbl = Table(
+        data,
+        colWidths=[usable_w * 0.45, usable_w * 0.55],
+        splitInRow=1,
+    )
+    style = _rl_table_style(len(data) - 1)
+    style.add("WORDWRAP", (0, 0), (-1, -1), "LTR")
+    style.add("VALIGN", (0, 0), (-1, -1), "TOP")
+    tbl.setStyle(style)
+    return tbl
+
+
 def _content_to_flowables(content: dict, styles) -> list:
     """Convert a section content dict (from SectionGenerator) to ReportLab flowables."""
     flowables = []
@@ -757,10 +856,7 @@ def _content_to_flowables(content: dict, styles) -> list:
             for item in body:
                 flowables.append(Paragraph(f"• {item}", styles["bullet"]))
         elif sub_type == "table_ref" and isinstance(body, dict):
-            data = [["Item", "Value"]] + [[k, str(v)] for k, v in body.items()]
-            tbl = Table(data)
-            tbl.setStyle(_rl_table_style(len(data) - 1))
-            flowables.append(tbl)
+            flowables.append(_kv_table(body, styles))
         elif sub_type == "table_ref" and isinstance(body, str):
             flowables.append(Paragraph(f"<i>{body}</i>", styles["caption"]))
         else:

@@ -215,25 +215,49 @@ class ExcelApplicationBuilder:
         ws["A3"].alignment = _center()
         ws.row_dimensions[3].height = 16
 
+        # THE BANNER ROW READS ITS OWN TEXT (1.3.0 FIX-2 B2). Both arms below
+        # hardcoded ``height = 28`` — in this function, two rows above the cell
+        # 1.3.0 B1 fixed by deriving its height, and left behind by that fix.
+        # Measured on the shipped builder at the shipped geometry:
+        #
+        #     partial-unverified   ships 28.0 pt, needs 75.0 pt (519 chars)
+        #     degraded             ships 28.0 pt, needs 30.0 pt (168 chars)
+        #
+        # The degraded arm clips at its SHORTEST possible message, so no
+        # wording makes 28 correct. What the partial banner never displayed:
+        # "... so each is a LOWER BOUND ... Do not submit until all project
+        # locations are verified." The row that exists to stop a CDE filing was
+        # the row that could not finish its own sentence.
+        #
+        # A banner is the one row a reader must not have to widen a column to
+        # read, and it is the row whose length is least predictable — it names
+        # every unverified project, so it grows with the pipeline. Nothing here
+        # may be a literal again.
+        banner_text = None
         if degraded:
-            ws.merge_cells("A4:F4")
-            ws["A4"] = (
+            banner_text = (
                 "ELIGIBILITY DATA UNAVAILABLE — "
                 f"{getattr(pr, 'eligibility_data_error', None) or 'reason unknown'}. "
                 "Eligibility/distress figures are unverified; readiness score is "
                 "partial (computed without eligibility verification)."
             )
-            ws["A4"].font = _font(bold=True, color="FFFFFF", size=10)
-            ws["A4"].fill = _fill("B00000")
-            ws["A4"].alignment = _center()
-            ws.row_dimensions[4].height = 28
         elif partial_unverified:
+            banner_text = "UNVERIFIED PROJECT LOCATIONS — " + unverified_banner(pr)
+        if banner_text is not None:
             ws.merge_cells("A4:F4")
-            ws["A4"] = "UNVERIFIED PROJECT LOCATIONS — " + unverified_banner(pr)
+            ws["A4"] = banner_text
             ws["A4"].font = _font(bold=True, color="FFFFFF", size=10)
             ws["A4"].fill = _fill("B00000")
             ws["A4"].alignment = _center()
-            ws.row_dimensions[4].height = 28
+            # Clamped, like the Q25 note block below: required_row_height does
+            # not clamp on purpose, and a banner past Excel's 409 pt ceiling
+            # would need splitting across rows by a person. The gate asserts
+            # against the UNCLAMPED value, so it fails loudly if that ever
+            # happens rather than shipping a silently truncated warning.
+            ws.row_dimensions[4].height = min(
+                MAX_ROW_HEIGHT,
+                required_row_height(banner_text, DASHBOARD_FULL_SPAN_PTS, 10),
+            )
 
         # --- Key Metrics block (rows 5–14) ---
         ws["A5"] = "KEY APPLICATION METRICS"
