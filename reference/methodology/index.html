@@ -2026,12 +2026,12 @@
 <tr>
 <td>Higher Distress Targeting</td>
 <td>15</td>
-<td>85%+ of <strong>QEI</strong> in severely distressed areas — a proxy, see the basis note below</td>
+<td>85%+ of <strong>QEI</strong> in severely distressed areas — a proxy for a Question 25(a) commitment measured on QLICI dollars, see the basis note below</td>
 </tr>
 <tr>
 <td>Deep Distress Commitment</td>
 <td>10</td>
-<td>20%+ of <strong>QEI</strong> in CDFI Fund-designated Deep Distress areas — a proxy, see the basis note below</td>
+<td>20%+ of <strong>QEI</strong> in CDFI Fund-designated Deep Distress areas — a proxy for the <strong>top rung</strong> of Question 25(b)(i)'s ladder, see the basis note below</td>
 </tr>
 <tr>
 <td>Special Targeting</td>
@@ -2056,21 +2056,57 @@
 </tbody>
 </table>
 <p><strong>BASIS NOTE — the Fund's two distress commitments are measured on QLICIs, this
-tool's sub-scores are measured on QEI.</strong> The CY 2024-2025 NMTC Program Review
-Process (Targeting Areas of Higher Distress, Question 25) states that the
-Applicant commits to providing <em>"at least 85% of its QLICIs in specified areas
-of severe distress and/or areas characterized by multiple indicia of distress"</em>
-and <em>"at least 20% of its QLICIs to 'Deep Distress' areas"</em>. Both are shares of
-<strong>QLICIs</strong>. Every distress share this package computes is a share of <strong>QEI</strong>
+tool's sub-scores are measured on QEI.</strong> Question 25 of the <em>CY 2024-2025 NMTC
+Allocation Application</em> (printed pp. 38-41) sets both, and both are denominated
+in QLICIs <em>"in terms of aggregate dollar amounts"</em>, tested <strong>for each QLICI</strong>.</p>
+<p><strong>Question 25(a)</strong> asks for at least 85% of QLICIs in areas characterized by at
+least <strong>one</strong> of items 1-5 — Severe Distress; NMTC Native Areas; U.S. Island
+Areas; Non-Metropolitan Counties; Targeted Populations — <strong>or</strong> by at least
+<strong>two</strong> of items 6-12: 25% poverty / 70% median family income / 1.25×
+unemployment; Brownfield Sites; ARC and/or DRA Areas; Colonias Areas; Federal
+Medically Underserved Areas; FEMA Disaster Areas; Low-Income and Low-Access to
+Supermarkets. <em>"Multiple indicia of distress"</em> — the phrase the Review Process
+summarises items 6-12 with — is that <strong>two-of-seven</strong> test, per QLICI.</p>
+<p><strong>Question 25(b)(i) is not a 20% bar.</strong> It is a selectable commitment level —
+<strong>0 / 5 / 10 / 15 / 20</strong> — and selecting 20 opens a field for any figure from
+20% to 100%. It covers <strong>four</strong> area types: Deep Distress, NMTC Native Areas,
+High Migration Rural Counties, U.S. Island Areas. A CDE that can honestly commit
+10% selects 10 and has failed nothing. The Application adds that <em>"A QLICI that
+meets this commitment will also automatically meet the commitment made in
+Question 25(a)."</em></p>
+<p>Every distress share this package computes is a share of <strong>QEI</strong>
 (<code>intelligence/distress_analysis.py</code>); <code>qlici_amount</code> is read only to print it
 in Appendix A and to check that it does not exceed its project's QEI, and feeds
 no percentage, no score and no bar. The two sub-scores above are therefore
-QEI-based <em>proxies</em> for the Fund's QLICI-denominated commitments, not
-computations of them, and no figure this tool renders answers either
-commitment. The 85% commitment carries a second mismatch: it covers severe
-distress <strong>or multiple indicia</strong> of distress, and this package computes no
-multi-indicia measure at all. Computing the QLICI-denominated shares is 1.2.2
-work, behind a written methodology — see CHANGELOG.md.</p>
+QEI-based <em>proxies</em>, not computations of the Fund's commitments, and no figure
+this tool renders answers either one. This package carries a per-project field
+for <strong>five of the fourteen</strong> distinct area types Question 25 lists — a
+tool-verified distress level covering Severe and Deep Distress, and
+CDE-declared, tool-unverified flags for NMTC Native Areas, High Migration Rural
+Counties and U.S. territory. It carries nothing for Non-Metropolitan Counties,
+nothing for Targeted Populations, and nothing for any of items 6-12; it computes
+no multi-indicia measure at all. <strong>Holding those fields is not a partial answer
+to Question 25</strong>: the commitment is a share of QLICI <em>dollars</em>, this package
+weights nothing by QLICI dollars, and a flag that enters no denominator
+contributes nothing to a share.</p>
+<blockquote>
+<p><strong>Corrected in 1.3.0 (S1).</strong> Through 1.2.2 this note was written against the
+<em>CY 2024-2025 NMTC Program Review Process</em> — a seven-page <strong>summary</strong> of how
+the Fund scores an application. Both sentences it quoted are real and both
+were quoted correctly, and the summary still omitted the ladder and three of
+Question 25(b)'s four area types. The rendered document therefore told a CDE
+to compute one Deep Distress share and compare it to 20%, which is a
+pass/fail threshold that does not exist, and to leave Native Area, High
+Migration Rural and Island Area QLICIs out of a numerator they belong in.
+Both errors push the CDE to <strong>understate</strong> itself to a federal agency. The
+rule this leaves behind: <em>a summary document is a safe source for how the
+Fund scores and an unsafe source for what the Applicant is asked to commit
+to, because the thing the Applicant fills in is the Application.</em></p>
+</blockquote>
+<p>Computing the QLICI-denominated shares — swapping the denominator from
+<code>qei_request</code> to <code>qlici_amount</code> on any scored share — remains deferred behind a
+written, hostile-audited methodology, because it moves every Community Outcomes
+sub-score. See CHANGELOG.md.</p>
 <h4 id="special-targeting-is-this-tools-own-criterion-the-cdfi-fund-publishes-no-such-criterion">Special Targeting is this tool's own criterion — the CDFI Fund publishes no such criterion<a class="headerlink" href="#special-targeting-is-this-tools-own-criterion-the-cdfi-fund-publishes-no-such-criterion" title="Permanent link">&para;</a></h4>
 <p>The CY 2024-2025 NOAA (89 FR 92283, 21 Nov 2024), section V.B(b), sets out the complete set of additional points under IRC §45D(f)(2): <em>"the CDFI Fund will ascribe additional points to entities that meet one or both of the statutory priorities"</em> — a track record of serving Disadvantaged Businesses or Communities (up to five points) and Investments in Unrelated Entities (five points) — <em>"Thus, Applicants that meet the requirements of both priority categories can receive up to a total of ten additional points."</em> <strong>Two</strong> statutory priorities, <strong>ten</strong> points, and this tool already scores both separately under Priority Points below. There is no third.</p>
 <p>The phrases "Special Targeting" and "bonus points" appear in <strong>none</strong> of the three primary documents: the CY 2024-2025 Allocation Application (142 pp.), the Review Process (7 pp.) and the NOAA (10 pp.). The four categories are real NMTC concepts, but the Application uses them to <strong>define a Disadvantaged Business</strong> (p.132: a Disadvantaged Business is one located in <em>"a Persistent Poverty County; a NMTC Native Area; or a U.S. Island Area"</em>). They are inputs to the DBC statutory priority, not a scored criterion of their own.</p>
@@ -2177,15 +2213,37 @@ work, behind a written methodology — see CHANGELOG.md.</p>
 </tr>
 </tbody>
 </table>
-<p><strong>Note on the non-metro basis.</strong> <code>phase2_flags["non_metro_commitment_pct"]</code> is
-computed from <code>geographic_diversity["rural_pct"]</code>, which is a share of <strong>QEI</strong>
-(<code>geographic_analysis.py:96</code>), and the 20% figure above is quoted here without a
-denominator at all. The Fund states
-its two distress commitments on QLICIs (see the Community Outcomes basis note),
-and whether the non-metro commitment is QLICI-, QEI- or count-denominated <strong>has
-not been checked against the Application's own question text</strong>. Surfaced by
-<code>tests/test_qlici_basis.py</code> during the FIX-3 sweep and recorded rather than
-guessed. Do not read the flag as an answer to the Fund's requirement.</p>
+<p><strong>Note on the non-metro basis. ESTABLISHED — it is measured on QLICIs.</strong>
+<code>phase2_flags["non_metro_commitment_pct"]</code> is computed from
+<code>geographic_diversity["rural_pct"]</code>, which is a share of <strong>QEI</strong>
+(<code>geographic_analysis.py:96</code>) derived from a <strong>hard-coded twelve-state list</strong>
+(<code>geographic_analysis.py:16</code>), not from the OMB Bulletin 20-01 county
+definition the Fund uses. The Fund's figure is neither.</p>
+<p>Question 22 of the <em>CY 2024-2025 Allocation Application</em> (printed p. 31) asks
+the Applicant for <em>"a minimum percentage of </em><em>QLICIs</em><em> the Applicant is willing
+to commit to provide to Non-Metropolitan Counties"</em> (22(b)) and a maximum
+(22(c)), against a CDFI Fund goal that <em>"20% of all QLICIs made by Allocatees
+under this Round are invested in Non-Metropolitan Counties"</em>; the formula
+reduction falls on Allocatees <em>"that have not committed to investing a minimum
+of 20% of their QLICIs in Non-Metropolitan Counties"</em>, and the 50% Rural CDE
+figure is a commitment <em>"in response to Question 22(c)"</em> — also QLICIs. The CY
+2024-2025 NOAA states it the same way: <em>"invest at least 20 percent of their
+QLICIs (as measured by dollar amount)"</em>.</p>
+<p>So <strong>three</strong> things are true at once and each matters: the Fund measures on
+QLICI dollars, this tool measures on QEI, and this tool's non-metro
+<em>classification</em> is a state-level heuristic rather than a county-level lookup.
+Question 22 is also explicitly <strong>not scored in Phase I</strong>. Do not read the flag
+as an answer to the Fund's requirement.</p>
+<blockquote>
+<p><strong>Corrected in 1.3.0 (Review Process sweep).</strong> This paragraph read <em>"has not
+been checked against the Application's own question text"</em> — accurate when
+1.2.1 wrote it, and <strong>stale since 1.2.2 round 2</strong>, which established the
+QLICI basis from the NOAA and recorded it in
+<code>nmtcapp/data/benchmark_thresholds.py</code> while leaving the "not checked"
+sentence live here and on the Streamlit About page. A <em>could-not-establish</em>
+that has since been established is a claim like any other, and this one
+survived a round that fixed the constant it describes.</p>
+</blockquote>
 <hr />
 <h2 id="sub-score-formulas-business-strategy">Sub-score formulas (Business Strategy)<a class="headerlink" href="#sub-score-formulas-business-strategy" title="Permanent link">&para;</a></h2>
 <h3 id="product-flexibility-010-pts">Product Flexibility (0–10 pts)<a class="headerlink" href="#product-flexibility-010-pts" title="Permanent link">&para;</a></h3>
@@ -2221,10 +2279,11 @@ guessed. Do not read the flag as an answer to the Fund's requirement.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>score = min(15, pct_deep_or_severe / 0.85 × 15)
 </code></pre></div>
 <p>At 85%+ of <strong>QEI</strong> in severely distressed tracts (deep distress included): full
-15 pts, proportional credit below. The 0.85 is the Fund's bar used as this
-tool's scale factor; the Fund measures it on QLICIs and over severe distress
-<strong>or multiple indicia</strong>, neither of which this package computes. See the basis
-note above.</p>
+15 pts, proportional credit below. The 0.85 is <strong>Question 25(a)'s commitment
+level</strong> used as this tool's scale factor; the Fund measures it on QLICIs <em>in
+aggregate dollar amounts</em>, over a one-of-items-1-5 <strong>or</strong> two-of-items-6-12
+test applied per QLICI, none of which this package computes. See the basis note
+above.</p>
 <h3 id="deep-distress-commitment-010-pts">Deep Distress Commitment (0–10 pts)<a class="headerlink" href="#deep-distress-commitment-010-pts" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>score = min(10, pct_deep / 0.20 × 10)
 </code></pre></div>
@@ -2233,8 +2292,12 @@ credit below. Uses <code>pct_deep</code> from distress analysis and has no fallb
 "50% of <code>pct_deep_or_severe</code>" substitute this file used to document was removed
 in 1.2.1 (deep distress is a strict subset of severe distress in no fixed
 proportion, so no such split exists to compute); an absent <code>pct_deep</code> now scores
-zero. The 0.20 is the Fund's bar used as this tool's scale factor; the Fund
-measures it on QLICIs. See the basis note above.</p>
+zero. The 0.20 is <strong>the top rung of Question 25(b)(i)'s selectable ladder</strong>
+(0 / 5 / 10 / 15 / 20) used as this tool's scale factor — not a bar the CDE
+either clears or misses — and the Fund measures it on QLICIs in aggregate
+dollar amounts, over <strong>four</strong> area types of which this package computes one.
+Scoring a CDE that honestly commits 10% at half credit is this tool's
+judgement, not the Fund's. See the basis note above.</p>
 <h3 id="special-targeting-05-pts">Special Targeting (0–5 pts)<a class="headerlink" href="#special-targeting-05-pts" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>partial = Σ min(1.25, category_pct / 0.10 × 1.25)  for each of 4 categories
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>score   = min(5, partial)
