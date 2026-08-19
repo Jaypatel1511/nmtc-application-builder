@@ -571,6 +571,65 @@ def test_extraction_is_not_empty(rendered_lines):
         )
 
 
+
+
+# ---------------------------------------------------------------------------
+# N-WRAP: a piece of a ruled sentence is ruled.
+#
+# ADDED IN 1.3.0 FIX-2 B1, AND THE MEASUREMENT THAT FORCED IT. Fixing the PDF's
+# key/value tables so their cells WRAP turned four long unwrapped cells into 91
+# short visual lines. All 91 are contiguous fragments of lines already on the
+# allowlist — verified, zero orphans — and the whole-cell parents still render
+# (Word and Markdown carry them unwrapped), so nothing became dead.
+#
+# The alternative was 91 new allowlist entries. It was rejected because it
+# measures the renderer instead of the claim: the same Q25 basis note is ONE
+# line in Word, ONE in Markdown and nine in the PDF, and requiring nine
+# separate rulings for one sentence would put lines like
+#
+#     Areas; Federal Medically Underserved Areas;
+#
+# into the file whose own header says "READING THIS FILE IS THE HIGHEST-VALUE
+# REVIEW ON THIS PACKAGE". A fragment that carries no proposition on its own
+# cannot be reviewed on its own, and 91 of them would bury the 231 that can.
+#
+# The file was already conceding the point by hand: four entries in it are
+# justified as "Wrapped continuation of ..." and one says outright that N2
+# "misses it only because the PDF extractor wraps the line away from its
+# opening bracket". This is that concession, derived instead of typed.
+#
+# WHAT IT CANNOT DO. The fragment must be a CONTIGUOUS substring of a line a
+# human already ruled, and strictly shorter than it. A sentence the tool starts
+# saying that is not part of one it already says is not a fragment of anything
+# and is still reported. test_the_wrap_narrowing_cannot_absorb_a_new_claim is
+# the proof, and the gate prints how many lines the narrowing absorbed so the
+# number cannot grow unnoticed.
+# ---------------------------------------------------------------------------
+
+#: Below this, a "fragment" is short enough to be an accidental substring of an
+#: unrelated ruled line rather than a wrap of it. _is_prose already floors
+#: candidates at 25 characters; this is belt and braces at the narrowing.
+MIN_FRAGMENT_CHARS = 20
+
+
+def wrapped_fragments(lines, ruled) -> dict:
+    """Return ``{line: parent}`` for each line that is a piece of a ruled line.
+
+    Example::
+
+        wrapped_fragments({"a piece of the whole"}, {"a piece of the whole thing"})
+    """
+    absorbed = {}
+    for line in lines:
+        if len(line) < MIN_FRAGMENT_CHARS:
+            continue
+        for parent in ruled:
+            if len(parent) > len(line) and line in parent:
+                absorbed[line] = parent
+                break
+    return absorbed
+
+
 # ---------------------------------------------------------------------------
 # The gate
 # ---------------------------------------------------------------------------
@@ -585,7 +644,11 @@ def test_no_unallowed_invariant_assertion(rendered_lines):
 
     candidates = {ln for ln in invariant if _is_prose(ln)}
     allow = _load_allowlist()
-    unallowed = sorted(candidates - set(allow))
+    unallowed = set(candidates) - set(allow)
+    absorbed = wrapped_fragments(unallowed, set(allow))
+    print(f"  N-WRAP absorbed {len(absorbed)} wrapped fragment(s) of "
+          f"{len(set(absorbed.values()))} ruled line(s)")
+    unallowed = sorted(unallowed - set(absorbed))
 
     assert not unallowed, (
         f"{len(unallowed)} line(s) are byte-identical across "
@@ -612,4 +675,34 @@ def test_allowlist_has_no_dead_entries(rendered_lines):
         f"{len(dead)} allowlist entr(ies) no longer appear as invariant lines. "
         "Remove them so the list stays a description of what actually "
         "renders:\n" + "\n".join(f"  {ln}" for ln in dead)
+    )
+
+
+def test_the_wrap_narrowing_cannot_absorb_a_new_claim(rendered_lines):
+    """N-WRAP must swallow wraps and nothing else.
+
+    A gate that has never been seen to refuse is a gate nobody has evidence
+    about. Three cases, all against the real allowlist: a genuine fragment is
+    absorbed, a sentence that is not a piece of any ruled line is not, and a
+    fragment shorter than :data:`MIN_FRAGMENT_CHARS` is not — because a short
+    string can be an accidental substring of an unrelated ruling.
+    """
+    allow = set(_load_allowlist())
+    parent = max(allow, key=len)
+
+    genuine = parent[: len(parent) - 10]
+    assert wrapped_fragments({genuine}, allow) == {genuine: parent}, (
+        "N-WRAP did not absorb a contiguous piece of a ruled line — the wraps "
+        "it exists for would each need a hand-written entry"
+    )
+
+    invented = "This tool ranks your pipeline in the top decile of applicants."
+    assert wrapped_fragments({invented}, allow) == {}, (
+        "N-WRAP absorbed a sentence that is not a fragment of any ruled line. "
+        "It would then hide exactly the class this gate exists to catch."
+    )
+
+    assert wrapped_fragments({parent[:MIN_FRAGMENT_CHARS - 1]}, allow) == {}, (
+        "N-WRAP absorbed a fragment below the length floor, where a substring "
+        "match is as likely to be a coincidence as a wrap"
     )

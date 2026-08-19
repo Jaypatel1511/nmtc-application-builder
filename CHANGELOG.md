@@ -5,14 +5,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — 1.3.0
+## [Unreleased] — 1.3.0, prepared 2026-08-19
 
-**MINOR, not PATCH.** S3 changes what an existing user's document says without
-their input changing: an upload with no `qlici_amount` column used to print the
-project's QEI request under the heading **Total QLICI ($)**, and now prints
-`not supplied [CDE TO COMPLETE]`. That is the same shape as 1.1.6 → 1.2.0, where
-`analyze` began exiting 2 where it used to run. **The minor bump licenses no
-extra scope** — the deferred list at the foot of this entry is unchanged.
+**MINOR, not PATCH, and for TWO reasons — the second was missing from this
+entry until FIX-2.**
+
+1. **S3 changes what an existing user's document says without their input
+   changing:** an upload with no `qlici_amount` column used to print the
+   project's QEI request under the heading **Total QLICI ($)**, and now prints
+   `not supplied [CDE TO COMPLETE]`.
+2. **B3 changes what an existing user's input MEANS.** `prior_awards: []` — the
+   value the shipped scaffold tells a first-time CDE to write — used to load
+   through `CDEProfile.from_yaml` and then fail `validation/completeness_check`
+   with *"CDE profile missing required field: prior_awards"*. It now passes
+   both. **A validator's verdict moved**, which is an accepted-input change and
+   is the textbook reason a release is a minor rather than a patch. See B3
+   below; it shipped in `ff49064` and this entry did not mention it.
+
+Both are the same shape as 1.1.6 → 1.2.0, where `analyze` began exiting 2 where
+it used to run. **The minor bump licenses no extra scope** — the deferred list
+at the foot of this entry is unchanged.
 
 ### S1 — the basis note instructed a CDE to compute the wrong number
 
@@ -166,23 +178,106 @@ same function Section B reads.
 
 ### The rendered baseline moved — for the first time this cycle
 
-Seven insertions, five deletions, **every changed line classified, zero
-unexplained**:
+> **13 insertions, 4 deletions** in `tests/rendered_baseline/`, measured
+> `63443cc`..`ff49064`, in `excel.txt`, `markdown.txt`, `pdf.txt` and
+> `word.txt`.
 
-| Surface | Changed line | Classification |
-|---|---|---|
-| excel | `A12` label gains `(a share of QEI, not of QLICIs …)` | intended — **S4**, and this is the entry that was invisible before |
-| excel | `A27` new BASIS NOTE label | intended — S4 |
-| excel | `A28` new basis note body | intended — S4 |
-| excel | `A30` footer, was `A27` | consequential reflow of the two rows above |
-| markdown | Section B basis note body | intended — S1 |
-| word | `T6\|R7` basis note body | intended — S1 |
-| pdf | Section B basis note body | intended — S1 |
+**CORRECTED IN FIX-2, AND IT IS THE SIXTH STALE HAND-TYPED COUNT OF THIS
+CYCLE.** This paragraph shipped as *"Seven insertions, five deletions"* against
+a tree that yields 13 and 4, and its table listed `A27`, `A28` and `A30` rows
+that do not exist in any commit of this branch — the note went onto its **own
+worksheet**, not onto rows 27-30 of the dashboard, so the eight `Q25 Basis
+Note!` lines the change actually added were entirely absent from a table headed
+"every changed line classified, zero unexplained". It was produced by the very
+commit whose own narrative is about the fifth stale count. The figures above are
+now **derived from the tree** by
+`tests/test_pinned_constants.test_the_changelogs_rendered_baseline_delta_matches_the_tree`,
+which re-runs `git diff --numstat` between the two commits this claim names and
+fails if either the counts or the set of moved surfaces disagrees.
+
+**Every changed line classified, zero unexplained:**
+
+| Surface | Lines | Changed line | Classification |
+|---|---|---|---|
+| excel | 1 −, 1 + | `A12` label gains `(a share of QEI, not of QLICIs — see the 'Q25 Basis Note' sheet)` | intended — **S4**, and this is the entry that was invisible before |
+| excel | 8 + | `@@SHEET Q25 Basis Note` and `Q25 Basis Note!A1`, `A2`, `A4`–`A9` | intended — S4. A new worksheet, not new dashboard rows |
+| markdown | 2 −, 2 + | Section B basis note label and body | intended — S1 |
+| word | 1 −, 1 + | `T6\|R7` basis note body | intended — S1 |
+| pdf | 1 −, 1 + | Section B basis note body | intended — S1 |
 
 `Summary Dashboard!C12` — `|float|fmt=0.0%|0.8531073446327684` — is deliberately
 **unchanged**. The value was never wrong; the label around it was, and that is
 what moved. **S3 moves no baseline line**, correctly: the baseline fixture
-supplies `qlici_amount`, so nothing about it is defaulted.
+supplies `qlici_amount`, so nothing about it is defaulted. **No dashboard row
+was renumbered**, which is what the withdrawn `A30` row claimed.
+
+### B3 — the scaffold told a CDE to write a value the validator rejected
+
+**Shipped in `ff49064`; this entry did not mention it until FIX-2, and it is
+the reason this release is a MINOR.**
+
+`templates/cde_profile_template.yaml:26` reads
+
+```yaml
+prior_awards: []          # Prior NMTC allocations. Leave as [] if none.
+```
+
+`CDEProfile.from_yaml` accepted it. `validation/completeness_check`, which loops
+over `REQUIRED_CDE_FIELDS` and rejects `val == []`, reported **"CDE profile
+missing required field: prior_awards"**. The exception lived only inside
+`from_yaml`, as a local named `blank_is_answer`, so the two modules disagreed
+about the shipped scaffold.
+
+**Why that is a blocker rather than a nuisance.** The tool's core audience is a
+first-time CDE. It follows the scaffold, writes `[]`, loads without error, and
+is then told its profile is incomplete — and the only field named is **prior
+NMTC allocations, a scored track-record item**. The obvious way to clear the
+error is to put something in the list. That is a validator applying pressure
+toward a false statement about the applicant's own history in a federal filing:
+the shipped-inputs rule running backwards, pushing a fabricated value in rather
+than leaking one out.
+
+The exception is now one module constant,
+`core/cde.CDE_FIELDS_WHERE_EMPTY_IS_AN_ANSWER`, read by both.
+
+### The workbook gained a worksheet, not four rows
+
+`Q25 Basis Note` is a **new sheet**, positioned immediately after the Summary
+Dashboard, carrying the S1 note in full. The dashboard's distress label points
+at it **by sheet name** rather than at a row number nothing on screen names —
+the 1.3.0 draft's pointer said "see the basis note below" and pointed fifteen
+rows down, past the readiness block and under the footer, and whether "below"
+was even visible depended on the reader's window, because the file stores no
+window geometry at all. `tests/test_excel_geometry.test_the_basis_note_is_
+reachable_by_name` pins the sheet name, its presence, and its position.
+
+### Excel geometry: a rendered dimension no gate could see
+
+1.3.0 S4 gave `Summary Dashboard!A12` a two-line label; the metrics loop set
+`row_dimensions[row].height = 18` for every row, uniformly. Measured in Excel
+16.112 at the shipped geometry, **A12 needed 30.0 pt and shipped 18.0**, so the
+visible text ended mid-negation at *"(a share of QEI, not"* and the half that
+never displayed was the pointer to the note. **The round's own remedy was
+invisible on the surface it was written for.**
+
+`tests/rendered_baseline/excel.txt` records cell coordinates, Python types,
+number formats and values. Row heights, column widths and merge ranges appear
+nowhere in it, so **a correct fix leaves that file byte-unchanged** and the
+whole class is structurally unreachable from it. Third instance of the same
+shape, after the interpolation mask that hid every printed constant until 1.2.1
+and the value-only projection that hid B-3's number formats.
+
+- **`renderers/_sheet_geometry.py`** — every constant measured in Excel 16.112
+  against an autofit replica, with the raw runs in its docstring, because
+  merged ranges (which every dashboard label is) do not autofit at all.
+- **`tests/test_excel_geometry.py`** — re-derives every label's required height
+  from the SHIPPED workbook: its actual string, its actual merged span, its
+  actual font size. It reads nothing from the builder.
+- **No sheet is excluded.** The first draft excluded the six DataFrame sheets
+  on the reasoning that `_write_df_to_sheet` sets no heights. That reasoning was
+  false — it set `height = 16` uniformly — and the same defect was live on six
+  more sheets, including `Investor Commitments!G6`, a 351-character
+  `[CDE TO COMPLETE]` instruction displaying one line of nine.
 
 ### The Review Process sweep — the durable output of this round
 
@@ -299,6 +394,320 @@ three screens a CDE reads, it is internally contradictory, and it is unsourced.
 - **`_score_deep_distress`, `_score_product_flexibility`, `gap_pp`** — all
   three traced in the 1.3.0 audit and confirmed to render into no generated
   document. They shape advice, not the filing. Still wrong, still 1.3.1.
+
+---
+
+## FIX-2 — the same class, on the PDF, and the gate that could not see it
+
+A confirmation pass on `ff49064` confirmed S1-S4 and B1-B3 and then refuted the
+premise it was told to attack:
+
+> **Geometry was not the last class of "correct in the source, wrong on the
+> page." The PDF is the same class, worse, and invisible to every gate in the
+> repo including the new one.**
+
+### B1 — the PDF's key/value tables could not wrap
+
+`renderers/pdf_builder._content_to_flowables` built every section key/value
+table as `Table(data)` — no `colWidths`, and bare `str` cells rather than
+`Paragraph`. ReportLab cannot wrap a string cell, so it sized each column to
+the longest single line. Measured on the baseline fixture at `ff49064`:
+
+| Page | Table width | Frame | What a CDE saw |
+|---|---|---|---|
+| 9 (Section D) | 691 pt | 432 pt | Every row label pushed off the left edge, and the caveat on **QEI Less CDE Fees** cut mid-word at the right — the number without the sentence saying what it is not |
+| 5 (Section B) | **17,207 pt** | 432 pt | A header bar and four empty striped rows. **1.3.0's two reasons for existing rendered as an empty table.** |
+
+**753 words rendered outside the printable band**, on those two pages, in a
+document whose source text was correct throughout — measured by reading the
+shipped file back and comparing each text run's device position against the
+frame it was drawn in. **After the fix: zero, in all three analyzer states**
+(nominal, partial-unverified, degraded).
+
+The file had six `Table(` calls and five `colWidths` occurrences; this was the
+one without, and it is the generic `table_ref` renderer every section key/value
+table passes through. **The defect is older than this cycle** — off-page word
+count went 753 at `ff49064` and the caveat has been cut on every PDF this tool
+has generated since at least 1.2.1. Four passes over four rounds never rendered
+a page and looked at it.
+
+Three things were needed, not one:
+
+- **`colWidths`** off `renderers/_frame_geometry.usable_width()`, the single
+  statement of the text column that the four other call sites now also read.
+- **`Paragraph` cells**, XML-escaped on the way in. A string cell is one line
+  however wide it is.
+- **`splitInRow=1`.** This is the part the brief did not know it needed. The
+  ~4,000-character basis note wraps to roughly 1,000 pt and no portrait frame
+  is 1,000 pt tall; ReportLab splits *between* rows by default and raises
+  `LayoutError` on a single row taller than the page. **`colWidths` alone turns
+  a silent overflow into a hard build failure.** Verified by execution before
+  the fix was written.
+
+**And no `repeatRows`**, which `_df_to_rl_table` does set: a repeated
+"Item | Value" header above the continuation of one wrapped cell announces a
+row that is not there, and interleaves those two words into any quoted list
+that spans the break — which is how `tests/test_pinned_constants` first saw it.
+Word's key/value tables do not repeat their header either.
+
+**RULED: the note stays in a table.** A 4,000-character value in a two-column
+key/value grid is a fair question, and the three other renderers do not agree
+with each other about it — Markdown renders the dict as a `**key:** value`
+definition list, Word as an autofit table whose rows break across pages, and
+the workbook now puts the note on its own sheet. **Word is the surface to
+match**: it and the PDF are the two *paginated* renderings of the same dict,
+they are the two a CDE prints, and a reader comparing the .docx and the .pdf of
+one filing should not find a table in one and a run of prose in the other.
+Markdown's divergence is what a format with no page does, not a third option to
+copy. `splitInRow` is what gives a ReportLab row the page-breaking behaviour a
+Word row already has.
+
+### B2 — a "do not submit" instruction that never displayed
+
+`renderers/excel_builder` hardcoded `ws.row_dimensions[4].height = 28` on both
+banner rows — **in the function the geometry fix edited, two rows above the
+cell it fixed.** Measured on the shipped builder:
+
+| State | Ships | Needs | Chars |
+|---|---|---|---|
+| partial-unverified | 28.0 pt | **75.0 pt** | 519 |
+| degraded | 28.0 pt | **30.0 pt** | 168 |
+
+The degraded arm clips at its **shortest possible message**, so no wording made
+28 correct. What a CDE never saw, past the partial banner's first two lines:
+
+> *"…Distress and targeting shares count only location-verified projects in the
+> numerator but all pipeline QEI in the denominator, so each is a LOWER BOUND …
+> **Do not submit until all project locations are verified.**"*
+
+The row that exists to stop a CDE filing was the row that could not finish its
+own sentence. Both heights now derive from the text, clamped at Excel's 409 pt
+ceiling exactly as the Q25 note block below them already was.
+
+**The round's own geometry gate detected both, and never ran them.** Nothing in
+the suite had ever built the workbook with a banner. `tests/test_excel_geometry`
+is now parametrized over all three analyzer states — nominal,
+partial-unverified, degraded — and every check in it runs against each.
+
+### B4 — the gate that would have caught the PDF, and three vacuity holes
+
+`tests/test_excel_geometry.py` reads the workbook only. It cannot see PDF, Word
+or Markdown, which is why B1 survived a round that existed to fix exactly this
+class. **`tests/test_render_frame_geometry.py`** is the renderer-agnostic
+answer, and it says on its face what it does and does not cover:
+
+- **PDF, rendered.** The shipped file is re-opened and every text-showing
+  operation's device position read back, measured against ReportLab's own font
+  metrics. This is the page as a CDE sees it, including text no flowable
+  produced — the running footer is drawn straight onto the canvas and is
+  checked too, against its own wider band, because a gate that reports the page
+  number as clipped on sixteen of twenty pages is a gate nobody reads.
+- **PDF, modelled.** Every `Table` in the story is asked for its own width and
+  compared to the frame it will be placed in. Exact, and it names the flowable
+  rather than the coordinates of its debris.
+- **Word: covered by mechanism, not by measurement**, and written down as
+  weaker. Nothing in this repository can lay out a .docx. What is asserted is
+  that no key/value table pins a column width, which is what makes Word fit it
+  to the text column.
+- **Markdown: out of scope, and not silently.** It has no frame; "outside the
+  frame" has no referent. Recorded as a decision, with an assertion that the
+  content whose PDF rendering was the defect is still present.
+
+**Both new checks are shown red on their restored defects** — the shipped
+`Table(data)` rebuilt on the real Section B content — and **neither can pass
+vacuously**: an empty PDF fails on `measured > 0` rather than passing on
+`not findings`, and that refusal has its own test.
+
+**The three vacuity holes in the Excel gate are closed, each with a test that
+proves it:**
+
+1. **Zero sheets passed.** `assert not findings` is true of a workbook the gate
+   never opened. It now asserts sheets exist and that at least one text cell
+   was measured.
+2. **All-unset heights passed silently.** `if not shipped: continue` skipped
+   the cell without saying so, so a builder that stopped setting heights would
+   have turned the gate off rather than red. Skips are now returned and
+   asserted to be zero — the builder sets an explicit height on every row it
+   writes, measured.
+3. **A merged cell with `height = None` was skipped on a premise the module's
+   own docstring contradicts in capitals** — *"MERGED CELLS DO NOT AUTOFIT …
+   Excel's AutoFit is a no-op on a merged range, and every label on the
+   dashboard is merged"*. Merged cells are now measured against the sheet's
+   default row height, with one exemption stated and bounded: **one** line of
+   the **default** font, which is what that height is calibrated for. A
+   multi-line merged label, or one at a larger font, is reported.
+
+### The two claim gates learned what a line break is
+
+Making the PDF wrap turned four long unwrapped cells into 91 short visual
+lines. **All 91 are contiguous fragments of lines already on the invariance
+allowlist — verified, zero orphans — and no allowlisted line went dead**,
+because Word and Markdown still carry the same sentences unwrapped.
+
+The alternative was 91 new allowlist entries, and it was rejected: it measures
+the renderer instead of the claim. The same Q25 basis note is **one** line in
+Word, **one** in Markdown and **nine** in the PDF, and requiring nine rulings
+for one sentence would put lines like `Areas; Federal Medically Underserved
+Areas;` into the file whose own header reads *"READING THIS FILE IS THE
+HIGHEST-VALUE REVIEW ON THIS PACKAGE"*. The file was already conceding the
+point by hand — four of its entries are justified as *"Wrapped continuation
+of …"* and one says outright that a narrowing *"misses it only because the PDF
+extractor wraps the line away from its opening bracket"*. **N-WRAP** and
+**N6** are that concession, derived instead of typed: a contiguous substring of
+a line a human already ruled, strictly shorter than it and at least 20
+characters, is the same ruling. Both gates print how many fragments they
+absorbed, and both have a test that an invented claim is **not** absorbed.
+
+`tests/test_qlici_basis` was widened the other way, to the **paragraph**, and
+this is a correction rather than a loosening: in Markdown and Word the whole
+basis note is one line, so *"does this line name QLICIs"* has always meant
+*"does this paragraph name QLICIs"* on three of the four surfaces. The PDF
+matched them until its cells wrapped. The block stops at a blank line, and
+`test_the_paragraph_widening_cannot_excuse_a_bar_from_the_next_paragraph`
+proves it.
+
+`tests/test_pinned_constants` now strips the running header/footer from each
+PDF page before matching. `_normalise` collapses whitespace so a pin survives a
+**line** wrap; it could not survive a **page** wrap, because what interrupts
+the sentence there is chrome rather than whitespace. A pin is a claim about the
+document, not about the page it landed on.
+
+### FIX-2's own rendered baseline movement
+
+> **144 insertions, 50 deletions** in `tests/rendered_baseline/`, measured
+> `ff49064`..`HEAD`, in `pdf.txt` only.
+
+**The largest baseline movement of the cycle**, and Markdown, Word and Excel
+are byte-unchanged, which is the check B1 had to pass: it is a PDF layout fix
+and it touched the PDF only. Every changed line falls into five classes:
+
+| Class | Lines | Classification |
+|---|---|---|
+| `Item`/`Value` gain a leading space in extraction | 10 | consequential — the header cells are `Paragraph`s now and pypdf reports the centring offset as a space. The header was already centred by `_rl_table_style`; nothing moved on the page |
+| Section B's six distress row labels wrap | 13 | **intended — B1.** They were one 86-character line in a 194 pt column |
+| The Q25 basis note wraps, over pages 5-7 | 96 | **intended — B1.** This is the remedy: 600 words that rendered off-page now render on it |
+| Section D's three long values wrap | 9 | **intended — B1**, including the QEI-Less-CDE-Fees caveat that was cut mid-word |
+| Page numbers +2 from page 6, and two blocks reflow across a break | 66 | consequential — the note now occupies two more pages |
+
+**Zero unexplained.**
+
+### The whole output surface, enumerated — REPORT ONLY, and the durable part
+
+Four rounds have each found their defect inside the previous round's fix, and
+this one exists to fix a defect found inside a fix. The premise worth attacking
+was that **the four generated documents are the whole output surface**. They are
+not: the CLI block, four Streamlit pages and the published docs site render the
+same content through different geometry. Every one was generated and read, in
+every state the analyzer can produce.
+
+| Surface | State(s) checked | Result |
+|---|---|---|
+| PDF | nominal, partial-unverified, degraded | **B1. 753 → 0 off-page words** |
+| Excel | nominal, partial-unverified, degraded | **B2. banner 28 pt against 75 and 30** |
+| Word | nominal, partial-unverified, degraded | clean — nothing pins a column width |
+| Markdown | nominal, partial-unverified, degraded | no frame; nothing can fall out of it |
+| `nmtcapp analyze` block | all three | no clipping class. A terminal reflows, and the `:<30` paddings are minimum widths — a long label misaligns a column, it never loses a character. **But see F1.** |
+| Streamlit, 4 pages | nominal, rendered in Chrome | **zero clipped elements**, measured as `scrollWidth > clientWidth` under a clipping `overflow`, walked through shadow roots. Zero horizontal page overflow. |
+| Docs site, built `--strict` | nominal | zero clipped elements; the site's own sample PDF measures **0 off-page words** |
+
+Two mechanism facts worth writing down, because they are what makes the
+Streamlit result hold at widths nobody tested: `stMetricLabel` computes
+`white-space: normal; overflow: visible`, so a metric LABEL wraps and cannot
+clip at any width — which is why the Q25 denominator disclosure survives in
+`Deep / Severe distress (a share of QEI, not of QLICIs)`. `stMetricValue`
+computes `white-space: nowrap; overflow: hidden; text-overflow: ellipsis`, so a
+metric VALUE is truncated at any width. **No value in this app currently
+carries a disclosure**, and that is the load-bearing fact — see F2.
+
+**F1 — the two screens name five unverified projects and say six.** REPORT
+ONLY, 1.3.1. `intelligence/pipeline_analyzer.py:77` and
+`streamlit_app/pages/1_Pipeline_Analyzer.py:253` both render
+`", ".join(unverified_project_ids[:5])` under a count that is not truncated.
+Executed on an eight-project pipeline with six unverified:
+
+```
+CLI :  6 project(s) could not be location-verified and remain
+       UNVERIFIED (no tract assigned): PRJ-D03, PRJ-D04, PRJ-D05, PRJ-D06, PRJ-D07
+DOC :  6 of 8 projects could not be location-verified (no census tract
+       assigned): PRJ-D03, PRJ-D04, PRJ-D05, PRJ-D06, PRJ-D07, PRJ-D08.
+```
+
+`PRJ-D08` is absent from both screens and neither says the list was cut. The
+list IS the actionable half — it is what tells a CDE which projects to go and
+verify — and the two surfaces that drop it are the two a CDE reads before
+generating anything. Same class as B2: a disclosure that is complete in the
+source and incomplete on the page. Not fixed here because this round's remit is
+B1-B4 and its baseline movement is already the largest of the cycle; the fix is
+an `and N more` and a gate that the rendered ID list matches
+`unverified_project_ids`.
+
+**F2 — the Streamlit distress metric is a bare percentage.** REPORT ONLY,
+1.3.1. `renderers/_disclosure`'s own header states the rule: *"For the partial
+case every affected metric must carry its qualifier INLINE ... a separate
+disclaimer paragraph can be stripped in editing; an inline qualifier cannot."*
+The four documents obey it through `qualified_pct`. **No Streamlit file imports
+`qualified_pct` or `unverified_qualifier`** — `1_Pipeline_Analyzer.py:376`
+renders `fmt_pct(deep_severe_pct)` unconditionally, so in the partial-unverified
+state the screen shows a bare share with the disclosure only in a `st.warning`
+above the tab bar. The banner is on screen, so this is weaker than B2; it is
+still the exact shape the module's own rule forbids, on the surface a CDE reads
+first.
+
+**F3 — two stale hand-typed counts on rendered surfaces.** REPORT ONLY, 1.3.1.
+`streamlit_app/app.py:86` renders `✅ 890+ tests` and `README.md:289` reads
+`# 544 tests, should all pass`. The tree collects **1,096**. Seventh and eighth
+instances of this cycle's signature pattern, both on the first screen a
+prospective user sees. The fix is not another digit — it is the treatment
+`_sweep_census` already gets: derive it, or do not print it.
+
+**Checked and NOT a defect:** the docs site's `v1.1.2` version badge. It is
+mkdocs-material's `md-source__fact--version`, read from the repository's latest
+GitHub *release*, and v1.1.2 is genuinely the newest tag. 1.2.0-1.3.0 have
+never been tagged, so the badge is accurate about the repository and says
+nothing false about the package.
+
+### FLOOR and MAX_SDIST_SKIPS — the measurement behind them was wrong
+
+`FLOOR=520` was correct at `ff49064`. **The measurement recorded beside it was
+not.** `release.yml` documented *"1,068 collected, 11 skipped, 1,057
+executed"*; the real figure at that commit is **18 skipped**. The 11 comes from
+running the suite **inside the unpacked tarball**, which that workflow's own
+comment forbids in capitals — doing so puts the tarball's source tree on
+`sys.path` and un-skips nine checks that ask whether `nmtcapp/` sits beside
+`tests/`. A floor derived from a run the job does not perform.
+
+**That is worse than a stale digit, and it is why it is listed here rather than
+as a footnote.** A digit that is stale gets remeasured. A derivation that is
+merely plausible gets copied forward — which is precisely what happened to
+`MAX_SDIST_SKIPS`, whose comment justified 20 as *"1.8x the measurement"*.
+Against the real 18 it was 1.11x: a ceiling one skip above the thing it bounds,
+tightened onto a number taken the wrong way.
+
+Both are re-derived here, from a fresh sdist built from a pristine clone and run
+with `release.yml`'s exact invocation, **identically on 3.9.25 and 3.12.13**:
+
+|  | value |
+|---|---|
+| collected under `-m "not wheel"` | 1,096 |
+| skipped in the sdist | 20 |
+| **executed** | **1,076** |
+| half | 538 |
+| rounded down to ten | **`FLOOR=530`** |
+
+All twenty are environment skips and each names its own reason: no git
+checkout (4), no `nmtcapp/` source tree beside `tests/` (9), no `docs/` (4), no
+`.github/workflows/` (3). **None is unconditional** — FIX-2 replaced the one
+test that was about to introduce the first (a nominal-state parametrization
+with no banner to check) with an assertion that no banner renders.
+
+`MAX_SDIST_SKIPS` goes to **24**, and the ratio is gone from its comment
+because a ratio was never the right way to pick it. The ceiling only changes
+anything when it crosses a rounding boundary: at 1,096 collected the band's
+lower bound is 530 for every ceiling from 17 to 36 and drops to 520 at 37. With
+the measured 20 as the other end, the live range is [20, 36]. 24 sits four
+above the measurement and twelve below the point where the band goes slack —
+which is what 40 was doing before 1.3.0, and what made it an abstention rather
+than a ceiling.
 
 ---
 
@@ -942,17 +1351,21 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 183 constants are swept
+colour". The rendered-string sweep demands **19**, and 193 constants are swept
 where 49 were.
 
-> **Remeasured in 1.3.0.** This sentence read **160** when 1.2.2 shipped, which
-> was true of that tree. `test_the_changelogs_sweep_figures_match_the_tree`
-> asserts the figure against the tree *under test*, not against the tree the
-> paragraph was written on, so a release that adds a constant to a swept module
-> makes the sentence false and fails the gate. 1.3.0 adds nine —
-> `renderers/_question_25` (eight) and `_cell_format.NOT_SUPPLIED_INPUT`. The
-> figure is a property of the tree and is remeasured with it; the paragraph's
-> subject, that the sweep is derived rather than hand-listed, is unchanged.
+> **Remeasured in 1.3.0, and again in FIX-2.** This sentence read **160** when
+> 1.2.2 shipped and **183** at `ff49064`, each true of its own tree.
+> `test_the_changelogs_sweep_figures_match_the_tree` asserts the figure against
+> the tree *under test*, not against the tree the paragraph was written on, so
+> a release that adds a constant to a swept module makes the sentence false and
+> fails the gate — which is what happened here, twice, on purpose. 1.3.0 added
+> nine (`renderers/_question_25`, eight, and `_cell_format.NOT_SUPPLIED_INPUT`)
+> and FIX-2 adds ten more: eight in the new `renderers/_frame_geometry` and two
+> in `renderers/_sheet_geometry` (`DEFAULT_ROW_HEIGHT`, `DEFAULT_FONT_SIZE`).
+> The figure is a property of the tree and is remeasured with it; the
+> paragraph's subject, that the sweep is derived rather than hand-listed, is
+> unchanged.
 
 > **Corrected in FIX-2 (G-1).** This paragraph shipped saying **133**, and three
 > sites in `tests/test_pinned_constants.py` said the same. All four figures were
