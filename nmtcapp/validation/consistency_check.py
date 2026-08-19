@@ -76,7 +76,7 @@ def check_consistency(application: "Application",
         # being mistaken for one that asked and got yes, and the pin in
         # tests/test_qlici_basis.py carries the rule in one line: a gate that
         # cannot fail is worse than no gate, because it is also a green tick.
-        # Fourteen instances of it are on record in this package.
+        # The pattern is on record in this package's CHANGELOG.
         #
         # CHOSEN — say so, as a warning, naming the project. The check is a
         # WARNING and not an ISSUE because nothing is known to be wrong: the

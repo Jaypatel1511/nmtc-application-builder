@@ -16,6 +16,8 @@ import shutil
 import sys
 from pathlib import Path
 
+from nmtcapp.core.application import OUTPUT_EXTRA_INSTALL
+
 
 def _get_templates_dir() -> Path:
     """Locate the packaged templates directory.
@@ -113,7 +115,13 @@ def _make_starter_notebook() -> str:
                     "# score = app.score_win_probability()\n"
                     "# print(score.summary())\n"
                     "\n"
-                    "# Uncomment to generate documents:\n"
+                    "# Uncomment to generate the four application documents\n"
+                    "# (Markdown, Word, Excel, PDF). Word and PDF need the\n"
+                    "# renderer libraries, which do NOT come with a plain\n"
+                    "# install:\n"
+                    f"#     {OUTPUT_EXTRA_INSTALL}\n"
+                    "# Without them generate() writes what it can and logs a\n"
+                    "# line naming the extra for each format it skipped.\n"
                     "# paths = app.generate('./drafts/')\n"
                     "# print(paths)"
                 ),
@@ -180,6 +188,18 @@ def cmd_init(args: argparse.Namespace) -> int:
     print(f"  4. Or run: nmtcapp analyze {directory}/pipeline.csv \\")
     print(f"               --cde {directory}/cde_profile.yaml \\")
     print(f"               --requested-allocation <dollars>")
+    print()
+    # THE EXTRA A CDE NEVER LEARNS EXISTS (1.3.1 F4). `analyze` prints a
+    # report and writes no file; the four application documents come from
+    # Application.generate(), in the notebook. Word and PDF need libraries a
+    # plain `pip install nmtc-application-builder` does not bring, and until
+    # 1.3.1 the ONLY place that was ever said was a logger.warning naming one
+    # library, emitted after the fact. Two of four output formats, invisible
+    # to a CDE following the advertised path.
+    print("To generate the four application documents (Markdown, Word, Excel,")
+    print("PDF), the Word and PDF renderers need libraries that a plain")
+    print("install does not bring. Install them with:")
+    print(f"    {OUTPUT_EXTRA_INSTALL}")
     return 0
 
 

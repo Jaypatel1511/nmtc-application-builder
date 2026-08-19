@@ -18,6 +18,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, TYPE_CHECKING
 
+from nmtcapp.renderers._disclosure import wrap_disclosure
+
 from nmtcapp.optimizer.candidate_pool import CandidatePool
 from nmtcapp.optimizer.constraints import OptimizationConstraints
 from nmtcapp.optimizer.objectives import (
@@ -101,7 +103,8 @@ class OptimizationResult:
         for dim, delta in self.dimensional_improvements.items():
             arrow = "+" if delta >= 0 else ""
             lines.append(f"    {dim.replace('_', ' ').title():<30} {arrow}{delta * 100:.1f} pts")
-        lines.extend(["", f"  NOTE: {self.methodology_note[:120]}...", "=" * 68])
+        lines.extend(["", "  NOTE:", *wrap_disclosure(self.methodology_note),
+                      "=" * 68])
         return "\n".join(lines)
 
     def to_dict(self) -> dict:

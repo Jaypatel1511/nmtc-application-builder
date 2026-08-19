@@ -15,6 +15,83 @@ disclaimer paragraph can be stripped in editing; an inline qualifier cannot.
 from __future__ import annotations
 
 
+#: How many items a truncated list shows before it says there are more.
+LIST_PREVIEW_LIMIT = 5
+
+
+def join_truncated(items, limit: int = LIST_PREVIEW_LIMIT) -> str:
+    """Join items, and SAY SO when the list is cut — one statement of both.
+
+    A TRUNCATED LIST UNDER AN UNTRUNCATED COUNT (1.3.1 F1). Four surfaces
+    joined ``ids[:5]`` under a sentence that had already said how many there
+    were. A CDE with six unverified projects read "6 project(s) ... :" and then
+    five IDs, with no ellipsis and nothing saying the list was partial — so the
+    sixth read as verified. The generated documents name all six, which means
+    the screen and the filing disagreed and the screen is the one a CDE acts
+    on before it ever generates a filing.
+
+    The pattern was already in this repository and only one caller used it —
+    ``sections/section_a_business``, on the target-states sentence. It is
+    stated once here now, and that caller reads it rather than restating it,
+    for the reason ``renderers/_frame_geometry`` exists: a rule recomputed at
+    each call site is a rule one call site can forget.
+
+    THE SUFFIX IS THE EXISTING ONE, UNCHANGED. " and others" is what Section A
+    has rendered since 1.1.x and it is in the four committed baselines; a
+    better-informed wording (" and 3 others") would move a generated document
+    on a patch release, which this round exists not to do. If it is worth
+    changing, it is worth changing as a document change, reviewed as one.
+
+    Example::
+
+        join_truncated(["IL", "OH", "MI"])                 # -> 'IL, OH, MI'
+        join_truncated([f"P{i}" for i in range(7)])[-12:]  # -> ' and others'
+    """
+    items = [str(i) for i in items]
+    return ", ".join(items[:limit]) + (" and others" if len(items) > limit else "")
+
+
+def wrap_disclosure(text: str, *, width: int = 68, indent: str = "  ") -> list:
+    """Return a disclosure as wrapped lines — NEVER as a truncated one.
+
+    A DISCLOSURE MAY NOT BE CUT (1.3.1). ``benchmarks.BenchmarkResult.summary``
+    printed ``self.methodology_disclosure[:140]`` of a 352-character sentence,
+    with no ellipsis. What a reader saw was::
+
+        Benchmarks compare input metrics against patterns observed in CDFI
+        Fund NMTC award announcements (CY2020-CY2024). Only winner-level data is
+
+    and what the cut removed was the whole of the disclosure's work:
+
+        ... non-winner distributions are unknown. Scores reflect alignment with
+        historical winners, NOT PROBABILITY OF SELECTION. Use as diagnostic
+        guidance only — NOT AS A PREDICTION OF FUNDING OUTCOMES.
+
+    So the surface kept the half that reads as a credential and dropped every
+    clause saying the score is not a forecast — under a heading that says
+    "Methodology:", which is a promise that what follows is the methodology.
+    ``optimizer.OptimizationResult.summary`` cut the same class at 120
+    characters, losing "Alignment score != win probability".
+
+    Truncating body text is a display decision. Truncating a disclosure changes
+    what the document says, and it changes it in the direction that flatters
+    the tool. This wraps instead; a terminal that is narrower than ``width``
+    reflows, and no clause is lost at any width.
+
+    Example::
+
+        wrap_disclosure("a b c", width=4, indent="")   # -> ['a b', 'c']
+    """
+    import textwrap
+
+    return textwrap.wrap(
+        " ".join(str(text).split()),
+        width=max(width, 20),
+        initial_indent=indent,
+        subsequent_indent=indent,
+    ) or [indent.rstrip()]
+
+
 def qlici_not_supplied_note(pipeline) -> str:
     """Appendix A's disclosure when no QLICI amount was supplied — or ``""``.
 

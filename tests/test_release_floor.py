@@ -23,8 +23,14 @@ checks by putting the tarball's source tree on sys.path. The job's real
 invocation skipped eighteen there, and twenty here. A digit that is
 stale gets remeasured; a
 derivation that is merely plausible gets copied forward, so this is the worse
-half of the pattern rather than a footnote to it. FLOOR is 530 here, derived
+half of the pattern rather than a footnote to it. FLOOR was 530 there, derived
 from 1,096 collected and 20 skipped, identically on 3.9.25 and 3.12.13.
+
+1.3.1 MAKES IT SEVEN, AND THIS TEST IS WHAT FOUND IT. The round added 48 tests
+and went red on ``FLOOR=530`` before anything in release.yml was touched --
+the first stale floor in this file's history caught by a check rather than by
+somebody re-reading the comment beside it. FLOOR is 560, derived from 1,143
+collected and 23 skipped, identically on 3.9.12 and 3.12.13.
 
 MAX_SDIST_SKIPS below is the same shape one layer in, and 1.3.0 tightened it
 for the same reason.
@@ -91,23 +97,43 @@ MARKER_EXPR = "not wheel"
 #: no measurement of this tree produces, which is what 40 was doing and what
 #: made it an abstention rather than a ceiling.
 #:
-#: 24 sits four skips above the measurement and twelve below the point where
+#: RE-DERIVED TO 28 IN 1.3.1, AND 24 WAS ONE SKIP FROM BEING WRONG. The sdist
+#: skipped 20 at FIX-2 and skips 23 now, so the ceiling had a single skip of
+#: headroom left -- and a ceiling that is about to be crossed by its own
+#: measurement stops bounding anything the moment it is.
+#:
+#: The arithmetic that picks it, restated for this tree. With 1,143 collected
+#: the lower bound is
+#:
+#:     ((1143 - MAX_SDIST_SKIPS) // 2) // 10 * 10
+#:
+#: which returns 560 at a ceiling of 23, 550 for every ceiling from 24 to 43,
+#: and drops to 540 at 44. A ceiling below its own measurement is not a
+#: ceiling, so the live range is [23, 43]. At 44 the band starts admitting a
+#: floor no measurement of this tree produces, which is what 40 was doing
+#: before 1.3.0 and what made it an abstention rather than a ceiling.
+#:
+#: 28 sits five skips above the measurement and sixteen below the point where
 #: the band goes slack. It leaves room for a few more environment-driven skips
 #: without ever admitting a stale floor.
 #:
-#: What skips in the tarball and why -- all twenty are environment skips and
-#: each names its own reason: tests needing a git checkout (4), the constant
-#: SWEEPS and the two CHANGELOG derivations in test_pinned_constants that read
-#: the package SOURCE where this job deliberately has none (9), the docs hooks
-#: and docs scans in test_121_financial_tables and test_fund_attribution_source
-#: because MANIFEST.in prunes docs/ (4), and three that ask about
-#: .github/workflows/, which MANIFEST.in does not ship: this module's own two
-#: and test_ci_fetches_enough_history_to_answer_this_gate.
+#: What skips in the tarball and why -- all twenty-three are environment skips
+#: and each names its own reason: tests needing a git checkout (5, one of them
+#: new in 1.3.1: test_the_changelogs_baseline_class_table_adds_up), the
+#: constant SWEEPS and the CHANGELOG derivations in test_pinned_constants that
+#: read the package SOURCE where this job deliberately has none (9), the docs
+#: hooks and docs scans in test_121_financial_tables and
+#: test_fund_attribution_source because MANIFEST.in prunes docs/ (4), three
+#: that ask about .github/workflows/, which MANIFEST.in does not ship (this
+#: module's own two and test_ci_fetches_enough_history_to_answer_this_gate),
+#: and two new in 1.3.1 -- test_truncated_lists' F1 sweep and its
+#: ruled-exception check, which read nmtcapp/ and streamlit_app/ where this
+#: job puts neither beside tests/.
 #:
 #: If the skip count ever approaches this, the right response is to ask why the
 #: sdist stopped being able to answer its own suite's questions -- not to raise
 #: the ceiling.
-MAX_SDIST_SKIPS = 24
+MAX_SDIST_SKIPS = 28
 
 _FLOOR_RE = re.compile(r"^\s*FLOOR=(\d+)\s*$", re.MULTILINE)
 _COLLECTED_RE = re.compile(r"(\d+)(?:/\d+)? tests? collected")

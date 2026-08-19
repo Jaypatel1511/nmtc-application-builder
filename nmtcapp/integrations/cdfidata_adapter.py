@@ -4,6 +4,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from nmtcapp.renderers._disclosure import join_truncated
+
 if TYPE_CHECKING:
     from nmtcapp.core.cde import CDEProfile
 
@@ -74,7 +76,7 @@ def _build_record(cde: "CDEProfile", tlr_count: int) -> dict:
         f"{cde.name} has received {len(awards)} prior NMTC allocations totaling "
         f"${total_prior:,.0f}, with {fully_deployed} rounds fully deployed. "
         f"Capital has been deployed across {len(states_deployed)} states: "
-        f"{', '.join(states_deployed[:5]) if states_deployed else 'N/A'}."
+        f"{join_truncated(states_deployed) if states_deployed else 'N/A'}."
     )
 
     return {

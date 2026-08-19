@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from nmtcapp.data.schema import TARGET_DISTRESS_THRESHOLDS
 from nmtcapp.renderers._disclosure import (
-    is_partial_unverified, qualified_pct, unverified_qualifier,
+    is_partial_unverified, join_truncated, qualified_pct, unverified_qualifier,
 )
 from nmtcapp.sections.base import SectionGenerator, _cde_todo, _placeholder
 
@@ -39,7 +39,7 @@ class SectionABusinessStrategy(SectionGenerator):
         sector = pr.sector_mix
 
         states = geo.get("states", [])
-        states_str = ", ".join(states[:5]) + (" and others" if len(states) > 5 else "")
+        states_str = join_truncated(states)
         dominant_sector = sector.get("dominant_sector", "healthcare")
         deep_pct = distress.get("pct_deep_or_severe", 0.0)
         total_qei = pr.total_qei_request

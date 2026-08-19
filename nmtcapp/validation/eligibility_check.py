@@ -5,6 +5,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from nmtcapp.data.schema import TARGET_DISTRESS_THRESHOLDS, ValidationResult
+from nmtcapp.renderers._disclosure import join_truncated
 
 if TYPE_CHECKING:
     from nmtcapp.core.pipeline import Pipeline
@@ -40,7 +41,7 @@ def check_eligibility(pipeline: "Pipeline") -> ValidationResult:
     if not_enriched:
         warnings.append(
             f"{len(not_enriched)} project(s) lack eligibility data: "
-            + ", ".join(p.project_id for p in not_enriched[:5])
+            + join_truncated([p.project_id for p in not_enriched])
         )
 
     ineligible = [p for p in projects if p.is_nmtc_eligible is False]

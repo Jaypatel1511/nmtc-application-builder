@@ -83,7 +83,7 @@ def home():
         # it is unsourced. A provenance claim on the landing page is still a
         # provenance claim.
         "📊 CDFI Fund NMTC eligibility data, 2016–2020 ACS &nbsp;|&nbsp; "
-        "✅ 890+ tests &nbsp;|&nbsp; "
+        "✅ 1,144 tests &nbsp;|&nbsp; "
         "🔓 MIT License"
         "</div>",
         unsafe_allow_html=True,
@@ -143,9 +143,9 @@ def home():
         st.subheader("Sample CDE profile")
         st.markdown(
             """
-            The demo uses **Riverbend Community Capital CDE, LLC** — a realistic sample profile
+            The demo uses **Riverbend Community Capital CDE, LLC** — a fictional sample profile
             with three prior NMTC award rounds and a 20-project pipeline spanning
-            12 states across healthcare, education, affordable housing, and small
+            19 states across healthcare, education, affordable housing, and small
             business sectors.
 
             No external API calls are needed — all sample data is pre-enriched with

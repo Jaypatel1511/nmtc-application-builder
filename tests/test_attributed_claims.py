@@ -228,14 +228,64 @@ def wrapped_fragments(clauses, ruled) -> dict:
         wrapped_fragments({"not a cdfi fund"}, {"not a cdfi fund parameter)"})
     """
     absorbed = {}
-    for clause in clauses:
+    # Deterministic, for the reason tests/test_invariant_output records at the
+    # same function: `ruled` is a set, and taking whichever parent hash order
+    # reached first made the PARENT count vary run to run on an unchanged tree
+    # while the gate printed it as a fact (1.3.1 G5).
+    candidates = sorted(ruled, key=lambda p: (-len(p), p))
+    for clause in sorted(clauses):
         if len(clause) < MIN_FRAGMENT_CHARS:
             continue
-        for parent in ruled:
+        for parent in candidates:
             if len(parent) > len(clause) and clause in parent:
                 absorbed[clause] = parent
                 break
     return absorbed
+
+
+def _assert_every_absorption_is_a_wrap(absorbed: dict, seen_on: dict) -> None:
+    """N6's narrowing must swallow wraps and nothing else — asserted, not printed.
+
+    THE COUNT USED TO BE PRINTED (1.3.1 G5). ``print("N6 absorbed 6 ...")`` in
+    a passing test is read by nobody, and the parent half of it was not even
+    stable: `wrapped_fragments` took its parent from an unordered set, so the
+    same tree printed 8, 9, 10 and 13 across PYTHONHASHSEED values.
+
+    What is asserted instead is the property the narrowing actually claims,
+    stated the same way ``tests/test_invariant_output`` states it: A WRAP IS
+    ONE CLAUSE SEEN THROUGH TWO GEOMETRIES. Markdown, Word and Excel carry the
+    long cells unbroken; the PDF lays them into a 194 pt column and splits
+    them across visual lines, and this gate's unit is a line. So a genuine
+    fragment appears on a surface its parent does not.
+
+    A clause that renders BESIDE its supposed parent, on the same surface, was
+    not wrapped by anything. Absorbing it would let a new uncited attribution
+    inherit a ruling by being a substring of one — which is precisely the
+    class this gate exists to report.
+    """
+    assert absorbed, (
+        "N6 absorbed nothing. The PDF wraps the long key/value cells this "
+        "narrowing was added for, so some fragments must exist; if none do, "
+        "extraction changed shape and the narrowing is dead code."
+    )
+    not_wraps = []
+    for clause, parent in sorted(absorbed.items()):
+        shared = seen_on.get(clause, set()) & seen_on.get(parent, set())
+        if not seen_on.get(clause) or not seen_on.get(parent):
+            not_wraps.append(f"not indexed on any surface: {clause[:70]!r}")
+        elif shared:
+            not_wraps.append(
+                f"on {sorted(shared)} this clause renders BESIDE the ruled "
+                f"clause it is treated as a wrap of:\n      clause: "
+                f"{clause[:90]!r}\n      parent: {parent[:90]!r}"
+            )
+    assert not not_wraps, (
+        f"{len(not_wraps)} of {len(absorbed)} absorbed clause(s) are not "
+        "wraps. N6 exists so one sentence does not need nine rulings because "
+        "the PDF broke it across nine lines; it is not a licence for an "
+        "uncited claim to inherit a ruling by being a substring of one.\n\n  "
+        + "\n\n  ".join(not_wraps[:10])
+    )
 
 
 @pytest.fixture(scope="module")
@@ -249,6 +299,7 @@ def attributed_clauses(tmp_path_factory) -> dict:
     found = {}
     exempted = set()
     scanned = 0
+    seen_on: dict = {}          # normalised clause -> {format, ...}
     for sid, (cde, pipeline, requested) in SCENARIOS.items():
         out = tmp_path_factory.mktemp(f"attr{sid}")
         app = Application(cde=cde, requested_allocation=requested)
@@ -269,6 +320,7 @@ def attributed_clauses(tmp_path_factory) -> dict:
                 low = line.lower()
                 for clause in _clauses(line):
                     cl = clause.lower()
+                    seen_on.setdefault(_normalise(clause), set()).add(fmt)
                     hits = [t for t in TRIGGERS if t in cl]
                     if not hits:
                         continue
@@ -280,8 +332,7 @@ def attributed_clauses(tmp_path_factory) -> dict:
     # there, is the same clause seen through a line break.
     ruled = set(_load_allowlist()) | exempted
     absorbed = wrapped_fragments(set(found) - ruled, ruled)
-    print(f"  N6 absorbed {len(absorbed)} wrapped fragment(s) of "
-          f"{len(set(absorbed.values()))} ruled or exempt clause(s)")
+    _assert_every_absorption_is_a_wrap(absorbed, seen_on)
     for clause in absorbed:
         found.pop(clause, None)
     assert scanned > 200, (
@@ -380,3 +431,28 @@ def test_the_wrap_narrowing_cannot_absorb_a_new_claim():
     )
 
     assert wrapped_fragments({parent[:MIN_FRAGMENT_CHARS - 1]}, ruled) == {}
+
+
+def test_the_wrap_proof_refuses_a_clause_that_renders_beside_its_parent():
+    """N6's surface rule goes red on a fragment-shaped lie — shown, not argued.
+
+    ADDED IN 1.3.1 (G5), alongside the assertion that replaced the printed
+    count. A proof that has never been seen to refuse is a proof nobody has
+    evidence about.
+    """
+    ruled = set(_load_allowlist())
+    parent = max(ruled, key=len)
+    lie = parent[: len(parent) - 10]
+
+    # Same surface as its parent: nothing wrapped it there.
+    with pytest.raises(AssertionError, match=r"not wraps"):
+        _assert_every_absorption_is_a_wrap(
+            {lie: parent}, {lie: {"pdf"}, parent: {"pdf", "word"}})
+
+    # Disjoint surfaces: a real wrap, and it passes.
+    _assert_every_absorption_is_a_wrap(
+        {lie: parent}, {lie: {"pdf"}, parent: {"word"}})
+
+    # An absorption of something the corpus never rendered is refused too.
+    with pytest.raises(AssertionError, match="not indexed"):
+        _assert_every_absorption_is_a_wrap({lie: parent}, {parent: {"word"}})
