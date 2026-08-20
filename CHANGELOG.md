@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — 1.4.0
+## [1.4.0] — 2026-08-20
 
 **MINOR. The non-metropolitan share stops being a guess, stops being a
 benchmark, and starts naming what it is.**
@@ -278,7 +278,7 @@ that prose displaced.
 
 ---
 
-## [Unreleased] — 1.3.1
+## [1.3.1] — 2026-08-20, published 2026-08-20T02:52:57Z
 
 **PATCH. The eight findings the 1.3.0 confirmation pass returned SHIP with,
 plus four things a CDE reads on a screen and nowhere else.**

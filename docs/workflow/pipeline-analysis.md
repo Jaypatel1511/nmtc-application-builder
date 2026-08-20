@@ -223,7 +223,6 @@ d["vs_historical_winners"]    # str — e.g. "above_median"
 g = analysis.geographic_analysis
 g["states_count"]                  # int — number of distinct states
 g["msa_count"]                     # int — number of MSAs represented
-g["urban_pct"]                     # float — fraction of QEI in urban tracts
 g["non_metro_pct"]                 # float — share of QEI in verified Non-Metropolitan Counties
 g["metro_pct"]                     # float — share of QEI in verified Metropolitan Counties
 g["metro_undetermined_pct"]        # float — share of QEI whose county status is UNKNOWN
