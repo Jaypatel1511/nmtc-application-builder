@@ -260,3 +260,73 @@ def test_derivation_boundary_is_documented():
         "result passed into a helper. Extend the derivation to cover the new "
         "module, or bring the read back into the adapter."
     )
+
+
+#: The field the 1.4.0 floor exists for, and the version that first has it.
+_CONTRACT_FLOOR = "0.5.0"
+_FLOOR_FIELD = "is_non_metro"
+
+
+def test_the_field_the_floor_exists_for_is_present():
+    """``is_non_metro`` must exist on the installed EligibilityResult.
+
+    THE DERIVED TEST ABOVE ALREADY COVERS THIS, and that is exactly why this
+    one is written separately. ``test_eligibility_result_has_attribute`` is
+    parametrised over whatever the adapter happens to read: it protects the
+    field only for as long as the adapter reads it, and it would go green — not
+    red — if someone deleted the read. What it cannot say is WHY the dependency
+    floor moved.
+
+    ``nmtc-mapper>=0.5.0`` in pyproject.toml is a floor with one job: guarantee
+    this field. A floor whose reason lives only in a comment is a floor that
+    gets lowered by the next person who wants to install an older mapper. This
+    asserts the reason directly, and names it in the failure message.
+
+    RED AGAINST 0.4.3, GREEN AGAINST 0.5.0 — that is the whole contract, and it
+    is checkable by installing either one.
+    """
+    import nmtcmapper
+    from nmtcmapper.eligibility.checker import EligibilityResult
+
+    version = getattr(nmtcmapper, "__version__", "unknown")
+    fields = {f.name for f in dataclasses.fields(EligibilityResult)}
+
+    assert _FLOOR_FIELD in fields, (
+        f"installed nmtc-mapper {version} has no "
+        f"EligibilityResult.{_FLOOR_FIELD}. pyproject.toml declares "
+        f"nmtc-mapper>={_CONTRACT_FLOOR} precisely because that is the first "
+        f"release carrying it, and intelligence/geographic_analysis computes "
+        f"the pipeline's non-metropolitan share from it — under an older "
+        f"mapper every geocoded project raises AttributeError in "
+        f"nmtc_mapper_adapter._enrich_via_api. Installed fields: "
+        f"{sorted(fields)}"
+    )
+
+
+def test_the_floor_field_is_tri_state_not_a_bool():
+    """``Optional[bool]``, not ``bool`` — the distinction the share depends on.
+
+    ``None`` from this field means "could not determine", and
+    geographic_analysis puts those dollars in a third bucket rather than in
+    the metropolitan one. If upstream ever narrowed the annotation to a plain
+    ``bool``, the third bucket would silently empty and every undetermined
+    dollar would be counted metropolitan — which is the defect the twelve-state
+    list had and the reason this field replaced it.
+    """
+    import typing
+    from nmtcmapper.eligibility.checker import EligibilityResult
+
+    annotations = {f.name: f.type for f in dataclasses.fields(EligibilityResult)}
+    declared = annotations[_FLOOR_FIELD]
+    # Dataclass field types may arrive as a string under `from __future__
+    # import annotations`; compare on the rendered form so both spellings work.
+    rendered = declared if isinstance(declared, str) else str(declared)
+
+    assert "Optional[bool]" in rendered or "bool, NoneType" in rendered, (
+        f"EligibilityResult.{_FLOOR_FIELD} is declared {rendered!r}, not an "
+        "Optional[bool]. geographic_analysis reads None as 'not determined' "
+        "and routes those dollars to a third bucket; a two-valued field "
+        "collapses that bucket into 'metropolitan' without changing a line "
+        "of this package."
+    )
+    assert typing.Optional[bool] == typing.Union[bool, None]  # pin the premise

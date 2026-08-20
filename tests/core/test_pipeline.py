@@ -199,3 +199,40 @@ def test_pipeline_from_csv_missing_column_raises():
 def test_pipeline_from_csv_file_not_found():
     with pytest.raises(FileNotFoundError):
         Pipeline.from_csv("/nonexistent/pipeline.csv")
+
+
+def test_sample_pipelines_do_not_alias_each_others_projects():
+    """``Pipeline.sample()`` must hand out copies, not the module-level objects.
+
+    THE DEFECT (1.4.0). ``sample()`` returned ``_SAMPLE_PROJECTS[:n]``, which
+    slices the LIST and shares the ``PipelineProject`` instances. Every sample
+    pipeline in a process was the same twenty objects, and every attribute
+    enrichment writes — ``census_tract``, ``distress_level``,
+    ``is_nmtc_eligible``, ``is_non_metro``, ``geocode_success`` — was shared
+    state.
+
+    NOT A TEST-ONLY CONCERN, which is why this lives beside the library and not
+    in a conftest. ``--demo`` runs ``sample()``, the Streamlit app is a
+    long-lived process, and two pipelines a user believes are independent
+    shared eligibility values.
+
+    Found by the CLI baseline gate, whose pre-enriched capture came out at 87%
+    deep/severe alone and 100% after the rest of the suite had run.
+    """
+    from nmtcapp.core.pipeline import Pipeline, _SAMPLE_PROJECTS
+
+    first, second = Pipeline.sample(), Pipeline.sample()
+    a, b = list(first)[0], list(second)[0]
+
+    assert a is not b, "two sample pipelines share a PipelineProject instance"
+    assert a.project_id == b.project_id, "the copies are not of the same project"
+
+    original = _SAMPLE_PROJECTS[0].distress_level
+    a.distress_level = "mutated-by-this-test"
+    assert b.distress_level == original, (
+        "mutating one sample pipeline changed another"
+    )
+    assert _SAMPLE_PROJECTS[0].distress_level == original, (
+        "mutating a sample pipeline reached back into the module-level "
+        "fixture, so every later Pipeline.sample() in this process is wrong"
+    )

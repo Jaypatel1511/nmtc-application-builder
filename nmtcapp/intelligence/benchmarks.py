@@ -238,15 +238,43 @@ class HistoricalBenchmarks:
             note="Winners average 96% eligibility",
         ))
 
-        # Rural concentration
-        metrics.append(self._assess(
-            "min_rural_pct", "Rural % of QEI",
-            value=float(g.get("rural_pct", 0.0)),
-            higher_is_better=True,
-            winner_mean=WINNER_GEOGRAPHIC_PATTERNS["rural_pct_mean"],
-            winner_std=0.10,
-            note=f"Winner mean rural: {WINNER_GEOGRAPHIC_PATTERNS['rural_pct_mean']:.0%}",
-        ))
+        # THE RURAL BENCHMARK IS DELETED (1.4.0 premise ruling), and this
+        # comment is its record because a removal leaves nothing else behind.
+        #
+        # It scored `geographic_diversity["rural_pct"]` against
+        # WINNER_GEOGRAPHIC_PATTERNS["rural_pct_mean"] at weight 0.05 and rolled
+        # the result into overall_benchmark_score. Four defects stacked, and
+        # repairing only the first would have made the other three harder to
+        # see, not easier:
+        #
+        #   1. THE CDE'S SIDE had no basis — a QEI share over a hard-coded
+        #      twelve-state list. That is what 1.4.0 R2 fixed.
+        #   2. THE WINNER'S SIDE has none either, and this package already
+        #      knows it. data/historical_awards.py's own header states that the
+        #      four "Source: CDFI Fund Annual Reports" comments — including the
+        #      one over WINNER_GEOGRAPHIC_PATTERNS — cite a publication that
+        #      does not exist, and that "Every value under them is unsourced."
+        #      0.18 is one of those values.
+        #   3. THE WINNER MEAN IS A COMPLEMENT TOO. rural_pct_mean 0.18 and
+        #      urban_pct_mean 0.82 sum to exactly 1.000 across a population of
+        #      award winners, which is arithmetic and not measurement — the
+        #      same structural defect as the figure it was benchmarking.
+        #   4. THERE IS NO QUESTION TO BENCHMARK. Question 22(c)/(d) asks what
+        #      percentage of QLICIs the Applicant COMMITS to deploy in
+        #      Non-Metropolitan Counties, and Question 22 is not scored in
+        #      Phase I. Comparing a pipeline's current QEI share to a "winner
+        #      mean" scores an Applicant against a number the Fund never asked
+        #      them for. See renderers/_question_22.
+        #
+        # Fixing (1) alone would have left a more authoritative version of the
+        # same misleading comparison, which is the outcome this ruling exists
+        # to refuse. The non-metropolitan share survives as an unbenchmarked
+        # characterisation on the CLI and the Streamlit tab, with its basis and
+        # its nature named; what is gone is scoring a CDE against it.
+        #
+        # _weighted_score normalises by the weights actually present, so the
+        # remaining eight metrics renormalise from 0.95 to 1.0 on their own and
+        # no weight is retyped.
 
         overall = self._weighted_score(metrics)
         tier_summary = {

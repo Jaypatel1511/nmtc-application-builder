@@ -397,11 +397,13 @@ WINNER_PATTERN_THRESHOLDS: dict = {
         "competitive": 0.90,
         "weak": 0.75,
     },
-    "min_rural_pct": {
-        "strong": 0.20,
-        "competitive": 0.10,
-        "weak": 0.00,
-    },
+    # "min_rural_pct" REMOVED (1.4.0 premise ruling). Its tiers were 0.20 /
+    # 0.10 / 0.00 — a "strong" band set at the Fund's 20%, which is a
+    # program-level goal across all Allocatees and a bar on what an Allocatee
+    # COMMITTED to, not a percentage an Applicant's pipeline must reach. Its
+    # only consumer, benchmarks.py's rural metric, is deleted; see the note
+    # there for the four defects, and renderers/_question_22 for the
+    # instrument.
     "min_native_area_pct": {
         "strong": 0.10,
         "competitive": 0.05,
@@ -425,5 +427,10 @@ BENCHMARK_METRIC_WEIGHTS: dict = {
     "min_sectors_represented": 0.05,
     "min_projects": 0.05,
     "min_eligible_pct": 0.05,
-    "min_rural_pct": 0.05,
+    # "min_rural_pct": 0.05 removed with its metric (1.4.0). These weights now
+    # sum to 0.95 rather than 1.00 and that is CORRECT, not an oversight:
+    # benchmarks._weighted_score divides by the weights actually present, so
+    # the eight surviving metrics renormalise themselves. Topping one of them
+    # up by 0.05 to restore a round total would silently reweight a metric
+    # nobody decided to reweight.
 }

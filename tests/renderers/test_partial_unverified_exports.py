@@ -12,7 +12,6 @@ location-verified. Every export format (Word, PDF, Excel, Markdown) must:
 3. Never assert the bare percentage as an unqualified fact in narratives.
 """
 import re
-from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -22,6 +21,8 @@ from nmtcmapper import EligibilityDownloadError
 from nmtcapp.core.application import Application
 from nmtcapp.core.cde import CDEProfile
 from nmtcapp.core.pipeline import Pipeline, PipelineProject
+
+from tests.mapper_doubles import geocode_failed, ok_result
 
 BANNER_MARK = "could not be location-verified"
 QUALIFIER = "(2 of 6 unverified)"
@@ -49,22 +50,13 @@ def _scenario_b_pipeline() -> Pipeline:
     ])
 
 
-def _ok_result(address: str, tract: str, distress: str) -> SimpleNamespace:
-    return SimpleNamespace(
-        address=address, tract_id=tract, geocode_success=True,
-        nmtc_eligible=True, distress_level=distress,
-        is_high_migration_rural=False,
-        is_opportunity_zone=False,
-    )
-
-
-def _geocode_failed(address: str) -> SimpleNamespace:
-    return SimpleNamespace(
-        address=address, tract_id=None, geocode_success=False,
-        nmtc_eligible=False, distress_level="ineligible",
-        is_high_migration_rural=False,
-        is_opportunity_zone=False,
-    )
+# BUILT FROM THE INSTALLED DATACLASS, not hand-listed (1.4.0 R1). These two
+# were SimpleNamespaces enumerating the fields the adapter read when this file
+# was written, which is the "validates the mock, not the library" shape that
+# let nmtc-mapper 0.5.0's removal of is_nmtc_native_area through every gate.
+# See tests/mapper_doubles.
+_ok_result = ok_result
+_geocode_failed = geocode_failed
 
 
 def _mock_mapper_scenario_b() -> MagicMock:

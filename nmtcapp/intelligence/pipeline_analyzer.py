@@ -14,6 +14,7 @@ from nmtcapp.integrations.nmtc_calc_adapter import compute_pipeline_economics
 from nmtcapp.integrations.nmtc_mapper_adapter import enrich_pipeline_eligibility
 from nmtcapp.renderers._cell_format import supplied_total
 from nmtcapp.renderers._disclosure import join_truncated
+from nmtcapp.renderers._question_22 import Q22_QEI_BASIS_CLAUSE
 
 if TYPE_CHECKING:
     from nmtcapp.core.pipeline import Pipeline
@@ -122,7 +123,29 @@ class PipelineAnalysisResult:
             "── Geographic Diversity ────────────────────────────────",
             f"  States:          {g.get('states_count', 0)}",
             f"  MSAs:            {g.get('msa_count', 0)}",
-            f"  Urban/Rural:     {g.get('urban_pct', 0):.0%} / {g.get('rural_pct', 0):.0%}",
+            # THE THREE-WAY SPLIT (1.4.0 R2/R3). This line used to read
+            # "Urban/Rural: 93% / 7%" — two figures summing to 100%, with no
+            # denominator named and no third state possible, computed as
+            # "rural = 1 − (QEI in states absent from a hard-coded list of
+            # twelve)". All three parts of that were wrong: the word, the
+            # basis, and the arithmetic.
+            #
+            # It now prints all three buckets. The undetermined one is printed
+            # even when it is 0%, deliberately: a reader who only ever sees it
+            # when it is non-zero has no way to know the category exists, and
+            # would read a 0%-undetermined pipeline's two figures as the same
+            # complement this change removed.
+            f"  Non-metro:       {g.get('non_metro_pct', 0):.0%}  "
+            f"({Q22_QEI_BASIS_CLAUSE})",
+            f"  Metropolitan:    {g.get('metro_pct', 0):.0%}",
+            f"  Not determined:  {g.get('metro_undetermined_pct', 0):.0%}"
+            f"  ({g.get('metro_status_qei', {}).get('undetermined_projects', 0)}"
+            " project(s) — counted as neither)",
+            "  Question 22 asks what percentage of QLICIs the Applicant "
+            "commits to deploy",
+            "  in Non-Metropolitan Counties. This is a share of QEI in the "
+            "current pipeline,",
+            "  not that commitment, and Question 22 is not scored in Phase I.",
             f"  HHI:             {g.get('hhi', 0):.0f}  "
             f"({g.get('geographic_concentration_label', 'N/A')})",
             "",

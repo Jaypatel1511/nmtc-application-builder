@@ -5,6 +5,253 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — 1.4.0
+
+**MINOR. The non-metropolitan share stops being a guess, stops being a
+benchmark, and starts naming what it is.**
+
+`intelligence/geographic_analysis` computed the pipeline's rural share from a
+**hard-coded twelve-state set** whose own comment called itself "(simplified)",
+and the module four lines below it conceded *"(In production, this would use
+proper CBSA codes from census data.)"* The dependency this package already
+installs returns a per-tract OMB answer, and the adapter threw it away.
+
+**A minor, not a patch, for two independent reasons**: the `nmtc-mapper` floor
+rises from `>=0.4.2` to `>=0.5.0`, and user-visible computed values move on
+three surfaces a CDE reads.
+
+### THE PREMISE RULING — does a non-metropolitan share belong here at all?
+
+Three answers, because the question has three parts.
+
+**THE PER-PROJECT DETERMINATION BELONGS, and is understated by the brief that
+asked for it.** Table A5 row (d), *"Located in a Non-Metropolitan County?"*, is
+**required by the Fund** and this tool does not supply it — recorded as a gap in
+1.2.1 and still open. Question 22(f) instructs the Applicant to *"indicate the
+number and dollar amount of transactions that have already been identified in
+Non-Metropolitan Counties, for which underwriting is completed or underway"*,
+referencing Table A5. `PipelineProject.is_non_metro` is the field that makes
+both answerable. It is carried, tri-state.
+
+**THE AGGREGATE SHARE BELONGS AS AN UNBENCHMARKED CHARACTERISATION.** It is
+raw material for drafting 22(f) and for deciding what to commit to in 22(c). It
+is not an answer to either, and every surface that renders it now says so.
+
+**THE BENCHMARK DOES NOT BELONG, and it is deleted.** `benchmarks.py` scored
+`rural_pct` against `WINNER_GEOGRAPHIC_PATTERNS["rural_pct_mean"]` at weight
+0.05 and folded the result into `overall_benchmark_score`. Four defects,
+stacked:
+
+1. **The CDE's side had no basis** — a QEI share over twelve state codes.
+2. **The winner's side has none either, and this package already knew.**
+   `data/historical_awards.py`'s own header records that the four
+   *"Source: CDFI Fund Annual Reports"* comments — including the one over
+   `WINNER_GEOGRAPHIC_PATTERNS` — cite a publication that does not exist, and
+   that **"Every value under them is unsourced."** `0.18` is one of them.
+3. **The winner mean is a complement too.** `rural_pct_mean` 0.18 and
+   `urban_pct_mean` 0.82 sum to exactly 1.000 across a population of award
+   winners. That is arithmetic, not measurement — the same structural defect as
+   the figure being benchmarked.
+4. **There is no question to benchmark.** See R3.
+
+**Fixing (1) alone would have shipped a more authoritative version of the same
+misleading comparison.** That is the outcome this ruling refuses.
+
+### R3 — the denominator is LABELLED, not swapped, and Q22 was read to settle it
+
+Retrieved from the instrument this round, hash confirmed identical to the
+SHA-256 `renderers/_question_25.py:52` pins — 142 pp., 1,525,626 bytes,
+`0280c6bc…12834f` — and text-extracted locally with `pypdf`. Printed p. 32
+(PDF 59):
+
+> **(c)** What is the minimum percentage of QLICIs that the Applicant is
+> willing to commit to deploy in Non-Metropolitan Counties? `______%` ·
+> *Numerical - Percentage*
+>
+> **(d)** What is the maximum percentage of QLICIs that the Applicant is
+> willing to commit to deploy in Non-Metropolitan Counties? `______%`
+
+**"Willing to commit to deploy", into a blank field, and the figure entered
+*"shall become a condition of its Allocation Agreement with the CDFI Fund"*.**
+It is the Question 25 shape one level down: a forward commitment about capital
+the Applicant does not hold, not a measurement of the pipeline it does. Printed
+p. 31 adds that *"Question 22 will not be evaluated and scored in Phase I."*
+
+So swapping QEI for QLICI would move the figure closer to the **units** of a
+commitment while leaving it a characterisation of a pipeline — more credible
+and no more correct. **The basis stays QEI and every surface names it**, using
+`renderers/_question_22`, which imports the denominator clause from
+`_question_25` rather than retyping it.
+
+**AN INCONSISTENCY IN THE INSTRUMENT, recorded so nobody "corrects" us toward
+it.** The p. 31 NOTE says the range runs *"at or above the minimum indicated in
+Question 22(b), but not more than the maximum percentage indicated in Question
+22(c)"*. In the p. 32 table, **22(b) is a count of years (0-6)** and the
+percentages are **22(c)** and **22(d)**. The NOTE also contradicts itself: its
+Rural CDE sentence puts the 50% commitment at 22(c). The question table governs.
+`docs/reference/methodology.md` had inherited the NOTE's letters and is
+corrected.
+
+### R4 — `non_metro_meets_minimum` deleted, and a name collision found underneath it
+
+`win_probability.py:633` was `rural_pct >= 0.20`. **There is no 20% applicant
+threshold.** The 20% is a Fund goal for *"all QLICIs made by Allocatees under
+this Round"* and a bar on what an Allocatee **committed** to; Question 22 states
+no minimum an individual Applicant must clear. **Consumers: none** — one write,
+zero reads, in this package and its docs.
+
+**AND THE LINE ABOVE IT WAS WORSE.** `non_metro_commitment_pct` **is a CDE
+profile field.** `templates/cde_profile_sample.yaml:126` ships
+`non_metro_commitment_pct: 0.22` — a CDE's own answer to Question 22(c) — and it
+arrives in `_build_phase2_flags` through `CDEProfile.extra` → `cde_attributes`,
+exactly like `has_favorable_fee_structure` two lines below, which **is** read
+from `attrs`. Line 632 ignored it and wrote a computed pipeline share over the
+top, **under the identical key and in different units** (the YAML is a fraction,
+the flag was a percentage number). A CDE who declared 22% read back `7.0`.
+
+**This is the fourth instance of this package discarding a column the CDE filled
+in**, after `native_area`, `urban_rural` and the declared tract/distress pair.
+The declaration now stands; the measured share is reported as
+`non_metro_pipeline_qei_pct` with `non_metro_undetermined_qei_pct` beside it.
+The word `commitment` no longer appears on anything this tool computed.
+
+### R5 — the 18% traced, and then deleted rather than pinned
+
+*"Winner rural mean: **18%**"* at `1_Pipeline_Analyzer.py:625` **does** trace to
+`WINNER_GEOGRAPHIC_PATTERNS["rural_pct_mean"] = 0.18`, so it was pinnable. It is
+deleted instead, per the premise ruling — pinning it would have made a
+misleading comparison reproducible.
+
+**THREE HAND-TYPED CONSTANTS SAT THERE, NOT ONE.** *"Winner median states: 7"*
+and *"Winner mean HHI: 620"* were literals on the two adjacent lines and are
+both keys of the same dict. Both are now interpolated. That takes the recorded
+count of hand-typed numbers beside live figures from six to eight.
+
+### R2 — the three-way split, and what happens to `_RURAL_STATES` and `_STATE_MSA_MAP`
+
+`_RURAL_STATES` is **deleted**. Its worst property was not that the twelve were
+wrong: `rural_pct` was `1 − urban_pct` where "urban" meant *"in a state absent
+from the list"*, so **Alaska, Nebraska, Iowa, Oklahoma and thirty-four other
+states were counted metropolitan by default — as was every project the tool had
+failed to verify.** Nothing was ever determined to be metropolitan. Three of the
+twelve (`MS`, `KS`, `NM`) were simultaneously assigned MSAs by `_STATE_MSA_MAP`
+four lines below.
+
+`_STATE_MSA_MAP` is **kept**, ruled separately. It feeds `msa_count`, `msas` and
+the per-state MSA label — never the county determination — so deleting it as
+collateral would remove the MSA figure from three surfaces for reasons that have
+nothing to do with the defect. It is **still wrong** and is recorded rather than
+repaired: one MSA per state means `msa_count` can never exceed `states_count`,
+and a nineteen-state pipeline reports nineteen MSAs regardless of how its
+projects are distributed. A real fix needs CBSA codes per tract, which
+`nmtc-mapper` does not return. 1.4.x.
+
+The replacement is three-way and is **not reducible to two**:
+
+| `project.is_non_metro` | bucket |
+|---|---|
+| `True` | non-metropolitan |
+| `False` | metropolitan |
+| `None`, or never geocoded | **not determined** |
+
+`None` is not `False`. The three shares sum to 1.0 for any pipeline with QEI,
+and the undetermined slice is rendered on every surface — including in the donut
+at zero, so the category stays a category.
+
+### THE CLI SUMMARY NOW HAS A BASELINE, AND CAPTURING IT FOUND THE WORST CASE
+
+`tests/cli_baseline/analyze.txt` captures `nmtcapp analyze` across five analyzer
+states, replaying twenty recorded `nmtc-mapper` answers so no network is needed.
+**43 lines move between `56573c0` and this commit, every one of them inside the
+Geographic Diversity block, zero unexplained.** The `unavailable` state is why
+it was worth building: with the CDFI Fund eligibility dataset unloadable and not
+one project verified, `56573c0` printed
+
+    Urban/Rural:     93% / 7%
+
+— a confident two-way split for a pipeline about which the tool knew nothing.
+No test in the tree rendered the summary in that state, so nothing could see it.
+It now prints `0% / 0% / 100% not determined`, and
+`test_the_degraded_states_do_not_report_a_determined_split` asserts it as a rule
+rather than as a baseline.
+
+### THE RENDERED BASELINE MOVED, AND THE BRIEF DID NOT EXPECT IT TO
+
+The round was scoped on the finding that `rural_pct` reaches no generated
+document. **That finding is correct and was re-verified.** What moved the
+baseline is R1, not R2: `renderers/_question_25`'s basis note states, on all
+four surfaces, that this package *"carries NOTHING for Non-Metropolitan
+Counties"*. Carrying `PipelineProject.is_non_metro` made that sentence **false**
+the moment the field landed.
+
+**Leaving it was not an option available.** The note's own paragraph heading is
+*"WHICH OF THE CDE'S QUALIFYING ROUTES ARE VISIBLE HERE"*, and the module was
+written against exactly this direction of error: *"the 1.2.2 note's 'computes
+neither figure' was true and unhelpfully pessimistic"*, and understating the
+package pushes the CDE to **understate itself to a federal agency** — the false
+negative this file's header ranks as the worst class of error in the package. So
+`Q25_AREA_TYPES_MODELLED` goes 5 → 6 and Non-Metropolitan Counties joins the
+provenance enumeration as TOOL-VERIFIED AND TRI-STATE.
+
+> **54 insertions, 44 deletions** in `tests/rendered_baseline/`, measured
+> `56573c0`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+
+**Every changed line classified, zero unexplained:**
+
+| Class | Lines | +/− | Surface |
+|---|---|---|---|
+| Section B basis note — markdown and word render the whole note as ONE line each, so both changes land on one line per surface | 4 | +2 / −2 | markdown, word |
+| `Q25 Basis Note` sheet — `A6` gains "6 of the 14"; `A8`/`A9` re-chunk at the sentence boundary the new text pushed past 800 chars. No row added | 6 | +3 / −3 | excel |
+| The note itself, re-wrapped across the PDF column — "5 of the 14" → "6 of the 14" and the Non-Metropolitan Counties sentence | 28 | +17 / −11 | pdf |
+| Page renumbering — the longer note pushes one page break, so `@@PAGE n` and `Page n` shift by one from page 21 onward | 58 | +30 / −28 | pdf |
+| The new page's furniture — one CONFIDENTIAL footer band and one blank line | 2 | +2 / −0 | pdf |
+| `Item`/`Value` extraction rows — none; no table gained or lost a row | 0 | +0 / −0 | — |
+
+**No figure moved.** Not one number in any of the four documents changed: the
+diff is the basis note's prose, the count it interpolates, and the pagination
+that prose displaced.
+
+### Also in this round
+
+- **Test doubles are built from the installed dataclass** (`tests/mapper_doubles.py`).
+  Two files hand-listed `SimpleNamespace` stand-ins for `EligibilityResult` —
+  the same "validates the mock, not the library" shape that let 0.5.0's removal
+  of `is_nmtc_native_area` through every gate. Adding one read broke eight tests
+  with `AttributeError` on the double; the fix is that the doubles cannot drift
+  again.
+- **`BENCHMARK_METRIC_WEIGHTS` no longer sums to 1.0, and that is correct.**
+  `_weighted_score` divides by the weights actually present. The test that
+  pinned the round total was measuring a coincidence: it went red on a
+  mathematically identical benchmark, and would have gone green on a metric
+  added without a weight — which scores 0.0 and drags the total down silently.
+  It now asserts the weight keys and the metric keys are the same set.
+- **`Constraints.min_rural_pct` removed. It was declared and never enforced** —
+  `is_feasible` never read it, in any release, while two documentation pages
+  listed it as a working constraint. Removing it changes no optimizer behaviour
+  because it governed none.
+
+### Found and NOT fixed
+
+- **`core/application.py:181` logs `"allocation $%,.0f"`**, which is not a valid
+  printf conversion in Python. **Every `Application()` construction raises inside
+  `logging.Formatter` under any INFO-level configuration**; `logging` swallows it
+  and prints a "Logging error" traceback instead of the record. Found by the CLI
+  capture, which pins its handler at WARNING partly for this reason. It is in the
+  1.3.2 queue the brief fenced off, and it is worse than "a formatting typo".
+- **`nmtcapp/core/upload_handler.py:43` maps an `Urban/Rural` upload column to
+  `urban_rural`, which `from_csv` never reads.** It was NOT wired into
+  `is_non_metro`, deliberately: "Rural" is the CDE's own word and
+  "Non-Metropolitan County" is an OMB county designation. Merging them would
+  recreate, one layer down, the conflation this round removed.
+- **`WINNER_GEOGRAPHIC_PATTERNS` remains unsourced** and is still read by
+  `pattern_analysis.compare_to_winners` as a reference table. Removing the
+  benchmark removed the place where an unsourced mean was *scored against* a
+  CDE. The constants themselves are the separate `historical_awards` workstream.
+- **`CITATION.cff` says `1.3.0`** and nothing gates it. Bumped to `1.4.0` here;
+  the gate is not built.
+
+---
+
 ## [Unreleased] — 1.3.1
 
 **PATCH. The eight findings the 1.3.0 confirmation pass returned SHIP with,
@@ -1735,11 +1982,15 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 203 constants are swept
+colour". The rendered-string sweep demands **19**, and 208 constants are swept
 where 49 were.
 
-> **Remeasured in 1.3.0, and again in FIX-2.** This sentence read **160** when
-> 1.2.2 shipped and **183** at `ff49064`, each true of its own tree.
+> **Remeasured in 1.3.0, and again in FIX-2, and again in 1.4.0.** This
+> sentence read **160** when 1.2.2 shipped, **183** at `ff49064` and **203**
+> at `56573c0`, each true of its own tree. 1.4.0's five are
+> `renderers/_question_22`'s constants, three of which are waived on the
+> ground that they reach the CLI summary and the Streamlit Geographic tab
+> rather than any of the six document renderers.
 > `test_the_changelogs_sweep_figures_match_the_tree` asserts the figure against
 > the tree *under test*, not against the tree the paragraph was written on, so
 > a release that adds a constant to a swept module makes the sentence false and

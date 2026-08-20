@@ -60,9 +60,31 @@ class TestApplicationBenchmark:
         assert bc.methodology_disclosure
         assert "winner" in bc.methodology_disclosure.lower()
 
-    def test_nine_metrics(self, sample_application):
+    def test_eight_metrics(self, sample_application):
+        """Eight, not nine — the rural benchmark was deleted in 1.4.0.
+
+        The count is DERIVED from the weight table rather than typed, which is
+        the whole reason this assertion is worth keeping: a metric added
+        without a weight scores at 0.0 and drags the overall benchmark down
+        silently, and a weight left behind by a deleted metric is a row nobody
+        removed. Comparing the two catches both directions.
+        """
+        from nmtcapp.data.benchmark_thresholds import BENCHMARK_METRIC_WEIGHTS
+
         bc = sample_application.benchmark()
-        assert len(bc.metrics) == 9
+        assert len(bc.metrics) == len(BENCHMARK_METRIC_WEIGHTS), (
+            f"{len(bc.metrics)} benchmark metrics against "
+            f"{len(BENCHMARK_METRIC_WEIGHTS)} weights. "
+            f"metrics: {sorted(m.metric for m in bc.metrics)}; "
+            f"weights: {sorted(BENCHMARK_METRIC_WEIGHTS)}"
+        )
+        assert {m.metric for m in bc.metrics} == set(BENCHMARK_METRIC_WEIGHTS)
+        assert "min_rural_pct" not in {m.metric for m in bc.metrics}, (
+            "the rural benchmark is back. It scored a QEI share computed from "
+            "a twelve-state list against an unsourced 'winner mean' that is "
+            "the exact complement of its own sibling, for a question the Fund "
+            "does not score in Phase I. See intelligence/benchmarks."
+        )
 
     def test_no_pipeline_raises(self):
         from nmtcapp.core.cde import CDEProfile

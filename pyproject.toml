@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nmtc-application-builder"
-version = "1.3.1"
+version = "1.4.0"
 description = "Flagship NMTC application intelligence platform — pipeline analysis, eligibility validation, readiness scoring, and visualization for CDEs"
 readme = "README.md"
 license = { text = "MIT" }
@@ -29,11 +29,26 @@ dependencies = [
     "pyyaml>=6.0",
     # 0.3.4 was the IMPORT floor (first version exporting NMTCMapperError,
     # EligibilityDownloadError and data_source, used in nmtc_mapper_adapter).
-    # 0.4.2 is the CORRECTNESS floor: 0.3.1–0.4.1 report 168 census tracts as
+    # 0.4.2 was the CORRECTNESS floor: 0.3.1–0.4.1 report 168 census tracts as
     # not NMTC-eligible when they statutorily are. 0.4.2's loader moves
     # 35,167 → 35,335 eligible of the same 85,395 tracts — a delta of exactly
     # 168, verified against the installed 0.4.2 docstring.
-    "nmtc-mapper>=0.4.2",
+    #
+    # 0.5.0 IS THE CONTRACT FLOOR (1.4.0 R1), and this floor is why the release
+    # is a minor rather than a patch. nmtc_mapper_adapter now reads
+    # EligibilityResult.is_non_metro, which 0.4.2 and 0.4.3 do not have, and
+    # intelligence/geographic_analysis computes the non-metropolitan share of
+    # the pipeline from it. Under the old open ">=0.4.2" a resolver was free to
+    # pick 0.4.3 and every geocoded project would raise AttributeError.
+    #
+    # THIS PACKAGE HAS ALREADY BEEN BROKEN ONCE BY EXACTLY THIS FLOOR. 0.5.0
+    # REMOVED is_nmtc_native_area while ">=0.4.2" still resolved to it, and
+    # `nmtcapp analyze` raised on the first real project while the whole suite
+    # stayed green — the test doubles constructed the field themselves. The
+    # gate that catches it now is tests/integrations/test_mapper_contract.py,
+    # which introspects the INSTALLED library rather than a mock; raising the
+    # floor is what makes that gate's answer binding rather than advisory.
+    "nmtc-mapper>=0.5.0",
     "nmtc-calc>=0.1.0",
     "cdfidata>=0.1.7",
     "impact-ledger>=0.2.0",

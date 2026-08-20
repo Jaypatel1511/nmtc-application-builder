@@ -108,7 +108,7 @@ The recommendation engine benchmarks each dimension against historical winners a
 
 - **Critical**: if distress concentration or eligibility rate falls below minimum competitive thresholds
 - **High**: if geographic concentration is too high or a key sector is overrepresented
-- **Medium**: incremental improvements like adding rural projects or lifting project count to winner median
+- **Medium**: incremental improvements like adding non-metropolitan projects or lifting project count to winner median
 
 Each recommendation includes a specific action and a numeric improvement estimate (e.g., "+8–15 distress alignment score points").
 

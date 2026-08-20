@@ -59,6 +59,19 @@ recursive-include tests *.py
 # this showed up as a red build and not as silence.
 recursive-include tests *.txt
 
+# tests/cli_baseline_replay.json — the twenty recorded nmtc-mapper answers the
+# CLI baseline replays. THIRD instance of the same hole, and it was caught
+# before shipping this time only because 1.4.0 built the tarball by hand and
+# listed it: `recursive-include tests *.py` misses it, `*.txt` misses it, and
+# tests/test_cli_baseline.py inside the sdist would have raised
+# FileNotFoundError on a fixture the repo has. Identical in shape to the
+# invariant_allowlist.txt line above, which shipped red and was found by CI.
+#
+# The pattern is deliberately by extension rather than by name: a second data
+# fixture in any other format is the fourth instance waiting to happen, so
+# widen this line when one arrives rather than adding a third include.
+recursive-include tests *.json
+
 include README.md
 include CHANGELOG.md
 include CONTRIBUTING.md

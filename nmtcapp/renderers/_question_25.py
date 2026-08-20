@@ -161,9 +161,19 @@ Q25B_LADDER = (0, 5, 10, 15, 20)
 #: U.S. Island Areas appear in both lists and are counted once.
 Q25_DISTINCT_AREA_TYPES = 14
 
-#: The five this package carries a per-project field for. Counted here rather
-#: than typed into the sentence so the two cannot drift.
-Q25_AREA_TYPES_MODELLED = 5
+#: The area types this package carries a per-project field for. Counted here
+#: rather than typed into the sentence so the two cannot drift.
+#:
+#: FIVE UNTIL 1.4.0, SIX AFTER IT. Carrying PipelineProject.is_non_metro made
+#: the note's own sentence — "It carries NOTHING for Non-Metropolitan Counties"
+#: — false on four rendered surfaces the moment the field landed. That is the
+#: whole reason the rendered baselines move in 1.4.0, and it is the direction
+#: this module was written to guard: the 1.2.2 note's "computes neither figure"
+#: was true and unhelpfully pessimistic, and an unstated capability reads to a
+#: CDE under deadline as an absent one. Understating the package here pushes
+#: the CDE to understate ITSELF to a federal agency, which is the false
+#: negative this file's header ranks as the worst error in the package.
+Q25_AREA_TYPES_MODELLED = 6
 
 
 #: Longest chunk :func:`q25_basis_note_paragraphs` will emit, in characters.
@@ -338,8 +348,12 @@ def _q25_basis_note_text() -> str:
         "spatial intersection against the Fund's CIMS map rather than a "
         "tract-keyed lookup this package could perform (U.S. territory is the "
         "CDE's own word; the Application's U.S. Island Areas is a specific "
-        "list of five). It carries NOTHING for Non-Metropolitan "
-        "Counties, nothing for Targeted Populations, and nothing for any of "
+        "list of five). Non-Metropolitan Counties: TOOL-VERIFIED AND "
+        "TRI-STATE — the OMB designation is read for the same geocoded tract, "
+        "and a project the lookup could not resolve is recorded as "
+        "undetermined rather than as metropolitan, so no project is counted "
+        "in a county type it was never determined to be in. It carries "
+        "NOTHING for Targeted Populations and nothing for any of "
         "items 6-12; it computes no multi-indicia measure at all. Holding "
         "those fields is not a partial answer to Question 25 and must not be "
         "read as one: the commitment is a share of QLICI DOLLARS, this package "

@@ -34,7 +34,14 @@ class OptimizationConstraints:
     min_distress_pct: float = 0.0        # minimum % deep/severe distress required
     min_states: int = 1
     max_single_sector_pct: float = 1.0   # max fraction of QEI in one sector
-    min_rural_pct: float = 0.0           # minimum rural QEI fraction
+    # min_rural_pct REMOVED (1.4.0). It was DECLARED AND NEVER ENFORCED —
+    # is_feasible below checks total QEI, project count, required sectors,
+    # excluded states and states count, and never read this field in any
+    # release. Two documentation pages listed it as a working constraint
+    # (docs/workflow/optimization.md, docs/reference/api.md), so a CDE could
+    # set it, see the optimizer accept the value, and get a result that
+    # ignored it. Removing it changes no optimizer behaviour, because it
+    # governed none; what changes is that the docs stop promising it.
     min_eligibility_pct: float = 0.0     # minimum % of projects that are eligible
 
     def is_feasible(self, projects: List["PipelineProject"]) -> tuple[bool, str]:
