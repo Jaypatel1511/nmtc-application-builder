@@ -20,6 +20,32 @@ installs returns a per-tract OMB answer, and the adapter threw it away.
 rises from `>=0.4.2` to `>=0.5.0`, and user-visible computed values move on
 three surfaces a CDE reads.
 
+### THE FLOOR MOVES FOR A DIFFERENT REASON THAN THE ROUND WAS PLANNED ON
+
+The brief for this round held that `EligibilityResult.is_non_metro` does not
+exist below 0.5.0, so an unbounded `>=0.4.2` would `AttributeError`. **That was
+checked and it is false.** The field exists in every release back to **0.3.4** —
+0.3.4, 0.4.0, 0.4.1, 0.4.2, 0.4.3 and 0.5.0 were each installed and the
+dataclass introspected.
+
+**What changes at 0.5.0 is the TYPE, and it is worse than a missing field:**
+
+| version | annotation | indeterminate branch |
+|---|---|---|
+| 0.4.2, 0.4.3 | `is_non_metro: bool` | `False` |
+| **0.5.0** | `is_non_metro: Optional[bool]` | `None` |
+
+Under 0.4.3 a tract the mapper cannot resolve reports as **not
+non-metropolitan**, `geographic_analysis` reads that as a determination, and the
+dollars go into the **metropolitan** bucket. **The third bucket empties silently
+and the share is a complement again** — the exact defect R2 removes, re-entering
+through the dependency, with no exception raised and not one changed line in
+this repository.
+
+A missing field fails loudly on the first project. This fails **quietly, and
+into the wrong answer**. Had the floor been defended on the planned ground, the
+gate written to hold it would have gone green against 0.4.3.
+
 ### THE PREMISE RULING — does a non-metropolitan share belong here at all?
 
 Three answers, because the question has three parts.
