@@ -1602,7 +1602,7 @@
 <p>Four analyses run in parallel on the enriched pipeline:</p>
 <ul>
 <li><strong>Distress concentration</strong> — what percentage of QEI is deployed into deep, severe, LIC, and ineligible tracts; native area and high-migration rural percentages; comparison against winner distributions</li>
-<li><strong>Geographic diversity</strong> — states count, MSA count, urban/rural split, Herfindahl-Hirschman Index (HHI) for geographic concentration</li>
+<li><strong>Geographic diversity</strong> — states count, MSA count, a three-way Non-Metropolitan County split of QEI (non-metro / metropolitan / not determined), Herfindahl-Hirschman Index (HHI) for geographic concentration</li>
 <li><strong>Sector mix</strong> — sectors represented, dominant sector, high-priority sector percentage (healthcare + affordable housing + education), sector diversity score</li>
 <li><strong>Impact aggregation</strong> — total jobs created and retained, units built, square footage, and the critical jobs-per-million-QEI metric benchmarked against historical winners</li>
 </ul>
@@ -1901,11 +1901,15 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">g</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">geographic_analysis</span>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">g</span><span class="p">[</span><span class="s2">"states_count"</span><span class="p">]</span>                  <span class="c1"># int — number of distinct states</span>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">g</span><span class="p">[</span><span class="s2">"msa_count"</span><span class="p">]</span>                     <span class="c1"># int — number of MSAs represented</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">g</span><span class="p">[</span><span class="s2">"urban_pct"</span><span class="p">]</span>                     <span class="c1"># float — fraction of QEI in urban tracts</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">g</span><span class="p">[</span><span class="s2">"rural_pct"</span><span class="p">]</span>                     <span class="c1"># float — fraction of QEI in rural tracts</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">g</span><span class="p">[</span><span class="s2">"hhi"</span><span class="p">]</span>                           <span class="c1"># float — Herfindahl-Hirschman Index (lower = more diverse)</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="n">g</span><span class="p">[</span><span class="s2">"geographic_concentration_label"</span><span class="p">]</span> <span class="c1"># str — e.g. "low", "medium", "high"</span>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="n">g</span><span class="p">[</span><span class="s2">"state_breakdown"</span><span class="p">]</span>               <span class="c1"># dict — per-state QEI and project counts</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">g</span><span class="p">[</span><span class="s2">"non_metro_pct"</span><span class="p">]</span>                 <span class="c1"># float — share of QEI in verified Non-Metropolitan Counties</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">g</span><span class="p">[</span><span class="s2">"metro_pct"</span><span class="p">]</span>                     <span class="c1"># float — share of QEI in verified Metropolitan Counties</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">g</span><span class="p">[</span><span class="s2">"metro_undetermined_pct"</span><span class="p">]</span>        <span class="c1"># float — share of QEI whose county status is UNKNOWN</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>                                   <span class="c1">#         (not geocoded, or tract absent from the Fund</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>                                   <span class="c1">#         table). NOT metropolitan. The three sum to 1.0.</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="n">g</span><span class="p">[</span><span class="s2">"metro_status_qei"</span><span class="p">]</span>              <span class="c1"># dict  — the three buckets in dollars, plus project counts</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="n">g</span><span class="p">[</span><span class="s2">"hhi"</span><span class="p">]</span>                           <span class="c1"># float — Herfindahl-Hirschman Index (lower = more diverse)</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="n">g</span><span class="p">[</span><span class="s2">"geographic_concentration_label"</span><span class="p">]</span> <span class="c1"># str — e.g. "low", "medium", "high"</span>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="n">g</span><span class="p">[</span><span class="s2">"state_breakdown"</span><span class="p">]</span>               <span class="c1"># dict — per-state QEI and project counts</span>
 </code></pre></div>
 <h3 id="readiness-score-interpretation">Readiness score interpretation<a class="headerlink" href="#readiness-score-interpretation" title="Permanent link">&para;</a></h3>
 <table>

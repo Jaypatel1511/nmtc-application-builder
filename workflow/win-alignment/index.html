@@ -1623,12 +1623,61 @@
 </code></pre></div>
 <hr />
 <h2 id="phase-2-flags">Phase 2 flags<a class="headerlink" href="#phase-2-flags" title="Permanent link">&para;</a></h2>
-<p><code>score.phase2_flags</code> is a dict of boolean flags for qualitative factors that cannot be scored from pipeline data. These are informational only — they do not affect the Phase 1 aggregate score.</p>
+<p><code>score.phase2_flags</code> reports qualitative factors that cannot be scored from
+pipeline data. They are informational only — they do not affect the Phase 1
+aggregate score.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">for</span> <span class="n">flag</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">score</span><span class="o">.</span><span class="n">phase2_flags</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="n">status</span> <span class="o">=</span> <span class="s2">"⚠️ "</span> <span class="k">if</span> <span class="n">value</span> <span class="k">else</span> <span class="s2">"✓ "</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">flag</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'_'</span><span class="p">,</span><span class="w"> </span><span class="s1">' '</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">flag</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </code></pre></div>
-<p>Common flags: <code>non_metro_commitment_risk</code>, <code>fee_structure_risk</code>, <code>prior_reporting_compliance_risk</code>, <code>capitalization_risk</code>. See <a href="../../reference/methodology/#phase-2-considerations-not-scored-by-this-tool">Methodology — Phase 2 considerations</a> for details.</p>
+<p>The keys, and what each one is:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>non_metro_commitment_pct</code></td>
+<td><code>float</code> or <code>None</code></td>
+<td><strong>The CDE's own declaration</strong>, passed through from <code>cde_attributes["non_metro_commitment_pct"]</code> — its answer to Question 22(c). <code>None</code> if it declared nothing. Nothing computes this.</td>
+</tr>
+<tr>
+<td><code>non_metro_pipeline_qei_pct</code></td>
+<td><code>float</code></td>
+<td><strong>Measured.</strong> The share of pipeline QEI in verified Non-Metropolitan Counties, as a percentage. A characterisation of the pipeline, not an answer to Question 22 — see <a href="../../reference/methodology/#phase-2-considerations-not-scored-by-this-tool">Methodology</a>.</td>
+</tr>
+<tr>
+<td><code>non_metro_undetermined_qei_pct</code></td>
+<td><code>float</code></td>
+<td><strong>Measured.</strong> The share of pipeline QEI whose county status could not be determined. Not metropolitan.</td>
+</tr>
+<tr>
+<td><code>favorable_fee_structure</code></td>
+<td><code>bool</code> or <code>None</code></td>
+<td>From <code>cde_attributes["has_favorable_fee_structure"]</code>.</td>
+</tr>
+<tr>
+<td><code>prior_reporting_compliance_risk</code></td>
+<td><code>bool</code></td>
+<td>From <code>cde_attributes["has_prior_reporting_issues"]</code>; defaults to <code>False</code>.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Corrected in 1.4.0.</strong> This section described the dict as "boolean flags" and
+named four keys — <code>non_metro_commitment_risk</code>, <code>fee_structure_risk</code>,
+<code>prior_reporting_compliance_risk</code> and <code>capitalization_risk</code>. <strong>Three of the
+four have never existed</strong> in any release, and the dict has never been all
+booleans. The example above no longer prints a ⚠️/✓ verdict either, because
+two of these values are percentages and one is a <code>None</code>-able declaration, none
+of which is truthy-testable as a risk.</p>
+<p><code>non_metro_meets_minimum</code> was <strong>removed</strong> in the same round: it reported
+<code>rural_pct &gt;= 0.20</code>, and there is no 20% threshold an individual Applicant
+must clear. See <a href="../../reference/methodology/#phase-2-considerations-not-scored-by-this-tool">Methodology</a>.</p>
+</blockquote>
 
 
 

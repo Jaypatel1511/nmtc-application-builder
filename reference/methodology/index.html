@@ -2201,7 +2201,7 @@ sub-score. See CHANGELOG.md.</p>
 </tr>
 <tr>
 <td>Non-Metro commitment</td>
-<td>≥ 20% non-metro required; ≥ 50% if applying as Rural CDE. <strong>Basis not established by this tool</strong> — see the note below</td>
+<td>The CDE's own declared Question 22(c) figure, passed through from <code>cde_attributes["non_metro_commitment_pct"]</code> — <strong>not computed</strong>. <code>None</code> if the CDE declared nothing. See the note below</td>
 </tr>
 <tr>
 <td>Fee/compensation structure</td>
@@ -2213,27 +2213,54 @@ sub-score. See CHANGELOG.md.</p>
 </tr>
 </tbody>
 </table>
-<p><strong>Note on the non-metro basis. ESTABLISHED — it is measured on QLICIs.</strong>
-<code>phase2_flags["non_metro_commitment_pct"]</code> is computed from
-<code>geographic_diversity["rural_pct"]</code>, which is a share of <strong>QEI</strong>
-(<code>geographic_analysis.py:96</code>) derived from a <strong>hard-coded twelve-state list</strong>
-(<code>geographic_analysis.py:16</code>), not from the OMB Bulletin 20-01 county
-definition the Fund uses. The Fund's figure is neither.</p>
-<p>Question 22 of the <em>CY 2024-2025 Allocation Application</em> (printed p. 31) asks
-the Applicant for <em>"a minimum percentage of </em><em>QLICIs</em><em> the Applicant is willing
-to commit to provide to Non-Metropolitan Counties"</em> (22(b)) and a maximum
-(22(c)), against a CDFI Fund goal that <em>"20% of all QLICIs made by Allocatees
-under this Round are invested in Non-Metropolitan Counties"</em>; the formula
-reduction falls on Allocatees <em>"that have not committed to investing a minimum
-of 20% of their QLICIs in Non-Metropolitan Counties"</em>, and the 50% Rural CDE
-figure is a commitment <em>"in response to Question 22(c)"</em> — also QLICIs. The CY
+<p><strong>Note on the non-metro basis. ESTABLISHED — it is measured on QLICIs, and
+Question 22 asks for a COMMITMENT rather than a measurement.</strong></p>
+<p><code>phase2_flags["non_metro_commitment_pct"]</code> is the CDE's own declaration, read
+from <code>cde_attributes</code> (<code>CDEProfile.extra</code>, the <code>non_metro_commitment_pct</code> key
+of the profile YAML). It is <code>None</code> when the CDE declared nothing. <strong>Nothing
+computes it.</strong></p>
+<p>The pipeline's measured share is reported separately and under its own name:
+<code>phase2_flags["non_metro_pipeline_qei_pct"]</code>, from
+<code>geographic_diversity["non_metro_pct"]</code> — a share of <strong>QEI</strong>, determined per
+project from the OMB Non-Metropolitan County designation nmtc-mapper returns
+for the geocoded tract (<code>PipelineProject.is_non_metro</code>). Its undetermined
+companion is <code>non_metro_undetermined_qei_pct</code>.</p>
+<p>Question 22 of the <em>CY 2024-2025 Allocation Application</em> asks, at printed p. 32:</p>
+<blockquote>
+<p><strong>(c)</strong> What is the minimum percentage of <strong>QLICIs</strong> that the Applicant is
+willing to commit to deploy in Non-Metropolitan Counties? <code>______%</code></p>
+<p><strong>(d)</strong> What is the maximum percentage of <strong>QLICIs</strong> that the Applicant is
+willing to commit to deploy in Non-Metropolitan Counties? <code>______%</code></p>
+</blockquote>
+<p>Both are blank <code>Numerical - Percentage</code> fields, and the figures entered
+<em>"shall become a condition of its Allocation Agreement with the CDFI Fund"</em>.
+The CDFI Fund goal is that <em>"20% of all QLICIs made by Allocatees under this
+Round are invested in Non-Metropolitan Counties"</em>, and the formula reduction
+falls on Allocatees <em>"that have not committed to investing a minimum of 20% of
+their QLICIs in Non-Metropolitan Counties"</em>; the 50% Rural CDE figure is a
+commitment <em>"in response to Question 22(c)"</em> — also QLICIs. The CY
 2024-2025 NOAA states it the same way: <em>"invest at least 20 percent of their
 QLICIs (as measured by dollar amount)"</em>.</p>
-<p>So <strong>three</strong> things are true at once and each matters: the Fund measures on
-QLICI dollars, this tool measures on QEI, and this tool's non-metro
-<em>classification</em> is a state-level heuristic rather than a county-level lookup.
-Question 22 is also explicitly <strong>not scored in Phase I</strong>. Do not read the flag
-as an answer to the Fund's requirement.</p>
+<p>So <strong>four</strong> things are true at once:</p>
+<ol>
+<li>The Fund's figures are denominated in <strong>QLICI dollars</strong>; this tool's share
+   is denominated in <strong>QEI</strong>.</li>
+<li>Question 22(c)/(d) is a <strong>forward commitment</strong> the Applicant types into a
+   blank field, not a measurement of the pipeline it holds today — the same
+   shape as Question 25(a)/(b).</li>
+<li>The <strong>20% is a program-level goal</strong> across all Allocatees and a bar on what
+   an Allocatee <em>committed</em> to. Question 22 states <strong>no minimum</strong> an individual
+   Applicant must clear.</li>
+<li>Question 22 is explicitly <strong>not scored in Phase I</strong>.</li>
+</ol>
+<p>Where the Application <em>does</em> want the pipeline, it asks for transactions rather
+than a percentage: Question 22(f) instructs the Applicant to <em>"indicate the
+number and dollar amount of transactions that have already been identified in
+Non-Metropolitan Counties, for which underwriting is completed or underway"</em>,
+referencing <strong>Table A5</strong>. That is what <code>metro_status_qei</code> carries — dollars and
+counts for all three buckets. Note that this tool does <strong>not</strong> yet supply Table
+A5 row (d), <em>"Located in a Non-Metropolitan County?"</em>, which the Fund requires;
+<code>is_non_metro</code> is the field that makes supplying it possible.</p>
 <blockquote>
 <p><strong>Corrected in 1.3.0 (Review Process sweep).</strong> This paragraph read <em>"has not
 been checked against the Application's own question text"</em> — accurate when
@@ -2243,6 +2270,21 @@ QLICI basis from the NOAA and recorded it in
 sentence live here and on the Streamlit About page. A <em>could-not-establish</em>
 that has since been established is a claim like any other, and this one
 survived a round that fixed the constant it describes.</p>
+<p><strong>Corrected again in 1.4.0, twice.</strong></p>
+<p><strong>The letters were wrong here.</strong> This page cited the minimum as 22(b) and the
+maximum as 22(c). In the Application's own question table (printed p. 32),
+<strong>22(b) is a count of years (0-6)</strong> and the two percentages are <strong>22(c)</strong> and
+<strong>22(d)</strong>. The error was inherited from the instrument: the NOTE block on
+printed p. 31 says the range runs <em>"at or above the minimum indicated in
+Question 22(b), but not more than the maximum percentage indicated in
+Question 22(c)"</em>, which contradicts the table it introduces — and contradicts
+its own next paragraph, which puts the Rural CDE 50% commitment at 22(c).
+<strong>The question table governs</strong>: it is the field list the Applicant fills in.</p>
+<p><strong>And the basis sentence described a defect that has been fixed.</strong> The
+twelve-state list at <code>geographic_analysis.py:16</code> is deleted. The
+classification is now a per-project OMB county designation, and a project
+whose designation could not be determined is reported in a third bucket
+rather than counted metropolitan.</p>
 </blockquote>
 <hr />
 <h2 id="sub-score-formulas-business-strategy">Sub-score formulas (Business Strategy)<a class="headerlink" href="#sub-score-formulas-business-strategy" title="Permanent link">&para;</a></h2>
