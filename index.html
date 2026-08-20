@@ -1189,6 +1189,16 @@
 </div>
 <hr />
 <h2 id="60-second-quickstart">60-second quickstart<a class="headerlink" href="#60-second-quickstart" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">This block runs on the shipped fictional CDE</p>
+<p><code>CDEProfile.sample()</code> is Riverbend Community Capital CDE, LLC — a CDE that
+does not exist. Nothing in the package refuses this path (the refusal is on
+<code>CDEProfile.from_yaml()</code> and the Streamlit upload, not on <code>sample()</code> or
+<code>generate()</code>), so the four files below are filing-shaped documents for a
+fictional applicant. Run it to see the tool work; replace <code>CDEProfile.sample()</code>
+with <code>CDEProfile.from_yaml("cde_profile.yaml")</code> before anything you would file.
+<code>nmtcapp init &lt;dir&gt;</code> scaffolds that file.</p>
+</div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.application</span><span class="w"> </span><span class="kn">import</span> <span class="n">Application</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.cde</span><span class="w"> </span><span class="kn">import</span> <span class="n">CDEProfile</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.core.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pipeline</span>
@@ -1199,7 +1209,7 @@
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">app</span><span class="o">.</span><span class="n">add_pipeline</span><span class="p">(</span><span class="n">pipeline</span><span class="p">)</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">"./drafts/"</span><span class="p">)</span>
 </code></pre></div>
-<p>That five-line block produces a complete application package (Word, Excel, PDF, Markdown) in <code>./drafts/</code>, runs all intelligence analyses, and writes the pipeline analysis summary to the terminal.</p>
+<p>That five-line block runs all intelligence analyses and writes a complete application package (Word, Excel, PDF, Markdown) into <code>./drafts/</code>. It prints nothing: <code>generate()</code> logs at INFO and writes no output to the terminal. For the summary on screen, call <code>app.analyze().summary()</code>.</p>
 <p><a class="md-button md-button--primary" href="installation/">Get started with Installation</a>
 <a class="md-button" href="quickstart/">Read the Quickstart</a>
 <a class="md-button" href="https://github.com/Jaypatel1511/nmtc-application-builder">View on GitHub</a></p>
