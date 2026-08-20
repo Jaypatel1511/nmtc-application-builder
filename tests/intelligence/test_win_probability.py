@@ -510,3 +510,83 @@ class TestMethodologyDisclosure:
             "competitive_tier", "peer_comparison", "methodology_disclosure"
         ):
             assert key in d, f"Missing key: {key}"
+
+
+# ---------------------------------------------------------------------------
+# 1.4.0 R4 — the commitment the CDE declares vs. the share the tool measures
+# ---------------------------------------------------------------------------
+
+class TestNonMetroPhase2Flags:
+    """``non_metro_commitment_pct`` is the CDE's declaration, not a computation.
+
+    THE DEFECT (1.4.0 R4). ``templates/cde_profile_sample.yaml`` ships
+    ``non_metro_commitment_pct: 0.22`` — a CDE's own answer to Question 22(c) —
+    and it arrives in ``cde_attributes`` through ``CDEProfile.extra``.
+    ``_build_phase2_flags`` ignored it and wrote a computed pipeline QEI share
+    over the top, under the identical key and in different units. A CDE that
+    declared 22% read back 7.0.
+    """
+
+    def _score(self, pipeline_result, attrs=None):
+        from nmtcapp.intelligence.win_probability import WinProbabilityModel
+        return WinProbabilityModel().score(
+            pipeline_result, 55_000_000, cde_attributes=attrs,
+        )
+
+    def test_the_declared_commitment_survives(self, sample_pipeline_result):
+        score = self._score(sample_pipeline_result,
+                            {"non_metro_commitment_pct": 0.22})
+        assert score.phase2_flags["non_metro_commitment_pct"] == 0.22, (
+            "the CDE's declared Question 22(c) commitment was overwritten by "
+            "a computed pipeline share again"
+        )
+
+    def test_an_undeclared_commitment_is_none_not_a_computed_stand_in(
+            self, sample_pipeline_result):
+        """A CDE that answered nothing has declared nothing.
+
+        Substituting the pipeline share here would be the same defect in its
+        quietest form: a figure the CDE never entered, rendered under a key
+        whose name says they committed to it.
+        """
+        score = self._score(sample_pipeline_result, {})
+        assert score.phase2_flags["non_metro_commitment_pct"] is None
+
+    def test_the_measured_share_is_reported_under_its_own_name(
+            self, sample_pipeline_result):
+        score = self._score(sample_pipeline_result, {})
+        flags = score.phase2_flags
+        assert "non_metro_pipeline_qei_pct" in flags
+        assert "non_metro_undetermined_qei_pct" in flags
+        assert isinstance(flags["non_metro_pipeline_qei_pct"], float)
+
+    def test_the_word_commitment_is_not_on_a_computed_figure(
+            self, sample_pipeline_result):
+        """Names carry claims. A measured share may not be called a commitment."""
+        score = self._score(sample_pipeline_result, {})
+        computed = {k for k in score.phase2_flags
+                    if k.startswith("non_metro_") and "commitment" in k}
+        assert computed == {"non_metro_commitment_pct"}, (
+            f"a computed figure is named as a commitment: {sorted(computed)}"
+        )
+        assert score.phase2_flags["non_metro_commitment_pct"] is None, (
+            "the one key carrying the word 'commitment' holds a value this "
+            "run computed rather than one the CDE declared"
+        )
+
+    def test_meets_minimum_stays_deleted(self, sample_pipeline_result):
+        """There is no 20% applicant threshold to meet.
+
+        The 20% is a CDFI Fund goal across "all QLICIs made by Allocatees under
+        this Round" and a bar on what an Allocatee COMMITTED to; Question 22
+        states no minimum an individual Applicant must clear, and the question
+        is not scored in Phase I. See renderers/_question_22.
+        """
+        score = self._score(sample_pipeline_result, {})
+        assert "non_metro_meets_minimum" not in score.phase2_flags, (
+            "non_metro_meets_minimum is back. It compared one CDE's QEI share "
+            "to a Fund-wide target and rendered the result as a boolean "
+            "telling the CDE it had failed a bar that does not exist."
+        )
+        offenders = [k for k in score.phase2_flags if "meets_minimum" in k]
+        assert not offenders, f"renamed, not removed: {offenders}"

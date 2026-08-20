@@ -4,7 +4,6 @@ nmtc-mapper 0.3.4 raises typed errors instead of serving sample data. The
 adapter must surface those failures as explicit unavailable/unverified
 markers — never substitute hardcoded tracts or eligibility values.
 """
-from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,6 +11,8 @@ import pytest
 from nmtcmapper import EligibilityDownloadError, NMTCMapperError
 
 from nmtcapp.core.pipeline import Pipeline, PipelineProject
+
+from tests.mapper_doubles import geocode_failed
 
 # The first tract of the old hardcoded fallback table — a fabricated
 # deep-distress POSITIVE that must never appear in adapter output.
@@ -79,15 +80,10 @@ def test_no_fallback_table_exists():
 # 3. Per-project geocode failure → unverified, never a substitute tract
 # ---------------------------------------------------------------------------
 
-def _geocode_failed_result(address: str) -> SimpleNamespace:
-    # Mirrors nmtc-mapper 0.3.4: geocode failure returns an
-    # "ineligible"-shaped result with geocode_success=False.
-    return SimpleNamespace(
-        address=address, tract_id=None, geocode_success=False,
-        nmtc_eligible=False, distress_level="ineligible",
-        is_high_migration_rural=False,
-        is_opportunity_zone=False,
-    )
+# Mirrors nmtc-mapper's geocode-failure shape — an "ineligible"-looking result
+# with geocode_success=False — but constructed from the INSTALLED dataclass so
+# the double cannot drift from the library (1.4.0 R1). See tests/mapper_doubles.
+_geocode_failed_result = geocode_failed
 
 
 def test_geocode_failure_is_unverified():
@@ -265,3 +261,123 @@ def test_hmda_analyzer_is_not_a_declared_dependency():
     assert not any(n.startswith("cra-scraper") for n in names), (
         f"cra-scraper is declared again (it has never had a single import): {names}"
     )
+
+
+# ---------------------------------------------------------------------------
+# 1.4.0 R1 — is_non_metro is carried, tri-state, and never collapses to False
+# ---------------------------------------------------------------------------
+
+def _pipeline_of(n=1):
+    return _unenriched_pipeline(n=n)
+
+
+def _mapper_returning(*results):
+    mapper = MagicMock()
+    mapper.data_source = "cdfi_fund"
+    mapper.check_address.side_effect = list(results)
+    return mapper
+
+
+@pytest.mark.parametrize("mapper_value", [True, False, None],
+                         ids=["true", "false", "none"])
+def test_is_non_metro_is_carried_verbatim_from_the_mapper(mapper_value):
+    """All three of Optional[bool] survive the adapter unchanged."""
+    from nmtcapp.integrations.nmtc_mapper_adapter import enrich_pipeline_eligibility
+    from tests.mapper_doubles import ok_result
+
+    pipeline = _pipeline_of(1)
+    project = list(pipeline)[0]
+    mapper = _mapper_returning(
+        ok_result(project.full_address, "17031838200", "deep",
+                  is_non_metro=mapper_value)
+    )
+    with patch("nmtcmapper.NMTCMapper", return_value=mapper):
+        enrich_pipeline_eligibility(pipeline)
+
+    assert list(pipeline)[0].is_non_metro is mapper_value
+
+
+def test_an_indeterminate_mapper_value_does_not_erase_a_prior_determination():
+    """``_prefer_determinate``, on this field, in the direction that matters.
+
+    A pre-enriched pipeline can arrive with is_non_metro already set. A mapper
+    that returns None for that tract means "could not determine", which is
+    strictly less information than what the caller supplied — so the prior
+    value stands. This is the same rule is_high_migration_rural and
+    is_opportunity_zone follow, and the rule the deleted is_nmtc_native_area
+    read broke.
+    """
+    from nmtcapp.integrations.nmtc_mapper_adapter import enrich_pipeline_eligibility
+    from tests.mapper_doubles import ok_result
+
+    pipeline = _pipeline_of(1)
+    project = list(pipeline)[0]
+    project.is_non_metro = True
+
+    mapper = _mapper_returning(
+        ok_result(project.full_address, "17031838200", "deep",
+                  is_non_metro=None)
+    )
+    with patch("nmtcmapper.NMTCMapper", return_value=mapper):
+        enrich_pipeline_eligibility(pipeline)
+
+    assert list(pipeline)[0].is_non_metro is True, (
+        "an indeterminate mapper answer erased a determination the caller "
+        "supplied — enrichment may correct a value, never erase one"
+    )
+
+
+def test_a_mapper_determination_does_override_a_prior_value():
+    """The other direction: False from the mapper IS a determination."""
+    from nmtcapp.integrations.nmtc_mapper_adapter import enrich_pipeline_eligibility
+    from tests.mapper_doubles import ok_result
+
+    pipeline = _pipeline_of(1)
+    project = list(pipeline)[0]
+    project.is_non_metro = True
+
+    mapper = _mapper_returning(
+        ok_result(project.full_address, "17031838200", "deep",
+                  is_non_metro=False)
+    )
+    with patch("nmtcmapper.NMTCMapper", return_value=mapper):
+        enrich_pipeline_eligibility(pipeline)
+
+    assert list(pipeline)[0].is_non_metro is False
+
+
+def test_an_ungeocoded_project_keeps_is_non_metro_none():
+    """Not False. Unverified is not metropolitan."""
+    from nmtcapp.integrations.nmtc_mapper_adapter import enrich_pipeline_eligibility
+    from tests.mapper_doubles import geocode_failed
+
+    pipeline = _pipeline_of(1)
+    project = list(pipeline)[0]
+    mapper = _mapper_returning(geocode_failed(project.full_address))
+    with patch("nmtcmapper.NMTCMapper", return_value=mapper):
+        enrich_pipeline_eligibility(pipeline)
+
+    assert list(pipeline)[0].is_non_metro is None
+
+
+def test_a_tract_absent_from_the_fund_table_keeps_is_non_metro_none():
+    """The SECOND indeterminate branch — geocoded, but tract_found is False."""
+    from nmtcapp.integrations.nmtc_mapper_adapter import enrich_pipeline_eligibility
+    from tests.mapper_doubles import ok_result
+
+    pipeline = _pipeline_of(1)
+    project = list(pipeline)[0]
+    mapper = _mapper_returning(
+        ok_result(project.full_address, "99999999999", "deep",
+                  is_non_metro=True, tract_found=False)
+    )
+    with patch("nmtcmapper.NMTCMapper", return_value=mapper):
+        enrich_pipeline_eligibility(pipeline)
+
+    enriched = list(pipeline)[0]
+    assert enriched.is_non_metro is None, (
+        "a non-metro verdict was copied from a result whose tract is absent "
+        "from the CDFI Fund's 85,395-row table. Every eligibility field must "
+        "stay unverified on that branch, this one included."
+    )
+    assert enriched.geocode_success is True

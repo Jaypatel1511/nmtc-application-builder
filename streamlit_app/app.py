@@ -83,7 +83,7 @@ def home():
         # it is unsourced. A provenance claim on the landing page is still a
         # provenance claim.
         "📊 CDFI Fund NMTC eligibility data, 2016–2020 ACS &nbsp;|&nbsp; "
-        "✅ 1,159 tests &nbsp;|&nbsp; "
+        "✅ 1,192 tests &nbsp;|&nbsp; "
         "🔓 MIT License"
         "</div>",
         unsafe_allow_html=True,

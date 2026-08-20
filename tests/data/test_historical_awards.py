@@ -194,10 +194,45 @@ class TestBenchmarkThresholds:
         assert BENCHMARK_SCORE_POINTS
         assert BENCHMARK_METRIC_WEIGHTS
 
-    def test_metric_weights_sum_to_one(self):
+    def test_metric_weights_are_a_normalisable_distribution(self):
+        """Positive, and no single metric dominating — NOT summing to 1.0.
+
+        THE ASSERTION THIS REPLACES WAS ``abs(total - 1.0) < 0.01`` AND IT WAS
+        MEASURING THE WRONG THING (1.4.0). ``benchmarks._weighted_score``
+        divides by the weights of the metrics actually present, so the table
+        never needed to sum to anything in particular — the normalisation is
+        done at use. What the round total pinned was a coincidence of the table
+        having exactly the same rows as the metric list.
+
+        The coincidence made the check actively misleading in both directions.
+        Deleting the rural metric with its weight left a mathematically
+        identical benchmark and a red test. Adding a metric and forgetting its
+        weight — which scores it at 0.0 and silently drags the overall score
+        down — leaves the total at 1.0 and a green test.
+
+        So the invariant asserted is the one that matters: every weight is a
+        positive share, none of them swamps the rest, and — checked in
+        test_application_week3 where the metric list is actually built — the
+        weight keys and the metric keys are the same set.
+        """
         from nmtcapp.data.benchmark_thresholds import BENCHMARK_METRIC_WEIGHTS
-        total = sum(BENCHMARK_METRIC_WEIGHTS.values())
-        assert abs(total - 1.0) < 0.01
+
+        weights = BENCHMARK_METRIC_WEIGHTS
+        assert weights, "the weight table is empty"
+        assert all(w > 0 for w in weights.values()), (
+            f"non-positive weight(s): "
+            f"{[k for k, w in weights.items() if w <= 0]}. A metric weighted "
+            "0.0 is computed, rendered and then ignored."
+        )
+        total = sum(weights.values())
+        assert 0.5 <= total <= 1.0, (
+            f"weights sum to {total}, outside the sane band. They are "
+            "renormalised at use, so the total need not be 1.0 — but a total "
+            "this far off means rows were added or removed without thought."
+        )
+        assert max(weights.values()) / total < 0.5, (
+            "one metric carries more than half the benchmark score"
+        )
 
     def test_score_points_ordered(self):
         from nmtcapp.data.benchmark_thresholds import BENCHMARK_SCORE_POINTS

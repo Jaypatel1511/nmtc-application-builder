@@ -340,7 +340,6 @@ Dataclass defining constraints for the pipeline optimizer.
 | `min_distress_pct` | `float` | 0.0 | Minimum fraction of QEI in deep/severe tracts |
 | `min_states` | `int` | 1 | Minimum distinct states required |
 | `max_single_sector_pct` | `float` | 1.0 | Maximum QEI fraction for any one sector |
-| `min_rural_pct` | `float` | 0.0 | Minimum rural QEI fraction |
 | `min_eligibility_pct` | `float` | 0.0 | Minimum NMTC-eligible project fraction |
 
 ### `is_feasible`

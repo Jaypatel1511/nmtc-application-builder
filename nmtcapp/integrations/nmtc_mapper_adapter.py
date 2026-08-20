@@ -35,6 +35,7 @@ def enrich_pipeline_eligibility(pipeline: "Pipeline") -> "Pipeline":
     - ``distress_level``
     - ``is_high_migration_rural``
     - ``is_opportunity_zone``
+    - ``is_non_metro``
     - ``geocode_success``
 
     ``is_native_area`` is NOT populated here. It is supplied by the CDE via
@@ -209,6 +210,20 @@ def _enrich_via_api(projects, mapper, mapper_error: type) -> None:
         )
         project.is_opportunity_zone = _prefer_determinate(
             result.is_opportunity_zone, project.is_opportunity_zone
+        )
+        # is_non_metro (1.4.0 R1) — the OMB Non-Metropolitan County
+        # determination, and the field that replaces the twelve-state guess in
+        # intelligence/geographic_analysis.
+        #
+        # It goes through _prefer_determinate for the same reason as the two
+        # above, even though no CSV column supplies it today: a pre-enriched
+        # pipeline (Pipeline.sample(), every fixture, any caller that populated
+        # eligibility itself) can arrive with the field already set, and an
+        # indeterminate mapper result must not erase it. Reading it straight
+        # would be correct only for as long as nothing else ever writes it,
+        # which is the assumption the native-area read was built on.
+        project.is_non_metro = _prefer_determinate(
+            result.is_non_metro, project.is_non_metro
         )
 
 

@@ -1,0 +1,489 @@
+======================================================================
+@@ STATE: ok
+======================================================================
+========================================================================
+  DEMO MODE — FICTIONAL CDE. NOT YOUR DATA.
+  CDE:       Riverbend Community Capital CDE, LLC (sample profile shipped with this package)
+  Requested: $55,000,000 (illustrative figure, not your request)
+  Every CDE-level score, ratio and recommendation below refers to
+  this fictional CDE. Re-run with --cde and --requested-allocation
+  for results about your own application.
+========================================================================
+
+======================================================================
+  NMTC APPLICATION ANALYSIS
+  CDE:   Riverbend Community Capital CDE, LLC
+  Round: CY2025  |  Requested: $55,000,000
+  Analyzed: <TIMESTAMP>
+======================================================================
+============================================================
+PIPELINE ANALYSIS SUMMARY
+============================================================
+  Projects:        20
+  Total QEI:       $   124,700,000
+  Total Cost:      $   174,000,000
+  Eligible (by project count): 85%
+
+── Distress Concentration (share of pipeline QEI) ─────
+  Deep/Severe:     57%  (✗ this tool's own ≥75% band — not a CDFI Fund threshold)
+  LIC:             30%
+  Non-LIC:         13%
+  Native Area:     10%  (CDE-declared; not verified by this tool)
+
+── Geographic Diversity ────────────────────────────────
+  States:          19
+  MSAs:            19
+  Non-metro:       3%  (a share of QEI, not of QLICIs)
+  Metropolitan:    97%
+  Not determined:  0%  (0 project(s) — counted as neither)
+  Question 22 asks what percentage of QLICIs the Applicant commits to deploy
+  in Non-Metropolitan Counties. This is a share of QEI in the current pipeline,
+  not that commitment, and Question 22 is not scored in Phase I.
+  HHI:             586  (diverse)
+
+── Sector Mix ──────────────────────────────────────────
+  Sectors:         7
+  Dominant:        healthcare
+  High Priority:   68%
+  Diversity Score: 88.3/100
+
+── Impact Projections ──────────────────────────────────
+  Jobs Created:    880
+  Jobs Retained:   306
+  Units Built:     234
+  Sq Ft:           205,500
+  Jobs/$MM QEI:    7.1
+
+── Deal Economics ──────────────────────────────────────
+  Total NMTCs:     $    48,633,000
+  Investor Equity: $    40,365,390
+  Leverage Loans:  $    84,334,610
+  CDE Fees:        $     3,117,500
+  QEI less fees:   $   121,582,500
+============================================================
+
+── Validation ──────────────────────────────────────────────────
+[FAIL] eligibility_check
+  ERROR: Project PRJ-S012 (Detroit Auto Parts Manufacturer) is NOT NMTC-eligible — tract 26163515700 does not qualify as a LIC
+  ERROR: Project PRJ-S013 (Indianapolis Mixed-Use Community Hub) is NOT NMTC-eligible — tract 18097353300 does not qualify as a LIC
+  ERROR: Project PRJ-S015 (St. Louis Community Solar Project) is NOT NMTC-eligible — tract 29510118600 does not qualify as a LIC
+  WARN:  Only 87% of verified QEI is in eligible tracts. Flagged at this tool's own 90% screening band — not a CDFI Fund threshold. What is federal here is structural, not a scoring expectation: IRC §45D(d) requires each QLICI to be made in a qualified active low-income community business, which must be located in a Low-Income Community, and Treas. Reg. §1.45D-1(c)(5)(i) requires substantially all — at least 85 percent — of QEI proceeds to be invested in QLICIs. QEI attributed to ineligible tracts cannot count toward that test
+[PASS] completeness_check
+  WARN:  Pipeline QEI ($124,700,000) is 227% of requested allocation — a 1.2–1.5× pipeline is typical
+[PASS] consistency_check
+  All checks passed.
+
+  2/3 checks passed
+
+============================================================
+  APPLICATION READINESS SCORE: 61.9/100  [C]
+  [██████████████████░░░░░░░░░░░░] 61.9%
+============================================================
+
+Component Scores:
+  Eligibility Quality             68.0/100
+  Distress Concentration          58.2/100
+  Geographic Diversity           100.0/100
+  Impact Metrics                  38.2/100
+  Validation Pass Rate            36.7/100
+  Completeness                    80.0/100
+
+Top Strengths:
+  + Good geographic diversity across multiple states
+
+Areas for Improvement:
+  - Distress concentration below competitive threshold
+  - Jobs and units per $1MM QEI below this tool's impact-score band
+  - Some projects may not be NMTC-eligible — verify tracts
+
+Recommendations:
+  → Increase deep/severe distress concentration from 57% to ≥75% by substituting standard LIC projects with deeper-distress alternatives
+  → Add operating business projects (manufacturing, healthcare) to improve jobs-per-million-QEI metric above this tool's 12 FTE screening band (a house band, not a CDFI Fund figure)
+  → Resolve validation error: Project PRJ-S012 (Detroit Auto Parts Manufacturer) is NOT NMTC-eligible — tract 26163515700 does not qualify as a LIC
+============================================================
+========================================================================
+  DEMO MODE — FICTIONAL CDE. NOT YOUR DATA.
+  CDE:       Riverbend Community Capital CDE, LLC (sample profile shipped with this package)
+  Requested: $55,000,000 (illustrative figure, not your request)
+  Every CDE-level score, ratio and recommendation below refers to
+  this fictional CDE. Re-run with --cde and --requested-allocation
+  for results about your own application.
+========================================================================
+[exit 0]
+
+========================================================================
+  1 VALIDATION CHECK(S) FAILED: eligibility_check
+  This command exits 0 anyway: the exit code reports whether
+  the ANALYSIS RAN, not what it found. Re-run with --strict to
+  exit non-zero on a failed check, which is what a CI job or a
+  wrapper script should use.
+========================================================================
+======================================================================
+@@ STATE: partial
+======================================================================
+========================================================================
+  DEMO MODE — FICTIONAL CDE. NOT YOUR DATA.
+  CDE:       Riverbend Community Capital CDE, LLC (sample profile shipped with this package)
+  Requested: $55,000,000 (illustrative figure, not your request)
+  Every CDE-level score, ratio and recommendation below refers to
+  this fictional CDE. Re-run with --cde and --requested-allocation
+  for results about your own application.
+========================================================================
+
+======================================================================
+  NMTC APPLICATION ANALYSIS
+  CDE:   Riverbend Community Capital CDE, LLC
+  Round: CY2025  |  Requested: $55,000,000
+  Analyzed: <TIMESTAMP>
+======================================================================
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  2 project(s) could not be location-verified and remain
+  UNVERIFIED (no tract assigned): PRJ-S003, PRJ-S004
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+============================================================
+PIPELINE ANALYSIS SUMMARY
+============================================================
+  Projects:        20
+  Total QEI:       $   124,700,000
+  Total Cost:      $   174,000,000
+  Eligible (by project count): 75%
+
+── Distress Concentration (share of pipeline QEI) ─────
+  Deep/Severe:     49%  (✗ this tool's own ≥75% band — not a CDFI Fund threshold)
+  LIC:             30%
+  Non-LIC:         21%  (upper bound — includes unverified)
+  Native Area:     10%  (CDE-declared; not verified by this tool)
+
+── Geographic Diversity ────────────────────────────────
+  States:          19
+  MSAs:            19
+  Non-metro:       3%  (a share of QEI, not of QLICIs)
+  Metropolitan:    90%
+  Not determined:  8%  (2 project(s) — counted as neither)
+  Question 22 asks what percentage of QLICIs the Applicant commits to deploy
+  in Non-Metropolitan Counties. This is a share of QEI in the current pipeline,
+  not that commitment, and Question 22 is not scored in Phase I.
+  HHI:             586  (diverse)
+
+── Sector Mix ──────────────────────────────────────────
+  Sectors:         7
+  Dominant:        healthcare
+  High Priority:   68%
+  Diversity Score: 88.3/100
+
+── Impact Projections ──────────────────────────────────
+  Jobs Created:    880
+  Jobs Retained:   306
+  Units Built:     234
+  Sq Ft:           205,500
+  Jobs/$MM QEI:    7.1
+
+── Deal Economics ──────────────────────────────────────
+  Total NMTCs:     $    48,633,000
+  Investor Equity: $    40,365,390
+  Leverage Loans:  $    84,334,610
+  CDE Fees:        $     3,117,500
+  QEI less fees:   $   121,582,500
+============================================================
+
+── Validation ──────────────────────────────────────────────────
+[FAIL] eligibility_check
+  ERROR: Project PRJ-S012 (Detroit Auto Parts Manufacturer) is NOT NMTC-eligible — tract 26163515700 does not qualify as a LIC
+  ERROR: Project PRJ-S013 (Indianapolis Mixed-Use Community Hub) is NOT NMTC-eligible — tract 18097353300 does not qualify as a LIC
+  ERROR: Project PRJ-S015 (St. Louis Community Solar Project) is NOT NMTC-eligible — tract 29510118600 does not qualify as a LIC
+  WARN:  2 project(s) lack eligibility data: PRJ-S003, PRJ-S004
+  WARN:  Only 86% of verified QEI is in eligible tracts (of the 92% of QEI that could be verified; 8% is unverified). Flagged at this tool's own 90% screening band — not a CDFI Fund threshold. What is federal here is structural, not a scoring expectation: IRC §45D(d) requires each QLICI to be made in a qualified active low-income community business, which must be located in a Low-Income Community, and Treas. Reg. §1.45D-1(c)(5)(i) requires substantially all — at least 85 percent — of QEI proceeds to be invested in QLICIs. QEI attributed to ineligible tracts cannot count toward that test
+  WARN:  Deep/severe distress concentration (49% of QEI) is below this tool's internal screening band of 50% (a house heuristic, not a CDFI Fund threshold). The published CY 2024-2025 severe-distress bar for full credit is 85% of QLICIs, which this tool does not compute — do not read the figure above as an answer to it
+[PASS] completeness_check
+  WARN:  Pipeline QEI ($124,700,000) is 227% of requested allocation — a 1.2–1.5× pipeline is typical
+[PASS] consistency_check
+  All checks passed.
+
+  2/3 checks passed
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  UNVERIFIED PROJECTS IN PIPELINE
+  2 projects unverified — locations could not be verified; eligibility-dependent components are lower bounds (unverified projects count in the denominator, never the numerator)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+============================================================
+  APPLICATION READINESS SCORE: 57.6/100  [C]  (PARTIAL)
+  [█████████████████░░░░░░░░░░░░░] 57.6%
+  2 projects unverified — locations could not be verified; eligibility-dependent components are lower bounds (unverified projects count in the denominator, never the numerator)
+============================================================
+
+Component Scores:
+  Eligibility Quality             60.0/100
+  Distress Concentration          49.2/100
+  Geographic Diversity           100.0/100
+  Impact Metrics                  38.2/100
+  Validation Pass Rate            36.7/100
+  Completeness                    80.0/100
+
+Top Strengths:
+  + Good geographic diversity across multiple states
+
+Areas for Improvement:
+  - Distress concentration below competitive threshold
+  - Jobs and units per $1MM QEI below this tool's impact-score band
+  - Some projects may not be NMTC-eligible — verify tracts
+
+Recommendations:
+  → Increase deep/severe distress concentration from 49% to ≥75% by substituting standard LIC projects with deeper-distress alternatives
+  → Add operating business projects (manufacturing, healthcare) to improve jobs-per-million-QEI metric above this tool's 12 FTE screening band (a house band, not a CDFI Fund figure)
+  → Resolve validation error: Project PRJ-S012 (Detroit Auto Parts Manufacturer) is NOT NMTC-eligible — tract 26163515700 does not qualify as a LIC
+============================================================
+========================================================================
+  DEMO MODE — FICTIONAL CDE. NOT YOUR DATA.
+  CDE:       Riverbend Community Capital CDE, LLC (sample profile shipped with this package)
+  Requested: $55,000,000 (illustrative figure, not your request)
+  Every CDE-level score, ratio and recommendation below refers to
+  this fictional CDE. Re-run with --cde and --requested-allocation
+  for results about your own application.
+========================================================================
+[exit 0]
+Project PRJ-S003 geocoded to tract 36005011502, which is absent from the CDFI Fund eligibility table — leaving eligibility unverified rather than recording an indeterminate verdict
+Location could not be verified for project PRJ-S004 (9500 S Grape St, Los Angeles, CA) — leaving eligibility unverified
+
+========================================================================
+  1 VALIDATION CHECK(S) FAILED: eligibility_check
+  This command exits 0 anyway: the exit code reports whether
+  the ANALYSIS RAN, not what it found. Re-run with --strict to
+  exit non-zero on a failed check, which is what a CI job or a
+  wrapper script should use.
+========================================================================
+======================================================================
+@@ STATE: unavailable
+======================================================================
+========================================================================
+  DEMO MODE — FICTIONAL CDE. NOT YOUR DATA.
+  CDE:       Riverbend Community Capital CDE, LLC (sample profile shipped with this package)
+  Requested: $55,000,000 (illustrative figure, not your request)
+  Every CDE-level score, ratio and recommendation below refers to
+  this fictional CDE. Re-run with --cde and --requested-allocation
+  for results about your own application.
+========================================================================
+
+======================================================================
+  NMTC APPLICATION ANALYSIS
+  CDE:   Riverbend Community Capital CDE, LLC
+  Round: CY2025  |  Requested: $55,000,000
+  Analyzed: <TIMESTAMP>
+======================================================================
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ELIGIBILITY DATA UNAVAILABLE
+  eligibility dataset could not be loaded (captured)
+  Eligibility and distress figures below are UNVERIFIED and
+  excluded from scoring. Do not use for application content.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+============================================================
+PIPELINE ANALYSIS SUMMARY
+============================================================
+  Projects:        20
+  Total QEI:       $   124,700,000
+  Total Cost:      $   174,000,000
+  Eligible (by project count): unverified
+
+── Distress Concentration (share of pipeline QEI) ─────
+  Deep/Severe:     0%  (✗ this tool's own ≥75% band — not a CDFI Fund threshold)
+  LIC:             0%
+  Non-LIC:         100%  (upper bound — includes unverified)
+  Native Area:     10%  (CDE-declared; not verified by this tool)
+
+── Geographic Diversity ────────────────────────────────
+  States:          19
+  MSAs:            19
+  Non-metro:       0%  (a share of QEI, not of QLICIs)
+  Metropolitan:    0%
+  Not determined:  100%  (20 project(s) — counted as neither)
+  Question 22 asks what percentage of QLICIs the Applicant commits to deploy
+  in Non-Metropolitan Counties. This is a share of QEI in the current pipeline,
+  not that commitment, and Question 22 is not scored in Phase I.
+  HHI:             586  (diverse)
+
+── Sector Mix ──────────────────────────────────────────
+  Sectors:         7
+  Dominant:        healthcare
+  High Priority:   68%
+  Diversity Score: 88.3/100
+
+── Impact Projections ──────────────────────────────────
+  Jobs Created:    880
+  Jobs Retained:   306
+  Units Built:     234
+  Sq Ft:           205,500
+  Jobs/$MM QEI:    7.1
+
+── Deal Economics ──────────────────────────────────────
+  Total NMTCs:     $    48,633,000
+  Investor Equity: $    40,365,390
+  Leverage Loans:  $    84,334,610
+  CDE Fees:        $     3,117,500
+  QEI less fees:   $   121,582,500
+============================================================
+
+── Validation ──────────────────────────────────────────────────
+[PASS] eligibility_check
+  WARN:  20 project(s) lack eligibility data: PRJ-S001, PRJ-S002, PRJ-S003, PRJ-S004, PRJ-S005 and others
+  WARN:  Tract eligibility could not be verified for any project — no eligibility percentage can be computed. This is not a finding of ineligibility; restore eligibility data access and re-run.
+  WARN:  Deep/severe distress concentration (0% of QEI) is below this tool's internal screening band of 50% (a house heuristic, not a CDFI Fund threshold). The published CY 2024-2025 severe-distress bar for full credit is 85% of QLICIs, which this tool does not compute — do not read the figure above as an answer to it
+[PASS] completeness_check
+  WARN:  Pipeline QEI ($124,700,000) is 227% of requested allocation — a 1.2–1.5× pipeline is typical
+[PASS] consistency_check
+  All checks passed.
+
+  3/3 checks passed
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ELIGIBILITY DATA UNAVAILABLE
+  eligibility dataset could not be loaded (captured)
+  score computed without eligibility verification (4 of 6 components)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+============================================================
+  APPLICATION READINESS SCORE: 73.3/100  [B]  (PARTIAL)
+  [█████████████████████░░░░░░░░░] 73.3%
+  score computed without eligibility verification (4 of 6 components)
+============================================================
+
+Component Scores:
+  Geographic Diversity           100.0/100
+  Impact Metrics                  38.2/100
+  Validation Pass Rate           100.0/100
+  Completeness                    80.0/100
+
+Top Strengths:
+  + Good geographic diversity across multiple states
+  + Clean validation — no blocking issues
+
+Areas for Improvement:
+  - Eligibility data unavailable — tracts and distress levels unverified
+  - Jobs and units per $1MM QEI below this tool's impact-score band
+
+Recommendations:
+  → Restore eligibility data access (nmtc-mapper) and re-run the analysis — eligibility and distress cannot be verified right now
+  → Add operating business projects (manufacturing, healthcare) to improve jobs-per-million-QEI metric above this tool's 12 FTE screening band (a house band, not a CDFI Fund figure)
+============================================================
+========================================================================
+  DEMO MODE — FICTIONAL CDE. NOT YOUR DATA.
+  CDE:       Riverbend Community Capital CDE, LLC (sample profile shipped with this package)
+  Requested: $55,000,000 (illustrative figure, not your request)
+  Every CDE-level score, ratio and recommendation below refers to
+  this fictional CDE. Re-run with --cde and --requested-allocation
+  for results about your own application.
+========================================================================
+[exit 0]
+nmtc-mapper eligibility data unavailable (eligibility dataset could not be loaded (captured)). Eligibility fields remain unverified; scoring will exclude the eligibility component.
+======================================================================
+@@ STATE: pre_enriched
+======================================================================
+
+======================================================================
+  NMTC APPLICATION ANALYSIS
+  CDE:   Riverbend Community Capital CDE, LLC
+  Round: CY2025  |  Requested: $55,000,000
+  Analyzed: <TIMESTAMP>
+======================================================================
+============================================================
+PIPELINE ANALYSIS SUMMARY
+============================================================
+  Projects:        20
+  Total QEI:       $   122,500,000
+  Total Cost:      $   170,600,000
+  Eligible (by project count): 100%
+
+── Distress Concentration (share of pipeline QEI) ─────
+  Deep/Severe:     87%  (✓ this tool's own ≥75% band — not a CDFI Fund threshold)
+  LIC:             13%
+  Non-LIC:         0%
+  Native Area:     10%  (CDE-declared; not verified by this tool)
+
+── Geographic Diversity ────────────────────────────────
+  States:          19
+  MSAs:            19
+  Non-metro:       0%  (a share of QEI, not of QLICIs)
+  Metropolitan:    0%
+  Not determined:  100%  (20 project(s) — counted as neither)
+  Question 22 asks what percentage of QLICIs the Applicant commits to deploy
+  in Non-Metropolitan Counties. This is a share of QEI in the current pipeline,
+  not that commitment, and Question 22 is not scored in Phase I.
+  HHI:             592  (diverse)
+
+── Sector Mix ──────────────────────────────────────────
+  Sectors:         7
+  Dominant:        healthcare
+  High Priority:   65%
+  Diversity Score: 91.8/100
+
+── Impact Projections ──────────────────────────────────
+  Jobs Created:    864
+  Jobs Retained:   298
+  Units Built:     234
+  Sq Ft:           198,500
+  Jobs/$MM QEI:    7.0
+
+── Deal Economics ──────────────────────────────────────
+  Total NMTCs:     $    47,775,000
+  Investor Equity: $    39,653,250
+  Leverage Loans:  $    82,846,750
+  CDE Fees:        $     3,062,500
+  QEI less fees:   $   119,437,500
+============================================================
+
+── Validation ──────────────────────────────────────────────────
+[PASS] eligibility_check
+  All checks passed.
+[PASS] completeness_check
+  WARN:  Pipeline QEI ($122,500,000) is 223% of requested allocation — a 1.2–1.5× pipeline is typical
+[PASS] consistency_check
+  All checks passed.
+
+  3/3 checks passed
+
+============================================================
+  APPLICATION READINESS SCORE: 86.6/100  [A]
+  [█████████████████████████░░░░░] 86.6%
+============================================================
+
+Component Scores:
+  Eligibility Quality            100.0/100
+  Distress Concentration         100.0/100
+  Geographic Diversity           100.0/100
+  Impact Metrics                  38.2/100
+  Validation Pass Rate           100.0/100
+  Completeness                    80.0/100
+
+Top Strengths:
+  + High pipeline eligibility rate (≥80% score)
+  + Strong deep/severe distress concentration
+  + Good geographic diversity across multiple states
+
+Areas for Improvement:
+  - Jobs and units per $1MM QEI below this tool's impact-score band
+
+Recommendations:
+  → Add operating business projects (manufacturing, healthcare) to improve jobs-per-million-QEI metric above this tool's 12 FTE screening band (a house band, not a CDFI Fund figure)
+============================================================
+======================================================================
+@@ STATE: empty
+======================================================================
+{
+  "geographic_concentration_label": "highly_concentrated",
+  "hhi": 0.0,
+  "meets_diversity_minimum": false,
+  "metro_pct": 0.0,
+  "metro_status_qei": {
+    "metro": 0.0,
+    "metro_projects": 0,
+    "non_metro": 0.0,
+    "non_metro_projects": 0,
+    "undetermined": 0.0,
+    "undetermined_projects": 0
+  },
+  "metro_undetermined_pct": 0.0,
+  "msa_count": 0,
+  "msas": [],
+  "non_metro_pct": 0.0,
+  "state_breakdown": {},
+  "states": [],
+  "states_count": 0,
+  "total_qei": 0.0
+}

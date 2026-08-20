@@ -38,7 +38,6 @@ constraints = OptimizationConstraints(
     min_distress_pct=0.70,         # minimum fraction of QEI in deep/severe tracts
     min_states=5,                   # minimum distinct states in selected set
     max_single_sector_pct=0.40,    # maximum fraction of QEI in any one sector
-    min_rural_pct=0.10,            # minimum fraction of QEI in rural tracts
     min_eligibility_pct=0.95,      # minimum fraction of projects that are NMTC-eligible
 )
 ```
@@ -54,7 +53,6 @@ constraints = OptimizationConstraints(
 | `min_distress_pct` | `float` | 0.0 | Minimum deep/severe distress fraction |
 | `min_states` | `int` | 1 | Minimum distinct states in selected set |
 | `max_single_sector_pct` | `float` | 1.0 | Maximum QEI share for any single sector |
-| `min_rural_pct` | `float` | 0.0 | Minimum rural QEI fraction |
 | `min_eligibility_pct` | `float` | 0.0 | Minimum NMTC-eligible fraction |
 
 All constraints are soft-checked: the optimizer tries its best to satisfy them. If the constraints are collectively infeasible (e.g., `min_states=10` when the pipeline only covers 6 states), the optimizer returns the best feasible result it can find and sets `constraints_satisfied=False` with an explanation in `infeasibility_reason`.

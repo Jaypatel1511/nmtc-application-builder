@@ -131,7 +131,9 @@ When CDE Profile fields are missing, the Streamlit analyzer displays which sub-s
 - **Pipeline ingestion** — Load from CSV or v1.1 xlsx template; validates all required fields
 - **NMTC eligibility enrichment** — Census tract lookup, distress level classification (deep / severe / LIC), opportunity zone and native area flags
 - **Distress concentration analysis** — Deep/severe QEI percentage vs. CDFI Fund competitive thresholds (target: ≥75%)
-- **Geographic diversity scoring** — State count, HHI concentration index, urban/rural split
+- **Geographic diversity scoring** — State count, HHI concentration index, and a
+  three-way Non-Metropolitan County split of pipeline QEI (non-metro / metropolitan /
+  not determined), from the OMB designation for each geocoded tract
 - **Sector mix analysis** — Shannon entropy, dominant sector, high-priority sector alignment
 - **Impact projection** — Jobs per $MM QEI benchmarked against historical winner distributions
 - **CDFI Fund alignment scoring** — Business Strategy (0–50), Community Outcomes (0–50), Priority Points (0–10 bonus) against the published CY 2024-2025 review criteria; tier: Not Qualified / Highly Qualified / Top Tier
@@ -286,7 +288,7 @@ Contributions welcome — bug fixes, additional data sources, visualization impr
 git clone https://github.com/Jaypatel1511/nmtc-application-builder.git
 cd nmtc-application-builder
 pip install -e ".[dev]"
-PYTHONPATH=. pytest tests/ -v          # 1,159 tests, should all pass
+PYTHONPATH=. pytest tests/ -v          # 1,192 tests, should all pass
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on pull requests, code style, and issue reporting.

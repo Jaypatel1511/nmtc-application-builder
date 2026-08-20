@@ -40,7 +40,7 @@ Each recommendation is tagged with one of five categories:
 | Category | Dimensions addressed |
 |----------|---------------------|
 | `distress` | Deep/severe concentration, native area and HMR bonus |
-| `geographic` | States count, HHI, rural percentage |
+| `geographic` | States count, HHI, Non-Metropolitan County share of QEI |
 | `impact` | Jobs per million QEI |
 | `sector` | Sector diversity, concentration ceiling |
 | `pipeline` | Eligibility rate, project count |

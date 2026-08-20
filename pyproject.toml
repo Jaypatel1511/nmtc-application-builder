@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nmtc-application-builder"
-version = "1.3.1"
+version = "1.4.0"
 description = "Flagship NMTC application intelligence platform — pipeline analysis, eligibility validation, readiness scoring, and visualization for CDEs"
 readme = "README.md"
 license = { text = "MIT" }
@@ -29,11 +29,48 @@ dependencies = [
     "pyyaml>=6.0",
     # 0.3.4 was the IMPORT floor (first version exporting NMTCMapperError,
     # EligibilityDownloadError and data_source, used in nmtc_mapper_adapter).
-    # 0.4.2 is the CORRECTNESS floor: 0.3.1–0.4.1 report 168 census tracts as
+    # 0.4.2 was the CORRECTNESS floor: 0.3.1–0.4.1 report 168 census tracts as
     # not NMTC-eligible when they statutorily are. 0.4.2's loader moves
     # 35,167 → 35,335 eligible of the same 85,395 tracts — a delta of exactly
     # 168, verified against the installed 0.4.2 docstring.
-    "nmtc-mapper>=0.4.2",
+    #
+    # 0.5.0 IS THE CONTRACT FLOOR (1.4.0 R1), and this floor is why the release
+    # is a minor rather than a patch — but NOT for the reason it is natural to
+    # assume. The assumption was measured, and it was false.
+    #
+    # THE FIELD IS NOT NEW. EligibilityResult.is_non_metro exists in EVERY
+    # release back to 0.3.4 — verified by installing each one and introspecting
+    # the dataclass: 0.3.4, 0.4.0, 0.4.1, 0.4.2, 0.4.3 and 0.5.0 all carry it.
+    # A floor justified as "the field does not exist below 0.5.0" would have
+    # been a true-sounding sentence about a false fact, and any gate built on
+    # it would have passed against 0.4.3 while the defect shipped.
+    #
+    # WHAT CHANGES AT 0.5.0 IS THE TYPE, and it is what the whole round turns
+    # on:
+    #
+    #     0.4.2 / 0.4.3   is_non_metro: bool            indeterminate -> False
+    #     0.5.0           is_non_metro: Optional[bool]  indeterminate -> None
+    #
+    # Under 0.4.3 a tract the mapper could not resolve reports as NOT
+    # non-metropolitan, and intelligence/geographic_analysis reads that as a
+    # determination and puts the dollars in the METROPOLITAN bucket. That is
+    # exactly the defect 1.4.0 R2 removed from this package, re-entering
+    # through the dependency: the third bucket silently empties and every
+    # unverified dollar is counted metropolitan again — no error, no exception,
+    # and not one changed line in this repository.
+    #
+    # THE GATE IS tests/integrations/test_mapper_contract.py, which introspects
+    # the INSTALLED library rather than a mock. Verified both ways:
+    # test_the_floor_field_is_tri_state_not_a_bool is RED against 0.4.3 and
+    # GREEN against 0.5.0.
+    #
+    # THIS PACKAGE HAS ALREADY BEEN BROKEN ONCE BY AN OPEN FLOOR, in the other
+    # direction. 0.5.0 REMOVED is_nmtc_native_area while ">=0.4.2" still
+    # resolved to it, and `nmtcapp analyze` raised on the first real project
+    # while the whole suite stayed green — the test doubles constructed the
+    # field themselves. That is why the floor and the contract test ship
+    # together: the floor makes the gate's answer binding rather than advisory.
+    "nmtc-mapper>=0.5.0",
     "nmtc-calc>=0.1.0",
     "cdfidata>=0.1.7",
     "impact-ledger>=0.2.0",

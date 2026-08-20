@@ -27,9 +27,35 @@ class TestHistoricalBenchmarks:
         bc = HistoricalBenchmarks().compare(sample_pipeline_result, 55_000_000)
         assert isinstance(bc, BenchmarkComparison)
 
-    def test_has_nine_metrics(self, sample_pipeline_result):
+    def test_metric_set_matches_the_weight_table(self, sample_pipeline_result):
+        """Derived, not typed — it was ``== 9`` and 1.4.0 made it 8.
+
+        A hand-typed count says nothing about WHICH metrics are present, and
+        this package has six recorded instances of a hand-typed number going
+        stale. The weight table is the list of metrics that count toward the
+        overall score, so agreeing with it is the property worth holding.
+        """
+        from nmtcapp.data.benchmark_thresholds import BENCHMARK_METRIC_WEIGHTS
+
         bc = HistoricalBenchmarks().compare(sample_pipeline_result, 55_000_000)
-        assert len(bc.metrics) == 9
+        assert {m.metric for m in bc.metrics} == set(BENCHMARK_METRIC_WEIGHTS)
+
+    def test_the_rural_benchmark_stays_deleted(self, sample_pipeline_result):
+        """1.4.0 premise ruling — no non-metro share is scored against a mean.
+
+        The share itself survives as an unbenchmarked characterisation on the
+        CLI and the Streamlit Geographic tab. What was removed is comparing it
+        to a "winner mean" and folding the result into a score: the winner mean
+        is one of the values data/historical_awards.py's own header records as
+        unsourced, it is the exact complement of its sibling, and Question 22
+        asks the Applicant to COMMIT to a percentage of QLICIs rather than to
+        report a pipeline share. See renderers/_question_22.
+        """
+        bc = HistoricalBenchmarks().compare(sample_pipeline_result, 55_000_000)
+        labels = " ".join(f"{m.metric} {m.label} {m.note}" for m in bc.metrics)
+        assert "rural" not in labels.lower(), (
+            f"a rural/non-metro benchmark is back in the metric set: {labels}"
+        )
 
     def test_overall_score_in_range(self, sample_pipeline_result):
         bc = HistoricalBenchmarks().compare(sample_pipeline_result, 55_000_000)

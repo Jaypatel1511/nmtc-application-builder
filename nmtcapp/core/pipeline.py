@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import csv
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Iterator, List, Optional
 
 import pandas as pd
@@ -106,6 +106,25 @@ class PipelineProject:
     is_native_area: Optional[bool] = None
     is_high_migration_rural: Optional[bool] = None
     is_opportunity_zone: Optional[bool] = None
+    # TOOL-VERIFIED AND TRI-STATE (1.4.0 R1). The OMB Non-Metropolitan County
+    # determination for the tract this package geocoded, read from
+    # nmtc-mapper's EligibilityResult.is_non_metro.
+    #
+    # ``None`` MEANS "NOT DETERMINED" AND NEVER "METROPOLITAN". A tract whose
+    # metro status the mapper could not resolve, and a project that never
+    # geocoded, are both unknown — and the share computed from this field
+    # (intelligence/geographic_analysis) puts them in a third bucket rather
+    # than in either. The twelve-state list this field replaced made the
+    # opposite choice implicitly: it computed rural as 1 − urban over "any
+    # state not in the twelve", so all thirty-eight unlisted states, and every
+    # project the tool could not verify, were counted metropolitan by default.
+    #
+    # NOT SET FROM THE `urban_rural` CSV COLUMN, deliberately. That column is
+    # the CDE's own word and this one is an OMB county designation; "Rural" and
+    # "Non-Metropolitan County" are not the same predicate, and merging them
+    # would recreate, one layer down, the conflation this field exists to
+    # remove. The column stays unread — recorded, not fixed, in 1.4.0's notes.
+    is_non_metro: Optional[bool] = None
     # v1.1 per-project flags — drive CDE-level scoring pcts automatically
     is_us_territory: Optional[bool] = None        # project in US Territory → pct_us_territories
     is_persistent_poverty: Optional[bool] = None  # tract is Persistent Poverty County
@@ -233,6 +252,7 @@ class PipelineProject:
             "is_native_area": self.is_native_area,
             "is_high_migration_rural": self.is_high_migration_rural,
             "is_opportunity_zone": self.is_opportunity_zone,
+            "is_non_metro": self.is_non_metro,
             "is_us_territory": self.is_us_territory,
             "is_persistent_poverty": self.is_persistent_poverty,
             "is_below_market_rate": self.is_below_market_rate,
@@ -397,7 +417,23 @@ class Pipeline:
 
             pipeline = Pipeline.sample(n=20)
         """
-        raw = _SAMPLE_PROJECTS[:n]
+        # COPIES, NOT THE MODULE-LEVEL OBJECTS (1.4.0). `_SAMPLE_PROJECTS[:n]`
+        # slices the LIST and hands out the same PipelineProject instances to
+        # every caller, so two sample pipelines in one process aliased each
+        # other's projects field-for-field. Enriching one mutated the other;
+        # so did anything that assigned a distress level, a tract or a flag.
+        #
+        # NOT A TEST-ONLY CONCERN. `enrich_pipeline_eligibility` writes to
+        # these attributes, `Pipeline.sample()` is the offline demo path, and
+        # `--demo` runs it — so a long-lived process (the Streamlit app is
+        # one) that sampled twice shared eligibility state between two
+        # pipelines a user believes are independent.
+        #
+        # FOUND BY THE 1.4.0 CLI BASELINE, which captures the pre-enriched
+        # state and came out different depending on which tests had run
+        # before it: 87% deep/severe alone, 100% in the full suite. A gate
+        # whose answer depends on execution order is not a gate.
+        raw = [replace(p) for p in _SAMPLE_PROJECTS[:n]]
         pipeline = cls(raw)
         # The sample fixture ships pre-verified eligibility data for offline
         # demos and tests — the one construction path that may claim "ok"

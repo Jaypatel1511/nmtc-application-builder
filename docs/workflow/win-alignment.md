@@ -248,12 +248,33 @@ print(f"Score: {result.alignment_score_before*100:.0f} → {result.alignment_sco
 
 ## Phase 2 flags
 
-`score.phase2_flags` is a dict of boolean flags for qualitative factors that cannot be scored from pipeline data. These are informational only — they do not affect the Phase 1 aggregate score.
+`score.phase2_flags` reports qualitative factors that cannot be scored from
+pipeline data. They are informational only — they do not affect the Phase 1
+aggregate score.
 
 ```python
 for flag, value in score.phase2_flags.items():
-    status = "⚠️ " if value else "✓ "
-    print(f"{status} {flag.replace('_', ' ')}: {value}")
+    print(f"{flag}: {value}")
 ```
 
-Common flags: `non_metro_commitment_risk`, `fee_structure_risk`, `prior_reporting_compliance_risk`, `capitalization_risk`. See [Methodology — Phase 2 considerations](../reference/methodology.md#phase-2-considerations-not-scored-by-this-tool) for details.
+The keys, and what each one is:
+
+| Key | Type | Source |
+|---|---|---|
+| `non_metro_commitment_pct` | `float` or `None` | **The CDE's own declaration**, passed through from `cde_attributes["non_metro_commitment_pct"]` — its answer to Question 22(c). `None` if it declared nothing. Nothing computes this. |
+| `non_metro_pipeline_qei_pct` | `float` | **Measured.** The share of pipeline QEI in verified Non-Metropolitan Counties, as a percentage. A characterisation of the pipeline, not an answer to Question 22 — see [Methodology](../reference/methodology.md#phase-2-considerations-not-scored-by-this-tool). |
+| `non_metro_undetermined_qei_pct` | `float` | **Measured.** The share of pipeline QEI whose county status could not be determined. Not metropolitan. |
+| `favorable_fee_structure` | `bool` or `None` | From `cde_attributes["has_favorable_fee_structure"]`. |
+| `prior_reporting_compliance_risk` | `bool` | From `cde_attributes["has_prior_reporting_issues"]`; defaults to `False`. |
+
+> **Corrected in 1.4.0.** This section described the dict as "boolean flags" and
+> named four keys — `non_metro_commitment_risk`, `fee_structure_risk`,
+> `prior_reporting_compliance_risk` and `capitalization_risk`. **Three of the
+> four have never existed** in any release, and the dict has never been all
+> booleans. The example above no longer prints a ⚠️/✓ verdict either, because
+> two of these values are percentages and one is a `None`-able declaration, none
+> of which is truthy-testable as a risk.
+>
+> `non_metro_meets_minimum` was **removed** in the same round: it reported
+> `rural_pct >= 0.20`, and there is no 20% threshold an individual Applicant
+> must clear. See [Methodology](../reference/methodology.md#phase-2-considerations-not-scored-by-this-tool).

@@ -43,6 +43,10 @@ import re
 
 import pytest
 
+from nmtcapp.renderers._question_22 import (
+    Q22_METRO_LABEL, Q22_NON_METRO_LABEL, Q22_NON_METRO_METRIC_LABEL,
+    Q22_UNDETERMINED_LABEL,
+)
 from nmtcapp.renderers._question_25 import Q25_QEI_BASIS_CLAUSE
 from nmtcapp.tables.distress_table import (
     HMR_ROW_LABEL, LIC_ROW_LABEL, NATIVE_AREA_ROW_LABEL,
@@ -88,12 +92,18 @@ _ANALYZER = os.path.join(_PAGES, "1_Pipeline_Analyzer.py")
 # ---------------------------------------------------------------------------
 
 _RULED_SHARE_METRICS = {
-    "Rural share": (
-        "share of QEI in rural markets. No generated document names its "
-        "basis, so there is no audited wording to carry. 1.4.0."
-    ),
+    # "Rural share" IS GONE FROM THIS LIST BECAUSE THE METRIC WAS FIXED, not
+    # because the ruling was dropped (1.4.0 R2/R3). The 1.3.1 entry read
+    # "share of QEI in rural markets. No generated document names its basis,
+    # so there is no audited wording to carry. 1.4.0." — and 1.4.0 is this
+    # round. The metric now renders as Q22_NON_METRO_METRIC_LABEL, which
+    # names its denominator on the figure's face, and the basis wording it
+    # carries lives in renderers/_question_22 rather than being paraphrased
+    # here. test_every_ruled_share_metric_still_exists is what would have
+    # fired had the entry been left behind after the label moved.
     "High-priority sector %": (
-        "share of QEI in high-priority sectors. Same reason. 1.4.0."
+        "share of QEI in high-priority sectors. No generated document names "
+        "its basis, so there is no audited wording to carry. 1.4.x."
     ),
 }
 
@@ -151,8 +161,19 @@ def test_every_bare_percentage_metric_on_the_distress_tab_is_ruled():
     and refuses a percentage whose label is a bare noun.
     """
     tree = ast.parse(_source(), filename="1_Pipeline_Analyzer.py")
+    # Names whose VALUE carries the basis. Listed by name rather than by
+    # value so the assertion is "the screen imported the audited label",
+    # which is the thing F2 is actually about; a label that stopped naming
+    # its denominator would be caught by the constant's own module and by
+    # test_the_document_and_the_screen_cannot_drift_apart, not by a substring
+    # check here.
     ruled = {"Q25_QEI_BASIS_CLAUSE", "LIC_ROW_LABEL", "NATIVE_AREA_ROW_LABEL",
-             "HMR_ROW_LABEL"}
+             "HMR_ROW_LABEL",
+             # 1.4.0 R3 — the Non-Metropolitan County split. All four name
+             # QEI: the metric label is "Non-metro share of QEI" and the three
+             # bucket labels are suffixed "(QEI)" at the call site.
+             "Q22_NON_METRO_METRIC_LABEL", "Q22_NON_METRO_LABEL",
+             "Q22_METRO_LABEL", "Q22_UNDETERMINED_LABEL"}
 
     pct_metrics, bare = 0, []
     for node in ast.walk(tree):
@@ -198,4 +219,123 @@ def test_every_ruled_share_metric_still_exists():
         "ruled share metric(s) no longer render. Remove the ruling so the "
         "list stays a description of what is actually exempt:\n  "
         + "\n  ".join(stale)
+    )
+
+
+# ---------------------------------------------------------------------------
+# 1.4.0 R3 — the non-metropolitan split's own gates
+# ---------------------------------------------------------------------------
+
+def test_the_non_metro_metric_label_names_its_denominator():
+    """The constant the screen imports must itself carry the basis.
+
+    Adding a name to ``ruled`` above exempts it from the bare-percentage walk.
+    That exemption is only sound while the constant's VALUE actually names the
+    denominator — otherwise the fix for F2 becomes "rename the label to
+    something imported", which passes the gate and shows the CDE the same bare
+    percentage.
+    """
+    assert "QEI" in Q22_NON_METRO_METRIC_LABEL, (
+        f"Q22_NON_METRO_METRIC_LABEL is {Q22_NON_METRO_METRIC_LABEL!r} and no "
+        "longer names its denominator. It is exempted from the bare-percentage "
+        "walk on the strength of naming it."
+    )
+
+
+def test_the_three_bucket_labels_are_rendered_with_their_basis():
+    """Each bucket metric must carry "(QEI)" at the call site.
+
+    The three bucket constants are bare nouns on purpose — "Non-metropolitan",
+    "Metropolitan", "Not determined" are the Fund's categories and are reused
+    in the donut legend, where the chart title supplies the basis. On the
+    metric row there is no title to lean on, so the call site adds it. This
+    asserts that, rather than trusting the comment.
+    """
+    source = _source()
+    for const in ("Q22_NON_METRO_LABEL", "Q22_METRO_LABEL",
+                  "Q22_UNDETERMINED_LABEL"):
+        assert f'f"{{{const}}} (QEI)"' in source, (
+            f"the {const} metric no longer renders with its (QEI) suffix. "
+            "Three bare-noun percentages on one row is the exact shape F2 "
+            "removed from the Distress tab."
+        )
+
+
+def test_the_undetermined_bucket_is_rendered_and_not_dropped():
+    """The third bucket must reach the screen — chart, metric and caveat.
+
+    THE DEFECT THIS IS WRITTEN AGAINST (1.4.0 R2). The donut this replaced
+    plotted two values summing to 1.0, computed as ``rural = 1 − urban``, so
+    every dollar the tool had failed to verify was DRAWN as urban. A viewer
+    could not tell a measured metropolitan share from an unmeasured one.
+    Dropping the undetermined slice again would restore that silently: the
+    remaining two values would still be a valid pie, just a wrong one.
+    """
+    source = _source()
+    assert "Q22_UNDETERMINED_LABEL" in source, (
+        "the undetermined bucket's label is not on the page at all"
+    )
+    assert "undetermined_pct" in source, (
+        "the page no longer reads metro_undetermined_pct — the third bucket's "
+        "dollars are being dropped, which is what R2 removed"
+    )
+    assert "q22_undetermined_caveat" in source, (
+        "the page no longer renders the undetermined caveat. When the third "
+        "bucket is non-empty the two determined shares do not sum to 100%, "
+        "and a reader who assumes they do reads one as the complement of the "
+        "other."
+    )
+    # The donut must plot three values, not two.
+    tree = ast.parse(source, filename="1_Pipeline_Analyzer.py")
+    # The page draws two donuts — distress levels and county status. Select
+    # by the labels, not by position: a new chart added above this one would
+    # otherwise silently move the assertion onto the wrong figure.
+    pies = [n for n in ast.walk(tree)
+            if isinstance(n, ast.Call)
+            and getattr(n.func, "attr", None) == "Pie"]
+    assert pies, "no go.Pie on the page at all"
+    status_pies = [
+        n for n in pies
+        if any(
+            isinstance(nm, ast.Name) and nm.id.startswith("Q22_")
+            for kw in n.keywords if kw.arg == "labels"
+            for nm in ast.walk(kw.value)
+        )
+    ]
+    assert len(status_pies) == 1, (
+        f"expected exactly one go.Pie labelled with the Q22 county-status "
+        f"constants, found {len(status_pies)} of {len(pies)} donuts"
+    )
+    values = [kw.value for kw in status_pies[0].keywords if kw.arg == "values"]
+    assert values and isinstance(values[0], ast.List), (
+        "go.Pie's values= is no longer a list literal this gate can count"
+    )
+    assert len(values[0].elts) == 3, (
+        f"the QEI-status donut plots {len(values[0].elts)} slices, not 3. The "
+        "undetermined bucket must be drawn, even at zero, or the ring asserts "
+        "that every dollar was determined."
+    )
+
+
+def test_the_q22_basis_clause_is_the_q25_object():
+    """One string, two names — asserted, because a pin was waived on it.
+
+    ``tests/pinned_constants.txt`` waives ``Q22_QEI_BASIS_CLAUSE`` on the
+    ground that it IS ``Q25_QEI_BASIS_CLAUSE``, already pinned to all four
+    generated artifacts. That waiver is only sound while the identity holds:
+    if ``_question_22`` ever retyped the clause instead of importing it, the
+    Q25 pin would keep passing against the documents while the CLI and the
+    Streamlit tab drifted to a second wording of the same denominator.
+
+    That is not hypothetical here. ``_question_25`` records finding exactly
+    three copies of this sentence in the tree, agreeing by luck, and says
+    "Read it, do not retype it."
+    """
+    from nmtcapp.renderers._question_22 import Q22_QEI_BASIS_CLAUSE
+
+    assert Q22_QEI_BASIS_CLAUSE is Q25_QEI_BASIS_CLAUSE, (
+        "Q22_QEI_BASIS_CLAUSE is no longer the Q25 object. tests/"
+        "pinned_constants.txt waives a pin on it because the Q25 pin covers "
+        "it; a separate copy makes that waiver false and leaves the CLI and "
+        "the Streamlit tab unpinned."
     )

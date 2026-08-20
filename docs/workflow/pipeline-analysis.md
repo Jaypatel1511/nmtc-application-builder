@@ -40,7 +40,7 @@ Projects with pre-populated eligibility fields (as returned by `Pipeline.sample(
 Four analyses run in parallel on the enriched pipeline:
 
 - **Distress concentration** — what percentage of QEI is deployed into deep, severe, LIC, and ineligible tracts; native area and high-migration rural percentages; comparison against winner distributions
-- **Geographic diversity** — states count, MSA count, urban/rural split, Herfindahl-Hirschman Index (HHI) for geographic concentration
+- **Geographic diversity** — states count, MSA count, a three-way Non-Metropolitan County split of QEI (non-metro / metropolitan / not determined), Herfindahl-Hirschman Index (HHI) for geographic concentration
 - **Sector mix** — sectors represented, dominant sector, high-priority sector percentage (healthcare + affordable housing + education), sector diversity score
 - **Impact aggregation** — total jobs created and retained, units built, square footage, and the critical jobs-per-million-QEI metric benchmarked against historical winners
 
@@ -224,7 +224,12 @@ g = analysis.geographic_analysis
 g["states_count"]                  # int — number of distinct states
 g["msa_count"]                     # int — number of MSAs represented
 g["urban_pct"]                     # float — fraction of QEI in urban tracts
-g["rural_pct"]                     # float — fraction of QEI in rural tracts
+g["non_metro_pct"]                 # float — share of QEI in verified Non-Metropolitan Counties
+g["metro_pct"]                     # float — share of QEI in verified Metropolitan Counties
+g["metro_undetermined_pct"]        # float — share of QEI whose county status is UNKNOWN
+                                   #         (not geocoded, or tract absent from the Fund
+                                   #         table). NOT metropolitan. The three sum to 1.0.
+g["metro_status_qei"]              # dict  — the three buckets in dollars, plus project counts
 g["hhi"]                           # float — Herfindahl-Hirschman Index (lower = more diverse)
 g["geographic_concentration_label"] # str — e.g. "low", "medium", "high"
 g["state_breakdown"]               # dict — per-state QEI and project counts

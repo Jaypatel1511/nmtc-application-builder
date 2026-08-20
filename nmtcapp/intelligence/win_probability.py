@@ -627,10 +627,55 @@ class WinProbabilityModel:
     ) -> dict:
         flags = {}
 
-        # Non-metro commitment
-        rural_pct = result.geographic_diversity.get("rural_pct", 0.0)
-        flags["non_metro_commitment_pct"] = round(rural_pct * 100, 1)
-        flags["non_metro_meets_minimum"] = rural_pct >= 0.20
+        # NON-METRO: A COMMITMENT THE CDE DECLARES, AND A PIPELINE SHARE THE
+        # TOOL MEASURES. Two different facts. This block used to publish the
+        # second under the first's name and drop the first on the floor.
+        #
+        # WHAT WAS HERE, and why each line went:
+        #
+        #   flags["non_metro_commitment_pct"] = round(rural_pct * 100, 1)
+        #
+        # `non_metro_commitment_pct` IS A CDE PROFILE FIELD. It ships in
+        # templates/cde_profile_sample.yaml as `non_metro_commitment_pct: 0.22`
+        # — a CDE's own answer to Question 22(c) — and arrives here in `attrs`
+        # via CDEProfile.extra, exactly like has_favorable_fee_structure two
+        # lines below, which IS read from attrs. This line ignored it and wrote
+        # a computed pipeline share over the top, under the identical key and
+        # in different units (the YAML is a fraction; this wrote a percentage
+        # number). A CDE who declared 22% read back 7.0 and had no way to see
+        # which number that was. It is the fourth instance of this package
+        # discarding a column the CDE filled in — after native_area,
+        # urban_rural and the declared tract/distress pair.
+        #
+        # It is also misnamed on its own terms: a pipeline share is not a
+        # commitment. Question 22(c) asks what the Applicant "is willing to
+        # commit to deploy", which is a forward undertaking about capital not
+        # yet raised. The word `commitment` now appears only on the CDE's own
+        # declaration, never on anything this tool computed.
+        #
+        #   flags["non_metro_meets_minimum"] = rural_pct >= 0.20
+        #
+        # DELETED OUTRIGHT, not renamed. THERE IS NO 20% APPLICANT THRESHOLD.
+        # The 20% is a CDFI Fund goal across "all QLICIs made by Allocatees
+        # under this Round" and a bar on what an Allocatee has COMMITTED to;
+        # Question 22 states no minimum an individual Applicant must clear, and
+        # the question is not scored in Phase I at all. Comparing one CDE's QEI
+        # share to a Fund-wide target and rendering the result as a boolean
+        # called `meets_minimum` told a CDE it had failed a bar that does not
+        # exist. Its consumers were: none — one write, no reads, in this
+        # package or its docs. See renderers/_question_22 for the instrument.
+        flags["non_metro_commitment_pct"] = attrs.get(
+            "non_metro_commitment_pct", None
+        )
+        # The measured pipeline share, named for what it is: a share of QEI,
+        # measured, not committed to. None-safe because an empty pipeline
+        # determines nothing.
+        flags["non_metro_pipeline_qei_pct"] = round(
+            result.geographic_diversity.get("non_metro_pct", 0.0) * 100, 1
+        )
+        flags["non_metro_undetermined_qei_pct"] = round(
+            result.geographic_diversity.get("metro_undetermined_pct", 0.0) * 100, 1
+        )
 
         # Fee structure (informational; set in attrs if known)
         flags["favorable_fee_structure"] = attrs.get("has_favorable_fee_structure", None)

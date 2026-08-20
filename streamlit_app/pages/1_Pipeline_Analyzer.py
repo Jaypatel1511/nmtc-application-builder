@@ -26,7 +26,12 @@ from nmtcapp.core.sample_identity import SampleDataError
 from nmtcapp.renderers._disclosure import join_truncated
 from nmtcapp.tables.distress_table import LIC_ROW_LABEL, NATIVE_AREA_ROW_LABEL
 from nmtcapp.data.schema import TARGET_DISTRESS_THRESHOLDS
+from nmtcapp.data.historical_awards import WINNER_GEOGRAPHIC_PATTERNS
 from nmtcapp.renderers._question_25 import Q25_QEI_BASIS_CLAUSE, q25_basis_note
+from nmtcapp.renderers._question_22 import (
+    Q22_METRO_LABEL, Q22_NON_METRO_LABEL, Q22_NON_METRO_METRIC_LABEL,
+    Q22_UNDETERMINED_LABEL, q22_basis_note, q22_undetermined_caveat,
+)
 from utils import (
     fmt_millions,
     fmt_pct,
@@ -534,14 +539,21 @@ with tabs[2]:
     states_count = g.get("states_count", 0)
     hhi = g.get("hhi", 0)
     conc_label = g.get("geographic_concentration_label", "N/A")
-    rural_pct = g.get("rural_pct", 0.0)
-    urban_pct = g.get("urban_pct", 0.0)
+    non_metro_pct = g.get("non_metro_pct", 0.0)
+    metro_pct = g.get("metro_pct", 0.0)
+    undetermined_pct = g.get("metro_undetermined_pct", 0.0)
+    metro_qei = g.get("metro_status_qei", {})
 
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("States represented", states_count)
     c2.metric("Geographic HHI", f"{hhi:,.0f}")
     c3.metric("Concentration level", conc_label)
-    c4.metric("Rural share", fmt_pct(rural_pct))
+    # WAS: metric("Rural share", fmt_pct(rural_pct)) — a bare percentage whose
+    # denominator was invisible and whose basis was a twelve-state list.
+    # tests/test_streamlit_metric_basis.py ruled this exact metric for 1.4.0.
+    # The label now names the denominator on the figure's own face, as the
+    # generated documents do for every distress share.
+    c4.metric(Q22_NON_METRO_METRIC_LABEL, fmt_pct(non_metro_pct))
 
     st.markdown("---")
 
@@ -584,15 +596,28 @@ with tabs[2]:
     with left:
         fig_ur = go.Figure(
             go.Pie(
-                labels=["Urban", "Rural"],
-                values=[urban_pct, rural_pct],
+                # THREE SLICES, ALWAYS (1.4.0 R2). The two-slice
+                # Urban/Rural donut drew a ring that summed to 100% out of a
+                # figure computed as 1 − (QEI in twelve states), so every
+                # unverified dollar was drawn as urban. A donut that silently
+                # drops undetermined dollars is the same defect as a numerator
+                # that silently excludes them — it just fails in colour.
+                #
+                # The undetermined slice is passed even when it is zero:
+                # Plotly renders a zero-value slice as nothing but keeps it in
+                # the legend, so the category stays visible as a category.
+                labels=[Q22_METRO_LABEL, Q22_NON_METRO_LABEL,
+                        Q22_UNDETERMINED_LABEL],
+                values=[metro_pct, non_metro_pct, undetermined_pct],
+                sort=False,
                 hole=0.5,
-                marker_colors=[BLUE, ACCENT],
+                marker_colors=[BLUE, ACCENT, NEUTRAL],
                 textinfo="label+percent",
                 hovertemplate="%{label}: %{percent}<extra></extra>",
             )
         )
-        fig_ur = style_plotly_fig(fig_ur, title="Urban / Rural QEI split", height=300)
+        fig_ur = style_plotly_fig(
+            fig_ur, title="QEI by Non-Metropolitan County status", height=300)
         fig_ur.update_traces(
             textfont=dict(color="#FFFFFF", size=12),
             insidetextfont=dict(color="#FFFFFF", size=12),
@@ -615,16 +640,55 @@ with tabs[2]:
 
     with right:
         st.markdown("**Geographic benchmarks**")
+        # THREE HAND-TYPED CONSTANTS SAT HERE, NOT ONE (1.4.0 R5). "Winner
+        # median states: **7**", "Winner mean HHI: **620**" and "Winner rural
+        # mean: **18%**" were all literals beside a live figure, and all three
+        # are keys of WINNER_GEOGRAPHIC_PATTERNS. Two are now interpolated from
+        # the constant, which is this package's rule and the fix for six
+        # recorded instances of a hand-typed number going stale.
         st.markdown(
-            f"- Winner median states: **7**  |  Your pipeline: **{states_count}**"
+            f"- Winner median states: "
+            f"**{WINNER_GEOGRAPHIC_PATTERNS['p50_states']:.0f}**  |  "
+            f"Your pipeline: **{states_count}**"
         )
         st.markdown(
-            f"- Winner mean HHI: **620**  |  Your pipeline: **{hhi:,.0f}**"
+            f"- Winner mean HHI: "
+            f"**{WINNER_GEOGRAPHIC_PATTERNS['mean_hhi']:,.0f}**  |  "
+            f"Your pipeline: **{hhi:,.0f}**"
         )
-        st.markdown(
-            f"- Winner rural mean: **18%**  |  Your pipeline: **{fmt_pct(rural_pct)}**"
-        )
+        # THE THIRD ONE IS NOT INTERPOLATED — IT IS DELETED. 18% traces to
+        # WINNER_GEOGRAPHIC_PATTERNS["rural_pct_mean"], so it was pinnable; the
+        # ruling is that it should not be rendered at all. That constant is one
+        # of the values data/historical_awards.py's own header describes as
+        # citing a publication that does not exist, it is the exact complement
+        # of urban_pct_mean, and Question 22 asks the Applicant to COMMIT to a
+        # percentage of QLICIs rather than to report a pipeline share — so
+        # there is no question this comparison answers. Pinning the number
+        # would have made a misleading comparison reproducible.
+        # See renderers/_question_22 and intelligence/benchmarks.
         st.markdown(f"- MSAs represented: **{msa_count}**")
+
+    st.markdown("---")
+    st.markdown("**Non-Metropolitan County status of pipeline QEI**")
+    d1, d2, d3 = st.columns(3)
+    d1.metric(
+        f"{Q22_NON_METRO_LABEL} (QEI)", fmt_pct(non_metro_pct),
+        help=f"{metro_qei.get('non_metro_projects', 0)} project(s)",
+    )
+    d2.metric(
+        f"{Q22_METRO_LABEL} (QEI)", fmt_pct(metro_pct),
+        help=f"{metro_qei.get('metro_projects', 0)} project(s)",
+    )
+    d3.metric(
+        f"{Q22_UNDETERMINED_LABEL} (QEI)", fmt_pct(undetermined_pct),
+        help=f"{metro_qei.get('undetermined_projects', 0)} project(s) — "
+             "counted as neither",
+    )
+    caveat = q22_undetermined_caveat(undetermined_pct)
+    if caveat:
+        st.warning(caveat)
+    with st.expander("What this figure is, and what Question 22 asks for"):
+        st.markdown(q22_basis_note())
 
 # =============================================================================
 # TAB 3 — Sector
