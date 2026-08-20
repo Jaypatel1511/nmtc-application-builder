@@ -1,12 +1,29 @@
-"""Smoke tests: verify every Streamlit page's nmtcapp imports resolve correctly.
+"""Smoke tests: a hand-written sample of the Streamlit pages' nmtcapp imports.
 
-These tests fail in CI before the app crashes on Streamlit Cloud, catching:
-  - Missing names after a module is renamed or refactored
-  - A PyPI-installed nmtc-application-builder shadowing the local repo version
-  - Any import-time NameError or AttributeError in the imported modules
+SUPERSEDED BY tests/test_streamlit_deployment_pin.py. Kept because these are
+cheap and named per page, but READ THE CORRECTION BELOW BEFORE TRUSTING THEM.
 
-Each test mirrors the exact `from nmtcapp...` import lines at the top of the
-corresponding Streamlit page file, so a breakage here maps 1-to-1 to a page crash.
+THIS FILE PREVIOUSLY CLAIMED TO CATCH "a PyPI-installed
+nmtc-application-builder shadowing the local repo version". IT DOES NOT, AND
+IT DID NOT. When the deployed app broke on `join_truncated` at 1.3.1, every
+test here was green, for two independent reasons:
+
+  1. THE LIST IS TYPED, NOT DERIVED, so it drifts silently. `test_page1_imports`
+     below mirrors three of page 1's nine imported names. It does not mention
+     join_truncated, LIC_ROW_LABEL, NATIVE_AREA_ROW_LABEL, Q25_QEI_BASIS_CLAUSE
+     or q25_basis_note --- the five that a stale pin actually fails on. That is
+     rule 4 of tests/test_pinned_constants.py (THE LIST IS DERIVED, NOT
+     INHERITED) violated in the one place it most mattered.
+
+  2. CI INSTALLS THIS TREE (`pip install ".[dev]"`), so `nmtcapp` here is always
+     the repository, never the pinned PyPI copy. A test that only ever resolves
+     against the tree cannot detect the tree being shadowed by something else.
+     No amount of adding names to the lists below would fix that half.
+
+test_streamlit_deployment_pin.py addresses (1) by walking the AST instead of
+mirroring by hand, and addresses (2) by forcing the pin to equal this tree's
+version so that "resolves against the tree" and "resolves against the pinned
+version" are the same statement.
 """
 
 
