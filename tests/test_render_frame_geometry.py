@@ -938,6 +938,77 @@ def test_the_chrome_exemption_is_a_bound_and_not_a_skip(rendered_pdf):
     )
 
 
+def _one_run_pdf(path: str, *, x: float, y: float, text: str = "stray") -> None:
+    """A one-page portrait PDF with a single text run drawn at (x, y)."""
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import letter
+
+    c = canvas.Canvas(path, pagesize=letter)
+    c.setFont("Helvetica", 9)
+    c.drawString(x, y, text)
+    c.showPage()
+    c.save()
+
+
+def test_the_band_selection_asks_the_predicate_and_not_the_height(tmp_path):
+    """check_pdf_frames must choose its band with is_chrome_baseline().
+
+    THE HOLE THIS CLOSES (1.3.1 fix round, R5). G6 made the footer exemption a
+    bound rather than a skip, and
+    ``test_the_chrome_exemption_is_a_bound_and_not_a_skip`` is what proves the
+    bound holds. But that test calls :func:`is_chrome_baseline` directly, twice,
+    and never calls :func:`check_pdf_frames`. The predicate was pinned; the gate
+    chose the band; nothing tied them. Reverting the band selection in
+    ``check_pdf_frames`` to the exact 1.3.0 height test --
+    ``chrome = run["y"] < CHROME_BAND_TOP_PTS`` -- left all twenty-four tests in
+    this module green. That is G6's own shape one layer in: the fix was real and
+    the thing holding it was not.
+
+    So this asserts the SELECTION, through ``check_pdf_frames``, on a document
+    built to make the two rules disagree. A run at y=55 pt is below the body
+    frame's bottom edge (64.8) and is NOT within tolerance of the footer text
+    baseline (32.4), so:
+
+        height test  -> chrome band  (72-540)  -> x=76 is inside  -> no finding
+        predicate    -> body frame   (90-522)  -> x=76 is outside -> finding
+
+    The sample document cannot show this: on it the two rules agree exactly (44
+    runs each), which is precisely why the revert is invisible to every other
+    test here. The disagreement has to be constructed.
+    """
+    stray = str(tmp_path / "stray_below_frame.pdf")
+    _one_run_pdf(stray, x=76.0, y=55.0)
+
+    findings, measured = check_pdf_frames(stray)
+    assert measured > 0, (
+        "no words measured in the probe document — this proof would be vacuous"
+    )
+    assert findings, (
+        "a text run at y=55 pt, below the body frame's bottom edge but not at a "
+        "footer baseline, was drawn at x=76 pt — outside the 90-522 pt body "
+        "frame — and check_pdf_frames reported nothing. It granted the run the "
+        "18-pt-wider footer band on the strength of its HEIGHT. That is the "
+        "1.3.0 behaviour G6 replaced: band selection must ask "
+        "is_chrome_baseline(), not compare against CHROME_BAND_TOP_PTS."
+    )
+
+    # THE CONVERSE, so this cannot be satisfied by deleting the exemption. A run
+    # AT the footer baseline must still receive the wider band THROUGH
+    # check_pdf_frames -- otherwise the page number on every page reports as
+    # clipped, which is the false positive the two bands exist to avoid.
+    footer = str(tmp_path / "footer_run.pdf")
+    _one_run_pdf(footer, x=76.0, y=CHROME_TEXT_BASELINES_PTS[0])
+
+    findings, measured = check_pdf_frames(footer)
+    assert measured > 0, "no words measured in the footer probe"
+    assert not findings, (
+        "a run drawn AT the footer text baseline was measured against the body "
+        "frame and reported as outside it. The exemption has stopped reaching "
+        "check_pdf_frames, and every page number in every rendered PDF is now a "
+        "finding:\n  " + "\n  ".join(findings[:3])
+    )
+
+
 def _tmp_pdf_path():
     import tempfile, os
     return os.path.join(tempfile.mkdtemp(), "template_probe.pdf")

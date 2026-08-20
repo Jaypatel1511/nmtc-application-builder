@@ -93,8 +93,8 @@ _AUTHORITY = ("nmtcapp", "renderers", "_disclosure.py")
 #       read; making them say "top 3 of 7" is a wording change to a rendered
 #       document and belongs in a minor release.
 #   nmtcapp/renderers/markdown_builder.py:182   documents
-#       NOT THIS DEFECT, same reason — recommendations[:3] under "Recommended
-#       Actions", no count.
+#       NOT THIS DEFECT, same reason — recommendations[:3] under
+#       "Recommended Improvements Before Submission:", no count.
 #   nmtcapp/integrations/impact_adapter.py:94   internal      NOT RENDERED.
 #       Returns the top 3 sectors as data; the caller labels them.
 #   nmtcapp/visualization/maps.py:258           chart         NOT THIS DEFECT.
@@ -122,11 +122,12 @@ _AUTHORITY = ("nmtcapp", "renderers", "_disclosure.py")
 #: attached; this is where the reasons live, and adding one is a review event.
 _RULED_EXCEPTIONS = {
     ("nmtcapp/renderers/markdown_builder.py", "recommendations"): (
-        "recommendations[:3] renders under the heading 'Recommended Actions', "
-        "which states no count. A heading that promises nothing cannot be "
-        "contradicted by a short list. It IS a silent truncation and is "
-        "reported in 1.3.1's user-surface read; saying 'top 3 of 7' would "
-        "change a generated document and belongs in a minor release."
+        "recommendations[:3] renders under the heading 'Recommended "
+        "Improvements Before Submission:', which states no count. A heading "
+        "that promises nothing cannot be contradicted by a short list. It IS "
+        "a silent truncation and is reported in 1.3.1's user-surface read; "
+        "saying 'top 3 of 7' would change a generated document and belongs in "
+        "a minor release."
     ),
 }
 

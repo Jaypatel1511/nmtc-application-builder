@@ -31,6 +31,15 @@ The library reads your project pipeline, enriches each project with NMTC eligibi
 
 ## 60-second quickstart
 
+!!! warning "This block runs on the shipped fictional CDE"
+    `CDEProfile.sample()` is Riverbend Community Capital CDE, LLC — a CDE that
+    does not exist. Nothing in the package refuses this path (the refusal is on
+    `CDEProfile.from_yaml()` and the Streamlit upload, not on `sample()` or
+    `generate()`), so the four files below are filing-shaped documents for a
+    fictional applicant. Run it to see the tool work; replace `CDEProfile.sample()`
+    with `CDEProfile.from_yaml("cde_profile.yaml")` before anything you would file.
+    `nmtcapp init <dir>` scaffolds that file.
+
 ```python
 from nmtcapp.core.application import Application
 from nmtcapp.core.cde import CDEProfile
@@ -43,7 +52,7 @@ app.add_pipeline(pipeline)
 paths = app.generate("./drafts/")
 ```
 
-That five-line block produces a complete application package (Word, Excel, PDF, Markdown) in `./drafts/`, runs all intelligence analyses, and writes the pipeline analysis summary to the terminal.
+That five-line block runs all intelligence analyses and writes a complete application package (Word, Excel, PDF, Markdown) into `./drafts/`. It prints nothing: `generate()` logs at INFO and writes no output to the terminal. For the summary on screen, call `app.analyze().summary()`.
 
 [Get started with Installation](installation.md){ .md-button .md-button--primary }
 [Read the Quickstart](quickstart.md){ .md-button }

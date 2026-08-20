@@ -26,11 +26,25 @@ derivation that is merely plausible gets copied forward, so this is the worse
 half of the pattern rather than a footnote to it. FLOOR was 530 there, derived
 from 1,096 collected and 20 skipped, identically on 3.9.25 and 3.12.13.
 
-1.3.1 MAKES IT SEVEN, AND THIS TEST IS WHAT FOUND IT. The round added 48 tests
+1.3.1 MAKES IT SEVEN, AND THIS TEST IS WHAT FOUND IT. The round added 47 tests
 and went red on ``FLOOR=530`` before anything in release.yml was touched --
 the first stale floor in this file's history caught by a check rather than by
-somebody re-reading the comment beside it. FLOOR is 560, derived from 1,143
-collected and 23 skipped, identically on 3.9.12 and 3.12.13.
+somebody re-reading the comment beside it. FLOOR became 560, derived from
+1,143 collected and 23 skipped, identically on 3.9.25 and 3.12.13.
+
+1.3.1's FIX ROUND RE-DERIVED IT AND IT DID NOT MOVE. That round added six
+tests (three gates for R1, one for R5, and two for the widened test-count
+gate), taking the sdist collection to 1,150 under ``-m "not wheel"`` with 25
+skipped -- 1,125 executed, half of which is 562, rounded down to 560. Measured
+identically on 3.9.25 and 3.12.13: both 1,125 passed / 25 skipped / 1
+deselected. The two new skips are this round's own and are the same
+environment class as the other twenty-three: test_docs_refusal_claims' call-site
+sweep reads nmtcapp/, and test_test_count_claims' CONTRIBUTING.md site is a
+surface the job ships but does not copy out of the tarball.
+
+(The "3.9.12" written here before was a typo for 3.9.25 -- no 3.9.12 was ever
+run. A hand-typed coordinate in the paragraph recording a re-derivation, which
+is the class R3 of that round is about.)
 
 MAX_SDIST_SKIPS below is the same shape one layer in, and 1.3.0 tightened it
 for the same reason.
@@ -102,23 +116,30 @@ MARKER_EXPR = "not wheel"
 #: headroom left -- and a ceiling that is about to be crossed by its own
 #: measurement stops bounding anything the moment it is.
 #:
-#: The arithmetic that picks it, restated for this tree. With 1,143 collected
+#: The arithmetic that picks it, restated for this tree. With 1,150 collected
 #: the lower bound is
 #:
-#:     ((1143 - MAX_SDIST_SKIPS) // 2) // 10 * 10
+#:     ((1150 - MAX_SDIST_SKIPS) // 2) // 10 * 10
 #:
-#: which returns 560 at a ceiling of 23, 550 for every ceiling from 24 to 43,
-#: and drops to 540 at 44. A ceiling below its own measurement is not a
-#: ceiling, so the live range is [23, 43]. At 44 the band starts admitting a
+#: which returns 560 for every ceiling up to 30 and drops to 550 at 31. A
+#: ceiling below its own measurement is not a ceiling, and the measurement is
+#: now 25, so the live range is [25, 30]. At 31 the band starts admitting a
 #: floor no measurement of this tree produces, which is what 40 was doing
 #: before 1.3.0 and what made it an abstention rather than a ceiling.
 #:
-#: 28 sits five skips above the measurement and sixteen below the point where
-#: the band goes slack. It leaves room for a few more environment-driven skips
-#: without ever admitting a stale floor.
+#: 28 SITS THREE SKIPS ABOVE THE MEASUREMENT AND TWO BELOW THE SLACK POINT,
+#: and that is tighter than it has been. It was five above and sixteen below
+#: when it was chosen; this round's two new environment skips took three of
+#: that headroom and a larger collection took the rest. It is still a ceiling
+#: -- above its own measurement, below the point the band goes slack -- but
+#: the next environment skip puts it one from the edge. Re-derive it then;
+#: do not widen it to buy room.
 #:
-#: What skips in the tarball and why -- all twenty-three are environment skips
-#: and each names its own reason: tests needing a git checkout (5, one of them
+#: What skips in the tarball and why -- all twenty-five are environment skips
+#: and each names its own reason (the two added in 1.3.1's fix round are
+#: test_docs_refusal_claims' guard-call-site sweep, which reads nmtcapp/, and
+#: test_test_count_claims' CONTRIBUTING.md claim site, which the job ships but
+#: does not copy out): tests needing a git checkout (5, one of them
 #: new in 1.3.1: test_the_changelogs_baseline_class_table_adds_up), the
 #: constant SWEEPS and the CHANGELOG derivations in test_pinned_constants that
 #: read the package SOURCE where this job deliberately has none (9), the docs

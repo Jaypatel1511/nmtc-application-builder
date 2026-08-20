@@ -19,6 +19,145 @@ moved out of `section_b_outcomes` into `distress_table` (F2), and every
 truncated-list call site moved onto one helper (F1). All three were made as
 byte-for-byte moves and the baseline gate was run after each.
 
+### Part 0 — the fix round: one false sentence about refusal, and four cheap things
+
+A hostile audit returned SHIP conditional on one docs edit. It confirmed both
+renderer diagnoses, re-derived `FLOOR=560` to the digit, and cleared
+`section_b_outcomes.py`. Then it found a sentence the build round did not.
+**The four baselines did not move in this round either** — verified by blob
+hash against `0643296`, not by running the gate, and **no file under
+`nmtcapp/` is modified at all.**
+
+- **R1. The docs site published a false statement about the package's refusal
+  behaviour, and the page's own build was the counterexample.**
+  `docs/hooks/generate_sample_output.py` wrote *"The package refuses to score
+  or generate against this identity outside demo mode"* onto the Sample Output
+  page, and thirty lines below the sentence called `CDEProfile.sample()` →
+  `Application.generate()`, publishing four filing-shaped documents for
+  Riverbend at **Readiness Grade A, 86.6/100, $65,000,000**. Proven by
+  execution both ways: `sample()` → `generate()` returns four formats with no
+  exception; `from_yaml()` on the shipped sample raises `SampleDataError`
+  naming the **CDE name** field. The mechanism is that `sample()` is a
+  classmethod calling `cls(...)`, `__post_init__` does not check, and
+  `generate()` does not check — **the sample path is unguarded, not
+  misdirected.** The sentence now states the boundary that exists: the refusal
+  sits on `CDEProfile.from_yaml()` (and so on `nmtcapp analyze --cde`, verified
+  by running it) and on the Streamlit upload, and on nothing else.
+  **Sharper than the audit's framing:** there is no CLI `generate` subcommand
+  and no Streamlit generate path, so `Application.generate()` is the *only*
+  way to produce a document at all — and it is the path with no guard on it.
+- **R1 gate. `tests/test_docs_refusal_claims.py`, and what it cannot see.**
+  Four tests: the guard's call sites are exactly
+  `{nmtcapp/core/cde.py, streamlit_app/utils.py}` by AST walk; the unguarded
+  path is executed and must succeed; the guarded path is executed and must
+  refuse and name the field; and every sentence on eighteen published surfaces
+  matching a refusal vocabulary must be registered with the basis it was
+  checked on. **It does not parse English** — the broad version is not
+  buildable, so what is built is a registry that turns a new refusal claim into
+  a review event. It is blind to synonyms and to files outside its list, and
+  says nothing about whether the refusal is correct policy. The registry
+  immediately caught a fourth claim the manual sweep had missed (see below).
+- **R2. The published quickstart taught the unguarded path.** `docs/index.md`
+  opened with `CDEProfile.sample()` → `app.generate("./drafts/")` as the first
+  code block a visitor reads. **Ruled: a caveat above the block, not a
+  blank-template rewrite** — and ruled by execution rather than taste.
+  `nmtcapp init` then `CDEProfile.from_yaml()` on the scaffolded file raises
+  `ValueError: ... is missing 7 required fields`, so a blank-template-first
+  quickstart's opening block **cannot run at all**. The quickstart's job is to
+  work in sixty seconds; the safer shape does not work in any number of
+  seconds. Caveat added; the working block kept.
+- **R3. A gate justified its ruling by quoting a heading that exists nowhere.**
+  `tests/test_truncated_lists.py` cited *"Recommended Actions"*; the real
+  heading is *"Recommended Improvements Before Submission:"*. **The ruling
+  survives** — checked against the rendered baseline, where the heading states
+  no count — so only the citation was invented. **The prompt for this round
+  said one site; there were two.** The second sits in the comment block with
+  the quote split across a line break, so a whole-tree grep for the exact
+  string does not find it — the same shape as the miss that produced the
+  finding. Every other quoted heading in the four new test modules was verified
+  against the surface it claims to quote; the rest hold.
+- **R4. Three hand-typed "48"s in the round about hand-typed counts, and a
+  fourth surface the gate could not see.** Derived, not assumed:
+  `0643296` collects **1,097** unfiltered and **1,096** under `-m "not wheel"`;
+  `30e8146` collects **1,144** and **1,143**. **Both deltas are 47, not 48.**
+  Corrected in `CHANGELOG.md`, `.github/workflows/release.yml` and
+  `tests/test_release_floor.py`. Separately, `CONTRIBUTING.md` said
+  `# all 544 tests` — **stale by 600** — and `_CLAIM_SITES` covered only
+  `README.md` and `streamlit_app/app.py`, so **the gate whose docstring claimed
+  every surface stating a test count read two of three.** The miss was one
+  absent `(?:all\s+)?` alternative in the pattern; it is now in both patterns
+  and asserted by a sensitivity check on the exact line that shipped wrong.
+- **R5. The 189-run under-check had no regression test, and now goes red.**
+  `test_the_chrome_exemption_is_a_bound_and_not_a_skip` asserts the footer
+  heights and the exempted runs **by calling `is_chrome_baseline` directly** —
+  it never calls `check_pdf_frames`. Reverting the band selection to the exact
+  1.3.0 height test left **all 24 gate tests green**, shown. The new
+  `test_the_band_selection_asks_the_predicate_and_not_the_height` drives
+  `check_pdf_frames` over a constructed one-run PDF where the two rules
+  disagree (y=55 pt: below the frame bottom, not at a footer baseline) and
+  asserts both directions. **With the revert re-applied it is the only test
+  that fails — 1 failed, 24 passed** — then restored.
+  **A figure this round could not reproduce:** the "189 of 1,091 runs" belongs
+  to the base gate's pypdf-visitor extraction, not to HEAD's content-stream
+  parser. On the base-rendered document at HEAD the two rules agree **exactly**
+  (44 runs each, 0 mis-banded), which is precisely why the revert is invisible
+  to every other test and why the disagreement has to be constructed.
+
+### Part 0b — the docs-claim sweep
+
+Nothing in this project had ever swept the documentation for claims about the
+package's behaviour and **executed** them. Doing so found three more false or
+misleading statements beyond R1:
+
+- **`docs/index.md` said the quickstart block "writes the pipeline analysis
+  summary to the terminal". It writes nothing** — 0 chars to stdout and 0 to
+  stderr, measured. `generate()` logs at INFO to a logger the package never
+  configures a handler for; the thing that prints a summary is
+  `analysis.summary()`, which the block never calls. Corrected.
+- **`docs/workflow/recommendations.md` said `quantified_improvement` "always
+  contains a numeric estimate". The field is `str`** — annotated
+  `quantified_improvement: str`, and the page's own sample output two
+  paragraphs above shows prose. Corrected to say so.
+- **`README.md`'s "The app keeps working; it never hard-blocks" is true for the
+  documented failure and false for the rest** — found by the R1 registry gate,
+  not by hand. Executed both ways on an unenriched pipeline: on
+  `NMTCMapperError` all six operations succeed, status becomes `unavailable`
+  and the banner renders; on **any other exception** from the data layer
+  `analyze()` raises `RuntimeError` at `application.py:250-254`.
+  `nmtc_mapper_adapter`'s own docstring says *"Unexpected exceptions
+  propagate"*, so the behaviour is intended and the sentence simply does not
+  scope it. **Registered with that basis and deferred to 1.3.2** rather than
+  reworded here.
+
+Claims run and found **true**: `Pipeline.from_csv` raises `FileNotFoundError`
+and `ValueError` as `api.md` states; Markdown output really is available with
+`docx`, `openpyxl`, `reportlab` and `matplotlib` all forced unimportable;
+`_METHODOLOGY` is exposed on result objects; all four formats really are
+generated fresh on every docs build. **True but not provable from outside on
+this input:** the optimizer's no-regression guarantee — the sample pipeline
+returns `alignment_score_after == alignment_score_before` at 0 iterations, so
+the guarantee is untested rather than confirmed.
+
+**Deferred, with reasons, not silently dropped:** `application.py:181` logs
+`"allocation $%,.0f"`, which is not a valid `%` conversion, so **every
+`Application(...)` raises a logging `ValueError` for any consumer who
+configures INFO logging** — real, confirmed, and **pre-existing since the
+initial commit `db4277e`**, so it is 1.3.2 rather than a runtime change inside
+a docs-and-gates round. The published Sample Output page is also not
+markdown-rendered at all: the hook writes `html.escape(...)` inside a `<pre>`,
+so the `!!! warning` box a reader sees is literal source text. Also
+pre-existing, also 1.3.2.
+
+**FLOOR re-derived and unchanged.** Built the sdist, installed the tarball with
+`[dev]` into a fresh venv, copied only `tests/`, `streamlit_app/`, `README.md`
+and `pyproject.toml` out of it into a directory with **no `nmtcapp/`**, and ran
+the job's exact invocation: **1,150 collected under `-m "not wheel"`, 25
+skipped, 1,125 executed, half 562, rounded down 560** — identical on **3.9.25
+and 3.12.13**. `MAX_SDIST_SKIPS` stays 28 but now sits **three** skips above
+its measurement and two below the point the band goes slack, and the comment
+says so instead of still claiming five and sixteen. The `3.9.12` recorded in
+three places was a typo for `3.9.25`; no `3.9.12` was ever run.
+
 ### Part 1 — the gates
 
 - **G1. The fetch-depth guard was the shape it was written to prevent.**
@@ -185,7 +324,7 @@ byte-for-byte moves and the baseline gate was run after each.
 
 ### Release plumbing
 
-- **`FLOOR` was stale and the gate is what said so.** 1.3.1 adds 48 tests and
+- **`FLOOR` was stale and the gate is what said so.** 1.3.1 adds 47 tests and
   `test_release_floor_is_derived_from_the_current_suite` went red on
   `FLOOR=530` before anything in `release.yml` was touched — **the first stale
   floor in this file's history caught by a check rather than by somebody
@@ -204,7 +343,7 @@ byte-for-byte moves and the baseline gate was run after each.
   rounded down                      560
   ```
 
-  Identical on 3.9.12 and 3.12.13: both 1,120 passed / 23 skipped / 1
+  Identical on 3.9.25 and 3.12.13: both 1,120 passed / 23 skipped / 1
   deselected. **`MAX_SDIST_SKIPS` went 24 → 28** at the same time: the sdist
   skipped 20 at FIX-2 and skips 23 now, so the ceiling had **one skip of
   headroom left**, and a ceiling about to be crossed by its own measurement

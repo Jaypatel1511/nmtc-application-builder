@@ -10,6 +10,20 @@ Two rendered surfaces stated a test count and neither was right:
     README.md:289              "# 544 tests, should all pass"  in the block a
                                contributor copies to run the suite
 
+AND A THIRD, WHICH THIS GATE MISSED UNTIL 1.3.1's FIX ROUND:
+
+    CONTRIBUTING.md:27         "# all 544 tests"    stale by 600 against the
+                               1,144 the tree collected at 30e8146, in the
+                               file that tells a contributor what to run
+
+The miss is worth stating plainly, because it is this gate's own class of
+defect one layer in. The docstring below said every surface that states a
+test count states this one, and _CLAIM_SITES held two of the three. The third
+was not hidden: it is the same command on the same kind of line, differing
+only by the word `all`, which the README pattern had no alternative for. A
+gate that names its coverage in prose and enumerates it in a tuple can have
+the prose be the wrong one, and nothing here compared them.
+
 The tree collected 1,097 at ``0643296``. This README has been wrong about its
 own test count at 658, at 544 and at 890+ — three times, in the direction that
 makes the package look smaller than it is on one surface and rounder than it is
@@ -67,7 +81,15 @@ _MIN_PLAUSIBLE_COLLECTION = 800
 #: captured against what it collected — not merely that some digits are there.
 _CLAIM_SITES = (
     ("streamlit_app/app.py", r'"✅\s*([\d,]+)\+?\s*tests'),
-    ("README.md", r'pytest tests/[^\n#]*#\s*([\d,]+)\+?\s*tests'),
+    ("README.md", r'pytest tests/[^\n#]*#\s*(?:all\s+)?([\d,]+)\+?\s*tests'),
+    # THE THIRD SURFACE, ADDED IN 1.3.1's FIX ROUND. This gate's docstring said
+    # every surface stating a test count states this one, and it read two of
+    # three. CONTRIBUTING.md carried `# all 544 tests` against a tree that
+    # collected 1,144 -- stale by 600, in the file that tells a contributor
+    # what to run. It was missed because the README pattern had no `all `
+    # alternative, so the same line shape did not match here; the alternative
+    # is now in both patterns rather than in a third one that can drift.
+    ("CONTRIBUTING.md", r'pytest tests/[^\n#]*#\s*(?:all\s+)?([\d,]+)\+?\s*tests'),
 )
 
 
@@ -116,6 +138,21 @@ def collected() -> int:
 def test_a_published_test_count_is_the_one_the_tree_collects(relpath, pattern, collected):
     """Every surface that states a test count states this one."""
     path = os.path.join(_ROOT, *relpath.split("/"))
+    if not os.path.exists(path):
+        # THE SDIST JOB DOES NOT PUT EVERY SURFACE BESIDE tests/. It copies
+        # only tests/, streamlit_app/, README.md and pyproject.toml out of the
+        # tarball, so CONTRIBUTING.md is shipped but not present at runtime
+        # there. Found by running this round's change through the job's actual
+        # invocation, where it was a FileNotFoundError rather than a skip.
+        #
+        # A skip and not a pass, and it cannot become the way this goes green
+        # on a checkout: _ALWAYS_PRESENT_CLAIM_SITES below is asserted to exist
+        # unconditionally, so the two shipped surfaces are never skippable.
+        pytest.skip(
+            f"{relpath} is not beside tests/ (this is the sdist job's run "
+            "directory or an installed tree, not a checkout). It ships in the "
+            "tarball; the job simply does not copy it out."
+        )
     with open(path, encoding="utf-8") as fh:
         text = fh.read()
 
@@ -137,6 +174,29 @@ def test_a_published_test_count_is_the_one_the_tree_collects(relpath, pattern, c
         )
 
 
+#: Surfaces that are present wherever this suite can run at all. The skip above
+#: is scoped to the surfaces the sdist job does not copy out; these two are not
+#: allowed to take it, or "no claim site was readable" becomes a green run.
+_ALWAYS_PRESENT_CLAIM_SITES = ("streamlit_app/app.py", "README.md")
+
+
+def test_the_shipped_claim_sites_are_never_merely_skipped():
+    """The two surfaces that travel with the suite must always be readable."""
+    for relpath in _ALWAYS_PRESENT_CLAIM_SITES:
+        path = os.path.join(_ROOT, *relpath.split("/"))
+        assert os.path.exists(path), (
+            f"{relpath} states a published test count and is not present, so "
+            "the gate above skipped rather than checked it. This surface "
+            "travels with the suite in every environment the suite runs in; if "
+            "that has changed, the packaging changed and this gate is now "
+            "blind, which is not something a skip should be allowed to say "
+            "quietly."
+        )
+    assert set(_ALWAYS_PRESENT_CLAIM_SITES).issubset({s[0] for s in _CLAIM_SITES}), (
+        "a surface listed as always-present is no longer a claim site at all"
+    )
+
+
 def test_the_derivation_would_notice_a_wrong_number(collected):
     """SENSITIVITY. The gate must reject the numbers that actually shipped."""
     for stale in (658, 544, 890):
@@ -151,6 +211,20 @@ def test_the_derivation_would_notice_a_wrong_number(collected):
         "the README pattern does not capture the number out of the exact line "
         "that shipped wrong — this gate would not have caught it"
     )
+
+    # THE `all ` SHAPE, WHICH IS WHY THE THIRD SURFACE WAS MISSED (1.3.1 fix
+    # round). CONTRIBUTING.md wrote `# all 544 tests` where README wrote
+    # `# 544 tests`, and one absent alternative in the pattern was the whole
+    # of the blindness. Both patterns carry it now, so assert both do.
+    contributing_pattern = _CLAIM_SITES[2][1]
+    forged_all = "PYTHONPATH=. pytest tests/ -v          # all 544 tests"
+    for label, pat in (("README", pattern), ("CONTRIBUTING", contributing_pattern)):
+        assert [int(m) for m in re.findall(pat, forged_all)] == [544], (
+            f"the {label} pattern does not capture the number out of the exact "
+            "`# all <n> tests` line that shipped wrong in CONTRIBUTING.md. That "
+            "missing `all ` alternative is why this gate read two surfaces of "
+            "three while its docstring claimed every one."
+        )
 
 
 # ---------------------------------------------------------------------------
