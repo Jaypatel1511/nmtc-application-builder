@@ -1659,6 +1659,120 @@ def test_the_changelogs_rendered_baseline_delta_matches_the_tree():
         )
 
 
+#: One row of a baseline-movement class table: | Class | Lines | +/- | ... |
+_CLASS_ROW_RE = re.compile(
+    r"^\|\s*(?!Class\b)(?!-)(.+?)\s*\|\s*(\d+)\s*\|\s*\+(\d+)\s*/\s*−(\d+)\s*\|",
+    re.M,
+)
+
+
+def test_the_changelogs_baseline_class_table_adds_up():
+    """The BREAKDOWN, not just the total — the half the gate above never read.
+
+    WHY THIS EXISTS (1.3.1 G7). The 1.3.0 entry's FIX-2 movement table
+    classified 194 changed lines into five rows and stated 10 / 13 / 96 / 9 /
+    66. **Every row was wrong, and they summed to 194** — the correct total,
+    which is why nothing caught it:
+    ``test_the_changelogs_rendered_baseline_delta_matches_the_tree`` parses the
+    BLOCKQUOTE and asserts the total and the file set. It was never given the
+    table. A hand-typed breakdown under a machine-checked total can be
+    arbitrarily wrong so long as it adds up, and this one was — five figures,
+    each off, cancelling.
+
+    WHAT THIS CAN AND CANNOT DERIVE, STATED RATHER THAN IMPLIED.
+
+    Four of the five classes are SEMANTIC — "Section B's four distress row
+    labels wrap" is a reading of the diff, not a rule over it, and no assertion
+    can re-derive it without re-doing the reading. One is not: `Item`/`Value`
+    gaining a leading space in extraction is exactly "the changed line, stripped,
+    is `Item` or `Value`". So:
+
+      1. every row's +/− split sums to its Lines figure;
+      2. the rows' Lines figures sum to insertions + deletions from the tree;
+      3. the `Item`/`Value` row is RE-DERIVED from the diff and must match;
+      4. therefore the other four rows are pinned to the residual, jointly.
+
+    (3) is what would have caught what shipped. (4) is weaker than (3) and is
+    written down as weaker: three of those four rows could still be wrong in
+    ways that cancel. Making them derivable means giving each row a matching
+    rule in the CHANGELOG itself, which is a change to how release notes are
+    written and is not a patch-release change.
+    """
+    if not os.path.isdir(os.path.join(_repo_root(), ".git")):
+        pytest.skip("not a git checkout — this claim is about the repository")
+
+    text = open(os.path.join(_repo_root(), "CHANGELOG.md"), encoding="utf-8").read()
+    claims = [(m, q) for q, m in
+              ((q, _BASELINE_DELTA_RE.search(q)) for q in _blockquotes(text)) if m]
+    assert claims, "no rendered-baseline delta claim found to check a table against"
+
+    checked = 0
+    for match, _quote in claims:
+        ins, dels, base, head, _surfaces = match.groups()
+        # The table follows its blockquote in the source. The blockquote is
+        # matched UNWRAPPED, so it is located here by the one fragment that
+        # survives the unwrap intact rather than by the whole match.
+        needle = f"**{ins} insertions, {dels} deletions**"
+        if needle not in text:
+            continue
+        after = text[text.index(needle) + len(needle):]
+        rows = _CLASS_ROW_RE.findall(after[:4000])
+        if not rows:
+            continue
+        checked += 1
+
+        unreachable = [
+            sha for sha in (base, head) if sha != "HEAD"
+            and subprocess.run(["git", "cat-file", "-e", f"{sha}^{{commit}}"],
+                               cwd=_repo_root(), capture_output=True).returncode
+        ]
+        if unreachable:
+            pytest.skip(f"{', '.join(unreachable)} not in this clone")
+
+        total = int(ins) + int(dels)
+        for label, lines, plus, minus in rows:
+            assert int(plus) + int(minus) == int(lines), (
+                f"class row {label!r} says {lines} lines but +{plus}/−{minus} "
+                f"is {int(plus) + int(minus)}. The row does not agree with itself."
+            )
+        summed = sum(int(r[1]) for r in rows)
+        assert summed == total, (
+            f"the class table's {len(rows)} rows sum to {summed}; the "
+            f"blockquote says {ins} insertions and {dels} deletions, which is "
+            f"{total}. Re-derive the rows against the diff:\n\n"
+            f"    git diff -U0 {base} {'' if head == 'HEAD' else head} "
+            "-- tests/rendered_baseline/pdf.txt"
+        )
+
+        # (3) — the one row that is a rule and not a reading.
+        args = ["diff", "-U0", base] + ([head] if head != "HEAD" else [])
+        diff = _git(*args, "--", "tests/rendered_baseline/")
+        changed = [ln for ln in diff.splitlines()
+                   if ln[:1] in "+-" and not ln[:3] in ("+++", "---")]
+        assert changed, "the diff produced no changed lines to classify"
+        derived = sum(1 for ln in changed if ln[1:].strip() in ("Item", "Value"))
+        stated = [int(lines) for label, lines, _p, _m in rows
+                  if "Item" in label and "Value" in label]
+        assert len(stated) == 1, (
+            "the class table no longer has exactly one `Item`/`Value` row. "
+            "That row is the only one this gate can re-derive; if it was "
+            "merged away, say so here rather than letting the check evaporate."
+        )
+        assert stated[0] == derived, (
+            f"the class table says {stated[0]} `Item`/`Value` line(s); the "
+            f"tree has {derived}. This is the exact figure that shipped wrong "
+            "in 1.3.0 (10, against 16), under a total that was right.\n\n"
+            f"    git diff -U0 {base} {'' if head == 'HEAD' else head} "
+            "-- tests/rendered_baseline/ | grep -E '^[+-] *(Item|Value)$' | wc -l"
+        )
+
+    assert checked, (
+        "no baseline-delta blockquote is followed by a class table in the form "
+        "this gate reads. The table is where 1.3.0's five wrong figures lived; "
+        "if it was reformatted, reformat the regex — do not drop the check."
+    )
+
+
 def test_ci_fetches_enough_history_to_answer_this_gate():
     """CI must clone deeply enough for the baseline-delta gate to run.
 
@@ -1669,19 +1783,67 @@ def test_ci_fetches_enough_history_to_answer_this_gate():
     deleting one line from ci.yml turns the check into a permanent skip and
     nothing anywhere says so.
 
-    Fourteen instances of "a gate that cannot fail is also a green tick" are on
-    record in this package. This is the line that keeps this one honest.
+    THIS GUARD WAS ITSELF THE SHAPE IT WAS WRITTEN TO PREVENT (1.3.1 G1).
+    Through 1.3.0 it read::
+
+        text = open(path).read()
+        assert "fetch-depth: 0" in text
+
+    — a substring test against the WHOLE FILE. ci.yml has two jobs. The line
+    commented out, or moved onto the `docs` job while the `test` job's checkout
+    lost it, satisfied that assertion exactly as well as the correct file did,
+    and the gate against "the skip becomes the pass" could not tell the two
+    apart. It parses the workflow now and asks the one question that matters:
+    does the job that RUNS THE SUITE check out with full history.
+
+    The pattern is on record in this package's CHANGELOG under "a gate that
+    cannot fail is also a green tick". A tally used to stand here and in four
+    other files; it is gone rather than restated, because a hand-maintained
+    count restated five times is the defect the entry it points at is about.
     """
+    yaml = pytest.importorskip("yaml")
+
     path = os.path.join(_repo_root(), ".github", "workflows", "ci.yml")
     if not os.path.exists(path):
         pytest.skip("no .github/workflows/ci.yml — not a checkout of the repo")
-    text = open(path, encoding="utf-8").read()
-    assert "fetch-depth: 0" in text, (
-        "ci.yml's checkout no longer requests full history, so "
-        "test_the_changelogs_rendered_baseline_delta_matches_the_tree skips in "
-        "CI on every run and the CHANGELOG's baseline figures go back to being "
-        "unchecked prose. Restore `fetch-depth: 0` on the test job's checkout."
+
+    with open(path, encoding="utf-8") as fh:
+        workflow = yaml.safe_load(fh)
+
+    jobs = workflow.get("jobs") or {}
+    assert TEST_JOB_NAME in jobs, (
+        f"ci.yml has no `{TEST_JOB_NAME}` job. This gate names the job that "
+        "runs the suite; if it was renamed, rename it here too rather than "
+        f"letting the check evaporate. Jobs present: {sorted(jobs)}"
     )
+
+    checkouts = [
+        step for step in (jobs[TEST_JOB_NAME].get("steps") or [])
+        if str(step.get("uses", "")).startswith("actions/checkout")
+    ]
+    assert checkouts, (
+        f"the `{TEST_JOB_NAME}` job has no actions/checkout step at all, so "
+        "there is no clone for the baseline-delta gate to read."
+    )
+
+    for step in checkouts:
+        depth = (step.get("with") or {}).get("fetch-depth")
+        assert depth == 0, (
+            f"the `{TEST_JOB_NAME}` job's checkout requests fetch-depth="
+            f"{depth!r}; it must be 0. Without full history, "
+            "test_the_changelogs_rendered_baseline_delta_matches_the_tree "
+            "skips on every CI run and the CHANGELOG's baseline figures go "
+            "back to being unchecked prose.\n\n"
+            "A `fetch-depth: 0` ANYWHERE ELSE IN THE FILE DOES NOT COUNT. That "
+            "is what this gate used to accept, and the docs job carries its "
+            "own checkout."
+        )
+
+
+#: The ci.yml job that runs the test suite — the one whose clone depth decides
+#: whether the baseline-delta gate can answer. Named once so the two assertions
+#: above cannot drift onto different jobs.
+TEST_JOB_NAME = "test"
 
 
 # ---------------------------------------------------------------------------

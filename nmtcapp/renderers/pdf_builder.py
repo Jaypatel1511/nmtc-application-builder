@@ -11,7 +11,10 @@ from nmtcapp.renderers._disclosure import (
     unverified_banner, unverified_ids, unverified_qualifier,
 )
 from nmtcapp.renderers._cell_format import format_cell, supplied_total
-from nmtcapp.renderers._frame_geometry import usable_width
+from nmtcapp.renderers._frame_geometry import (
+    CHROME_MARGIN_INCHES, FOOTER_RULE_INCHES, FOOTER_TEXT_BASELINE_INCHES,
+    FRAME_BOTTOM_INCHES, LANDSCAPE_MARGIN_INCHES, usable_width,
+)
 from nmtcapp.renderers._methodology import (
     ACS_VINTAGE, deal_economics_note, distress_definitions, impact_bands_note,
     noaa_note, readiness_weights_note,
@@ -274,17 +277,19 @@ def _make_header_footer(app: "Application", styles):
     def _on_page(canvas, doc):
         canvas.saveState()
         w = canvas._pagesize[0]  # works for both portrait and landscape
-        margin = inch
+        margin = CHROME_MARGIN_INCHES * inch
         canvas.setStrokeColor(rl_hex("border"))
         canvas.setLineWidth(0.5)
-        canvas.line(margin, 0.65 * inch, w - margin, 0.65 * inch)
+        canvas.line(margin, FOOTER_RULE_INCHES * inch,
+                    w - margin, FOOTER_RULE_INCHES * inch)
         canvas.setFont("Helvetica", TYPOGRAPHY["size_footnote"])
         canvas.setFillColor(rl_hex("text_muted"))
         footer_text = (
             f"{app.cde.name}  —  NMTC {app.application_round} Application  |  CONFIDENTIAL"
         )
-        canvas.drawCentredString(w / 2, 0.45 * inch, footer_text)
-        canvas.drawRightString(w - margin, 0.45 * inch, f"Page {doc.page}")
+        canvas.drawCentredString(w / 2, FOOTER_TEXT_BASELINE_INCHES * inch, footer_text)
+        canvas.drawRightString(w - margin, FOOTER_TEXT_BASELINE_INCHES * inch,
+                               f"Page {doc.page}")
         canvas.restoreState()
 
     def _on_first_page(canvas, doc):
@@ -327,27 +332,49 @@ class PDFApplicationBuilder:
         """
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         styles = _build_styles()
+        doc = self._build_doc_template(path, styles)
+        doc.build(self._build_story(styles))
+        size_kb = os.path.getsize(path) // 1024
+        logger.info("PDF saved: %s (%d KB)", path, size_kb)
+
+    def _build_doc_template(self, path: str, styles=None):
+        """Return the document template ``save`` lays the story into.
+
+        Split out of ``save`` so a gate can read the frames back without
+        building a document: ``tests/test_render_frame_geometry.
+        test_the_renderer_lays_out_against_the_constants_this_gate_measures``
+        compares every frame's coordinates against ``_frame_geometry``, which
+        is the same module the gate measures the rendered page against. The two
+        used to be one literal typed nine times in this file and once there;
+        see ``_frame_geometry.FRAME_BOTTOM_INCHES``.
+
+        Example::
+
+            doc = builder._build_doc_template("./out/application.pdf")
+            doc.pageTemplates[1].frames[0]._y1     # -> 64.8
+        """
+        styles = styles if styles is not None else _build_styles()
         on_first, on_later = _make_header_footer(self.application, styles)
 
         margin = inch * PAGE_LAYOUT["margin_left"]
-        ls_margin = 0.75 * inch
+        ls_margin = LANDSCAPE_MARGIN_INCHES * inch
         page_w, page_h = LETTER
         ls_w, ls_h = rl_landscape(LETTER)  # 792 × 612
 
         # Portrait body frame
         body_frame = Frame(
-            margin, 0.9 * inch,
+            margin, FRAME_BOTTOM_INCHES * inch,
             page_w - 2 * margin,
-            page_h - margin - 0.9 * inch,
+            page_h - margin - FRAME_BOTTOM_INCHES * inch,
             id="main",
         )
         cover_frame = Frame(margin, margin, page_w - 2 * margin, page_h - 2 * margin, id="cover")
 
         # Landscape frame for wide appendices
         ls_frame = Frame(
-            ls_margin, 0.9 * inch,
+            ls_margin, FRAME_BOTTOM_INCHES * inch,
             ls_w - 2 * ls_margin,
-            ls_h - ls_margin - 0.9 * inch,
+            ls_h - ls_margin - FRAME_BOTTOM_INCHES * inch,
             id="landscape_main",
         )
 
@@ -357,7 +384,7 @@ class PDFApplicationBuilder:
             leftMargin=margin,
             rightMargin=margin,
             topMargin=margin,
-            bottomMargin=0.9 * inch,
+            bottomMargin=FRAME_BOTTOM_INCHES * inch,
         )
 
         def _on_landscape(canvas, doc):
@@ -365,14 +392,16 @@ class PDFApplicationBuilder:
             w, h = rl_landscape(LETTER)
             canvas.setStrokeColor(rl_hex("border"))
             canvas.setLineWidth(0.5)
-            canvas.line(ls_margin, 0.65 * inch, w - ls_margin, 0.65 * inch)
+            canvas.line(ls_margin, FOOTER_RULE_INCHES * inch,
+                        w - ls_margin, FOOTER_RULE_INCHES * inch)
             canvas.setFont("Helvetica", TYPOGRAPHY["size_footnote"])
             canvas.setFillColor(rl_hex("text_muted"))
             footer = (
                 f"{self.application.cde.name}  —  NMTC {self.application.application_round}  |  CONFIDENTIAL"
             )
-            canvas.drawCentredString(w / 2, 0.45 * inch, footer)
-            canvas.drawRightString(w - ls_margin, 0.45 * inch, f"Page {doc.page}")
+            canvas.drawCentredString(w / 2, FOOTER_TEXT_BASELINE_INCHES * inch, footer)
+            canvas.drawRightString(w - ls_margin, FOOTER_TEXT_BASELINE_INCHES * inch,
+                                   f"Page {doc.page}")
             canvas.restoreState()
 
         doc.addPageTemplates([
@@ -381,10 +410,7 @@ class PDFApplicationBuilder:
             PageTemplate(id="Landscape", frames=[ls_frame], onPage=_on_landscape,
                          pagesize=rl_landscape(LETTER)),
         ])
-
-        doc.build(self._build_story(styles))
-        size_kb = os.path.getsize(path) // 1024
-        logger.info("PDF saved: %s (%d KB)", path, size_kb)
+        return doc
 
     def _build_story(self, styles) -> list:
         """Return the flowable story ``save`` builds the document from.

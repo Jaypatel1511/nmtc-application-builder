@@ -23,6 +23,8 @@ from nmtcapp.core.upload_handler import load_uploaded_pipeline
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from nmtcapp.core.sample_identity import SampleDataError
+from nmtcapp.renderers._disclosure import join_truncated
+from nmtcapp.tables.distress_table import LIC_ROW_LABEL, NATIVE_AREA_ROW_LABEL
 from nmtcapp.data.schema import TARGET_DISTRESS_THRESHOLDS
 from nmtcapp.renderers._question_25 import Q25_QEI_BASIS_CLAUSE, q25_basis_note
 from utils import (
@@ -250,7 +252,7 @@ elif getattr(pr, "unverified_project_ids", None):
     st.warning(
         f"**{len(pr.unverified_project_ids)} project(s) could not be "
         "location-verified** and remain unverified (no census tract "
-        "assigned): " + ", ".join(pr.unverified_project_ids[:5])
+        "assigned): " + join_truncated(pr.unverified_project_ids)
     )
 
 tabs = st.tabs(["Overview", "Distress", "Geographic", "Sector", "Impact"])
@@ -383,13 +385,28 @@ with tabs[1]:
              "every share on this screen is a share of QEI. See the basis "
              "note below.",
     )
-    c2.metric("LIC (standard)", fmt_pct(lic_pct))
+    # THE SIXTH SURFACE, AND THE LABEL IS CARRIED (1.3.1 F2).
+    #
+    # 1.3.0's B1 ride-along put Q25_QEI_BASIS_CLAUSE on the Deep/Severe metric
+    # above and stopped there. These two carried the same class of defect one
+    # column across: `st.metric("LIC (standard)")` and
+    # `st.metric("Native area (CDE-declared)")` print a share of QEI with no
+    # denominator on its face, beside a metric that names its own. Every
+    # generated document names the basis on all three — "QEI in LIC (Standard
+    # Eligible) Tracts" — and a CDE reads a figure off a screen and types it
+    # into a form exactly the way it reads one off a workbook.
+    #
+    # The wording is IMPORTED, not paraphrased. What ships in the documents
+    # was hostile-audited across three rounds; a metric label written fresh
+    # for this screen has not been, and a paraphrase of a denominator
+    # disclosure is a new claim about the denominator.
+    c2.metric(LIC_ROW_LABEL, fmt_pct(lic_pct))
     # CDE-DECLARED, and the label says so. This share comes from the
     # `native_area` column the CDE fills in, never from nmtc-mapper (which
     # dropped is_nmtc_native_area at 0.5.0), and the CDFI Fund publishes no
     # tract-keyed Native Areas resource to check it against. See
     # NATIVE_AREA_BASIS in nmtcapp/tables/distress_table.
-    c3.metric("Native area (CDE-declared)", fmt_pct(native_pct),
+    c3.metric(NATIVE_AREA_ROW_LABEL, fmt_pct(native_pct),
               help="This tool cannot verify a Native Area. The figure is the "
                    "share of QEI in projects the CDE itself declared as NMTC "
                    "Native Areas on its pipeline submission.")

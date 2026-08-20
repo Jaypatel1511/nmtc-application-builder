@@ -63,8 +63,50 @@ CHROME_MARGIN_INCHES = 1.0
 
 #: The body frame's bottom edge, in inches — and therefore the height below
 #: which anything drawn is header/footer chrome rather than story content.
+#:
+#: ONE STATEMENT, FIVE FORMER CALL SITES (1.3.1 G6). ``pdf_builder`` hardcoded
+#: ``0.9 * inch`` at five places — the portrait frame's origin and height, the
+#: landscape frame's origin and height, and the doc template's ``bottomMargin``
+#: — while the gate measured against this module. Nothing tied them. Moving the
+#: renderer's margin left the gate measuring the old band, silently, and the
+#: failure mode is a gate that passes while text sits in the footer.
 FRAME_BOTTOM_INCHES = 0.9
 CHROME_BAND_TOP_PTS = FRAME_BOTTOM_INCHES * POINTS_PER_INCH   # 64.8
+
+#: The two heights the running footer draws at, in inches: the rule, and the
+#: text baseline of the CDE/round line and the page number.
+#:
+#: THE EXEMPTION IS A BOUND, NOT A SKIP (1.3.1 G6). The chrome band is 18 pt
+#: wider each side than the body frame, and a gate that hands that extra slack
+#: to anything drawn below :data:`CHROME_BAND_TOP_PTS` hands it to a body
+#: flowable that happens to land low on the page too. These two heights are
+#: what the footer actually draws at, so the gate can grant the wider band to
+#: runs AT them and refuse it to everything else — and
+#: ``test_the_chrome_exemption_is_a_bound_and_not_a_skip`` fails if a height
+#: here ever rises past the frame bottom, which is the only way the exemption
+#: could start covering story content.
+FOOTER_RULE_INCHES = 0.65
+FOOTER_TEXT_BASELINE_INCHES = 0.45
+
+#: Heights, in points, at which a text run is running-footer chrome. The rule
+#: is not here: it is a line, and no text is drawn at it.
+CHROME_TEXT_BASELINES_PTS = (FOOTER_TEXT_BASELINE_INCHES * POINTS_PER_INCH,)   # (32.4,)
+
+#: How far off a chrome baseline a run may sit and still be chrome. ReportLab
+#: writes coordinates into the content stream at 2 decimal places.
+CHROME_BASELINE_TOLERANCE_PTS = 0.5
+
+
+def is_chrome_baseline(y_pts: float) -> bool:
+    """True when a run drawn at this height is running-footer chrome.
+
+    Example::
+
+        is_chrome_baseline(32.4)   # -> True, the footer text baseline
+        is_chrome_baseline(60.0)   # -> False, below the frame but not chrome
+    """
+    return any(abs(y_pts - b) <= CHROME_BASELINE_TOLERANCE_PTS
+               for b in CHROME_TEXT_BASELINES_PTS)
 
 
 def usable_width(*, landscape: bool = False) -> float:

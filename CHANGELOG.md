@@ -5,7 +5,366 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — 1.3.0, prepared 2026-08-19
+## [Unreleased] — 1.3.1
+
+**PATCH. The eight findings the 1.3.0 confirmation pass returned SHIP with,
+plus four things a CDE reads on a screen and nowhere else.**
+
+**THE DEFINING CONSTRAINT, AND IT HELD.** `tests/rendered_baseline/{pdf,
+markdown,word,excel}.txt` are **byte-identical to `0643296`** — `git diff`
+against them is empty. Nothing in this round touches a generated document.
+Three changes came close enough to be worth naming: the frame constants moved
+out of `pdf_builder` into `_frame_geometry` (G6), the three distress row labels
+moved out of `section_b_outcomes` into `distress_table` (F2), and every
+truncated-list call site moved onto one helper (F1). All three were made as
+byte-for-byte moves and the baseline gate was run after each.
+
+### Part 0 — the fix round: one false sentence about refusal, and four cheap things
+
+A hostile audit returned SHIP conditional on one docs edit. It confirmed both
+renderer diagnoses, re-derived `FLOOR=560` to the digit, and cleared
+`section_b_outcomes.py`. Then it found a sentence the build round did not.
+**The four baselines did not move in this round either** — verified by blob
+hash against `0643296`, not by running the gate, and **no file under
+`nmtcapp/` is modified at all.**
+
+- **R1. The docs site published a false statement about the package's refusal
+  behaviour, and the page's own build was the counterexample.**
+  `docs/hooks/generate_sample_output.py` wrote *"The package refuses to score
+  or generate against this identity outside demo mode"* onto the Sample Output
+  page, and thirty lines below the sentence called `CDEProfile.sample()` →
+  `Application.generate()`, publishing four filing-shaped documents for
+  Riverbend at **Readiness Grade A, 86.6/100, $65,000,000**. Proven by
+  execution both ways: `sample()` → `generate()` returns four formats with no
+  exception; `from_yaml()` on the shipped sample raises `SampleDataError`
+  naming the **CDE name** field. The mechanism is that `sample()` is a
+  classmethod calling `cls(...)`, `__post_init__` does not check, and
+  `generate()` does not check — **the sample path is unguarded, not
+  misdirected.** The sentence now states the boundary that exists: the refusal
+  sits on `CDEProfile.from_yaml()` (and so on `nmtcapp analyze --cde`, verified
+  by running it) and on the Streamlit upload, and on nothing else.
+  **Sharper than the audit's framing:** there is no CLI `generate` subcommand
+  and no Streamlit generate path, so `Application.generate()` is the *only*
+  way to produce a document at all — and it is the path with no guard on it.
+- **R1 gate. `tests/test_docs_refusal_claims.py`, and what it cannot see.**
+  Four tests: the guard's call sites are exactly
+  `{nmtcapp/core/cde.py, streamlit_app/utils.py}` by AST walk; the unguarded
+  path is executed and must succeed; the guarded path is executed and must
+  refuse and name the field; and every sentence on eighteen published surfaces
+  matching a refusal vocabulary must be registered with the basis it was
+  checked on. **It does not parse English** — the broad version is not
+  buildable, so what is built is a registry that turns a new refusal claim into
+  a review event. It is blind to synonyms and to files outside its list, and
+  says nothing about whether the refusal is correct policy. The registry
+  immediately caught a fourth claim the manual sweep had missed (see below).
+- **R2. The published quickstart taught the unguarded path.** `docs/index.md`
+  opened with `CDEProfile.sample()` → `app.generate("./drafts/")` as the first
+  code block a visitor reads. **Ruled: a caveat above the block, not a
+  blank-template rewrite** — and ruled by execution rather than taste.
+  `nmtcapp init` then `CDEProfile.from_yaml()` on the scaffolded file raises
+  `ValueError: ... is missing 7 required fields`, so a blank-template-first
+  quickstart's opening block **cannot run at all**. The quickstart's job is to
+  work in sixty seconds; the safer shape does not work in any number of
+  seconds. Caveat added; the working block kept.
+- **R3. A gate justified its ruling by quoting a heading that exists nowhere.**
+  `tests/test_truncated_lists.py` cited *"Recommended Actions"*; the real
+  heading is *"Recommended Improvements Before Submission:"*. **The ruling
+  survives** — checked against the rendered baseline, where the heading states
+  no count — so only the citation was invented. **The prompt for this round
+  said one site; there were two.** The second sits in the comment block with
+  the quote split across a line break, so a whole-tree grep for the exact
+  string does not find it — the same shape as the miss that produced the
+  finding. Every other quoted heading in the four new test modules was verified
+  against the surface it claims to quote; the rest hold.
+- **R4. Three hand-typed "48"s in the round about hand-typed counts, and a
+  fourth surface the gate could not see.** Derived, not assumed:
+  `0643296` collects **1,097** unfiltered and **1,096** under `-m "not wheel"`;
+  `30e8146` collects **1,144** and **1,143**. **Both deltas are 47, not 48.**
+  Corrected in `CHANGELOG.md`, `.github/workflows/release.yml` and
+  `tests/test_release_floor.py`. Separately, `CONTRIBUTING.md` said
+  `# all 544 tests` — **stale by 600** — and `_CLAIM_SITES` covered only
+  `README.md` and `streamlit_app/app.py`, so **the gate whose docstring claimed
+  every surface stating a test count read two of three.** The miss was one
+  absent `(?:all\s+)?` alternative in the pattern; it is now in both patterns
+  and asserted by a sensitivity check on the exact line that shipped wrong.
+- **R5. The 189-run under-check had no regression test, and now goes red.**
+  `test_the_chrome_exemption_is_a_bound_and_not_a_skip` asserts the footer
+  heights and the exempted runs **by calling `is_chrome_baseline` directly** —
+  it never calls `check_pdf_frames`. Reverting the band selection to the exact
+  1.3.0 height test left **all 24 gate tests green**, shown. The new
+  `test_the_band_selection_asks_the_predicate_and_not_the_height` drives
+  `check_pdf_frames` over a constructed one-run PDF where the two rules
+  disagree (y=55 pt: below the frame bottom, not at a footer baseline) and
+  asserts both directions. **With the revert re-applied it is the only test
+  that fails — 1 failed, 24 passed** — then restored.
+  **A figure this round could not reproduce:** the "189 of 1,091 runs" belongs
+  to the base gate's pypdf-visitor extraction, not to HEAD's content-stream
+  parser. On the base-rendered document at HEAD the two rules agree **exactly**
+  (44 runs each, 0 mis-banded), which is precisely why the revert is invisible
+  to every other test and why the disagreement has to be constructed.
+
+### Part 0b — the docs-claim sweep
+
+Nothing in this project had ever swept the documentation for claims about the
+package's behaviour and **executed** them. Doing so found three more false or
+misleading statements beyond R1:
+
+- **`docs/index.md` said the quickstart block "writes the pipeline analysis
+  summary to the terminal". It writes nothing** — 0 chars to stdout and 0 to
+  stderr, measured. `generate()` logs at INFO to a logger the package never
+  configures a handler for; the thing that prints a summary is
+  `analysis.summary()`, which the block never calls. Corrected.
+- **`docs/workflow/recommendations.md` said `quantified_improvement` "always
+  contains a numeric estimate". The field is `str`** — annotated
+  `quantified_improvement: str`, and the page's own sample output two
+  paragraphs above shows prose. Corrected to say so.
+- **`README.md`'s "The app keeps working; it never hard-blocks" is true for the
+  documented failure and false for the rest** — found by the R1 registry gate,
+  not by hand. Executed both ways on an unenriched pipeline: on
+  `NMTCMapperError` all six operations succeed, status becomes `unavailable`
+  and the banner renders; on **any other exception** from the data layer
+  `analyze()` raises `RuntimeError` at `application.py:250-254`.
+  `nmtc_mapper_adapter`'s own docstring says *"Unexpected exceptions
+  propagate"*, so the behaviour is intended and the sentence simply does not
+  scope it. **Registered with that basis and deferred to 1.3.2** rather than
+  reworded here.
+
+Claims run and found **true**: `Pipeline.from_csv` raises `FileNotFoundError`
+and `ValueError` as `api.md` states; Markdown output really is available with
+`docx`, `openpyxl`, `reportlab` and `matplotlib` all forced unimportable;
+`_METHODOLOGY` is exposed on result objects; all four formats really are
+generated fresh on every docs build. **True but not provable from outside on
+this input:** the optimizer's no-regression guarantee — the sample pipeline
+returns `alignment_score_after == alignment_score_before` at 0 iterations, so
+the guarantee is untested rather than confirmed.
+
+**Deferred, with reasons, not silently dropped:** `application.py:181` logs
+`"allocation $%,.0f"`, which is not a valid `%` conversion, so **every
+`Application(...)` raises a logging `ValueError` for any consumer who
+configures INFO logging** — real, confirmed, and **pre-existing since the
+initial commit `db4277e`**, so it is 1.3.2 rather than a runtime change inside
+a docs-and-gates round. The published Sample Output page is also not
+markdown-rendered at all: the hook writes `html.escape(...)` inside a `<pre>`,
+so the `!!! warning` box a reader sees is literal source text. Also
+pre-existing, also 1.3.2.
+
+**FLOOR re-derived and unchanged.** Built the sdist, installed the tarball with
+`[dev]` into a fresh venv, copied only `tests/`, `streamlit_app/`, `README.md`
+and `pyproject.toml` out of it into a directory with **no `nmtcapp/`**, and ran
+the job's exact invocation: **1,150 collected under `-m "not wheel"`, 25
+skipped, 1,125 executed, half 562, rounded down 560** — identical on **3.9.25
+and 3.12.13**. `MAX_SDIST_SKIPS` stays 28 but now sits **three** skips above
+its measurement and two below the point the band goes slack, and the comment
+says so instead of still claiming five and sixteen. The `3.9.12` recorded in
+three places was a typo for `3.9.25`; no `3.9.12` was ever run.
+
+### Part 1 — the gates
+
+- **G1. The fetch-depth guard was the shape it was written to prevent.**
+  `assert "fetch-depth: 0" in text` over the whole of `ci.yml`. Executed: the
+  line commented out **passes**, and the line deleted from the `test` job and
+  added to the `docs` job **passes**. Only outright deletion failed it. It
+  parses the workflow now and asserts `fetch-depth: 0` on the `test` job's
+  `actions/checkout` specifically; shown red three ways.
+- **G1b. The "fourteen instances" tally is gone from five files.** It was
+  hand-maintained and restated in `ci.yml`, `test_pinned_constants`,
+  `test_qlici_basis`, `validation/consistency_check` and this file — five
+  chances for one number to go stale, which is the defect the entry it points
+  at is about. The pattern name does the work; the tally did not.
+- **G2. The two PDF gates' self-tests were crossed.** The rendered checker had
+  a vacuity proof and no sensitivity proof; the modelled checker had a
+  sensitivity proof and no vacuity proof; and the module docstring said "tested,
+  twice", which was true of the pair and false of either. Each now has both.
+  The three `Table` failure modes are executed and the matrix pinned: mode 1
+  (no `colWidths`, `str` cells) reaches both gates, mode 2 (no `colWidths`,
+  `Paragraph` cells) correctly reaches neither, mode 3 (`colWidths`, tall row,
+  no `splitInRow`) raises `LayoutError` at build time and reaches neither —
+  written down so "the frame gates are green" is never read as "the table
+  renders".
+- **G3. The frame gate's false positive was real, and the diagnosis it came
+  with was wrong.** Reproduced at 45 and 50 projects (page 5, the
+  aggregate-impact bullet list) and absent at 20. It is NOT pypdf merging runs
+  across visual lines — the `Tj` is a single positioned operation. Two
+  independent faults, both in the measurement:
+  1. **A unicode round trip that does not close.** ReportLab's WinAnsiEncoding
+     puts `bullet` at code 0x7F where the PDF spec leaves the code unused. So
+     ReportLab draws a bullet as byte 0x7F, pypdf decodes 0x7F to U+007F (DEL),
+     and `pdfmetrics.stringWidth` cannot encode U+007F in winansi and charges
+     0.761 em where the bullet it drew is 0.350. Three bullets on one line
+     inflated it by 13.6 pt at 11 pt. **The line measures 420.00 pt exactly —
+     the frame's inner width to the hundredth — and was reported at 434.15.**
+  2. **The y coordinate was not a coordinate.** pypdf's visitor advances its
+     text matrix by leading × font size rather than by leading, so continuation
+     lines came back 165 pt low instead of 15. Runs deep in a wrapped block
+     arrived at y = −1,109 where they are drawn at y = 77 — and since the band
+     is chosen by height, every one of them was measured against the CHROME
+     band, 18 pt wider each side than the frame they are laid into. **The gate
+     was false-positiving and under-checking at once, and only the first was
+     visible.**
+
+  Fixed at the measurement, not the threshold: runs are read from the content
+  stream through the PDF's own text-state machine and measured from raw bytes
+  against code-indexed font widths. Findings at 20/45/50 projects: **1.3.0 →
+  0 / 1 / 1; 1.3.1 → 0 / 0 / 0**, and the sizes are kept as a regression.
+- **G4. The frame gate ran one fixture where the Excel gate runs three.** Both
+  PDF gates are parametrised over `("nominal", "partial_unverified",
+  "degraded")` now, off the same helper `test_excel_geometry` uses. What the
+  parametrisation still does not cover is enumerated in the module: pipeline
+  size (covered separately, nominal only), CDE-supplied text, page size and
+  font, and the cover page's own frame.
+- **G5. The absorbed-fragment counts were printed, not asserted — and the
+  printed parent count was not even stable.** `wrapped_fragments` took its
+  parent from an unordered `set`, so on one unchanged tree the same gate
+  printed **8, 9, 10 and 13 across five `PYTHONHASHSEED` values** while
+  reporting it as a fact. Hand-typing "14" would have shipped a flaky gate.
+  Made deterministic (longest parent first), and the count replaced with the
+  property the narrowing actually claims: **a wrap is one sentence seen through
+  two geometries, so a fragment appears on a surface its parent does not.**
+  Measured: all 91 N-WRAP fragments appear on the PDF and nowhere else; all 11
+  parents appear on Word (6), Markdown (3) or Excel (2) and never on the PDF.
+  Zero exceptions, which is what makes it assertable — and growth to 191
+  passes if all 191 are wraps, while one invented sentence fails at any total.
+  Both narrowings carry a proof that the refusal fires.
+  `test_the_wrap_narrowing_cannot_absorb_a_new_claim` was read and does what
+  its name says: three cases, against the real allowlist.
+- **G6. The frame constant was duplicated and untied — and the planning note
+  was wrong about it.** `FRAME_BOTTOM_INCHES` **does** exist, in
+  `renderers/_frame_geometry`, and `CHROME_BAND_TOP_PTS` is derived from it in
+  the renderer package rather than carried by the gate. What was true is the
+  rest: `pdf_builder` hardcoded `0.9 * inch` at five sites (`:339`, `:341`,
+  `:348`, `:350`, `:360`) and `inch` / `0.75 * inch` at four more, and nothing
+  tied any of them to the module the gate measures against. All nine now read
+  the constants, and `test_the_renderer_lays_out_against_the_constants_this_gate_measures`
+  reads the frames back off a real `BaseDocTemplate` — not a grep — so it holds
+  however the value is spelled.
+- **G6b. The chrome exemption was a skip; it is a bound.** The footer band is
+  18 pt wider each side than the body frame, and the gate handed it to anything
+  drawn below `CHROME_BAND_TOP_PTS` — a height test, which gives the slack to a
+  body flowable that lands low as readily as to a page number, and which G3's
+  second fault was silently exploiting on every wrapped block. It is granted
+  only to runs at a height the footer actually draws at now, and two things are
+  asserted: every footer height is below the frame bottom, and every run
+  granted the band is the footer.
+- **G7. The FIX-2 accounting was wrong in more ways than reported.** The
+  planning note said the table counts 10 where the tree says 16. It does — and
+  **all five rows are wrong, and they sum to 194, which is the correct total.**
+  Re-derived: 16 / 14 / 87 / 10 / 67 against 10 / 13 / 96 / 9 / 66. The prose
+  was wrong too — "six distress row labels wrap"; four did.
+  `test_the_changelogs_rendered_baseline_delta_matches_the_tree` did not catch
+  it because **it parses the blockquote and was never given the table**: it
+  asserts the total and the file set, and a hand-typed breakdown under a
+  machine-checked total can be arbitrarily wrong so long as it adds up.
+  `test_the_changelogs_baseline_class_table_adds_up` is the answer and is
+  honest about its reach — it re-derives the one row that is a rule rather than
+  a reading and pins the other four to the residual jointly. **And "nothing
+  moved on the page" was false**: before B1 the Section B header row was drawn
+  as part of a 17,197 pt table that ReportLab centres, putting `Item` at
+  x = −8,293.7 pt against x = 95.0 after. See the corrected table in the 1.3.0
+  entry.
+- **G8. 1.3.0 was still marked Unreleased.** Closed with its real publish
+  time, `2026-08-19T21:23:03Z`, read from the PEP 691 simple index
+  (`nmtc_application_builder-1.3.0-py3-none-any.whl`, `upload-time`
+  `2026-08-19T21:23:03.332923Z`) rather than from the CDN-cached JSON API.
+
+### Part 2 — what a CDE reads
+
+- **F1. A truncated list under an untruncated count, on four surfaces.** Swept:
+  every `[:N]` in `nmtcapp/` and `streamlit_app/`, ruled site by site. Four
+  were this defect — `intelligence/pipeline_analyzer:77` (the `nmtcapp analyze`
+  block), `streamlit_app/pages/1_Pipeline_Analyzer:253`,
+  `validation/eligibility_check:43` and `integrations/cdfidata_adapter:77` —
+  and the correct pattern already existed at exactly one call site,
+  `sections/section_a_business:42`, which four later call sites did not find.
+  One statement now, `renderers/_disclosure.join_truncated`, with the existing
+  " and others" suffix unchanged so no document moves; the exemplar reads it
+  too. Gated syntactically over the tree (AST, so a docstring example is not a
+  call site) **and** behaviourally on a pipeline with more unverified projects
+  than the preview limit. Both go red on the restored defect.
+- **F1b. A methodology disclosure cut mid-sentence, with no ellipsis.** Found
+  by F1's sweep and sharper than F1. `intelligence/benchmarks:110` printed
+  `methodology_disclosure[:140]` of a 352-character sentence, under the heading
+  `Methodology:`. What survived read as a credential; what the cut removed was
+  *"non-winner distributions are unknown"*, *"Scores reflect alignment with
+  historical winners, not probability of selection"* and *"not as a prediction
+  of funding outcomes"* — the whole of the disclosure's work.
+  `optimizer/pipeline_optimizer:104` cut the same class at 120 characters and
+  lost *"Alignment score ≠ win probability"*. **Truncating body text is a
+  display decision; truncating a disclosure changes what the document says, in
+  the direction that flatters the tool.** Both wrap now.
+- **F2. The Streamlit distress metrics without their basis — and the planning
+  note named the wrong metric.** The Deep/Severe metric already carries
+  `Q25_QEI_BASIS_CLAUSE`; 1.3.0's B1 ride-along put it there. The two beside it
+  did not: `LIC (standard)` and `Native area (CDE-declared)` printed a share of
+  QEI with no denominator on its face, next to a metric that names its own. The
+  claim that no Streamlit file imports `qualified_pct` is **confirmed** — every
+  consumer is under `nmtcapp/renderers` or `nmtcapp/sections`. Fixed by
+  CARRYING the document's own labels, extracted byte-identically into
+  `tables/distress_table` and imported by both; no wording was composed. The
+  gate's AST walk immediately found two more bare percentage metrics on the
+  same page (`Rural share`, `High-priority sector %`), which **no document
+  renders with a basis**, so there is nothing audited to carry — ruled with the
+  reason and reported for 1.4.0.
+- **F3. Three test counts on rendered surfaces, none of them right.**
+  `streamlit_app/app.py:86` said `890+ tests`; `README.md:289` said
+  `# 544 tests`; the tree collected 1,097 at `0643296`. This README has been
+  wrong at 658, 544 and 890+. Both corrected to the derived count, and
+  `test_a_published_test_count_is_the_one_the_tree_collects` re-derives it with
+  `pytest tests/ --collect-only -q` in a subprocess — the same command a reader
+  would run — rather than pinning a number.
+- **F4. The `[output]` extra was invisible, and worse than reported.** Nothing
+  a CDE following the advertised path ever named it. **And there is no CLI
+  path to a document at all:** `nmtcapp` has three commands — `init`, `analyze`,
+  `version` — and `analyze` prints a report and writes no file. `init`'s "Next
+  steps" offers the notebook or `analyze`, and the notebook's `app.generate()`
+  line is commented out with no mention of the extra. So a CDE could follow
+  every instruction the tool gives and never produce a document. The skip
+  message names the extra and the exact install command now (and not just the
+  one library, which gets a reader to three of four formats and stops), `init`
+  prints it, and the notebook says it beside `generate()`.
+
+### Release plumbing
+
+- **`FLOOR` was stale and the gate is what said so.** 1.3.1 adds 47 tests and
+  `test_release_floor_is_derived_from_the_current_suite` went red on
+  `FLOOR=530` before anything in `release.yml` was touched — **the first stale
+  floor in this file's history caught by a check rather than by somebody
+  re-reading the comment beside it.** Re-derived from a pristine clone with the
+  job's exact invocation — built the sdist, installed the tarball with `[dev]`
+  into a fresh venv, copied only `tests/`, `streamlit_app/`, `README.md` and
+  `pyproject.toml` out of the tarball into a directory with no `nmtcapp/` in
+  it, and ran from there, **not from inside the unpacked tarball**, which is
+  the derivation error FIX-2 recorded:
+
+  ```
+  collected under -m "not wheel"  1,143
+  skipped in the sdist              -23
+  EXECUTED                        1,120
+  half                              560
+  rounded down                      560
+  ```
+
+  Identical on 3.9.25 and 3.12.13: both 1,120 passed / 23 skipped / 1
+  deselected. **`MAX_SDIST_SKIPS` went 24 → 28** at the same time: the sdist
+  skipped 20 at FIX-2 and skips 23 now, so the ceiling had **one skip of
+  headroom left**, and a ceiling about to be crossed by its own measurement
+  bounds nothing. All 23 are environment skips and each names its reason; the
+  three new ones are `test_the_changelogs_baseline_class_table_adds_up` (needs
+  a git checkout) and `test_truncated_lists`' two source-reading checks.
+
+### Refuted
+
+- **`FRAME_BOTTOM_INCHES` does not exist.** It does. See G6.
+- **The frame gate's false positive is pypdf merging runs across visual
+  lines.** It is not. See G3.
+- **The Streamlit distress metric renders a percentage with no basis
+  qualifier.** The distress metric carries it; the two beside it did not. See
+  F2.
+- **The FIX-2 table counts 10 where the tree says 16.** True, and incomplete:
+  all five rows are wrong. See G7.
+
+---
+
+## [1.3.0] — 2026-08-19, published 2026-08-19T21:23:03Z
 
 **MINOR, not PATCH, and for TWO reasons — the second was missing from this
 entry until FIX-2.**
@@ -129,8 +488,10 @@ consistency rule by being exactly equal to the QEI it was copied from.
   turns a trivially-passing check into an invisibly-absent one, which is the
   same defect one level down and harder to see. This module already refuses
   that shape — `CrossSurfaceCheckError` is *raised* rather than returned for
-  exactly this reason. Fourteen instances of "a gate that cannot fail is also a
-  green tick" are on record in this package.
+  exactly this reason. "A gate that cannot fail is also a green tick" is this
+  package's most-repeated finding; this file is where the instances are
+  recorded, and a tally of them used to be restated in four other files, where
+  it could only ever go stale. Removed in 1.3.1 (G1).
 - **The TOTALS row refuses to sum around it.** A not-supplied cell poisons its
   own column total and no other. An absent affordable-unit count is still NaN
   and still sums with skipna — those are different facts and do not share a
@@ -575,21 +936,44 @@ document, not about the page it landed on.
 ### FIX-2's own rendered baseline movement
 
 > **144 insertions, 50 deletions** in `tests/rendered_baseline/`, measured
-> `ff49064`..`HEAD`, in `pdf.txt` only.
+> `ff49064`..`0643296`, in `pdf.txt` only.
 
 **The largest baseline movement of the cycle**, and Markdown, Word and Excel
 are byte-unchanged, which is the check B1 had to pass: it is a PDF layout fix
 and it touched the PDF only. Every changed line falls into five classes:
 
-| Class | Lines | Classification |
-|---|---|---|
-| `Item`/`Value` gain a leading space in extraction | 10 | consequential — the header cells are `Paragraph`s now and pypdf reports the centring offset as a space. The header was already centred by `_rl_table_style`; nothing moved on the page |
-| Section B's six distress row labels wrap | 13 | **intended — B1.** They were one 86-character line in a 194 pt column |
-| The Q25 basis note wraps, over pages 5-7 | 96 | **intended — B1.** This is the remedy: 600 words that rendered off-page now render on it |
-| Section D's three long values wrap | 9 | **intended — B1**, including the QEI-Less-CDE-Fees caveat that was cut mid-word |
-| Page numbers +2 from page 6, and two blocks reflow across a break | 66 | consequential — the note now occupies two more pages |
+| Class | Lines | + / − | Classification |
+|---|---|---|---|
+| `Item`/`Value` gain a leading space in extraction | 16 | +8 / −8 | consequential in extraction, NOT on the page — see the correction below |
+| Section B's **four** distress row labels wrap | 14 | +10 / −4 | **intended — B1.** The longest was one 86-character line in a 194 pt column |
+| The Q25 basis note wraps, over pages 5-7 | 87 | +84 / −3 | **intended — B1.** This is the remedy: 600 words that rendered off-page now render on it |
+| Section D's three long values wrap | 10 | +7 / −3 | **intended — B1**, including the QEI-Less-CDE-Fees caveat that was cut mid-word |
+| Page numbers +2 from page 6, and two blocks reflow across a break | 67 | +35 / −32 | consequential — the note now occupies two more pages |
 
-**Zero unexplained.**
+**194 lines, zero unexplained.**
+
+#### THIS TABLE WAS WRONG IN EVERY ROW, AND IT SUMMED (corrected in 1.3.1 G7)
+
+As shipped, the five rows read 10 / 13 / 96 / 9 / 66. Every one of them is
+wrong, and they **sum to 194** — which is the correct total, and is why nothing
+caught it. `test_the_changelogs_rendered_baseline_delta_matches_the_tree`
+parses the **blockquote** above and asserts the total and the file set against
+`git diff --numstat`. It was never given the table. A hand-typed breakdown
+under a machine-checked total can be arbitrarily wrong as long as it adds up,
+and this one was: five hand-typed figures, each off, cancelling to the right
+answer. **The seventh stale hand-typed count of this cycle, in the entry whose
+own narrative is about the sixth.** `test_the_changelogs_baseline_class_table_adds_up`
+is 1.3.1's answer and it is honest about its reach — it re-derives the
+`Item`/`Value` row from the tree, because that row is the only one statable as
+a rule, and asserts the remaining four sum to the residual.
+
+**And "nothing moved on the page" was false.** It is true of the CENTRING —
+the header cells were centred by `_rl_table_style` before the fix and after it,
+which is what the sentence meant. It is not true of the cells. Before B1 the
+Section B header row was drawn as part of a 17,197 pt table that ReportLab
+centres on a 612 pt page, so `Item` was laid down at **x = −8,293.7 pt**; after
+it, at x = 95.0. The page moved by 8,388.7 pt and this row said it did not.
+The claim has been narrowed to what was actually established.
 
 ### The whole output surface, enumerated — REPORT ONLY, and the durable part
 
@@ -1351,7 +1735,7 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 193 constants are swept
+colour". The rendered-string sweep demands **19**, and 203 constants are swept
 where 49 were.
 
 > **Remeasured in 1.3.0, and again in FIX-2.** This sentence read **160** when
@@ -1363,6 +1747,13 @@ where 49 were.
 > nine (`renderers/_question_25`, eight, and `_cell_format.NOT_SUPPLIED_INPUT`)
 > and FIX-2 adds ten more: eight in the new `renderers/_frame_geometry` and two
 > in `renderers/_sheet_geometry` (`DEFAULT_ROW_HEIGHT`, `DEFAULT_FONT_SIZE`).
+> **1.3.1 adds ten more and the gate went red on the old figure, which is the
+> whole point of it:** four in `renderers/_frame_geometry` (`FOOTER_RULE_INCHES`,
+> `FOOTER_TEXT_BASELINE_INCHES`, `CHROME_TEXT_BASELINES_PTS`,
+> `CHROME_BASELINE_TOLERANCE_PTS` — G6), three in `tables/distress_table`
+> (`LIC_ROW_LABEL`, `NATIVE_AREA_ROW_LABEL`, `HMR_ROW_LABEL` — F2), two in
+> `core/application` (`OUTPUT_EXTRA`, `OUTPUT_EXTRA_INSTALL` — F4) and one in
+> `renderers/_disclosure` (`LIST_PREVIEW_LIMIT` — F1).
 > The figure is a property of the tree and is remeasured with it; the
 > paragraph's subject, that the sweep is derived rather than hand-listed, is
 > unchanged.

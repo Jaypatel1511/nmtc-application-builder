@@ -77,7 +77,7 @@ A sample distress recommendation:
 
 ### `quantified_improvement`
 
-This field always contains a numeric estimate. The estimate is based on the scoring formulas in `WinProbabilityModel` — specifically, the change in dimensional score from moving a metric from its current value to the target threshold. The estimates are ranges, not point predictions, because the actual improvement depends on which specific projects are modified. Use them as directional signals, not commitments.
+This field is a **string**, not a number — `quantified_improvement: str` on `Recommendation`. It always contains a numeric estimate *stated in prose*, as the sample above shows (`Estimated +8–15 distress alignment score points; ...`); it is written for a reader, and parsing a figure back out of it is not supported. The estimate is based on the scoring formulas in `WinProbabilityModel` — specifically, the change in dimensional score from moving a metric from its current value to the target threshold. The estimates are ranges, not point predictions, because the actual improvement depends on which specific projects are modified. Use them as directional signals, not commitments.
 
 ---
 

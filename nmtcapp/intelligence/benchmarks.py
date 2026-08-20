@@ -5,6 +5,7 @@ import math
 from dataclasses import dataclass, field
 from typing import List, TYPE_CHECKING
 
+from nmtcapp.renderers._disclosure import wrap_disclosure
 from nmtcapp.data.benchmark_thresholds import (
     BENCHMARK_METRIC_WEIGHTS,
     BENCHMARK_SCORE_POINTS,
@@ -107,7 +108,7 @@ class BenchmarkComparison:
         lines.extend([
             "",
             "  Methodology:",
-            f"  {self.methodology_disclosure[:140]}",
+            *wrap_disclosure(self.methodology_disclosure),
             "=" * 68,
         ])
         return "\n".join(lines)

@@ -34,9 +34,12 @@ jobs:
         # DO NOT "FIX" A FAILURE HERE BY MAKING THAT TEST SKIP ON A SHALLOW
         # CLONE ALONE. It does skip, so a contributor's `--depth 1` reports
         # "cannot answer" instead of a false red — but a skip is how a gate
-        # stops asking, and this repository has fourteen recorded instances of
-        # exactly that. test_ci_fetches_enough_history_to_answer_this_gate
-        # asserts this line, so the skip can never become the way CI passes.
+        # stops asking, and this repository has that pattern on record in
+        # its CHANGELOG. test_ci_fetches_enough_history_to_answer_this_gate
+        # PARSES this file and asserts fetch-depth: 0 on the `test` job's
+        # checkout specifically, so the skip can never become the way CI
+        # passes — and neither can this line surviving on the docs job, which
+        # is what the 1.3.0 version of that gate accepted (1.3.1 G1).
         fetch-depth: 0
 
     - name: Set up Python ${{ matrix.python-version }}

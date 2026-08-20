@@ -24,6 +24,43 @@ from nmtcapp.data.schema import ValidationResult
 
 logger = logging.getLogger(__name__)
 
+#: The optional-dependency group that carries every renderer library. Named
+#: here so the CLI, the scaffold and the skip message below say the same thing.
+OUTPUT_EXTRA = "output"
+
+#: The exact command that turns two output formats into four.
+OUTPUT_EXTRA_INSTALL = f'pip install "nmtc-application-builder[{OUTPUT_EXTRA}]"'
+
+
+def _skip_message(fmt: str, library: str) -> str:
+    """The line a CDE sees when a renderer is skipped for a missing library.
+
+    IT USED TO NAME THE LIBRARY AND NOTHING ELSE (1.3.1 F4)::
+
+        python-docx not installed — skipping Word output
+
+    ``pyproject.toml`` defines an ``output`` extra carrying exactly these three
+    libraries, and NOTHING A CDE FOLLOWING THE ADVERTISED PATH EVER NAMED IT —
+    not ``nmtcapp init``'s "Next steps", not the notebook the scaffold writes,
+    and not this line, which is the only place the absence is ever mentioned.
+    So a CDE pip-installs the package, generates, gets Markdown, and never
+    learns that the PDF and Word renderers exist. Two of four output formats,
+    invisible, on the surface whose whole job is to say what went wrong.
+
+    "python-docx not installed" is also the wrong instruction to leave a reader
+    with: installing python-docx alone fixes Word and leaves PDF missing, which
+    is how someone arrives at three of four formats and stops.
+
+    Example::
+
+        _skip_message("PDF", "reportlab")[:40]   # -> 'PDF output skipped: reportlab is not in'
+    """
+    return (
+        f"{fmt} output skipped: {library} is not installed. All four output "
+        f"formats are available through the '{OUTPUT_EXTRA}' extra — install "
+        f"it with:  {OUTPUT_EXTRA_INSTALL}"
+    )
+
 
 @dataclass
 class ApplicationAnalysis:
@@ -312,7 +349,7 @@ class Application:
                 WordApplicationBuilder(self, analysis).save(path)
                 paths["word"] = path
             except ImportError:
-                logger.warning("python-docx not installed — skipping Word output")
+                logger.warning(_skip_message("Word", "python-docx"))
 
         if "excel" in formats:
             try:
@@ -321,7 +358,7 @@ class Application:
                 ExcelApplicationBuilder(self, analysis).save(path)
                 paths["excel"] = path
             except ImportError:
-                logger.warning("openpyxl not installed — skipping Excel output")
+                logger.warning(_skip_message("Excel", "openpyxl"))
 
         if "pdf" in formats:
             try:
@@ -330,7 +367,7 @@ class Application:
                 PDFApplicationBuilder(self, analysis).save(path)
                 paths["pdf"] = path
             except ImportError:
-                logger.warning("reportlab not installed — skipping PDF output")
+                logger.warning(_skip_message("PDF", "reportlab"))
 
         logger.info(
             "generate() complete — %d files written to %s: %s",

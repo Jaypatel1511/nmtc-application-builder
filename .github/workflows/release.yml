@@ -440,7 +440,50 @@ jobs:
           # count in this cycle to go stale (FLOOR=125, FLOOR=440, 133 in three
           # places, FLOOR=470, FLOOR=500).
           #
-          # RE-MEASURED AGAIN FOR FIX-2, AND THE 1.3.0 MEASUREMENT WAS TAKEN
+          # RE-MEASURED FOR 1.3.1, AND THE GATE IS WHAT ANNOUNCED IT. 1.3.1
+          # added 47 tests; test_release_floor_is_derived_from_the_current_suite
+          # went red on FLOOR=530 before anything here was touched, which is
+          # the first time in this file's history that a stale floor was caught
+          # by a check rather than by a person re-reading the comment.
+          #
+          # Re-derived from a PRISTINE CLONE at bd5de80 with this job's exact
+          # invocation -- built the sdist, unpacked it, installed the tarball
+          # with [dev] into a fresh venv, copied ONLY tests/, streamlit_app/,
+          # README.md and pyproject.toml out of the tarball into a directory
+          # with no nmtcapp/ in it, and ran from there:
+          #
+          #     collected under -m "not wheel" 1,143
+          #     skipped in the sdist             -23
+          #     EXECUTED                       1,120   <- what the formula returns
+          #     half                             560
+          #     rounded down                     560
+          #
+          # Identical on 3.9.25 and 3.12.13: both 1,120 passed / 23 skipped /
+          # 1 deselected. ("3.9.12" stood here and was a typo; no 3.9.12 was
+          # ever run.)
+          #
+          # RE-DERIVED AGAIN IN 1.3.1's FIX ROUND, AND IT DID NOT MOVE. That
+          # round added six tests, so the same invocation now measures:
+          #
+          #     collected under -m "not wheel" 1,150
+          #     skipped in the sdist             -25
+          #     EXECUTED                       1,125
+          #     half                             562
+          #     rounded down                     560   <- unchanged
+          #
+          # Identical on 3.9.25 and 3.12.13: both 1,125 passed / 25 skipped /
+          # 1 deselected. The two new skips are that round's own and are the
+          # same environment class as the rest: one sweep reads nmtcapp/, and
+          # one claim site is CONTRIBUTING.md, which the tarball ships and this
+          # job does not copy out.
+          #
+          # THE THREE NEW SKIPS ARE ALL THE SAME OLD CLASS, and each names its
+          # own reason: test_the_changelogs_baseline_class_table_adds_up needs
+          # a git checkout (1.3.1 G7), and test_truncated_lists' sweep and its
+          # ruled-exception check read the package SOURCE, which this job
+          # deliberately does not put beside tests/ (1.3.1 F1).
+          #
+          # RE-MEASURED FOR FIX-2, AND THE 1.3.0 MEASUREMENT WAS TAKEN
           # THE WRONG WAY. This comment recorded
           #
           #     collected under -m "not wheel" 1,068
@@ -467,11 +510,11 @@ jobs:
           #
           #     collected under -m "not wheel" 1,096
           #     skipped in the sdist             -20
-          #     EXECUTED                       1,076   <- what the formula returns
+          #     EXECUTED                       1,076
           #     half                             538
-          #     rounded down                     530
+          #     rounded down                     530   <- 1.3.0's floor
           #
-          # Identical on 3.9.25 and 3.12.13: both give 1,076 passed / 20
+          # Identical on 3.9.25 and 3.12.13: both gave 1,076 passed / 20
           # skipped / 1 deselected.
           #
           # All twenty are ENVIRONMENT skips and every one names its reason:
@@ -480,13 +523,13 @@ jobs:
           # FIX-2 replaced the one test that was about to introduce the first
           # with an assertion.
           #
-          # 440, then 470, then 500, then 520. THE PATTERN IS HAND-TYPED COUNTS
+          # 440, then 470, then 500, then 520, then 530. THE PATTERN IS HAND-TYPED COUNTS
           # INSIDE GATES, and every one of them was wrong in the safe direction,
           # which is why nothing ever failed to announce it. A floor that is too
           # low is not conservative; it is a gate that has stopped asking
           # anything.
           #
-          FLOOR=530
+          FLOOR=560
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()

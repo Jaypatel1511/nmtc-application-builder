@@ -13,6 +13,7 @@ from nmtcapp.intelligence.sector_analysis import analyze_sector_mix
 from nmtcapp.integrations.nmtc_calc_adapter import compute_pipeline_economics
 from nmtcapp.integrations.nmtc_mapper_adapter import enrich_pipeline_eligibility
 from nmtcapp.renderers._cell_format import supplied_total
+from nmtcapp.renderers._disclosure import join_truncated
 
 if TYPE_CHECKING:
     from nmtcapp.core.pipeline import Pipeline
@@ -74,7 +75,7 @@ class PipelineAnalysisResult:
                 f"  {len(self.unverified_project_ids)} project(s) could not be "
                 "location-verified and remain",
                 "  UNVERIFIED (no tract assigned): "
-                + ", ".join(self.unverified_project_ids[:5]),
+                + join_truncated(self.unverified_project_ids),
                 "!" * 60,
             ])
         eligible_display = (

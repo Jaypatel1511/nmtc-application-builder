@@ -714,8 +714,8 @@ def test_no_source_string_states_a_bar_without_its_denominator():
     # since 1.2.1; this loop, walking the same two trees for the harder
     # property, had only `assert not hits` — which a walk over zero files
     # satisfies perfectly. A gate that cannot fail is worse than no gate,
-    # because it is also a green tick. Fourteen instances of this shape are on
-    # record in this package.
+    # because it is also a green tick. This shape is on record in this
+    # package's CHANGELOG.
     assert scanned > 40, (
         f"only {scanned} source file(s) scanned — the walk is broken and this "
         "pin would pass vacuously"

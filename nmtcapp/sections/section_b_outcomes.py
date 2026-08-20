@@ -8,6 +8,9 @@ from nmtcapp.renderers._disclosure import is_partial_unverified, unverified_qual
 from nmtcapp.renderers._question_25 import (
     Q25_BASIS_LABEL, Q25_QEI_BASIS_SUFFIX, q25_basis_note,
 )
+from nmtcapp.tables.distress_table import (
+    HMR_ROW_LABEL, LIC_ROW_LABEL, NATIVE_AREA_ROW_LABEL,
+)
 from nmtcapp.sections.base import SectionGenerator, _cde_todo, _placeholder
 
 if TYPE_CHECKING:
@@ -163,14 +166,13 @@ class SectionBCommunityOutcomes(SectionGenerator):
                 _tract_pct(deep_pct),
             "— of which severely distressed but not also deep":
                 _tract_pct(severe_not_deep_pct),
-            "QEI in LIC (Standard Eligible) Tracts": _tract_pct(distress.get("pct_lic", 0)),
+            LIC_ROW_LABEL: _tract_pct(distress.get("pct_lic", 0)),
             # CDE-declared. This tool cannot verify a Native Area: the Fund
             # publishes no tract-keyed resource and the determination is a
             # spatial intersection against its CIMS map, not a join. See
             # NATIVE_AREA_BASIS in tables/distress_table.
-            "QEI in NMTC Native Areas (CDE-declared, not verified by this tool)":
-                _tract_pct(native_pct),
-            "QEI in High Migration Rural (HMR) Tracts": _tract_pct(hmr_pct),
+            NATIVE_AREA_ROW_LABEL: _tract_pct(native_pct),
+            HMR_ROW_LABEL: _tract_pct(hmr_pct),
             # THE ONLY ROW THAT MAY CARRY A BAR PERCENTAGE, because it is the
             # row whose whole subject is that no share above answers one. It
             # was labelled "CDFI Fund Severe Distress Threshold" and cited to

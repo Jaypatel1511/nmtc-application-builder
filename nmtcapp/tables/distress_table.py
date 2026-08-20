@@ -67,6 +67,38 @@ _ELIGIBILITY_SOURCE = "CDFI Fund NMTC Eligibility Table (2016–2020 ACS)"
 # over declared values, on a full-pipeline denominator.
 NATIVE_AREA_BASIS = "CDE-declared; not verified by this tool"
 
+# ---------------------------------------------------------------------------
+# THE DISTRESS ROW LABELS, STATED ONCE (1.3.1 F2)
+#
+# Every generated document names each share's DENOMINATOR on the figure's own
+# face — "QEI in LIC (Standard Eligible) Tracts", not "LIC". The Streamlit
+# Distress tab printed two of the same shares as `st.metric("LIC (standard)")`
+# and `st.metric("Native area (CDE-declared)")`, which drops the basis from the
+# one surface that shows the figure with no document around it.
+#
+# This is the QEI/QLICI labelling fix of 1.2.1 and 1.3.0 reaching the surface
+# it never reached, and the wording is CARRIED, not composed. What ships in the
+# documents was hostile-audited across three rounds; a fresh paraphrase written
+# for a metric label has not been, and a paraphrase of a denominator disclosure
+# is a new claim about the denominator.
+#
+# BYTE-IDENTICAL TO WHAT SECTION B HAS RENDERED. These are the literals that
+# stood in sections/section_b_outcomes, moved here and imported back, so the
+# four committed baselines do not move.
+# ---------------------------------------------------------------------------
+
+#: Share of QEI in Low-Income Community (standard eligible) tracts.
+LIC_ROW_LABEL = "QEI in LIC (Standard Eligible) Tracts"
+
+#: Share of QEI in NMTC Native Areas — the CDE's own declaration, never the
+#: tool's determination; see NATIVE_AREA_BASIS above.
+NATIVE_AREA_ROW_LABEL = (
+    "QEI in NMTC Native Areas (CDE-declared, not verified by this tool)"
+)
+
+#: Share of QEI in High Migration Rural counties.
+HMR_ROW_LABEL = "QEI in High Migration Rural (HMR) Tracts"
+
 
 def build_distress_table(pipeline: "Pipeline") -> pd.DataFrame:
     """Build the distress documentation table per CDFI Fund requirements.

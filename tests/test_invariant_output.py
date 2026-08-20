@@ -405,7 +405,9 @@ def rendered_lines(tmp_path_factory) -> dict:
                 f"scenario {sid}: {fmt} extracted as empty text — the gate "
                 "would then find everything invariant, or nothing"
             )
-            lines |= {_mask(ln) for ln in text.splitlines() if ln.strip()}
+            masked = {ln for ln in (_mask(ln) for ln in text.splitlines() if ln.strip()) if ln}
+            lines |= masked
+            _SURFACES_OF.setdefault(fmt, set()).update(masked)
         per_scenario[sid] = {ln for ln in lines if ln}
     return per_scenario
 
@@ -620,14 +622,101 @@ def wrapped_fragments(lines, ruled) -> dict:
         wrapped_fragments({"a piece of the whole"}, {"a piece of the whole thing"})
     """
     absorbed = {}
-    for line in lines:
+    # DETERMINISTIC, AND IT WAS NOT (1.3.1 G5). `ruled` is a set, so `break`
+    # took whichever parent the hash order happened to reach first. The
+    # FRAGMENT count was stable; the PARENT count was not — measured at 8, 9,
+    # 10 and 13 across five PYTHONHASHSEED values on one unchanged tree, while
+    # the gate printed it as a fact. Longest parent first: the most specific
+    # ruling wins, and the same tree gives the same answer twice.
+    candidates = sorted(ruled, key=lambda p: (-len(p), p))
+    for line in sorted(lines):
         if len(line) < MIN_FRAGMENT_CHARS:
             continue
-        for parent in ruled:
+        for parent in candidates:
             if len(parent) > len(line) and line in parent:
                 absorbed[line] = parent
                 break
     return absorbed
+
+
+#: ``{format: set(masked lines)}``, filled by the ``rendered_lines`` fixture as
+#: it extracts. The narrowing's own proof needs to know WHICH SURFACE a line
+#: came from, and the per-scenario view cannot answer that.
+_SURFACES_OF: dict = {}
+
+
+def _surfaces_carrying(line: str) -> set:
+    """The output formats a masked line appears on, across every scenario."""
+    return {fmt for fmt, lines in _SURFACES_OF.items() if line in lines}
+
+
+def _assert_every_absorption_is_a_wrap(absorbed: dict) -> None:
+    """The narrowing must swallow wraps and nothing else — asserted, not printed.
+
+    THE COUNT USED TO BE PRINTED (1.3.1 G5). ``print(f"N-WRAP absorbed 91...")``
+    in a passing test is read by nobody: 91 can become 191 in silence, and the
+    rule that absorbs fragments is the rule that can absorb a fragment-shaped
+    lie — a new claim that happens to be a contiguous substring of a sentence
+    somebody already ruled.
+
+    A COUNT WAS THE WRONG THING TO ASSERT ANYWAY. Pinning 91 makes an honest
+    rewording of one allowlisted sentence a red, and hand-typing the current
+    value would be the seventh stale count in this package's history. What the
+    narrowing actually claims is a PROPERTY, and it holds per fragment:
+
+        THE PARENT IS ON ONE SURFACE, WHOLE. THE FRAGMENT IS ON ANOTHER,
+        IN PIECES. A wrap is one sentence seen through two geometries.
+        Markdown, Word and Excel carry the long cells unwrapped; the PDF lays
+        them into a 194 pt column and breaks them. So a genuine fragment
+        appears on a surface its parent does not, and a NEW CLAIM — rendered
+        as its own line — appears alongside its supposed parent on the same
+        surface, where nothing wrapped it.
+
+    Measured on the shipped tree: all 91 absorbed fragments appear on the PDF
+    and on no other surface, and all of their parents appear on Word (6),
+    Markdown (3) or Excel (2) and never on the PDF. Zero exceptions, which is
+    what makes it assertable. Growth to 191 passes if all 191 are wraps; one
+    invented sentence fails whatever the total is.
+
+    The property is stated over "the surfaces the parent is on" rather than
+    naming the PDF, so a renderer that starts wrapping — or stops — moves the
+    evidence rather than breaking the rule.
+    """
+    assert absorbed, (
+        "the wrap narrowing absorbed nothing at all. The PDF's key/value cells "
+        "wrap, so some fragments must exist; if none do, extraction changed "
+        "shape and this narrowing is now dead code that cannot be seen to be "
+        "dead. Establish why before deleting it."
+    )
+    assert _SURFACES_OF, (
+        "no per-surface index was built — this proof would pass vacuously"
+    )
+
+    not_wraps = []
+    for fragment, parent in sorted(absorbed.items()):
+        on_fragment = _surfaces_carrying(fragment)
+        on_parent = _surfaces_carrying(parent)
+        if not on_fragment or not on_parent:
+            not_wraps.append(
+                f"{'fragment' if not on_fragment else 'parent'} appears on no "
+                f"surface at all — the index and the corpus disagree: "
+                f"{fragment[:60]!r}"
+            )
+        elif on_fragment & on_parent:
+            not_wraps.append(
+                f"on {sorted(on_fragment & on_parent)} this line renders "
+                f"BESIDE the ruled line it is being treated as a wrap of. "
+                f"Nothing wrapped it there.\n      fragment: {fragment[:90]!r}"
+                f"\n      parent:   {parent[:90]!r}"
+            )
+    assert not not_wraps, (
+        f"{len(not_wraps)} of {len(absorbed)} absorbed line(s) are not wraps "
+        "of the ruled line they were matched to. N-WRAP exists so one "
+        "sentence does not need nine allowlist entries because the PDF broke "
+        "it across nine visual lines; it is not a licence for a claim to "
+        "inherit a ruling by being a substring of one.\n\n  "
+        + "\n\n  ".join(not_wraps[:10])
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -646,8 +735,7 @@ def test_no_unallowed_invariant_assertion(rendered_lines):
     allow = _load_allowlist()
     unallowed = set(candidates) - set(allow)
     absorbed = wrapped_fragments(unallowed, set(allow))
-    print(f"  N-WRAP absorbed {len(absorbed)} wrapped fragment(s) of "
-          f"{len(set(absorbed.values()))} ruled line(s)")
+    _assert_every_absorption_is_a_wrap(absorbed)
     unallowed = sorted(unallowed - set(absorbed))
 
     assert not unallowed, (
@@ -706,3 +794,34 @@ def test_the_wrap_narrowing_cannot_absorb_a_new_claim(rendered_lines):
         "N-WRAP absorbed a fragment below the length floor, where a substring "
         "match is as likely to be a coincidence as a wrap"
     )
+
+
+def test_the_wrap_proof_refuses_a_substring_that_renders_beside_its_parent(rendered_lines):
+    """The surface rule goes red on a fragment-shaped lie — shown, not argued.
+
+    ADDED IN 1.3.1 (G5). ``_assert_every_absorption_is_a_wrap`` replaced a
+    printed count, and a proof that has never been seen to refuse is a proof
+    nobody has evidence about. This forges the exact thing the count could not
+    have caught: a line that is a contiguous substring of a ruled sentence and
+    renders ON THE SAME SURFACE as it, where nothing wrapped it.
+    """
+    allow = set(_load_allowlist())
+    parent = max(allow, key=len)
+    lie = parent[:len(parent) - 10]
+
+    surfaces = {fmt for fmt, lines in _SURFACES_OF.items() if parent in lines}
+    assert surfaces, "the longest ruled line renders on no surface — index broken"
+    fmt = sorted(surfaces)[0]
+
+    _SURFACES_OF[fmt].add(lie)
+    try:
+        with pytest.raises(AssertionError, match="not wraps"):
+            _assert_every_absorption_is_a_wrap({lie: parent})
+    finally:
+        _SURFACES_OF[fmt].discard(lie)
+
+    # And the honest case still passes, so the refusal is not blanket.
+    real = next((f, p) for f, p in
+                wrapped_fragments({ln for ln in set.intersection(*rendered_lines.values())
+                                   if _is_prose(ln)} - allow, allow).items())
+    _assert_every_absorption_is_a_wrap(dict([real]))
