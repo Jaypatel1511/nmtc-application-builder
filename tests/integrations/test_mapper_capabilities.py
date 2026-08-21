@@ -96,7 +96,7 @@ def test_every_tri_state_dependent_field_is_declared():
         + f"\n\n{_GUARD}() only distinguishes 'could not determine' from "
         "'determined False' when the upstream field can actually BE None. If "
         "it is typed bool upstream, the guard runs, False is not None, and a "
-        "fabricated negative passes straight through -- which is the 1.4.1 S2 "
+        "fabricated negative passes straight through -- which is the 1.5.0 S2 "
         "defect. Declare the field with what it means, so "
         "assert_mapper_capabilities() checks it at runtime."
     )

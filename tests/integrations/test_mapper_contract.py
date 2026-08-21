@@ -261,7 +261,7 @@ def test_derivation_boundary_is_documented():
         "result passed into a helper. Extend the derivation to cover the new "
         "module, or bring the read back into the adapter."
     )
-    # _mapper_capabilities JOINED THE SET IN 1.4.1 S2, and it does not widen
+    # _mapper_capabilities JOINED THE SET IN 1.5.0 S2, and it does not widen
     # the hole this test guards. The hole is a RESULT OBJECT passed into a
     # helper that reads attributes off its own parameter, which the AST walk
     # cannot follow. _mapper_capabilities never receives an EligibilityResult:

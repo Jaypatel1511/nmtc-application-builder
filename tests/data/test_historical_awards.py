@@ -23,7 +23,7 @@ class TestNmtcAwardRounds:
         assert len(NMTC_AWARD_ROUNDS) == 5
 
     def test_known_rounds_present(self):
-        for year in ("CY2020", "CY2021", "CY2022", "CY2023", "CY2024"):
+        for year in ("CY2020", "CY2021", "CY2022", "CY2023", "CY2024-2025"):
             assert year in NMTC_AWARD_ROUNDS
 
     def test_each_round_has_required_keys(self):
@@ -33,11 +33,27 @@ class TestNmtcAwardRounds:
             assert required <= set(data.keys()), f"{round_name} missing keys"
 
     def test_acceptance_rates_plausible(self):
+        """A sanity band, widened in 1.5.0 F5 because REALITY LEFT IT.
+
+        The old band was 0.20-0.50. It fit every round in the dict because the
+        only round outside it was the one whose figures were invented: CY2024
+        carried a fabricated 0.344. The published CY 2024-2025 rate is 0.657 --
+        142 allocatees of 216 applicants, a DOUBLE ROUND covering two years --
+        so the correction pushed a real number out of a band that had only ever
+        been fitted to an estimate. Widening it here is the honest direction;
+        clipping the datum to keep the band would have been the other one.
+        """
         for round_name, data in NMTC_AWARD_ROUNDS.items():
             rate = data["acceptance_rate"]
-            assert 0.20 <= rate <= 0.50, f"{round_name} acceptance rate {rate} out of range"
+            assert 0.20 <= rate <= 0.70, f"{round_name} acceptance rate {rate} out of range"
 
-    def test_total_allocated_five_billion(self):
+    def test_total_allocated_at_least_one_round_of_authority(self):
+        """Renamed in 1.5.0 F5: one row is no longer five billion.
+
+        CY 2024-2025 is a double round and was awarded $10 billion. The old
+        name asserted a fact about the dict that stopped being true the moment
+        the invented $5,000,000,000 was replaced with the published figure.
+        """
         for data in NMTC_AWARD_ROUNDS.values():
             assert data["total_allocated"] >= 4_900_000_000
 
@@ -85,7 +101,7 @@ class TestWinnerGeographicPatterns:
         assert WINNER_GEOGRAPHIC_PATTERNS["mean_hhi"] < 1_000
 
     def test_the_urban_complement_stays_deleted(self):
-        """THIS TEST USED TO ASSERT THE DEFECT (1.4.1 S3).
+        """THIS TEST USED TO ASSERT THE DEFECT (1.5.0 S3).
 
         It was ``test_urban_rural_pct_sum_to_one``, and it passed:
         ``urban_pct_mean`` 0.82 and ``rural_pct_mean`` 0.18 summed to exactly
@@ -111,6 +127,14 @@ class TestWinnerGeographicPatterns:
 
 class TestWinnerSectorPatterns:
     def test_sector_shares_sum_to_one(self):
+        """SUMMING TO 1.000 IS A PROPERTY OF A CONSTRUCTION, NOT EVIDENCE (F1).
+
+        Same ruling as test_award_size_tiers_pct_sum_to_one. The eight shares
+        are 0.22 / 0.18 / 0.17 / 0.14 / 0.12 / 0.08 / 0.05 / 0.04 -- all on a
+        0.01 grid, summing to exactly 1.000, over a population of real awards
+        this package holds no sector breakdown for. Passing means the values
+        were written to sum to one, not that any sector share was measured.
+        """
         sectors = [
             "healthcare", "affordable_housing", "small_business", "education",
             "community_facility", "mixed_use", "clean_energy", "other"
@@ -185,11 +209,27 @@ class TestQueryFunctions:
     def test_get_overall_acceptance_rate_custom_rounds(self):
         rate3 = get_overall_acceptance_rate(rounds=3)
         rate5 = get_overall_acceptance_rate(rounds=5)
-        # Both should be plausible; they may differ
-        assert 0.25 <= rate3 <= 0.45
-        assert 0.25 <= rate5 <= 0.45
+        # Bands widened in 1.5.0 F5 with the CY 2024-2025 correction. The
+        # mean over the last three rounds now includes a 65.7% double round,
+        # which lifts it to 0.455 -- outside a ceiling that had been fitted to
+        # a fabricated 0.344.
+        assert 0.25 <= rate3 <= 0.70
+        assert 0.25 <= rate5 <= 0.70
 
     def test_award_size_tiers_pct_sum_to_one(self):
+        """SUMMING TO 1.000 IS A PROPERTY OF A CONSTRUCTION, NOT EVIDENCE (F1).
+
+        Read this before reading the assertion as corroboration. The five
+        shares are 0.10 / 0.20 / 0.35 / 0.25 / 0.10 -- every one on a 0.05
+        grid, over a population of real awards, summing to exactly 1.000. Real
+        award data does not land on a 0.05 grid; a partition somebody wrote
+        down does. The registry row for these keys says so on its face.
+
+        The check is kept because an internal-consistency check is still worth
+        having, and because deleting it would remove the one place a reader
+        meets these numbers as a set. What is NOT claimed is that passing means
+        the shares are measured. It means they were constructed to sum to one.
+        """
         tiers = get_award_size_percentiles()
         total = sum(v["pct_of_awards"] for v in tiers.values())
         assert abs(total - 1.0) < 0.01

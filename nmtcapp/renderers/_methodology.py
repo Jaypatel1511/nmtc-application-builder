@@ -93,7 +93,7 @@ def noaa_note() -> str:
     """The round-provenance disclosure that travels with the distress note.
 
     IT USED TO BE ONE SENTENCE, AND THE SENTENCE WAS TRUE AND INSUFFICIENT
-    (1.4.1 S1). It said only that the CY 2026 NOAA was unpublished. A reader
+    (1.5.0 S1). It said only that the CY 2026 NOAA was unpublished. A reader
     learned nothing about the round this package's citations actually encode --
     CY 2024-2025, which closed on 29 Jan 2025 and was awarded on 23 Dec 2025 --
     so every Question 25, Question 22 and Question 15 citation still read as

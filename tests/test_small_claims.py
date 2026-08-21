@@ -1,4 +1,4 @@
-"""The 1.4.1 S6 gates: four small defects, each closed as a class.
+"""The 1.5.0 S6 gates: four small defects, each closed as a class.
 
 Each of these was a one-line fix. None of them is filed as one, because a
 one-line fix is a site and this round exists to stop shipping sites.
@@ -228,8 +228,6 @@ def test_max_sdist_skips_is_measured_against_something():
         "buy room -- that is what made it an abstention before 1.3.0.\n\n"
         f"Modules that can skip: {sorted(capable)}"
     )
-
-
 # ---------------------------------------------------------------------------
 # S6d -- logging format strings that cannot format
 # ---------------------------------------------------------------------------
@@ -456,7 +454,22 @@ def test_no_fstring_expression_contains_a_backslash():
     ACCEPTS this construct. CPython does not gate the f-string grammar change
     behind ``feature_version``, so the obvious mechanism does not work and a
     gate built on it would have passed over the exact defect it was written
-    for. A regex is what actually detects it.
+    for.
+
+    WHAT ACTUALLY DETECTS IT IS AN AST WALK -- this sentence used to say "a
+    regex is what actually detects it", and it credited the one mechanism that
+    was MEASURED TO FAIL (F8c). Eight lines above,
+    ``_fstring_expressions_with_backslashes``' own docstring records the
+    finding: the first draft of this gate WAS a regex, and it missed the real
+    line, because the pattern could not cross the earlier ``{'Metric':<34}``
+    groups whose quotes broke its character class. It went green over the exact
+    defect it was written for. The helper walks ``JoinedStr`` nodes and reads
+    each ``FormattedValue``'s own source segment back, which cannot be fooled
+    that way.
+
+    Two neighbouring docstrings disagreeing about the mechanism is not a
+    cosmetic problem: the wrong one is an instruction to a future maintainer to
+    rebuild this gate the way that already failed.
     """
     # THE CHECKOUT MARKER IS nmtcapp/, NOT "did the walk find anything".
     # An unpacked sdist ships streamlit_app/ and NOT nmtcapp/, so a

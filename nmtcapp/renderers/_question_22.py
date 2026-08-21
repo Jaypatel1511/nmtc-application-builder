@@ -72,7 +72,7 @@ response to Question 22(c)" — agrees with the table, not with itself.
 PROVENANCE. CY 2024-2025 NMTC Program Allocation Application, re-downloaded,
 re-hashed and text-extracted LOCALLY with pypdf. The page count, byte count,
 URL and SHA-256 are stated ONCE, in ``renderers/_round_provenance``. Until
-1.4.1 they were typed here AND in ``renderers/_question_25`` — two hand-copied
+1.5.0 they were typed here AND in ``renderers/_question_25`` — two hand-copied
 64-character hashes, which is provenance that nobody can proofread; the two
 happened to agree, exactly as ``Q25_QEI_BASIS_CLAUSE``'s three copies did. One
 constant now, read by both. CY 2024-2025 is a CLOSED round being used as a

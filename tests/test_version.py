@@ -1,6 +1,6 @@
 """Ensure __version__ and package metadata stay in sync.
 
-THE TEST THAT WAS HERE COMPARED A VALUE TO ITSELF (1.4.1 S6).
+THE TEST THAT WAS HERE COMPARED A VALUE TO ITSELF (1.5.0 S6).
 
     def test_version_sync():
         assert nmtcapp.__version__ == importlib.metadata.version("nmtc-application-builder")

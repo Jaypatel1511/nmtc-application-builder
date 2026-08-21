@@ -84,7 +84,7 @@ def enrich_pipeline_eligibility(pipeline: "Pipeline") -> "Pipeline":
 
     from nmtcmapper import NMTCMapper, NMTCMapperError
 
-    # THE DEPENDENCY CONTRACT, ASSERTED AT THE POINT OF CONSUMPTION (1.4.1 S2).
+    # THE DEPENDENCY CONTRACT, ASSERTED AT THE POINT OF CONSUMPTION (1.5.0 S2).
     #
     # Deliberately BEFORE NMTCMapper() and outside the try/except below. Two
     # reasons, and the second is the one that matters:

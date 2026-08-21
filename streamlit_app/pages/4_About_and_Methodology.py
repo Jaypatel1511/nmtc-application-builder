@@ -295,7 +295,12 @@ st.markdown("---")
 # ---------------------------------------------------------------------------
 st.markdown("## Historical NMTC Round Statistics")
 st.markdown(
-    "Source: CDFI Fund NMTC Award Announcements (public disclosures)."
+    "Source: CDFI Fund NMTC Award Announcements (public disclosures). The "
+    "CY 2024-2025 row is a **double round covering both years**, announced "
+    "23 Dec 2025; its figures are from the CY 2024-2025 NMTC Program Award "
+    "Book (142 allocatees of 216 applicants; $10 billion awarded of "
+    "$19.2 billion requested), so its counts do not compare like-for-like "
+    "with the single rounds above it."
 )
 
 rows = []

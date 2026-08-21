@@ -53,7 +53,7 @@ PROVENANCE. CY 2024-2025 NMTC Program Allocation Application, retrieved
 summarising model, which is the provenance failure this whole cycle exists to
 correct. The page count, byte count, URL and SHA-256 are stated ONCE, in
 ``renderers/_round_provenance``; they were typed here and in
-``renderers/_question_22`` as two hand-copied 64-character hashes until 1.4.1,
+``renderers/_question_22`` as two hand-copied 64-character hashes until 1.5.0,
 and nobody proofreads 64 hex characters. Re-downloaded and re-verified
 2026-08-20: byte count and hash both unchanged.
 

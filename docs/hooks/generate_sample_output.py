@@ -153,7 +153,7 @@ def on_post_build(config, **kwargs):  # noqa: D103 - mkdocs hook signature
 def _html(markdown_body: str) -> str:
     """Minimal standalone page — the hook runs after the theme has rendered.
 
-    IT USED TO PUBLISH THE MARKDOWN SOURCE (1.4.1 S6). The body was
+    IT USED TO PUBLISH THE MARKDOWN SOURCE (1.5.0 S6). The body was
     ``html.escape``d and wrapped in ``<pre>``, so the published page showed
     every character of the Markdown as literal preformatted text: a leading
     ``# Sample Output``, the download list as ``- [`x.docx`](x.docx)`` with no

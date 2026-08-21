@@ -65,7 +65,27 @@ TARGET_DISTRESS_THRESHOLDS = {
     "target_deep_distress": 0.75,  # house heuristic: internal scoring band
 }
 
-# CDFI Fund historically prefers applicants serving ≥3 states.
+# HOUSE. This comment read "CDFI Fund historically prefers applicants serving
+# >=3 states." for nine releases. THAT IS AN UNSOURCED CLAIM ABOUT A FEDERAL
+# AGENCY, and it sat in no attribution registry: zero hits in
+# tests/scoring_attribution.txt and zero in tests/fund_attribution_allowlist.txt.
+# The CY 2024-2025 Review Process scores no state count, and the Allocation
+# Application asks for a service area, not a minimum number of states.
+#
+# AND IT IS NOT INERT, WHICH IS WHY IT MATTERS. tests/pinned_constants.txt
+# waived this constant on the grounds that it "Feeds meets_diversity_minimum, a
+# boolean. Neither the boolean nor the 3 renders in any artifact." Both halves
+# are wrong. It is the DENOMINATOR of validation/readiness_score._geo_score
+# (``states / MIN_GEOGRAPHIC_DIVERSITY * 50``), which is the
+# geographic_diversity component -- 15% of the readiness grade printed at the
+# top of every artifact. And MIN_GEOGRAPHIC_DIVERSITY + 2 renders verbatim as
+# "Target >=5 states" in the recommendation block. Measured 1.5.0 on a
+# single-state pipeline: sub-score 16.7, recommendation rendered.
+#
+# THE VALUE IS UNCHANGED HERE ON PURPOSE. Re-basing it is calibration against
+# the Fund's newly published Allocatee data, which is methodology-first work
+# and is NOT this release. What changes is that it no longer claims to be the
+# Fund's preference, and it is no longer waived on a false premise.
 MIN_GEOGRAPHIC_DIVERSITY: int = 3
 
 # ---------------------------------------------------------------------------

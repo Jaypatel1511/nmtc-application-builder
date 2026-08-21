@@ -53,7 +53,7 @@ Question 15 (*CY 2024-2025 NMTC Allocation Application*, pp. 20-21) is a single-
 
 This tool computes neither figure. Its sub-score divides a **QEI-weighted share of the portfolio** priced below market by the Fund's **per-loan rate-discount depth**, and takes the better of that and an application-level indicia count — so the Fund's "or" sits inside a single loan while this tool's sits across the whole book. Those are different quantities, and a portfolio share over a discount depth is not a ratio of anything.
 
-**No number in this row answers Question 15**, and it must not be read as a near-miss against it. The CDE has to answer Question 15 from its own loan terms. (Removing the below-market limb from the scoring arithmetic is deferred to 1.2.3, behind a written methodology, because it moves scored figures.)
+**No number in this row answers Question 15**, and it must not be read as a near-miss against it. The CDE has to answer Question 15 from its own loan terms. (Removing the below-market limb from the scoring arithmetic is deferred to a later release, behind a written methodology, because it moves scored figures.)
 
 #### The 90% on Track Record Alignment is this tool's, not the Fund's
 
@@ -136,7 +136,7 @@ The CY 2024-2025 NOAA (89 FR 92283, 21 Nov 2024), section V.B(b), sets out the c
 
 The phrases "Special Targeting" and "bonus points" appear in **none** of the three primary documents: the CY 2024-2025 Allocation Application (142 pp.), the Review Process (7 pp.) and the NOAA (10 pp.). The four categories are real NMTC concepts, but the Application uses them to **define a Disadvantaged Business** (p.132: a Disadvantaged Business is one located in *"a Persistent Poverty County; a NMTC Native Area; or a U.S. Island Area"*). They are inputs to the DBC statutory priority, not a scored criterion of their own.
 
-This row should be read as a house prompt to consider those areas, not as a bar the CDFI Fund will measure. (Earlier releases cited "Section II.C.1" for this claim — a real section, *Targeting Areas of Higher Distress*, which does not contain it. Removing the sub-score from the scoring arithmetic is deferred to 1.2.3, because it moves scored figures.)
+This row should be read as a house prompt to consider those areas, not as a bar the CDFI Fund will measure. (Earlier releases cited "Section II.C.1" for this claim — a real section, *Targeting Areas of Higher Distress*, which does not contain it. Removing the sub-score from the scoring arithmetic is deferred to a later release, because it moves scored figures.)
 
 ### Priority Points (10 bonus points)
 
@@ -291,7 +291,7 @@ score             = max(score_below_mkt, score_indicia)
 
 Full credit **on this tool's sub-score** if either: ≥ 50% of products are offered below market rate, OR ≥ 5 indicia of flexible product terms are documented. Both cut points are this tool's own, and neither is the CDFI Fund's Question 15 test — see [Product Flexibility does not measure the CDFI Fund's Question 15 test](#product-flexibility-does-not-measure-the-cdfi-funds-question-15-test), above.
 
-Note the first line's arithmetic: `products_below_market_pct` is a QEI-weighted share of the portfolio, while the Fund's 50% is the depth of the rate discount on an individual loan. Dividing one by the other produces a number with no dimensional meaning. It is retained here only because removing it moves scored figures; that removal is 1.2.3, behind a written methodology.
+Note the first line's arithmetic: `products_below_market_pct` is a QEI-weighted share of the portfolio, while the Fund's 50% is the depth of the rate discount on an individual loan. Dividing one by the other produces a number with no dimensional meaning. It is retained here only because removing it moves scored figures; that removal is a later release, behind a written methodology.
 
 ### Pipeline Credibility (0–15 pts)
 

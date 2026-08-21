@@ -1,6 +1,6 @@
 """THE EMBED GATE: no generated document may carry a chart, and the docs may not say it does.
 
-WHAT THIS CLOSES (1.4.1 S4)
+WHAT THIS CLOSES (1.5.0 S4)
 
 ``docs/workflow/output-formats.md`` claimed, under the heading "How
 visualizations are embedded", that ``WordApplicationBuilder`` "automatically
@@ -46,6 +46,7 @@ ruling in ``nmtcapp/visualization/maps.plot_winner_alignment``.
 from __future__ import annotations
 
 import os
+import re
 import zipfile
 
 import pytest
@@ -115,6 +116,212 @@ def test_the_word_document_carries_no_chart_image(generated):
     )
 
 
+# ---------------------------------------------------------------------------
+# THE CLAIM DETECTOR: SEMANTIC, NOT FOUR LITERALS (1.5.0 F2)
+#
+# WHAT WAS HERE. Four exact lowercase fragments of the sentence 1.4.0 shipped:
+#
+#     "and embeds them in the relevant sections"
+#     "automatically generates all five visualization charts"
+#     "charts are omitted from the word document"
+#     "how visualizations are embedded"
+#
+# with a comment defending the choice -- "keyed on the text that was actually
+# wrong rather than on a guess at how it might be reworded."
+#
+# TWENTY LINES AWAY, IN A FILE THIS SUITE ALSO SHIPS,
+# ``_fstring_expressions_with_backslashes`` records the opposite conclusion as
+# a MEASUREMENT: its first draft was a pattern keyed on the text that was
+# actually wrong, and it went green over the exact defect it was written for.
+# One gate learned that lesson and its neighbour wrote the inverse down as a
+# principle.
+#
+# AND THE WEAK VERSION WAS ALREADY FAILING, WHICH IS NOT A HYPOTHETICAL. With
+# the four literals in place and the suite green,
+# ``docs/workflow/visualizations.md`` carried a section headed "Embedding in
+# Word output" saying "all five charts are automatically generated and embedded
+# in the appropriate document sections", plus "deleted after embedding" and "To
+# ensure charts are included in Word output". A live restatement of the exact
+# claim, in the tree, under a passing gate -- contradicting output-formats.md
+# in the same docs set, and contradicted by this module's own behavioural half.
+#
+# SO THE RULE IS SEMANTIC. A sentence offends when it puts a CHART word, an
+# EMBEDDING word and a GENERATED-DOCUMENT word together without negating them.
+# That catches rewordings, because a reworded version of this claim still has
+# to name all three things -- there is no way to assert the capability while
+# omitting the chart, the document, or the act of putting one in the other.
+# ---------------------------------------------------------------------------
+
+#: The thing being embedded.
+_CHART_WORDS = (
+    "chart", "charts", "visualization", "visualizations", "visualisation",
+    "visualisations", "figure", "figures", "png", "pngs", "graphic", "graphics",
+)
+
+#: The act of putting it into a document.
+_EMBED_WORDS = (
+    "embed", "embeds", "embedded", "embedding", "insert", "inserts",
+    "inserted", "inserting", "included in", "includes them", "included into",
+    "added to", "appear in", "appears in", "placed in", "placed into",
+    "attached to", "rendered into", "written into", "baked into",
+    # "omitted from the Word document" asserts the capability by describing
+    # its absence as the exception. If nothing is ever embedded, nothing can
+    # be omitted.
+    "omitted from", "left out of", "dropped from",
+)
+
+#: Phrases naming the one entry point that would have to do the embedding.
+#: ``app.generate()`` writes text and tables and never touches a chart, so a
+#: sentence putting a chart word next to it asserts the capability even when it
+#: never uses an embedding verb -- "app.generate() automatically generates all
+#: five visualization charts" was one of the four sentences that actually
+#: shipped.
+_GENERATE_WORDS = (
+    "app.generate", "generate()", "word output enabled", "with word output",
+)
+
+#: The document it would be put into. Kept for the message, not as a
+#: REQUIREMENT: "See below for how visualizations are embedded" names no
+#: document and is still the claim. Requiring all three ingredients was how the
+#: first draft of this detector let four paraphrases through.
+_DOC_WORDS = (
+    "word", "docx", ".doc", "pdf", "document", "documents", "workbook",
+    "excel", "xlsx", "report", "reports", "application", "output", "filing",
+)
+
+#: Words that flip the sentence into a true statement. The docs MUST be able to
+#: say "no chart is embedded in any output format" -- that sentence contains
+#: all three ingredients and is the correction, not the defect.
+_NEGATORS = (
+    " not ", "n't", " no ", " never ", " none ", " nothing ", "cannot",
+    " neither ", " nor ", "must not", "does not", "do not",
+    "did not", "is not", "are not", "was not", "were not", "will not",
+    "would have", " would ", "used to", "previously", "no longer", "false",
+    "untrue", " once ", "becomes a", "hypothetical", "if this", "if that",
+    "yours to call",
+    # "suitable for embedding in presentations" describes what a READER may do
+    # with a PNG this package hands them. It is true, it is the whole point of
+    # returning a path, and it is not a claim that the tool does it.
+    "suitable for", "you can embed", "if you want", "place it yourself",
+    # a heading slug or anchor fragment, where words are joined by hyphens
+    "http", ".md#",
+)
+
+
+def _sentences(text: str):
+    """Yield (lineno, sentence), joining hard-wrapped lines first.
+
+    SPLITTING ON NEWLINES WAS A BUG, and it was this module's own bug one level
+    down. Markdown prose here is hard-wrapped at about 78 columns, so a
+    sentence-per-line split cuts sentences in half -- and the half carrying the
+    negation goes one way while the half carrying the claim goes the other.
+    "This section previously said the opposite: it claimed app.generate() ...
+    put them into the document sections automatically" reads as a clean
+    assertion of the capability the moment "previously" lands on one line and
+    "put them into the document" on the next.
+
+    So paragraphs are joined before sentences are cut. The line reported is the
+    first line of the paragraph the sentence came from, which is close enough
+    to navigate by and cannot be wrong in a way that hides a claim.
+    """
+    line = 1
+    for block in re.split(r"(\n\s*\n)", text):
+        if not block.strip():
+            line += block.count("\n")
+            continue
+        joined = " ".join(block.split())
+        # Split only where punctuation is followed by WHITESPACE. A bare "."
+        # inside `app.generate()` is not a sentence boundary, and treating it
+        # as one severed the negation from the claim in this very file's
+        # correction paragraph.
+        for sentence in re.split(r"(?<=[.!?])\s+", joined):
+            sentence = sentence.strip()
+            if sentence:
+                yield line, sentence
+        line += block.count("\n")
+
+
+def claims_charts_are_embedded(text: str) -> list:
+    """[(lineno, sentence)] for sentences asserting charts go into a document.
+
+    Exported (no leading underscore) because
+    ``test_the_claim_detector_catches_rewordings`` drives it directly with
+    synthetic sentences. A detector whose robustness is asserted only by the
+    corpus it happens to run over is the weak version again.
+    """
+    hits = []
+    for lineno, sentence in _sentences(text):
+        low = sentence.lower().replace("*", "").replace("`", "")
+        # Hyphens join words in heading slugs and anchor fragments, where
+        # "are-not-embedded" must still read as a negation.
+        low = " " + low.replace("-", " ").replace("_", " ") + " "
+        if any(neg in low for neg in _NEGATORS):
+            continue
+        if not any(re.search(rf"\b{w}\b", low) for w in _CHART_WORDS):
+            continue
+        asserts_embedding = any(w in low for w in _EMBED_WORDS)
+        asserts_generate = any(w in low for w in _GENERATE_WORDS)
+        if not (asserts_embedding or asserts_generate):
+            continue
+        hits.append((lineno, sentence))
+    return hits
+
+
+def test_the_claim_detector_catches_rewordings():
+    """The detector must survive paraphrase, and this proves it does.
+
+    Every POSITIVE below is a different way of saying the same false thing --
+    the four literals the old gate matched, the live sentence it MISSED in
+    docs/workflow/visualizations.md, and four natural restatements. Every
+    NEGATIVE is a sentence the docs must remain free to write, including the
+    correction itself, which necessarily contains all three ingredients.
+    """
+    positives = (
+        # the four the old gate keyed on
+        "The builder generates the charts and embeds them in the relevant sections.",
+        "app.generate() automatically generates all five visualization charts.",
+        "If matplotlib is missing the charts are omitted from the Word document.",
+        "See below for how visualizations are embedded.",
+        # the one that was LIVE in the tree while the old gate was green
+        "When you call app.generate() with Word output enabled, all five charts "
+        "are automatically generated and embedded in the appropriate document "
+        "sections.",
+        # natural restatements
+        "Each figure is inserted into the corresponding section of the report.",
+        "The five PNGs are added to the Word application automatically.",
+        "Visualizations appear in the generated PDF without further work.",
+        "Charts are placed into the workbook during document construction.",
+    )
+    negatives = (
+        "No chart is embedded in any output format.",
+        "Visualizations are NOT embedded in any generated document.",
+        "Charts are not inserted into the Word document, and that is deliberate.",
+        "This section previously said all five charts were embedded in the document.",
+        "All five visualization functions produce 300 DPI PNG files suitable for "
+        "embedding in presentations.",
+        "The readiness score appears in the Word document.",
+    )
+
+    missed = [s for s in positives if not claims_charts_are_embedded(s)]
+    assert not missed, (
+        f"{len(missed)} phrasing(s) of the false claim are NOT detected:\n\n"
+        + "\n".join(f"  {s}" for s in missed)
+        + "\n\nThe detector has to survive paraphrase. Keying it on the exact "
+        "sentence that happened to ship is how the previous version stayed "
+        "green while docs/workflow/visualizations.md carried the claim in "
+        "different words."
+    )
+
+    wrong = [s for s in negatives if claims_charts_are_embedded(s)]
+    assert not wrong, (
+        f"{len(wrong)} legitimate sentence(s) are flagged as the false claim:\n\n"
+        + "\n".join(f"  {s}" for s in wrong)
+        + "\n\nThe docs must stay free to state the correction, which names "
+        "all three ingredients by necessity. A detector that forbids the fix "
+        "is worse than the bug."
+    )
+
+
 def test_the_docs_do_not_claim_charts_are_embedded():
     """The claim half. Behaviour alone would stay green over a false page."""
     if not os.path.isdir(DOCS_DIR):
@@ -122,16 +329,6 @@ def test_the_docs_do_not_claim_charts_are_embedded():
             "docs/ is absent (unpacked sdist). MANIFEST.in prunes it, so this "
             "half asks a question about the repository."
         )
-
-    #: Phrases that assert the capability. Each is a real fragment of the
-    #: sentence 1.4.0 shipped, so this is keyed on the text that was actually
-    #: wrong rather than on a guess at how it might be reworded.
-    claims = (
-        "and embeds them in the relevant sections",
-        "automatically generates all five visualization charts",
-        "charts are omitted from the word document",
-        "how visualizations are embedded",
-    )
 
     offenders = []
     scanned = 0
@@ -142,12 +339,12 @@ def test_the_docs_do_not_claim_charts_are_embedded():
             scanned += 1
             path = os.path.join(dirpath, name)
             with open(path, encoding="utf-8") as handle:
-                lowered = handle.read().lower()
-            for claim in claims:
-                if claim in lowered:
-                    offenders.append(
-                        f"  {os.path.relpath(path, _REPO_ROOT)}: {claim!r}"
-                    )
+                text = handle.read()
+            for lineno, sentence in claims_charts_are_embedded(text):
+                offenders.append(
+                    f"  {os.path.relpath(path, _REPO_ROOT)}:{lineno}\n"
+                    f"      {sentence[:160]}"
+                )
 
     assert scanned >= 8, (
         f"scanned only {scanned} markdown files under docs/; the walk is "

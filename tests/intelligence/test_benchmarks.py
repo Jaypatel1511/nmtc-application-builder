@@ -6,7 +6,7 @@ from nmtcapp.intelligence.benchmarks import (
     MetricBenchmark,
 )
 
-# TestNormalCdf IS GONE, AND ITS FOUR TESTS PASSED (1.4.1 S3).
+# TestNormalCdf IS GONE, AND ITS FOUR TESTS PASSED (1.5.0 S3).
 #
 # They tested that erfc computes a normal CDF correctly. It did. What none of
 # them could ask is the only question that mattered: whether the CDE's figure,
@@ -100,7 +100,7 @@ class TestHistoricalBenchmarks:
         A percentile asserts a POSITION IN A DISTRIBUTION. This package holds
         no distribution of any winner characteristic, so any percentile it
         prints is manufactured from an invented mean and an invented spread.
-        Deleted in 1.4.1 S3; this is the assertion that keeps it deleted.
+        Deleted in 1.5.0 S3; this is the assertion that keeps it deleted.
         """
         bc = HistoricalBenchmarks().compare(sample_pipeline_result, 55_000_000)
         assert bc.metrics, "no metrics: this assertion would be vacuous"

@@ -31,7 +31,7 @@ But as a GATE it is worthless on its own, and saying so is the point:
 
     ``UPCOMING_MATERIALS_PUBLISHED = False`` is a sentence somebody typed.
     Nothing flips it. A test asserting the code agrees with itself is the
-    tautology ``test_version_sync`` already is (see 1.4.1 S6), and a dated
+    tautology ``test_version_sync`` already is (see 1.5.0 S6), and a dated
     assertion nobody re-reads is just another gate that cannot fail.
 
 SO: CAN A TEST DISTINGUISH "CY 2026 HAS NOT PUBLISHED" FROM "NOBODY HAS LOOKED
@@ -86,6 +86,136 @@ _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def _iso(value: str) -> _dt.date:
     return _dt.date(*(int(part) for part in value.split("-")))
+
+
+#: Every format the application renders to. The gate below asserts the round
+#: provenance reaches ALL of them, and the tuple is written out rather than
+#: imported so that a format being dropped from the renderer cannot silently
+#: shrink what this gate checks.
+_ALL_FORMATS = ("markdown", "word", "excel", "pdf")
+
+#: Phrases that must survive into every rendered artifact. Each one is a
+#: DISTINCT fact a reader loses if it is missing, not a restatement:
+#:   - which round, and that it is over
+#:   - that the round a CDE will actually file has no materials yet
+#:   - the certification deadline, which is external and hard
+#:   - the third obligation, which binds prior Allocatees (F7)
+_PROVENANCE_FACTS = (
+    ("closed and awarded", "which round this encodes, and that it is closed"),
+    ("NOT YET PUBLISHED", "that the round a CDE will file has no materials yet"),
+    ("August 31, 2026", "the AMIS CDE certification deadline"),
+    ("Subsidiary CDE", "the prior-Allocatee Subsidiary CDE obligation"),
+)
+
+
+def _render_all_formats(tmp_path) -> dict:
+    """Render the sample application to every format; return {fmt: text}."""
+    from nmtcapp.core.application import Application
+    from nmtcapp.core.cde import CDEProfile
+    from nmtcapp.core.pipeline import Pipeline
+
+    app = Application(cde=CDEProfile.sample(), requested_allocation=65_000_000)
+    app.add_pipeline(Pipeline.sample(n=20))
+    paths = app.generate(str(tmp_path), formats=list(_ALL_FORMATS))
+
+    # FAILS CLOSED. A format that does not render is a format this gate would
+    # otherwise pass by not looking at.
+    assert set(paths) == set(_ALL_FORMATS), (
+        f"rendered {sorted(paths)}, expected {sorted(_ALL_FORMATS)} — a format "
+        "that silently does not render is a format this gate is not checking"
+    )
+
+    out = {}
+    for fmt, path in paths.items():
+        if fmt == "markdown":
+            with open(path, encoding="utf-8") as fh:
+                text = fh.read()
+        elif fmt == "word":
+            from docx import Document
+            doc = Document(path)
+            parts = [para.text for para in doc.paragraphs]
+            for table in doc.tables:
+                for row in table.rows:
+                    parts.extend(cell.text for cell in row.cells)
+            text = "\n".join(parts)
+        elif fmt == "excel":
+            import openpyxl
+            wb = openpyxl.load_workbook(path, data_only=True)
+            parts = []
+            for ws in wb.worksheets:
+                for row in ws.iter_rows(values_only=True):
+                    parts.extend(str(v) for v in row if v is not None)
+            text = "\n".join(parts)
+        else:
+            from pypdf import PdfReader
+            text = "\n".join((page.extract_text() or "") for page in PdfReader(path).pages)
+
+        assert text.strip(), f"{fmt} extracted as empty text"
+        # PDF and Word wrap; compare on collapsed whitespace so a line break
+        # inside a phrase is not read as the phrase being absent.
+        out[fmt] = re.sub(r"\s+", " ", text)
+    return out
+
+
+def test_the_round_provenance_reaches_all_four_formats(tmp_path):
+    """The disclosure must render in EVERY format, not three of four.
+
+    THIS GATE IS THE DELIVERABLE, NOT THE EXCEL BLOCK IT CHECKS (1.5.0 B1).
+
+    Through 1.5.0 the note reached markdown, Word and PDF. The workbook
+    carried none of it -- and carried the citation anyway, in the present
+    tense and in the Fund's voice, at row 4 of the 'Q25 Basis Note' sheet:
+    "Question 25 of the CY 2024-2025 NMTC Allocation Application (printed
+    pp. 38-41) sets both commitments." A CDE who opened only the workbook got
+    a federal citation with no notice that the round had closed on
+    29 Jan 2025, that CY 2026 was unpublished, or that a hard external
+    certification deadline fell on 31 Aug 2026.
+
+    Excel is the format most likely to be circulated internally and pasted
+    from, so it was the worst of the four to leave silent. It was silent
+    because the gates counted formats that HAD the note rather than formats
+    that MUST. Adding the block without adding this test would fix the site
+    and leave the class -- which is the shape this project has recorded
+    repeatedly, and the reason the assertion below is parameterised over
+    _ALL_FORMATS rather than naming the workbook.
+    """
+    rendered = _render_all_formats(tmp_path)
+
+    missing = [
+        (fmt, phrase, why)
+        for fmt, text in rendered.items()
+        for phrase, why in _PROVENANCE_FACTS
+        if phrase not in text
+    ]
+    assert not missing, (
+        "round provenance is missing from rendered output:\n\n"
+        + "\n".join(
+            f"  {fmt:<9} lacks {phrase!r} — the reader loses {why}"
+            for fmt, phrase, why in missing
+        )
+        + "\n\nEvery format that cites a round must say which round it is and "
+        "that it is closed. Render the note from "
+        "_round_provenance.round_provenance_paragraphs(); do not retype it."
+    )
+
+
+def test_the_paragraph_view_is_exactly_the_note():
+    """The two shapes of the note cannot drift, because one builds the other.
+
+    Excel needs the note one paragraph per row (a merged cell has a 409-pt
+    ceiling and the note is longer). The wrong way to get that is a second
+    copy in excel_builder -- the exact shape that produced the 1.2.0 defect
+    where a sentence was corrected in one file and left live in another. So
+    the paragraphs are the definition and the note is their join, and this
+    asserts it stays that way.
+    """
+    joined = " ".join(rp.round_provenance_paragraphs())
+    assert joined == rp.round_provenance_note(), (
+        "round_provenance_note() is no longer the join of "
+        "round_provenance_paragraphs(). Excel renders the paragraphs and the "
+        "other three formats render the note, so they have just diverged: one "
+        "artifact now says something the others do not."
+    )
 
 
 # ---------------------------------------------------------------------------

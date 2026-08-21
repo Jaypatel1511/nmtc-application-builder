@@ -140,7 +140,7 @@ _UNRESOLVED_ROOTS = {
         "an INPUT dict the CDE supplies, not a dict this package returns. "
         "The question to ask of it is whether anything READS the documented "
         "key, which is a different assertion; see this module's docstring. "
-        "Hand-checked 1.4.1: non_metro_commitment_pct, "
+        "Hand-checked 1.5.0: non_metro_commitment_pct, "
         "has_favorable_fee_structure and has_prior_reporting_issues are all "
         "read at intelligence/win_probability.py:667-685."
     ),
@@ -151,14 +151,14 @@ _UNRESOLVED_ROOTS = {
         "resolver below matches a name to a dict; following a subscript into "
         "a list of dicts and back out would make the derivation guess at "
         "which element, and a derivation that guesses is one that can be "
-        "wrong quietly. Hand-checked 1.4.1: 'heading' and 'body' both exist "
+        "wrong quietly. Hand-checked 1.5.0: 'heading' and 'body' both exist "
         "(subsection elements carry body/heading/type)."
     ),
     "to_dataframe": (
         "a pandas DataFrame from Pipeline.to_dataframe(), so its subscripts "
         "are COLUMNS rather than dict keys. Same defect shape, different "
         "corpus and a different accessor; covering it here would give one "
-        "test two meanings. Hand-checked 1.4.1: 'sector' and 'state' are "
+        "test two meanings. Hand-checked 1.5.0: 'sector' and 'state' are "
         "both columns."
     ),
 }

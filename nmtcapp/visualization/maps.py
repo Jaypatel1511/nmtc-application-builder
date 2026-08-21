@@ -625,7 +625,7 @@ def plot_winner_alignment(application: "Application", output_path: str) -> str:
     Shows 3 metrics: distress %, states count, jobs per $MM.
     Each metric shows the pipeline value vs. a p25/p50/p75 range.
 
-    THE RANGES ARE NOT MEASURED AND NOT PUBLISHED (1.4.1 S4). All nine values
+    THE RANGES ARE NOT MEASURED AND NOT PUBLISHED (1.5.0 S4). All nine values
     this chart draws are ``HOUSE`` rows in tests/scoring_attribution.txt: no
     retrievable document supports any of them, and
     ``nmtcapp/data/historical_awards.py``'s own header states that the
@@ -635,7 +635,7 @@ def plot_winner_alignment(application: "Application", output_path: str) -> str:
     DO NOT EMBED THIS CHART IN A GENERATED DOCUMENT, and read this before
     "fixing" docs/workflow/output-formats.md to match some code that does.
 
-    Until 1.4.1 that page claimed all five charts were auto-embedded into the
+    Until 1.5.0 that page claimed all five charts were auto-embedded into the
     Word application. They never were, on any release. The mismatch is a
     one-line-looking discrepancy with a load-bearing reason underneath it: the
     FALSE DOCS CLAIM was the only thing standing between these three unsourced
@@ -646,7 +646,7 @@ def plot_winner_alignment(application: "Application", output_path: str) -> str:
     inside a filing is read as the APPLICANT's assertion, not the tool's.
 
     Auto-embedding becomes legitimate when the constants a chart draws are
-    sourced or deleted. As of 1.4.1's sweep, 61 of 69 winner-pattern constants
+    sourced or deleted. As of 1.5.0's sweep, 60 of 69 winner-pattern constants
     are still HOUSE and these nine are among them, so the constraint binds.
 
     Args:
@@ -714,7 +714,14 @@ def plot_winner_alignment(application: "Application", output_path: str) -> str:
 
         # Bar positions
         y_positions = [0, 1, 2, 3]
-        labels_bar = ["Winner P25", "Winner P50\n(Median)", "Winner P75", "Your Pipeline"]
+        # RELABELLED (B3). These read "Winner P25 / Winner P50 (Median) /
+        # Winner P75" until this change. All nine values are HOUSE constants;
+        # the word "Winner" on the y-axis of a 300-dpi PNG asserted they were
+        # measurements of real Allocatees. The docstring above says otherwise,
+        # but the docstring stays in the source and the PNG goes in the deck.
+        labels_bar = [
+            "House P25", "House P50\n(this tool's)", "House P75", "Your Pipeline",
+        ]
         values = [p25, p50, p75, pipeline_val]
 
         # Colors: winner bars in light blue, pipeline in dark blue
@@ -751,11 +758,11 @@ def plot_winner_alignment(application: "Application", output_path: str) -> str:
         # Competitive threshold line (p50)
         ax.axvline(
             x=comp_thresh, color=_ACCENT, linewidth=1.5,
-            linestyle="--", label="Competitive Threshold (P50)", zorder=5,
+            linestyle="--", label="House reference point (P50)", zorder=5,
         )
         ax.text(
             comp_thresh, 3.6,
-            "Competitive\nThreshold",
+            "House\nreference",
             ha="center", va="bottom", fontsize=6.5, color=_YELLOW,
             style="italic",
         )
@@ -773,13 +780,34 @@ def plot_winner_alignment(application: "Application", output_path: str) -> str:
         ax.tick_params(colors="#444444", labelsize=8)
         ax.grid(axis="x", color="#E0E0E0", linewidth=0.6, linestyle="--")
 
-        # Metric title
+        # Metric title. pad clears the "House reference" annotation above the
+        # top bar, which sits at y=3.6 in data coordinates.
         ax.set_title(metric["label"], fontsize=10, fontweight="bold",
-                     color="#222222", pad=8)
+                     color="#222222", pad=26)
 
+    # THE TITLE SAID "Application vs. Historical Winner Patterns" (B3). It
+    # named a comparison this package cannot make, in the largest type on the
+    # figure, and the figure is the thing that leaves the repository.
     fig.suptitle(
-        "Application vs. Historical Winner Patterns",
-        fontsize=14, fontweight="bold", color="#222222", y=1.02,
+        "Application vs. This Tool's House Reference Bands",
+        fontsize=14, fontweight="bold", color="#222222", y=1.04,
+    )
+
+    # THE CAVEAT IS ON THE FIGURE, NOT IN THE DOCSTRING, AND THAT IS THE POINT.
+    # 1.5.0's mitigation for these nine constants was to keep the chart out of
+    # the generated .docx. That protects the filing and does nothing for the
+    # PNG a CDE drops into a board deck, where the image travels without this
+    # module, without its docstring and without the methodology appendix. A
+    # provenance line rendered into the pixels travels with it.
+    fig.text(
+        0.5, -0.02,
+        "HOUSE BANDS - NOT CDFI FUND FIGURES AND NOT MEASUREMENTS OF PAST "
+        "ALLOCATEES.\nThe P25/P50/P75 bands are unsourced round numbers chosen "
+        "by this package. They are not percentiles of any\npublished "
+        "distribution and do not predict any funding outcome. "
+        "See nmtcapp.intelligence.benchmarks.",
+        ha="center", va="top", fontsize=8, color="#8A1C1C", style="italic",
+        linespacing=1.5,
     )
 
     plt.tight_layout()

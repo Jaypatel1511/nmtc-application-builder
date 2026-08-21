@@ -127,7 +127,15 @@ plot_winner_alignment(app, "./charts/winner_alignment.png")
 
 Each panel shows four bars: Winner P25, Winner P50 (Median), Winner P75, and Your Pipeline. A dashed amber vertical line marks the competitive threshold (P50). Your pipeline bar is dark blue; winner bars are light blue.
 
-**Why it matters:** The most data-dense visualization — shows exactly where you stand relative to the winner distribution on the three most important metrics. A pipeline bar that extends past the P50 line on all three panels is in competitive territory. A bar that falls short of P25 on any panel signals a critical gap.
+**Why it matters:** The most data-dense visualization — it places your pipeline
+against this tool's own reference bands on three metrics. **The P25/P50/P75
+bands are `HOUSE` values: unsourced round numbers this package chose, not a
+distribution of past Allocatees and not percentiles of anything published.**
+This paragraph used to say the chart "shows exactly where you stand relative to
+the winner distribution" and that clearing P50 put a pipeline "in competitive
+territory"; there is no such distribution, and clearing a house band predicts
+no funding outcome. Read a bar that falls short as a prompt to look at that
+metric, not as a measured gap against real applicants.
 
 ```python
 plot_winner_alignment(app, "./winner_alignment.png")
@@ -135,17 +143,32 @@ plot_winner_alignment(app, "./winner_alignment.png")
 
 ---
 
-## Embedding in Word output
+## Charts are NOT put into any generated document
 
-When you call `app.generate()` with Word output enabled, all five charts are automatically generated and embedded in the appropriate document sections. You do not need to call visualization functions separately — the `WordApplicationBuilder` handles this internally.
+**No chart is placed into any output format.** Not into Word, not into PDF,
+not into the workbook, not into markdown. `app.generate()` writes text and
+tables only; the five visualization functions are yours to call, and what they
+return is a PNG path.
 
-Charts are generated as temporary files during document construction and deleted after embedding. If `matplotlib` is not installed, the charts are omitted without error and the document is still generated.
+This section previously said the opposite: it claimed `app.generate()` with
+Word output enabled produced all five charts and put them into the document
+sections automatically, described temporary files being removed afterwards,
+and gave an install flag for making it happen. **None of that was ever true on
+any release**, and it directly contradicted
+[output-formats.md](output-formats.md#visualizations-are-not-embedded-in-any-generated-document),
+which says so correctly in the same documentation set.
 
-To ensure charts are included in Word output:
+**The false version was not a harmless docs bug.** `plot_winner_alignment`
+draws nine constants that are all `HOUSE` — unsourced round numbers this
+package chose, not measurements of past Allocatees. A page telling a reader
+those charts already go into the filed application is exactly what would
+license someone to "fix" the code to match the page, and put nine invented
+comparisons into a document a CDE files with the CDFI Fund. The mismatch
+between page and code was the only thing standing between them.
 
-```bash
-pip install "nmtc-application-builder[output,viz]"
-```
+If you want a chart in your application, place it yourself, and read
+[output-formats.md](output-formats.md) first for why this package will not do
+it for you.
 
 ---
 

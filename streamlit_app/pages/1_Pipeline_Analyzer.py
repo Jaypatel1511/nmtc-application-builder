@@ -49,6 +49,25 @@ from chart_style import (
 apply_matplotlib_theme()
 
 # ---------------------------------------------------------------------------
+# Provenance for the two geographic reference points (B3)
+# ---------------------------------------------------------------------------
+#: Rendered directly beneath the two WINNER_GEOGRAPHIC_PATTERNS figures on this
+#: page. It exists because those two numbers used to be labelled "Winner
+#: median states" and "Winner mean HHI" with nothing on the screen saying whose
+#: numbers they were. The docstring in benchmarks.py is in the source; this is
+#: the artifact. Kept deliberately short -- a caption a CDE will actually read
+#: beats a paragraph it will scroll past.
+_GEO_REFERENCE_METHODOLOGY = (
+    "Both reference points are THIS TOOL'S OWN HOUSE ESTIMATES, not CDFI Fund "
+    "figures and not measurements of past Allocatees. The Fund does publish "
+    "Allocatee-level deployment data (NMTC Public Data Release 2003-2023, "
+    "released 7 August 2026), but it reports QLICI-dollar-denominated REALIZED "
+    "DEPLOYMENT, while these are QEI-denominated APPLICATION-PIPELINE figures; "
+    "this package has not reconciled the two. Treat them as a prompt about "
+    "your own pipeline, not as a bar you must clear."
+)
+
+# ---------------------------------------------------------------------------
 # Page config
 # ---------------------------------------------------------------------------
 apply_theme()
@@ -646,16 +665,40 @@ with tabs[2]:
         # are keys of WINNER_GEOGRAPHIC_PATTERNS. Two are now interpolated from
         # the constant, which is this package's rule and the fix for six
         # recorded instances of a hand-typed number going stale.
+        # THE WORD "Winner" IS DELETED FROM BOTH LABELS (B3), AND THAT IS THE
+        # WHOLE FIX -- the constants themselves are unchanged and still
+        # scored. Until this change these lines read "Winner median states: 7"
+        # and "Winner mean HHI: 620". Both numbers are HOUSE constants of
+        # WINNER_GEOGRAPHIC_PATTERNS, and the label asserted -- in the label
+        # itself, with no caveat within a screen of it -- that they were
+        # MEASUREMENTS OF REAL ALLOCATEES. They are not, and the module that
+        # holds them says so. A number a CDE reads as "what winners do" is a
+        # federal-sounding claim; a number it reads as "this tool's reference
+        # point" is a prompt. Only the second one is true here.
+        #
+        # NOT REMOVED FROM SCORING, and that was ruled on evidence rather than
+        # assumed. See benchmarks._METHODOLOGY and the 1.5.0 CHANGELOG entry:
+        # the case for withdrawing these two metrics rested on the median CDE
+        # in the Fund's Public Data Release serving 2-3 states, which is an
+        # UNWEIGHTED median over 350 CDE names dominated by small subsidiary
+        # CDEs and measures REALIZED CUMULATIVE DEPLOYMENT, not an application
+        # pipeline. Restricted to the ~141 CDEs with 50+ transactions -- about
+        # the number of Allocatees in a round, and 80% of all QLICI dollars --
+        # the median is 9 states, and among the top 50 by dollars it is 21.
+        # The CY 2024-2025 Award Book puts 65 of 142 Allocatees on a national
+        # service area and 39 more on a multistate one. The bands are not
+        # measuring the wrong thing by an order of magnitude; the LABELS were.
         st.markdown(
-            f"- Winner median states: "
+            f"- This tool's median-states reference point: "
             f"**{WINNER_GEOGRAPHIC_PATTERNS['p50_states']:.0f}**  |  "
             f"Your pipeline: **{states_count}**"
         )
         st.markdown(
-            f"- Winner mean HHI: "
+            f"- This tool's mean-HHI reference point: "
             f"**{WINNER_GEOGRAPHIC_PATTERNS['mean_hhi']:,.0f}**  |  "
             f"Your pipeline: **{hhi:,.0f}**"
         )
+        st.caption(_GEO_REFERENCE_METHODOLOGY)
         # THE THIRD ONE IS NOT INTERPOLATED — IT IS DELETED. 18% traces to
         # WINNER_GEOGRAPHIC_PATTERNS["rural_pct_mean"], so it was pinnable; the
         # ruling is that it should not be rendered at all. That constant is one

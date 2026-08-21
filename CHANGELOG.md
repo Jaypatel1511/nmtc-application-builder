@@ -32,6 +32,269 @@ must never return. It also found a site nobody had looked at: `examples/01_quick
 executes that key AND `distress['pct_severe']`, so the first notebook a new user
 runs raises `KeyError` twice.
 
+---
+
+## Post-audit fix round (still 1.5.0 — unreleased, untagged, not on PyPI)
+
+A hostile audit of the round above returned **SHIP-AFTER-FIX**. This section is
+what that produced. **1.5.0 was never published** — PyPI's latest is 1.4.0 and
+there is no `v1.5.0` tag — so these are corrections *inside* an unreleased
+entry, not a new release.
+
+**The audit's central charge was right, and its central number was wrong.**
+Both were re-derived first-hand rather than relayed; `cdfifund.gov` answered
+HTTP 200 from the fixing session too.
+
+### B2 — the sentence justifying 61 HOUSE constants was false
+
+`intelligence/benchmarks.py` said, in its module docstring and again in the
+rendered `_METHODOLOGY` string, that *"The CDFI Fund publishes no
+winner-pattern distribution … award announcements name the Allocatees and their
+amounts, not the distribution of any pipeline characteristic across them"* —
+and gave that as the reason 61 scoring constants could not be sourced.
+
+**It was untrue on the day it was written.** On **Friday 7 August 2026**,
+thirteen days before the commit, the Fund released the **NMTC Public Data
+Release 2003–2023** (`cdfifund.gov/news/736`): a 24-slide summary report and a
+**21,202-row** transaction-level workbook (2,451,852 bytes) carrying CDE name,
+state, QLICI amount, Metro/Non-Metro, origination year, QALICB type and census
+tract. Both were downloaded and re-derived here. Two independent cross-checks
+confirm the extraction: the workbook's QLICI amounts sum to **$71,018,792,859**
+against the Fund's published "$71 billion", and its project sheet holds
+**8,439** rows against the Fund's published "8,439 QALICBs".
+
+The claim is worse than the audit put it. Each round's **Award Book** also
+reports pipeline characteristics across that round's Allocatees — the
+CY 2024-2025 edition gives the service-area scope of all 142 (65 national,
+39 multistate, 24 statewide, 14 local) plus their rural, Native-area and
+deep-distress commitments.
+
+**THE NUMBERS DO NOT MOVE, AND THAT IS THE RULING.** The Fund's figures are
+QLICI-dollar-denominated *realized deployment*; these constants are
+QEI-denominated *application-pipeline* figures. Reconciling them is inferential
+work on an artifact that informs a federal filing, which by this project's
+standing rule is methodology-first. What changed is the sentence: it now says
+the Fund publishes Allocatee-level deployment data, that this package has not
+reconciled it, and that the values are house estimates pending that work. That
+is true today and — the point of phrasing it that way — a future round can
+correct the numbers without first retracting a false claim about a federal
+agency.
+
+**All six of the audit's figures reproduced exactly**, and the pairing it did
+not explain decodes as all-years / 2020-2023, both QLICI-dollar-weighted:
+
+| constant | package | Fund, 2001-2023 | Fund, 2020-2023 |
+|---|---|---|---|
+| `rural_pct_mean` | 0.18 | 0.1994 | 0.2762 |
+| `mean_states` | 7.2 | 6.28 | 4.77 |
+| `p50_states` | 7.0 | 2.0 | 3.0 |
+| `mean_hhi` | 620 | 6,415 | 5,495 |
+| `mean_pct_deep_or_severe` | 0.81 | 0.750 (cumulative) | 0.766 (FY2023) |
+| `mean_pct_native_area` | 0.08 | 0.024 (cumulative) | 0.038 (FY2023) |
+
+The last two are not in the workbook at all — it carries no distress or
+Native-area column — and come from the summary report's slides 11 and 14. The
+audit's table listed `mean_hhi` in the opposite order from its neighbours,
+which is why it read as anomalous.
+
+**One band is well calibrated and that must not be lost:**
+`min_deep_distress_pct`'s strong band is **0.75** and the Fund's published
+cumulative severe-distress QLICI share is **75.0%** ($53.299B of $71.019B).
+
+### B3 — "Winner mean HHI: 620" on a CDE's screen
+
+`streamlit_app/pages/1_Pipeline_Analyzer.py` rendered two HOUSE constants
+labelled, in the label itself, as measurements of winners, with no caveat
+within a screen of them. `visualization/maps.plot_winner_alignment` did the
+same at 300 dpi: a PNG titled *"Application vs. Historical Winner Patterns"*
+with **Winner P25 / P50 (Median) / P75** bars and no provenance on the figure.
+
+Fixed: the word "Winner" is gone from both screen labels and from the chart's
+title and bar labels, and **the caveat is rendered into the figure itself** —
+because 1.5.0's mitigation for these nine constants was to keep the chart out
+of the generated `.docx`, which protects the filing and does nothing for the
+PNG a CDE drops into a board deck, where the image travels without the module,
+its docstring or the methodology appendix.
+
+#### THE SCORING RULING: THE METRICS STAY SCORED, AND THE UNDERSTATEMENT CASE IS REFUTED
+
+The planning chat recommended **withdrawing** `max_geographic_hhi` and
+`min_geographic_states` from scoring, on the grounds that the median real
+Allocatee serves 2–3 states with an HHI of 4,571–7,852 and would therefore be
+graded WEAK against a bar no winner meets. That is overturned, on measurement:
+
+1. **"An HHI of 620 … describes no real Allocatee" is false.** Nine CDEs in the
+   Fund's own data clear it, including Local Initiatives Support Corporation
+   (32 states, HHI 542, $1.16B), USBCDE LLC (45 states, HHI 448, $1.00B),
+   Stonehenge Community Development (31 states, HHI 529) and Wells Fargo CDE
+   (28 states, HHI 575). Fifty-two CDEs serve 16 or more states. (The "~16
+   equally-weighted states" gloss is also wrong twice: LISC reaches 542 across
+   32 unequally-weighted states.)
+2. **The "median Allocatee" statistic is an artifact of the cut.** It is an
+   unweighted median over 350 CDE *names*, most of them small subsidiary CDEs,
+   measuring realized cumulative deployment rather than an application
+   pipeline. Restricted to the 141 CDEs with 50+ transactions — about the
+   number of Allocatees in a round, and 80% of all QLICI dollars — the median
+   is **9 states**; among the top 50 by dollars it is **21 states**, mean HHI
+   2,507. Dollar-weighted across CDEs: 13.2 states, HHI 4,272.
+3. **`min_geographic_states` strong = 7 is met by 84% of the top 50 by
+   dollars**, and the Award Book puts 73% of the 142 CY 2024-2025 winners on a
+   national or multistate service area. It is not an unmeetable bar.
+4. **The prompt's harm mechanism does not exist.** "Geographic Diversity
+   carries 15% of the readiness grade" is true, but that component is computed
+   by `validation/readiness_score._geo_score` from `MIN_GEOGRAPHIC_DIVERSITY`
+   and a 5,000-HHI reference — it **never reads** `max_geographic_hhi` or
+   `min_geographic_states`, which belong to the separate `HistoricalBenchmarks`
+   output. Withdrawing them would not have moved the readiness grade at all.
+
+**Score delta on the demo pipeline: none.** Readiness is **86.6 before and
+86.6 after**; this round changed labels, provenance and prose, not arithmetic.
+The one behaviour change is elsewhere and is stated under F5.
+
+**What IS mis-calibrated, recorded for the methodology round:**
+`max_geographic_hhi`'s strong band of 500 is cleared by 1% of all CDEs and 4%
+of the top 50. That is a real finding, and re-basing it is exactly the
+derivation this round is forbidden from doing.
+
+### B1 — the workbook cited a closed round and carried no provenance
+
+Confirmed by generating all four formats and diffing rendered text: markdown,
+Word and PDF each carried the full disclosure; **Excel carried none of it** and
+carried the citation anyway, at row 4 of the Q25 Basis Note sheet, in the
+present tense.
+
+Fixed with a **Round Provenance** sheet (the workbook now has nine), rendering
+`_round_provenance.round_provenance_paragraphs()` — whose join is byte-identical
+to the string the other three formats render, so the workbook cannot drift.
+**The deliverable is the gate**, not the sheet:
+`test_the_round_provenance_reaches_all_four_formats` is parameterised over all
+four formats and proved red by removing the sheet.
+
+### The findings
+
+- **F1** — `WINNER_SECTOR_PATTERNS` (eight shares, 0.01 grid) and
+  `AWARD_SIZE_TIERS` (five shares, 0.05 grid) each sum to **exactly 1.000**.
+  Both registry row-sets now say so. **The brief's claim that "no test
+  enshrines either" is refuted**: `test_sector_shares_sum_to_one`,
+  `test_award_size_tiers_pct_sum_to_one` and `test_healthcare_is_largest_sector`
+  all enshrine them. Their docstrings now state that passing means the values
+  were *constructed* to sum to one, not that any share was measured.
+- **F3** — `_normal_cdf` was **not** gone: a byte-identical copy survived in
+  `intelligence/win_probability.py` with no caller since `8214788`, plus an
+  `import math` existing only to serve it. Deleted, and the CHANGELOG sentence
+  corrected. **The class is closed by `tests/test_orphaned_functions.py`** —
+  the round's sweep enumerated constants and nothing enumerated functions — and
+  it immediately found a **second** orphan the audit missed, `_mini_bar()`,
+  orphaned by the same commit.
+- **F4** — stale version labels. The brief said fifteen; the tree had
+  **seventy-one** (15 in `nmtcapp/`+`docs/`, 55 in `tests/`, 1 in
+  `streamlit_app/requirements.txt`), every one pointing at a `1.4.1` that has no
+  CHANGELOG heading and no tag. All rewritten. `tests/test_version_labels.py`
+  closes the class, and found a second one: six deferrals pointed work at
+  **1.2.3**, a release that never shipped (the series went 1.2.1 → 1.3.0), so
+  that work had been scheduled against an unreachable date for three releases.
+  They now name no version.
+- **F5** — `NMTC_AWARD_ROUNDS.CY2024` said *"Award data pending"* with $5B while
+  `_round_provenance`, in the same commit, said the round was awarded 23 Dec
+  2025 with $10B. **This was not merely an internal contradiction: the dict
+  renders as a table on the Streamlit About page under the caption "Source:
+  CDFI Fund NMTC Award Announcements (public disclosures)"** — so invented
+  figures carried a federal attribution on a CDE's screen, and the
+  `# estimated` markers stayed in the source. Corrected from the CY 2024-2025
+  Award Book (`cdfifund.gov/media/8018306`, p.4): **216 applicants, 142
+  allocatees, $10B awarded of $19.2B requested**, mean $70,422,535 and median
+  $75,000,000 computed from its own allocatee table, whose 142 amounts sum to
+  exactly $10,000,000,000 — the published total, so the extraction checks
+  itself. Re-keyed **CY2024-2025**, because the announcement calls it *"a double
+  round, covering 2024 and 2025"*. **This is the round's one behaviour change:**
+  `get_overall_acceptance_rate()` moves **0.336 → 0.415**, because the
+  fabricated 34.4% was replaced by a published 65.7%. The old figure understated
+  a CDE's odds by nearly half. The `trend_note` forecast — *"Expect 30-35%
+  acceptance in near-term rounds"*, rendered live on the About page — is
+  deleted; the next round settled at 65.7%.
+- **F6** — the registry header claimed "What remains has a consumer" while six
+  of its own rows said otherwise. Header corrected to name the exceptions and
+  why they survive; `AWARD_SIZE_TIERS`'s only callers are the two tests
+  asserting it exists. `trend_note` was the reverse error — it *does* have a
+  consumer, and the row denying it was wrong.
+- **F7** — the certification disclosure read half its source. `news/738`'s
+  section is headed *"…CDE Certification **and Subsidiary CDE
+  Certification**"*, and its second half binds **prior Allocatees** — this
+  tool's audience — to the same 11:59 p.m. ET **31 August 2026** deadline for
+  Subsidiary CDE certification and Allocation Agreement additions. Retrieved
+  first-hand and now stated in all four formats, with its own gate clause.
+- **F8** — (a) "1.5.0 adds seven test modules" was wrong inside the one file
+  whose subject is stale hand-typed counts: the tree adds **six**, the seventh
+  file being `scoring_attribution.txt`, a data file. Now derived from the tree
+  by `test_the_module_count_in_this_comment_matches_the_tree`. (b) landed
+  earlier in `ea415a1`. (c) `test_no_fstring_expression_contains_a_backslash`
+  credited "a regex" with detecting the defect, eight lines below a docstring
+  recording that the regex draft **missed the real line**; corrected to the AST
+  walk that actually finds it.
+- **F9** — `release.yml`'s 1.5.0 derivation had been inserted into the middle of
+  1.4.0's, leaving 1.4.0's *"1,166 passed / 25 skipped"* sitting directly under
+  the 1.5.0 table where it read as its confirmation. Re-ordered, oldest first.
+- **F2 — the docs-claim gate was a site gate, and it was already failing.**
+  It grepped four exact fragments while defending that choice in writing,
+  twenty lines from a gate that had *measured* the same reasoning failing. It
+  is now semantic — a sentence offends when it puts a chart word, an embedding
+  word and no negation together — and
+  `test_the_claim_detector_catches_rewordings` drives the detector directly
+  with nine phrasings and six sentences the docs must stay free to write.
+  **Taking F2 seriously found a live defect nobody had reported:**
+  `docs/workflow/visualizations.md` carried a whole section headed *"Embedding
+  in Word output"* claiming *"all five charts are automatically generated and
+  embedded in the appropriate document sections"*, describing temp files
+  "deleted after embedding" and an install flag to "ensure charts are included
+  in Word output". None of it has ever been true; it contradicted
+  `output-formats.md` in the same docs set and this module's own behavioural
+  half, and it is precisely what would license someone to "fix" the code by
+  putting nine unsourced constants into a filed federal application. Deleted
+  and replaced with the correction.
+- **A3a** — this file never distinguished its two gates. FLOOR is a
+  **catastrophe detector** with 50.5% slack; the thing that actually enforces
+  freshness is `test_release_floor_is_derived_from_the_current_suite`, which has
+  now fired in **four** consecutive rounds — including on this one. Documented.
+- **A3b** — `MAX_SDIST_SKIPS` did not constrain: the audit set it to **400**
+  and the suite stayed green, because the assertion was one-directional and
+  compared MODULES to a ceiling denominated in TESTS. It is now bounded from
+  above by the width of the FLOOR band it opens, which is the thing it actually
+  affects. Proved red at 400.
+
+### A finding of this round's own: an unsourced federal claim inside the grade
+
+`MIN_GEOGRAPHIC_DIVERSITY = 3` carried the comment *"CDFI Fund historically
+prefers applicants serving ≥3 states."* — an unsourced claim about a federal
+agency, in **no** attribution registry, and `tests/pinned_constants.txt` waived
+it because *"Neither the boolean nor the 3 renders in any artifact."*
+
+**Both halves of that waiver are false.** The constant is the denominator of
+`_geo_score` — the geographic_diversity component, **15% of the readiness grade
+printed at the top of every artifact** — and `MIN_GEOGRAPHIC_DIVERSITY + 2`
+renders verbatim as recommendation text. Measured on a single-state pipeline:
+sub-score **16.7**, and the line *"Expand geographic footprint — currently 1
+states. Target ≥5 states…"* rendered. The attribution is deleted and the waiver
+is re-filed as KNOWN with what actually reaches the surface. **The value is
+unchanged on purpose**: re-basing it is calibration, which is the methodology
+round.
+
+This is the same class as B3 and the audit missed it, because it followed
+`WINNER_PATTERN_THRESHOLDS` and this constant is not one.
+
+### Re-derivation and measurement
+
+- FLOOR stays **590**; `MAX_SDIST_SKIPS` goes **40 → 45**, overtaken by its own
+  measurement for the fourth round running. Measured by building the sdist and
+  running the release job's exact invocation: **1,238 collected / 42 skipped /
+  1,196 executed**.
+- **Building the sdist is what caught the two new gates' real defect.** Both had
+  no environment guard: in the tarball one raised `FileNotFoundError` on
+  `CHANGELOG.md` and the other walked an absent `nmtcapp/` — which without a
+  guard would report every module clean in the one environment where it can see
+  no modules at all. Neither is visible from a checkout.
+
+---
+
 ### S1 — round provenance: the app cited a closed round as though it were live
 
 `renderers/_round_provenance.py` is new and is the single authority for which
@@ -146,10 +409,22 @@ distribution, computed by pushing an invented mean and an invented standard
 deviation through a normal CDF, for a population whose distribution this
 package's own header says is unpublished. Location, spread and distributional
 family all fabricated. It was the most authoritative-looking number the module
-produced. Gone, with `_normal_cdf`, the `Pctile` column, the `winner_std`
-parameter and all six literals. `TestNormalCdf`'s four tests are deleted too —
-**they passed**, because the arithmetic was correct and the claim was
-manufactured, which is the worst combination.
+produced. Gone, with the `Pctile` column, the `winner_std` parameter and all
+six literals. `TestNormalCdf`'s four tests are deleted too — **they passed**,
+because the arithmetic was correct and the claim was manufactured, which is the
+worst combination.
+
+**CORRECTED (F3): `_normal_cdf` was NOT gone.** The sentence above said it was,
+and that was true of `benchmarks.py` and false of the repository. A
+byte-identical copy survived at `intelligence/win_probability.py:809` — no
+caller since `8214788`, no test coverage, and `import math` sitting at the top
+of that module for the sole purpose of feeding it. Both are deleted now.
+
+**The class point is the interesting one.** S3's sweep enumerated CONSTANTS.
+Nothing enumerated FUNCTIONS, so a deletion could be complete in the module a
+reviewer was reading and incomplete in the tree, with the CHANGELOG asserting
+the tree. `tests/test_orphaned_functions.py` closes that: it walks every module
+in `nmtcapp/` and fails on a module-private function no line references.
 
 **DELETED — six orphaned constants** with no consumer in code:
 `std_pct_deep_or_severe`, `mean_pct_hmr`, `std_states`, `urban_pct_mean`,
@@ -510,11 +785,12 @@ negative this file's header ranks as the worst class of error in the package. So
 `Q25_AREA_TYPES_MODELLED` goes 5 → 6 and Non-Metropolitan Counties joins the
 provenance enumeration as TOOL-VERIFIED AND TRI-STATE.
 
-> **82 insertions, 49 deletions** in `tests/rendered_baseline/`, measured
+> **96 insertions, 49 deletions** in `tests/rendered_baseline/`, measured
 > `56573c0`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
 >
-> **Remeasured in 1.5.0.** Read 54/44 when 1.4.0 shipped and that was correct
-> then. The gate re-derives it against the CURRENT tree, so 1.5.0's
+> **Remeasured in 1.5.0, and again in its fix round.** Read 54/44 when 1.4.0
+> shipped and that was correct then; 82/49 after S1; 96/49 once B1 gave the
+> workbook a provenance sheet and F7 added the third certification obligation. The gate re-derives it against the CURRENT tree, so 1.5.0's
 > round-provenance disclosure (S1) moved it: the one-sentence NOAA caveat
 > became a paragraph on markdown, Word and PDF, and the PDF gained a page.
 > The classification table below covers 1.4.0's lines; 1.5.0's are classified
@@ -533,7 +809,8 @@ provenance enumeration as TOOL-VERIFIED AND TRI-STATE.
 | **1.5.0 S1** — the round-provenance disclosure replaces the one-sentence NOAA caveat. Markdown and Word render the whole notes block as ONE line per surface, so both changes land on one line each | 4 | +2 / −2 | markdown, word |
 | **1.5.0 S1** — the same disclosure re-wrapped across the PDF column, replacing three lines with twenty-three | 26 | +23 / −3 | pdf |
 | **1.5.0 S1** — the new page's furniture: the longer note pushes one more page break, adding a `@@PAGE` marker, a CONFIDENTIAL footer band and a page number | 3 | +3 / −0 | pdf |
-| **1.5.0** — Excel: none. The workbook carries no methodology-notes block at all, so `noaa_note()` never reached it — a pre-existing gap recorded in 1.5.0's entry, not a regression | 0 | +0 / −0 | excel |
+| **Fix round, B1** — the workbook's new `Round Provenance` sheet: a `@@SHEET` marker, a heading, a pointer and the note's four paragraphs, one per row. This row read "Excel: none — the workbook carries no methodology-notes block at all", which was the defect B1 closed | 7 | +7 / −0 | excel |
+| **Fix round, F7** — the third certification obligation (prior Allocatees, Subsidiary CDEs) appended to the round-provenance note and re-wrapped across the PDF column, pushing the page furniture down by one line | 7 | +7 / −0 | pdf |
 
 **No figure moved.** Not one number in any of the four documents changed: the
 diff is the basis note's prose, the count it interpolates, and the pagination
@@ -1221,7 +1498,7 @@ and the value-only projection that hid B-3's number formats.
 > source for what the Applicant is asked to COMMIT TO, because the thing the
 > Applicant fills in is the Application.**
 
-**76 mentions across 72 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
+**77 mentions across 73 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
 `README.md`. *(75 across 71 when 1.3.0 shipped; 1.5.0 added one, in
 `renderers/_round_provenance`'s re-check list, which names the Review Process
 as a document to re-verify against rather than citing it for a claim.)* **13 cite the Review Process for a substantive claim** — a
@@ -2312,7 +2589,7 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 223 constants are swept
+colour". The rendered-string sweep demands **19**, and 224 constants are swept
 where 49 were. *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
 round label, its status, the re-check list and the pinned-document facts.)*
 
