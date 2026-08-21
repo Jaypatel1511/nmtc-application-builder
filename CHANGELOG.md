@@ -34,6 +34,187 @@ runs raises `KeyError` twice.
 
 ---
 
+## Closing round (still 1.5.0 — unreleased, untagged, not on PyPI)
+
+Four bounded items. **PyPI's latest is 1.4.0 and there is no `v1.5.0` tag**, so
+every item below is a correction *inside* an unreleased entry, not a new
+release. **Repository state was re-verified before any edit and the brief was
+wrong about it**: the brief said PR #14 was open against `main` at `a43e922`;
+it had already merged as `de2a30f` at 2026-08-21T12:53:25Z. `a43e922` was a
+stale local ref. Nothing else in the brief's state was wrong — branch head,
+absent tag and green CI all held.
+
+### T1 — the release's own thesis was still open
+
+The fix round found the three enshrining tests and **recorded them under
+*refuted hypotheses* instead of deleting them**, closing F1 by annotating their
+docstrings to concede that passing proves nothing. A docstring conceding that
+an assertion cannot fail leaves the assertion in the tree, still red for
+anyone substituting a measured figure. `test_sector_shares_sum_to_one`,
+`test_award_size_tiers_pct_sum_to_one` and `test_healthcare_is_largest_sector`
+are **deleted**, on the ruling `test_the_urban_complement_stays_deleted`
+already records one class up.
+
+**BOTH READINGS WERE CHECKED AND NEITHER MAKES IT A GATE.** If the partition is
+a *declared construction* — which the registry rows say it is — a sum-to-one
+assertion over its constants is a tautology that tests nothing. If it were ever
+*measured*, the same assertion forbids the measurement: eight shares on a 0.01
+grid and five on a 0.05 grid do not land on 1.000 by observation.
+
+**THE THIRD READING WAS LOOKED FOR BY TRACING CONSUMERS, NOT BY REASONING.**
+Had any code normalised over the shares, divided by their total or taken a
+weighted mean, the sum would be a real invariant. None does: `pattern_analysis`
+reads the eight keys individually into a passthrough dict; `objectives` reads
+only `mean_sectors_represented` and `max_single_sector_pct`, neither a member
+of the partition; every `sum()` in both modules is over pipeline projects; and
+`get_award_size_percentiles` is `return dict(AWARD_SIZE_TIERS)`, a passthrough
+that computes nothing. `AWARD_SIZE_TIERS` has **no consumer under `nmtcapp/`
+at all**. What replaces them asserts the property a consumer does depend on —
+that each key exists and holds a fraction in [0, 1] — which cannot be satisfied
+by construction alone and cannot forbid a measurement.
+
+The F1 entry above is corrected in place: it recorded annotation as the remedy,
+and that is now marked insufficient. **Nothing in the tree ever claimed the
+enshrining class was closed** — swept across CHANGELOG, `docs/`, `nmtcapp/` and
+`tests/`; F1 explicitly refuted that claim rather than repeating it. The two
+surviving "the class is closed" sentences belong to F3 (orphaned functions) and
+F4 (version labels), different classes, both legitimately closed.
+
+### T2 — the trap guarding the filed document
+
+`tests/test_no_embedded_charts.py` opened its fixture with
+`pytest.importorskip("matplotlib")`. **Measured, not reasoned**, with the
+import blocked: **2 passed, 1 skipped, exit 0** — and the half that skipped was
+`test_the_word_document_carries_no_chart_image`, the behavioural half, the one
+keeping nine unsourced house-band constants out of a document a CDE files with
+the CDFI Fund. S4's mitigation rests entirely on it.
+
+It was masked only because `dev` happens to declare matplotlib and **nothing
+asserted that it does**. `test_the_output_extra_covers_every_skippable_renderer`
+checks the `output` extra, which does not carry matplotlib and never did — one
+edit to `dev` and the gate goes silently green forever.
+
+The import is now **unconditional**, and `test_the_dev_extra_declares_matplotlib`
+asserts the declaration that keeps it honest. Same measurement after: **3
+passed, 1 error, exit 1**. The new gate was proved red by deleting matplotlib
+from the `dev` extra. **No leg can redden and no skip count moves**: `ci.yml`
+installs `".[dev]"` and `release.yml` installs `"${WHEEL}[dev]"` and
+`"${SDIST}[dev]"`, verified in the workflows — which is precisely why the trap
+was invisible.
+
+**The brief's precedent for this was wrong.** It called this "the same shape as
+the `markdown` fix that closed T0", describing that as declaring the dependency
+*and* adding a gate. `ea415a1` touched `pyproject.toml` and one docstring: it
+added the dependency and **no gate at all**, and there was no `importorskip` to
+remove. The prescription is right; the precedent is half of it.
+
+### T3 — a gate half that was silently off
+
+**20 of the 72 `python` fences under `docs/` fail to parse, and all 20 are in
+`docs/reference/api.md`** — a signature reference (`Application(cde: CDEProfile,
+...)`), which is not valid Python and never will be. Detector A, the
+alias-mapped AST scan, is **structurally inert for that entire file on every
+interpreter**; it is not the environment class. Detector B still sweeps the raw
+text, so the gate is **degraded, not blind**.
+
+The module docstring already said so in prose. Prose drifts, and a silently
+halved gate reads as a whole one. `test_detector_A_is_inert_on_exactly_the_files
+_this_gate_says_it_is` now pins both the per-file unparseable counts and the
+72-fence denominator that makes them interpretable, and fails if either moves.
+Proved red by adding one unparseable fence to `methodology.md`.
+
+*(The brief said 75 fences "in the repo". In this gate's own scope —
+`_doc_files()`, `docs/**.md` — it is 72; repo-wide including `README.md` it is
+74. The 20/api.md finding is exact either way.)*
+
+### T4 — the five numbers, re-derived from the Award Book
+
+The CY 2024-2025 Award Book was **downloaded again in this session** (HTTP 200,
+8,052,050 bytes, 8 pp.) and all five figures re-derived independently. **Every
+one is exact.** Page 4 states *"142 CDEs out of 216 applicants were awarded
+allocations by the CDFI Fund. 66%"* and *"A total of $10 billion was awarded out
+of $19.2 billion requested. 52%"*. Extracting the allocatee table (pp. 5–8)
+gives **142 amounts summing to exactly $10,000,000,000**, mean **$70,422,535**
+(70,422,535.21) and median **$75,000,000** — matching `avg_award` and
+`median_award` as rendered. `acceptance_rate` 0.657 = 142/216 = 0.65741.
+
+- **216** — numerator n/a; the applicant count for the single CY 2024-2025
+  competition, stated on p.4.
+- **142** — allocatee count, stated on p.4 and independently equal to the
+  number of rows in the allocatee table.
+- **$10,000,000,000** — stated on p.4 *and* the exact sum of the 142 table
+  amounts, so the extraction checks itself rather than being assumed.
+- **0.657** — 142 allocatees ÷ 216 applicants, one round. (The Book prints
+  "66%"; 65.74% is the unrounded quotient.)
+- **0.415** — **does NOT share a denominator with 0.657.** It is
+  `(0.293 + 0.357 + 0.351 + 0.657) / 4`: four per-round rates over a
+  denominator of four ROUNDS, not a pooled ratio of CDEs. Pooled over the same
+  window it is 449/1,142 = **0.393**.
+
+**THE REPLACEMENT RUNS TOWARD OVERSTATEMENT, AND THE BRIEF WAS RIGHT TO ASK.**
+Two independent inflations: the unweighted mean over unequal denominators
+over-weights CY 2024-2025, which has the smallest applicant pool (216 vs
+CY2021's 341) and the highest rate (+2.2 pts vs pooled); and the round is a
+**double round** awarding two years of authority in one competition, so its
+65.7% is not a single-round rate at all. The four single rounds CY2020–CY2023
+give mean-of-rates **0.347** and pooled **0.341** — so including the double
+round moves the figure **0.347 → 0.415**. A CDE reading 41% as its odds in the
+next round, which the trend note states is a **$5 billion single round**, is
+reading roughly seven points high.
+
+`APPLICATION_VOLUME_TRENDS["trend_note"]` already warns that the round *"does
+not compare like-for-like with the single rounds beside it"* — and
+`get_overall_acceptance_rate` averages it in regardless. **The value is
+unchanged on purpose**: re-basing means choosing between pooling, weighting and
+exclusion, which is calibration on a number informing a federal filing, and
+methodology-first by the standing rule. What is closed is that the construction
+can no longer be mistaken for a pooled rate or a single-round expectation:
+the function's docstring states all three quantities, and
+`test_the_overall_rate_is_a_mean_of_ratios_not_a_pooled_ratio` asserts the
+identity rather than leaving it as prose. **The calibration question is the
+round's one open recommendation.**
+
+### Re-derivation and measurement
+
+- **The sdist was rebuilt and run**, because three deleted tests and five new
+  ones move the derivation and a hand-typed count left stale is this project's
+  most-recorded defect. This job's exact invocation, from a directory holding
+  only what the tarball shipped: **1,242 collected / 43 skipped / 1,199
+  executed**. FLOOR stays **590**.
+- **`MAX_SDIST_SKIPS` stays 45 and is NOT raised**, though its headroom narrows
+  from three to two: the new Detector-A gate is guarded by `docs_present` and
+  skips in the tarball, which ships no `docs/`. Widening this constant to fit
+  rather than re-measuring is its entire recorded history (40 → 20 → 24 → 28 →
+  40 → 45), and two is real headroom. **The next gate that reads `docs/` or
+  `nmtcapp/` will overtake it**, and the answer then is another sdist build.
+- Published test counts move **1,241 → 1,243** in `README.md`,
+  `CONTRIBUTING.md` and `streamlit_app/app.py`, caught by
+  `test_a_published_test_count_is_the_one_the_tree_collects` rather than
+  remembered.
+- All four edited Python files compile under **3.9.25**, the declared floor.
+
+### Answered, not fixed
+
+- **`MAX_SDIST_SKIPS` IS two-directional** — the brief's premise is refuted.
+  A3b closed it: `test_max_sdist_skips_is_bounded_from_ABOVE_as_well` bounds
+  the FLOOR band the ceiling opens. Measured on this tree at **1,243
+  collected**: at 45 the band is [590, 621], 31 wide; the gate fires at **64**,
+  and 400 fails hard (band 201 wide against a stated maximum of 40).
+  **What it constrains is the band WIDTH, not the ceiling directly** — so at 45
+  the ceiling still has headroom to 63 before anything complains, a 40% rise.
+  That is a real remaining limit, recorded rather than described as closed.
+- **Nothing asserts the enshrining class is closed.** See T1.
+- **No fourth enshrining test of the sum-to-one shape.** Re-derived by sweeping
+  every exact-equality and sum assertion across `tests/`. The nearest candidate
+  is `test_cy2021_most_competitive`, which pins an ordering between two rounds'
+  rates — the same shape as the deleted `test_healthcare_is_largest_sector` but
+  a weaker case, since both rates are internally consistent with their own
+  awards/applications counts. **Left in place and reported.** Note that
+  CY2020–CY2023 have never been verified against primary sources; only
+  CY 2024-2025 has.
+
+---
+
 ## Post-audit fix round (still 1.5.0 — unreleased, untagged, not on PyPI)
 
 A hostile audit of the round above returned **SHIP-AFTER-FIX**. This section is
@@ -177,8 +358,11 @@ four formats and proved red by removing the sheet.
   Both registry row-sets now say so. **The brief's claim that "no test
   enshrines either" is refuted**: `test_sector_shares_sum_to_one`,
   `test_award_size_tiers_pct_sum_to_one` and `test_healthcare_is_largest_sector`
-  all enshrine them. Their docstrings now state that passing means the values
-  were *constructed* to sum to one, not that any share was measured.
+  all enshrine them. **The remedy recorded here — annotating their docstrings
+  to say that passing means the values were *constructed* to sum to one — was
+  not sufficient, and the closing round (T1) deletes all three.** A docstring
+  conceding that an assertion cannot fail leaves the assertion in the tree,
+  where it still goes red for anyone substituting a measured figure. See T1.
 - **F3** — `_normal_cdf` was **not** gone: a byte-identical copy survived in
   `intelligence/win_probability.py` with no caller since `8214788`, plus an
   `import math` existing only to serve it. Deleted, and the CHANGELOG sentence

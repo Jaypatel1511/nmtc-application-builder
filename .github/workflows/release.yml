@@ -612,6 +612,30 @@ jobs:
           #     half                             598
           #     rounded down                     590
           #
+          # RE-MEASURED AGAIN IN THE 1.5.0 CLOSING ROUND. FLOOR STILL DID NOT
+          # MOVE; THE CEILING DID NOT EITHER, BUT ITS HEADROOM DID. That round
+          # deletes three tests and adds five, so the tree collects two more,
+          # and one of the five -- test_documented_keys.py::
+          # test_detector_A_is_inert_on_exactly_the_files_this_gate_says_it_is
+          # -- is guarded by `docs_present` and therefore SKIPS in the tarball,
+          # which ships no docs/. Derived the long way again, with this job's
+          # exact invocation, from a directory holding only what the sdist
+          # shipped:
+          #
+          #     collected under -m "not wheel" 1,242
+          #     skipped in the sdist             -43
+          #     EXECUTED                       1,199
+          #     half                             599
+          #     rounded down                     590
+          #
+          # MAX_SDIST_SKIPS STAYS 45 AND IS NOW TWO ABOVE THE MEASUREMENT, down
+          # from three. It is not raised here: the whole recorded failure mode
+          # of this constant is being widened to fit rather than re-measured
+          # (40 -> 20 -> 24 -> 28 -> 40 -> 45), and two is real headroom, not a
+          # rounding artifact. The NEXT gate that reads docs/ or nmtcapp/ will
+          # overtake it, and the correct response then is another sdist build,
+          # not another increment.
+          #
           # BUILDING THE SDIST IS WHAT FOUND THE TWO NEW GATES' REAL DEFECT,
           # and this is the reason the derivation is done by hand rather than
           # trusted to the job. Both new modules had NO environment guard on

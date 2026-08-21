@@ -126,26 +126,63 @@ class TestWinnerGeographicPatterns:
 
 
 class TestWinnerSectorPatterns:
-    def test_sector_shares_sum_to_one(self):
-        """SUMMING TO 1.000 IS A PROPERTY OF A CONSTRUCTION, NOT EVIDENCE (F1).
+    def test_every_sector_share_a_consumer_reads_is_present_and_a_share(self):
+        """The invariant with a consumer, NOT the total (1.5.0 T1).
 
-        Same ruling as test_award_size_tiers_pct_sum_to_one. The eight shares
-        are 0.22 / 0.18 / 0.17 / 0.14 / 0.12 / 0.08 / 0.05 / 0.04 -- all on a
-        0.01 grid, summing to exactly 1.000, over a population of real awards
-        this package holds no sector breakdown for. Passing means the values
-        were written to sum to one, not that any sector share was measured.
+        WHAT WAS HERE, AND WHY IT IS GONE. Two tests:
+        ``test_sector_shares_sum_to_one`` asserted the eight shares total
+        exactly 1.000, and ``test_healthcare_is_largest_sector`` asserted
+        healthcare outranks four named others. Both are deleted, for the reason
+        ``test_the_urban_complement_stays_deleted`` records one class up.
+
+        The eight shares are 0.22 / 0.18 / 0.17 / 0.14 / 0.12 / 0.08 / 0.05 /
+        0.04 -- every one on a 0.01 grid, summing to exactly 1.000, over a
+        population of real awards this package holds NO sector breakdown for.
+        A sum-to-one assertion over them has exactly two readings and neither
+        is a gate:
+
+          * If the partition is a DECLARED CONSTRUCTION -- which it is; the
+            registry row says so on its face -- then summing constants that
+            were written to sum to one is a TAUTOLOGY. It cannot fail, so it
+            tests nothing.
+          * If it were ever MEASURED, the same assertion FORBIDS the
+            measurement. Eight real sector shares do not land on a 0.01 grid
+            totalling 1.000, so anyone substituting real figures goes RED and
+            is instructed by a green-tests rule to restore the invented ones.
+
+        THE THIRD READING WAS LOOKED FOR AND DOES NOT EXIST, checked by
+        tracing consumers rather than by reasoning about them. If any code
+        normalised over the eight, divided by their total, or took a weighted
+        mean across them, the sum WOULD be a real invariant. Nothing does:
+        ``intelligence/pattern_analysis`` reads the eight keys individually
+        into a passthrough dict, and ``optimizer/objectives`` reads only
+        ``mean_sectors_represented`` and ``max_single_sector_pct``, neither of
+        which is a member of the partition. Every ``sum()`` in either module is
+        over pipeline projects. So no consumer depends on the total, and
+        deleting the assertion loses no invariant.
+
+        The same argument retires the healthcare ordering: it pins which
+        invented number is biggest, has no consumer at all, and goes red the
+        moment a real sector mix puts affordable housing first.
+
+        WHAT IS ASSERTED INSTEAD is the property a consumer actually depends
+        on -- that each key it indexes exists and holds a fraction. That
+        cannot be satisfied by construction alone and cannot forbid a
+        measurement, because every real share lies in [0, 1].
         """
         sectors = [
             "healthcare", "affordable_housing", "small_business", "education",
             "community_facility", "mixed_use", "clean_energy", "other"
         ]
-        total = sum(WINNER_SECTOR_PATTERNS[s] for s in sectors)
-        assert abs(total - 1.0) < 0.01
-
-    def test_healthcare_is_largest_sector(self):
-        sectors = ["affordable_housing", "small_business", "education", "mixed_use"]
-        for s in sectors:
-            assert WINNER_SECTOR_PATTERNS["healthcare"] >= WINNER_SECTOR_PATTERNS[s]
+        missing = [s for s in sectors if s not in WINNER_SECTOR_PATTERNS]
+        assert not missing, (
+            f"WINNER_SECTOR_PATTERNS is missing {missing}. "
+            "intelligence/pattern_analysis.compare_to_winners indexes all "
+            "eight by name and raises KeyError on any that is absent."
+        )
+        bad = {s: WINNER_SECTOR_PATTERNS[s] for s in sectors
+               if not 0.0 <= WINNER_SECTOR_PATTERNS[s] <= 1.0}
+        assert not bad, f"sector shares outside [0, 1]: {bad}"
 
     def test_max_single_sector_pct_below_50pct(self):
         assert WINNER_SECTOR_PATTERNS["max_single_sector_pct"] < 0.50
@@ -216,23 +253,78 @@ class TestQueryFunctions:
         assert 0.25 <= rate3 <= 0.70
         assert 0.25 <= rate5 <= 0.70
 
-    def test_award_size_tiers_pct_sum_to_one(self):
-        """SUMMING TO 1.000 IS A PROPERTY OF A CONSTRUCTION, NOT EVIDENCE (F1).
+    def test_the_overall_rate_is_a_mean_of_ratios_not_a_pooled_ratio(self):
+        """What get_overall_acceptance_rate is a mean OF, asserted (1.5.0 T4).
 
-        Read this before reading the assertion as corroboration. The five
-        shares are 0.10 / 0.20 / 0.35 / 0.25 / 0.10 -- every one on a 0.05
-        grid, over a population of real awards, summing to exactly 1.000. Real
-        award data does not land on a 0.05 grid; a partition somebody wrote
-        down does. The registry row for these keys says so on its face.
+        The value reaches a CDE: ``win_probability.score_win_probability``
+        carries it as ``acceptance_rate_baseline``. Its docstring states the
+        construction, and a stated construction with nothing checking it is a
+        prose claim -- the shape this project has recorded most often. So the
+        three quantities the docstring names are computed here from the same
+        dict, and the identity that distinguishes them is asserted.
 
-        The check is kept because an internal-consistency check is still worth
-        having, and because deleting it would remove the one place a reader
-        meets these numbers as a set. What is NOT claimed is that passing means
-        the shares are measured. It means they were constructed to sum to one.
+        THIS IS NOT A CALIBRATION GATE. It does not require 0.4145, or any
+        band around it; re-basing the figure is the methodology round's call.
+        It requires only that the function keep computing a MEAN OF RATIOS and
+        that the pooled alternative stay visibly different, so nobody can
+        later describe one as the other -- in either direction.
+        """
+        recent = list(NMTC_AWARD_ROUNDS.values())[-4:]
+
+        mean_of_ratios = sum(r["acceptance_rate"] for r in recent) / len(recent)
+        pooled = (sum(r["awards"] for r in recent)
+                  / sum(r["applications"] for r in recent))
+
+        assert get_overall_acceptance_rate(rounds=4) == mean_of_ratios, (
+            "get_overall_acceptance_rate no longer returns the unweighted mean "
+            "of the per-round rates. Its docstring says it does, and says what "
+            "that means for a CDE reading the number. Change both together."
+        )
+        assert abs(get_overall_acceptance_rate(rounds=4) - pooled) > 0.01, (
+            f"the mean-of-ratios ({mean_of_ratios:.4f}) and the pooled rate "
+            f"({pooled:.4f}) have converged. While they differ, calling one "
+            "'the acceptance rate' without saying which is a live ambiguity "
+            "the docstring resolves; if they ever coincide, that paragraph "
+            "needs rewriting rather than this assertion relaxing."
+        )
+
+        double = [r for r in recent if r.get("double_round")]
+        assert double, (
+            "no round in the averaged window is flagged double_round. The "
+            "docstring's whole caution -- that a two-year round is averaged in "
+            "beside single rounds -- is keyed on that flag, and "
+            "APPLICATION_VOLUME_TRENDS['trend_note'] tells a reader the same "
+            "round 'does not compare like-for-like'. If the window moved past "
+            "it, rewrite both."
+        )
+
+    def test_award_size_tier_shares_are_shares(self):
+        """The total is NOT asserted, and the reason is the same one (1.5.0 T1).
+
+        ``test_award_size_tiers_pct_sum_to_one`` was here. The five shares are
+        0.10 / 0.20 / 0.35 / 0.25 / 0.10 -- every one on a 0.05 grid, summing
+        to exactly 1.000, over a population of real awards. Real award data
+        does not land on a 0.05 grid; a partition somebody wrote down does.
+
+        Its own docstring conceded the tautology and kept the check anyway, on
+        the grounds that "an internal-consistency check is still worth having"
+        and that deleting it "would remove the one place a reader meets these
+        numbers as a set". Neither survives contact with the ruling in
+        ``test_the_urban_complement_stays_deleted``: a check that cannot fail
+        is not a consistency check, and a reader still meets the set here --
+        the assertion below iterates all five.
+
+        THE FUNCTION IS NOT DOING WORK THAT COULD MAKE THE TOTAL AN INVARIANT.
+        ``get_award_size_percentiles`` is ``return dict(AWARD_SIZE_TIERS)``, a
+        passthrough -- it does not compute, renormalise or derive the shares,
+        so the assertion reached constants, not behaviour. Verified by reading
+        the function, not assumed from its name. ``AWARD_SIZE_TIERS`` has no
+        consumer under ``nmtcapp/`` at all, which 1.5.0 F6 already recorded.
         """
         tiers = get_award_size_percentiles()
-        total = sum(v["pct_of_awards"] for v in tiers.values())
-        assert abs(total - 1.0) < 0.01
+        bad = {k: v["pct_of_awards"] for k, v in tiers.items()
+               if not 0.0 <= v["pct_of_awards"] <= 1.0}
+        assert not bad, f"tier shares outside [0, 1]: {bad}"
 
     def test_application_volume_lengths_match(self):
         trends = get_application_volume_trends()

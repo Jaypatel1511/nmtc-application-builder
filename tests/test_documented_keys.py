@@ -73,6 +73,13 @@ publishes rather than from what a brief happened to name.
               that only read fences would call methodology.md clean without
               having looked at it.
 
+              DETECTOR A IS INERT ON api.md ENTIRELY, and that is asserted
+              rather than described: all twenty of its fences fail to parse on
+              every interpreter, so its alias map for that file is empty and
+              Detector B carries it alone. ``_DETECTOR_A_INERT_FENCES`` at the
+              foot of this module pins the count, because a half-off gate
+              reads as a whole one (1.5.0 T3).
+
   RIGHT SIDE  The dicts this package actually returns, read off LIVE objects
               built from the packaged fixtures. Nothing about the expected key
               set is written down here; it is whatever the code produces today.
@@ -562,4 +569,86 @@ def test_the_boundary_list_is_still_live(documented):
         f"_UNRESOLVED_ROOTS names {dead}, which the scanned corpus no longer "
         "documents. A "
         "ruling that guards nothing reads as coverage; delete the entry."
+    )
+
+
+# ---------------------------------------------------------------------------
+# DETECTOR A'S BLIND SPOT, MEASURED RATHER THAN DESCRIBED (1.5.0 T3)
+# ---------------------------------------------------------------------------
+
+#: Files where Detector A is STRUCTURALLY INERT, and how many fences in each.
+#:
+#: ``docs/reference/api.md`` is a signature reference. Its fences hold
+#: declarations, not statements -- ``Application(cde: CDEProfile, ...)`` and
+#: ``score_win_probability() -> WinProbabilityScore`` are not valid Python and
+#: never will be. ``ast.parse`` raises SyntaxError on every one, ``_scan_text``
+#: hits its ``continue``, and the alias map for that entire file is empty on
+#: EVERY interpreter. This is not the environment class: it is invariant.
+#:
+#: The gate is therefore DEGRADED, NOT BLIND -- Detector B sweeps the same raw
+#: text and still reports subscripts from it. But a half-off gate reads as a
+#: whole one, and this project has shipped that reading before. So the
+#: inertness is pinned as a NUMBER here rather than left as a sentence in the
+#: module docstring, where it could drift silently: if a fence in api.md
+#: becomes parseable, or a new unparseable fence appears in a file that had
+#: none, this fails and somebody states which detector now covers what.
+_DETECTOR_A_INERT_FENCES = {"docs/reference/api.md": 20}
+
+#: Total ``python`` fences across ``_doc_files()``, pinned for the same reason:
+#: it is the denominator that makes the number above mean something. Twenty
+#: unparseable out of 72 is a quarter of the corpus; twenty out of 5,000 would
+#: not be worth a comment. Measured, not estimated.
+_TOTAL_PYTHON_FENCES = 72
+
+
+def test_detector_A_is_inert_on_exactly_the_files_this_gate_says_it_is(docs_present):
+    """The silently-halved half, asserted (1.5.0 T3).
+
+    Detector A resolves aliases so that ``d = analysis.distress_analysis``
+    makes every later ``d["k"]`` a read of ``distress_analysis``. It can only
+    do that for fences that PARSE. Where none parses, the file is covered by
+    Detector B alone -- prose-and-table matching with no alias resolution --
+    and any subscript written through a local binding there is invisible to
+    this gate entirely.
+
+    That is a real and acceptable limitation. What is NOT acceptable is it
+    being invisible: a reader seeing "DETECTOR A (AST)" in the module docstring
+    has no way to learn that it contributes nothing to a quarter of the corpus.
+    """
+    counted = {}
+    total = 0
+    for path in _doc_files():
+        rel = os.path.relpath(path, _REPO_ROOT)
+        with open(path, encoding="utf-8") as handle:
+            text = handle.read()
+        for match in _FENCE.finditer(text):
+            total += 1
+            try:
+                ast.parse(match.group(1))
+            except SyntaxError:
+                counted[rel] = counted.get(rel, 0) + 1
+
+    assert total, (
+        "no ``python`` fences found under docs/ at all. The fence regex or the "
+        "walk is broken, and every assertion below would pass over nothing."
+    )
+    assert total == _TOTAL_PYTHON_FENCES, (
+        f"docs/ now holds {total} ``python`` fences, not "
+        f"{_TOTAL_PYTHON_FENCES}. That is fine -- but the unparseable count "
+        "below is only interpretable against a stated denominator, so update "
+        "both together and say what moved."
+    )
+    assert counted == _DETECTOR_A_INERT_FENCES, (
+        f"the set of fences Detector A cannot parse has MOVED.\n\n"
+        f"  recorded: {_DETECTOR_A_INERT_FENCES}\n"
+        f"  measured: {counted}\n\n"
+        "Detector A is structurally inert for any file listed here -- its "
+        "alias map is empty, so subscripts written through a local binding in "
+        "that file are covered by NOTHING. Detector B still reads the raw "
+        "text, so the gate is degraded rather than blind.\n\n"
+        "If a NEW file appears above, say in the docstring which detector "
+        "covers it and why that is enough. If a count DROPPED because a fence "
+        "became parseable, that is a coverage improvement -- record the new "
+        "number. Do not delete this assertion to make it pass: it exists "
+        "because a silently-halved gate reads as a whole one."
     )
