@@ -13,6 +13,7 @@ from nmtcapp.renderers._cell_format import format_cell
 from nmtcapp.renderers._methodology import (
     ACS_VINTAGE, deal_economics_note, impact_bands_note, noaa_note,
     readiness_weights_note,
+    readiness_inline_qualifier,
 )
 from nmtcapp.sections import ALL_SECTIONS
 from nmtcapp.tables.distress_table import build_distress_table
@@ -110,7 +111,8 @@ class MarkdownApplicationBuilder:
             f"Application Round: {app.application_round}  \n"
             f"Requested Allocation: **${app.requested_allocation:,.0f}**  \n"
             f"Prepared: {date.today().isoformat()}  \n"
-            f"Readiness Grade: **{score.grade}** ({score.overall_score:.1f}/100{partial_tag})  \n\n"
+            f"Readiness Grade: **{score.grade}** ({score.overall_score:.1f}/100{partial_tag}"
+            f" — {readiness_inline_qualifier()})  \n\n"
             f"---\n\n"
             # Read the real version. This line hardcoded "v0.1" while the
             # methodology note in the same document printed __version__, so
@@ -175,6 +177,12 @@ class MarkdownApplicationBuilder:
             + banner + summary +
             f"**Application Readiness Score: {score.overall_score:.1f}/100 "
             f"(Grade {score.grade}){partial_tag}**\n\n"
+            # THE DISCLOSURE GOES WHERE THE CLAIM IS (1.5.1 T3). Markdown was
+            # the fourth surface with this gap and it was not on the list:
+            # measured 25,179 characters between this score and
+            # readiness_weights_note() in the methodology block — 88% of the
+            # document. The methodology copy stays; this is an addition.
+            f"*{readiness_weights_note()}*\n\n"
             f"**Key Strengths** (this tool's own assessment against its own "
             f"thresholds — not a CDFI Fund evaluation)**:**\n" +
             "\n".join(f"- {s}" for s in score.top_strengths) +

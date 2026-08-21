@@ -65,6 +65,13 @@ _VERSION_RE = re.compile(r"(?<![\w.])(1\.\d+\.\d+)(?![\w.])")
 _NOT_OUR_RELEASES = {
     "1.6.1":  "mkdocs, whose METADATA declares markdown>=3.3.6",
     "1.36.0": "streamlit floor",
+    "1.61.1": (
+        "the INSTALLED Streamlit whose st.metric delta behaviour was executed "
+        "for 1.5.1 T4 — _determine_delta_color_and_direction returns GREEN/UP "
+        "for any delta that is neither '-'-prefixed nor exactly '0', which is "
+        "why every readiness grade rendered as good news. The version is named "
+        "because the finding is a claim about that library at that version"
+    ),
 }
 
 

@@ -174,6 +174,24 @@ def readiness_weights_note() -> str:
     )
 
 
+def readiness_inline_qualifier() -> str:
+    """The readiness grade's qualifier, sized to sit INSIDE the value it marks.
+
+    THE COVER TABLES PRINT THE GRADE BEFORE THE CALLOUT DOES (1.5.1 T3). Word,
+    PDF and Markdown each render "Readiness Assessment: Grade B — 83.0/100" in
+    a cover/details table, which is the FIRST place a CDE meets the number —
+    earlier than the readiness callout that now carries the full
+    ``readiness_weights_note()``. A qualifier that lives in a separate
+    paragraph can be stripped in editing; this one is part of the value string,
+    for the same reason ``_disclosure`` requires the unverified-projects
+    qualifier inline.
+
+    It is deliberately short. The full weighting disclosure is one screen
+    below, in the callout, on every one of those surfaces.
+    """
+    return "this tool's own unsourced house heuristic, not a CDFI Fund evaluation"
+
+
 def readiness_weights_sheet_note() -> str:
     """The same disclosure, sized for a spreadsheet cell.
 

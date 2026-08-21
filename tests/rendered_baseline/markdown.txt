@@ -5,7 +5,7 @@
 Application Round: CY2025  
 Requested Allocation: **$70,000,000**  
 Prepared: <RUNDATE>  
-Readiness Grade: **B** (84.9/100)  
+Readiness Grade: **B** (84.9/100 — this tool's own unsourced house heuristic, not a CDFI Fund evaluation)  
 
 ---
 
@@ -18,6 +18,8 @@ Readiness Grade: **B** (84.9/100)
 Great Lakes Regional Capital CDE, LLC respectfully requests $70.0MM in New Markets Tax Credit allocation for application round CY2025. Our 8-project pipeline spans 4 states with **85% of QEI committed to deep/severely distressed tracts**.
 
 **Application Readiness Score: 84.9/100 (Grade B)**
+
+*READINESS SCORE: An UNSOURCED HOUSE HEURISTIC of this tool (eligibility 25%, distress concentration 25%, geographic diversity 15%, impact metrics 20%, validation 10%, completeness 5%). The weights are this tool's own judgement; they are not calibrated against award data, the CDFI Fund publishes no such weighting, and the score does not predict an award outcome.*
 
 **Key Strengths** (this tool's own assessment against its own thresholds — not a CDFI Fund evaluation)**:**
 - High pipeline eligibility rate (≥80% score)

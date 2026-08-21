@@ -9,7 +9,9 @@ $70,000,000
 Preparation Date:
 <RUNDATE>
 Readiness Assessment:
-Grade B — 84.9/100
+Grade B — 84.9/100 (this tool's own
+unsourced house heuristic, not a CDFI Fund
+evaluation)
 Contact: Dana Okonkwo | dokonkwo@greatlakesregional.example.org | 216-555-0142
 CONFIDENTIAL — Prepared for CDFI Fund Review Only | Do Not Distribute Without CDE Authorization
 
@@ -46,6 +48,10 @@ Geographic Diversity: 89/100
 Impact Metrics: 33/100
 Validation Pass Rate: 100/100
 Completeness: 100/100
+READINESS SCORE: An UNSOURCED HOUSE HEURISTIC of this tool (eligibility 25%, distress concentration 25%,
+geographic diversity 15%, impact metrics 20%, validation 10%, completeness 5%). The weights are this tool's own
+judgement; they are not calibrated against award data, the CDFI Fund publishes no such weighting, and the score
+does not predict an award outcome.
 
 @@PAGE 3
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY2025 Application  |  CONFIDENTIAL

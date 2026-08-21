@@ -819,6 +819,119 @@ def test_house_pins_carry_their_disclaimer(rendered):
 
 
 # ---------------------------------------------------------------------------
+# Proximity: a disclosure 25 pages from its claim is not a disclosure
+#
+# test_house_pins_carry_their_disclaimer above flattens the whole document into
+# one haystack and asks whether a disclosure phrase appears ANYWHERE in it. That
+# is a presence check standing in for a proximity property, and it could not
+# fail the thing it was written to catch: on 1.5.0 the readiness grade was
+# printed on page 1 of the PDF and its disclosure was the last thing before the
+# end of page 26 — 24,739 characters away, 98% of the document — and this gate
+# was green. Measured on the same build: Word 16,657 characters (60% of the
+# document), Markdown 25,179 (88%), Excel 48. Excel was the only surface that
+# put the disclosure where the claim was, and it is the shape the other three
+# now match.
+#
+# A GATE DEMONSTRATED ONLY GREEN IS NOT KNOWN TO WORK, so
+# test_proximity_gate_fails_when_the_disclosure_is_far_away drives this same
+# helper with a document whose disclosure sits at the far end and asserts it
+# reports a failure. Without that, "the gate passes" and "the gate cannot fail"
+# look identical from the outside — which is exactly how the flattened check
+# above survived twenty-two releases.
+# ---------------------------------------------------------------------------
+
+#: Maximum characters between a readiness claim and its nearest disclosure.
+#: Sized from the surface that already did this right: Excel renders its
+#: disclosure 48 characters under the score. 1,200 is roughly a rendered
+#: paragraph or two — the same page, the same glance — and it is a ceiling on
+#: the defect, not a calibration of anything. It is HOUSE and says so.
+_DISCLOSURE_PROXIMITY_LIMIT = 1_200
+
+#: Where the readiness grade is claimed, as it renders after normalisation.
+_READINESS_CLAIM = re.compile(
+    r"(readiness (?:grade|assessment|score)|application readiness)", re.I
+)
+
+
+def _disclosure_proximity_failures(surfaces: dict) -> list:
+    """Report every readiness claim with no disclosure phrase near it.
+
+    Shared by the live gate and by its own red-proof below, so the proof
+    exercises the real matcher rather than a paraphrase of it.
+    """
+    failures = []
+    for surface, text in surfaces.items():
+        low = text.lower()
+        disclosure_at = [
+            m.start()
+            for phrase in _DISCLOSURE_PHRASES
+            for m in re.finditer(re.escape(phrase), low)
+        ]
+        for claim in _READINESS_CLAIM.finditer(low):
+            if not disclosure_at:
+                failures.append(
+                    f"  {surface} @{claim.start()}: readiness claim "
+                    f"{claim.group(0)!r} — NO disclosure anywhere on this surface"
+                )
+                break
+            nearest = min(abs(d - claim.start()) for d in disclosure_at)
+            if nearest > _DISCLOSURE_PROXIMITY_LIMIT:
+                failures.append(
+                    f"  {surface} @{claim.start()}: readiness claim "
+                    f"{claim.group(0)!r} — nearest disclosure is {nearest:,} "
+                    f"characters away (limit {_DISCLOSURE_PROXIMITY_LIMIT:,})"
+                )
+    return failures
+
+
+def test_readiness_disclosure_is_adjacent_to_the_claim(rendered):
+    """Every readiness claim carries a disclosure within reach of it."""
+    surfaces = {
+        name: rendered[name]
+        for name in ("word", "pdf", "excel", "markdown")
+        if name in rendered
+    }
+    assert surfaces, "no document surfaces rendered — this gate would pin nothing"
+    failures = _disclosure_proximity_failures(surfaces)
+    assert not failures, (
+        "Readiness claims render too far from their disclosure. A CDE who reads "
+        "the grade and stops has been told a house heuristic is an assessment:\n"
+        + "\n".join(failures)
+    )
+
+
+def test_proximity_gate_fails_when_the_disclosure_is_far_away():
+    """THE RED PROOF. Drive the gate with a document shaped like 1.5.0's PDF.
+
+    A synthetic surface: the readiness claim at the top, the disclosure at the
+    far end, nothing in between. This is 1.5.0's actual geometry — claim on
+    page 1, disclosure on page 26 — and the flattened presence check called it
+    green. If this test ever passes-by-not-failing, the proximity gate has
+    stopped measuring proximity.
+    """
+    far = (
+        "application readiness assessment grade b 83.0/100 "
+        + ("filler " * 4_000)
+        + "this tool's own unsourced house heuristic"
+    )
+    failures = _disclosure_proximity_failures({"synthetic_far": far})
+    assert failures, (
+        "the proximity gate did NOT fail on a disclosure ~28,000 characters "
+        "from its claim — it is not measuring proximity"
+    )
+    assert "characters away" in failures[0], failures
+
+    # And the same document with the disclosure moved adjacent must pass,
+    # so the gate is not simply failing everything it is shown.
+    near = (
+        "application readiness assessment grade b 83.0/100 "
+        "this tool's own unsourced house heuristic "
+        + ("filler " * 4_000)
+    )
+    assert not _disclosure_proximity_failures({"synthetic_near": near})
+
+
+# ---------------------------------------------------------------------------
 # Derivation: the list must not be a list somebody once wrote down
 #
 # BOTH SWEEPS BELOW READ THE SOURCE TREE, so both are checkout-only.
