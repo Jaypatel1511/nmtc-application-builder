@@ -620,10 +620,34 @@ def plot_readiness_radar(application: "Application", output_path: str) -> str:
 # ---------------------------------------------------------------------------
 
 def plot_winner_alignment(application: "Application", output_path: str) -> str:
-    """Bar/range chart showing pipeline metrics vs. historical winner distributions.
+    """Bar/range chart showing pipeline metrics vs. UNSOURCED winner bands.
 
     Shows 3 metrics: distress %, states count, jobs per $MM.
-    Each metric shows the pipeline value vs. winner p25/p50/p75 range.
+    Each metric shows the pipeline value vs. a p25/p50/p75 range.
+
+    THE RANGES ARE NOT MEASURED AND NOT PUBLISHED (1.4.1 S4). All nine values
+    this chart draws are ``HOUSE`` rows in tests/scoring_attribution.txt: no
+    retrievable document supports any of them, and
+    ``nmtcapp/data/historical_awards.py``'s own header states that the
+    "Source: CDFI Fund Annual Reports" comments above them cite a publication
+    that does not exist.
+
+    DO NOT EMBED THIS CHART IN A GENERATED DOCUMENT, and read this before
+    "fixing" docs/workflow/output-formats.md to match some code that does.
+
+    Until 1.4.1 that page claimed all five charts were auto-embedded into the
+    Word application. They never were, on any release. The mismatch is a
+    one-line-looking discrepancy with a load-bearing reason underneath it: the
+    FALSE DOCS CLAIM was the only thing standing between these three unsourced
+    comparisons and a filed federal application. Correcting the page to match
+    the code — rather than the code to match the page — is what keeps them out.
+
+    A chart is read as evidence more readily than a sentence is, and a chart
+    inside a filing is read as the APPLICANT's assertion, not the tool's.
+
+    Auto-embedding becomes legitimate when the constants a chart draws are
+    sourced or deleted. As of 1.4.1's sweep, 61 of 69 winner-pattern constants
+    are still HOUSE and these nine are among them, so the constraint binds.
 
     Args:
         application: An Application instance (pipeline must be set).

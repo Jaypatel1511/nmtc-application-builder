@@ -254,12 +254,21 @@ def test_derivation_boundary_is_documented():
         for p in root.rglob("*.py")
         if "nmtcmapper" in p.read_text(encoding="utf-8")
     )
-    assert touching == ["integrations/nmtc_mapper_adapter.py"], (
+    assert touching == ["integrations/_mapper_capabilities.py",
+                        "integrations/nmtc_mapper_adapter.py"], (
         f"another module now touches nmtc-mapper: {touching}. This contract "
         "test only introspects the adapter, and its AST walk cannot follow a "
         "result passed into a helper. Extend the derivation to cover the new "
         "module, or bring the read back into the adapter."
     )
+    # _mapper_capabilities JOINED THE SET IN 1.4.1 S2, and it does not widen
+    # the hole this test guards. The hole is a RESULT OBJECT passed into a
+    # helper that reads attributes off its own parameter, which the AST walk
+    # cannot follow. _mapper_capabilities never receives an EligibilityResult:
+    # it introspects the CLASS with dataclasses.fields() and reads annotations,
+    # so there is no instance and no attribute access to miss. Its own fields
+    # are covered by tests/integrations/test_mapper_capabilities.py, which
+    # derives them from the adapter rather than from a list.
 
 
 #: The field the 1.4.0 floor exists for, and the version that first has it.

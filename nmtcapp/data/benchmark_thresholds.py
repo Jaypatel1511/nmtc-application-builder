@@ -404,11 +404,12 @@ WINNER_PATTERN_THRESHOLDS: dict = {
     # only consumer, benchmarks.py's rural metric, is deleted; see the note
     # there for the four defects, and renderers/_question_22 for the
     # instrument.
-    "min_native_area_pct": {
-        "strong": 0.10,
-        "competitive": 0.05,
-        "weak": 0.00,
-    },
+    # "min_native_area_pct" REMOVED (1.4.1 S3). Unlike its neighbours it had
+    # NO CONSUMER — no metric in benchmarks.py, nothing in optimizer/ or
+    # streamlit_app/ ever read it. It was three unsourced band boundaries that
+    # scored nothing, which is the worst version of an unsourced constant: it
+    # carried the appearance of a calibrated threshold set while being unable
+    # to fail, be reviewed, or be noticed.
 }
 
 BENCHMARK_SCORE_POINTS: dict = {

@@ -48,12 +48,21 @@ dashboard with no denominator in its label. Four near-identical copies is the
 shape that produced the 1.2.0 defect where a sentence was deleted from one file
 and stayed live in a second. One authority, read by every surface.
 
-PROVENANCE. CY 2024-2025 NMTC Program Allocation Application, 142 pp.,
-1,525,626 bytes, SHA-256 0280c6bc7b35f6015e2c2b1be4b1c07b3864f2dcbaeadfbbbf8bde
-d8de12834f, retrieved 2026-08-17 from
-https://www.cdfifund.gov/system/files/2024-11/CY_2024-2025_NMTC_Program_Allocation_Application.pdf
-and text-extracted LOCALLY with pypdf — not fetched through a summarising
-model, which is the provenance failure this whole cycle exists to correct.
+PROVENANCE. CY 2024-2025 NMTC Program Allocation Application, retrieved
+2026-08-17 and text-extracted LOCALLY with pypdf — not fetched through a
+summarising model, which is the provenance failure this whole cycle exists to
+correct. The page count, byte count, URL and SHA-256 are stated ONCE, in
+``renderers/_round_provenance``; they were typed here and in
+``renderers/_question_22`` as two hand-copied 64-character hashes until 1.4.1,
+and nobody proofreads 64 hex characters. Re-downloaded and re-verified
+2026-08-20: byte count and hash both unchanged.
+
+WHICH ROUND THIS IS, AND WHY THAT MATTERS HERE. CY 2024-2025 is CLOSED — it was
+awarded 23 Dec 2025 — and the CY 2026 Application is not yet published. This
+module therefore encodes the most recent PUBLISHED instrument as a proxy for
+one that does not exist. That is the right call and it is not the same as the
+instrument being current; see ``renderers/_round_provenance`` for the
+disclosure and for what a CDE must re-check when CY 2026 lands.
 Question 25 spans printed pp. 38-41 (PDF pages 65-68); Question 25(b)'s four
 area types run to printed p. 42 (PDF page 69).
 """

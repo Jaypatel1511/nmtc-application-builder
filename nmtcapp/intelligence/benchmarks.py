@@ -1,7 +1,28 @@
-"""Compare a pipeline analysis result against historical NMTC winner benchmarks."""
+"""Place a pipeline's metrics in THIS TOOL'S OWN diagnostic bands.
+
+NOT A COMPARISON AGAINST WINNERS, and the module summary said it was until
+1.5.0: "Compare a pipeline analysis result against historical NMTC winner
+benchmarks." No winner distribution was ever loaded and none is published. The
+CDFI Fund's award announcements name the Allocatees and their amounts; they do
+not report the distribution of any pipeline characteristic across them, and
+application-level data for non-winners is not published at all.
+
+What this module does is place each metric in a strong / competitive / weak
+band against a threshold in ``data.benchmark_thresholds.WINNER_PATTERN_THRESHOLDS``
+-- round numbers this package chose, carrying ``HOUSE`` rows in
+``tests/scoring_attribution.txt`` because no retrievable document supports
+them. The bands are a prompt about your own pipeline, not a measurement of
+where you stand.
+
+DELETED IN 1.5.0: ``percentile_vs_winners``. It pushed an invented mean and an
+invented standard deviation through a normal CDF to assert a POSITION IN A
+DISTRIBUTION -- location, spread and distributional family all fabricated, for
+a population this package holds no data on. Six of its eight standard
+deviations were bare literals typed at the call site. It was the most
+authoritative-looking number here and every input to it was made up.
+"""
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass, field
 from typing import List, TYPE_CHECKING
 
@@ -11,28 +32,28 @@ from nmtcapp.data.benchmark_thresholds import (
     BENCHMARK_SCORE_POINTS,
     WINNER_PATTERN_THRESHOLDS,
 )
-from nmtcapp.data.historical_awards import (
-    WINNER_DISTRESS_PATTERNS,
-    WINNER_GEOGRAPHIC_PATTERNS,
-    WINNER_IMPACT_BENCHMARKS,
-    WINNER_SECTOR_PATTERNS,
-)
 
 if TYPE_CHECKING:
     from nmtcapp.intelligence.pipeline_analyzer import PipelineAnalysisResult
 
 _METHODOLOGY = (
-    "Benchmarks compare input metrics against patterns observed in CDFI Fund NMTC "
-    "award announcements (CY2020–CY2024). Only winner-level data is publicly "
-    "available; non-winner distributions are unknown. Scores reflect alignment "
-    "with historical winners, not probability of selection. Use as diagnostic "
-    "guidance only — not as a prediction of funding outcomes."
+    "THESE BANDS ARE THIS TOOL'S OWN, NOT A CDFI FUND FIGURE. Each metric is "
+    "placed in a strong / competitive / weak band by comparing it to a "
+    "threshold in nmtcapp.data.benchmark_thresholds.WINNER_PATTERN_THRESHOLDS. "
+    "The CDFI Fund publishes no winner-pattern distribution and no such "
+    "thresholds: award announcements name the Allocatees and their amounts, "
+    "not the distribution of any pipeline characteristic across them, and "
+    "application-level data for non-winners is not published at all. The "
+    "bands are round numbers chosen by this package and are unsourced. A band "
+    "is therefore a diagnostic prompt about your own pipeline, NOT a "
+    "measurement of where you stand against real applicants, NOT a percentile, "
+    "and NOT a prediction of any funding outcome."
 )
 
 
 @dataclass
 class MetricBenchmark:
-    """Benchmark assessment for a single metric against historical winners."""
+    """One metric's placement in this tool's own diagnostic bands."""
     metric: str
     label: str
     value: float
@@ -41,7 +62,6 @@ class MetricBenchmark:
     threshold_strong: float
     threshold_competitive: float
     threshold_weak: float
-    percentile_vs_winners: float  # 0.0–1.0 estimated position in winner distribution
     note: str
 
     def to_dict(self) -> dict:
@@ -56,14 +76,13 @@ class MetricBenchmark:
                 "competitive": self.threshold_competitive,
                 "weak": self.threshold_weak,
             },
-            "percentile_vs_winners": self.percentile_vs_winners,
             "note": self.note,
         }
 
 
 @dataclass
 class BenchmarkComparison:
-    """Full benchmark comparison of a pipeline against historical NMTC winners.
+    """A pipeline's metrics placed in this tool's own diagnostic bands.
 
     Example::
 
@@ -86,8 +105,9 @@ class BenchmarkComparison:
         }
         lines = [
             "=" * 68,
-            "  BENCHMARK vs. HISTORICAL NMTC WINNERS (CY2020–CY2024)",
-            f"  Overall Alignment Score: {self.overall_benchmark_score:.1f} / 100",
+            "  PIPELINE DIAGNOSTIC BANDS — THIS TOOL'S OWN, NOT CDFI FUND DATA",
+            f"  Overall Band Score: {self.overall_benchmark_score:.1f} / 100 "
+            "(this tool's own scale)",
             "=" * 68,
             "",
         ]
@@ -97,13 +117,17 @@ class BenchmarkComparison:
                 sym = _tier_symbol[t]
                 lines.append(f"  {sym} {t.upper():<18} {cnt} metric(s)")
         lines.append("")
-        lines.append(f"  {'Metric':<34} {'Value':>8}   {'Tier':<12}  Pctile")
-        lines.append(f"  {'-'*34} {'-'*8}   {'-'*12}  ------")
+        # NOT AN f-STRING EXPRESSION. A backslash inside the braces is a
+        # SyntaxError before 3.12, and requires-python is >=3.9 -- caught by
+        # running the sdist suite on 3.9.25, which is why that run is part of
+        # deriving FLOOR rather than an optional extra.
+        _band_header = "Band (this tool's own)"
+        lines.append(f"  {'Metric':<34} {'Value':>8}   {_band_header}")
+        lines.append(f"  {'-'*34} {'-'*8}   {'-'*22}")
         for m in self.metrics:
             sym = _tier_symbol.get(m.tier, "[ ]")
             lines.append(
-                f"  {sym} {m.label:<32} {m.value:>8.2f}   {m.tier:<12}  "
-                f"{m.percentile_vs_winners:.0%}"
+                f"  {sym} {m.label:<32} {m.value:>8.2f}   {m.tier}"
             )
         lines.extend([
             "",
@@ -123,7 +147,7 @@ class BenchmarkComparison:
 
 
 class HistoricalBenchmarks:
-    """Compare a pipeline analysis result to CDFI Fund historical winner patterns.
+    """Place a pipeline's metrics in this tool's own diagnostic bands.
 
     Example::
 
@@ -163,9 +187,8 @@ class HistoricalBenchmarks:
             "min_deep_distress_pct", "Deep/Severe Distress %",
             value=d.get("pct_deep_or_severe", 0.0),
             higher_is_better=True,
-            winner_mean=WINNER_DISTRESS_PATTERNS["mean_pct_deep_or_severe"],
-            winner_std=WINNER_DISTRESS_PATTERNS["std_pct_deep_or_severe"],
-            note=f"Winner median: {WINNER_DISTRESS_PATTERNS['p50_pct_deep_or_severe']:.0%}",
+            note="Band boundaries are this tool's own; the CDFI Fund "
+                 "publishes no distribution of this figure across winners.",
         ))
 
         # States served
@@ -173,9 +196,9 @@ class HistoricalBenchmarks:
             "min_geographic_states", "States Served",
             value=float(g.get("states_count", 0)),
             higher_is_better=True,
-            winner_mean=WINNER_GEOGRAPHIC_PATTERNS["mean_states"],
-            winner_std=WINNER_GEOGRAPHIC_PATTERNS["std_states"],
-            note=f"Winner median: {WINNER_GEOGRAPHIC_PATTERNS['p50_states']:.0f} states",
+            note="Band boundaries are this tool's own. Geographic reach is "
+                 "a real scoring consideration; the state COUNTS here are not "
+                 "a Fund figure.",
         ))
 
         # Geographic HHI
@@ -183,9 +206,9 @@ class HistoricalBenchmarks:
             "max_geographic_hhi", "Geographic HHI",
             value=float(g.get("hhi", 10_000)),
             higher_is_better=False,
-            winner_mean=WINNER_GEOGRAPHIC_PATTERNS["mean_hhi"],
-            winner_std=300.0,
-            note=f"Winner mean HHI: {WINNER_GEOGRAPHIC_PATTERNS['mean_hhi']:.0f}",
+            note="HHI and its band boundaries are this tool's own "
+                 "construct. The CDFI Fund neither computes nor publishes an "
+                 "HHI for any applicant.",
         ))
 
         # Jobs per $1MM QEI
@@ -193,9 +216,8 @@ class HistoricalBenchmarks:
             "min_jobs_per_mm_qei", "Jobs per $1MM QEI",
             value=float(i.get("jobs_per_million_qei", 0.0)),
             higher_is_better=True,
-            winner_mean=WINNER_IMPACT_BENCHMARKS["mean_jobs_per_mm_qei"],
-            winner_std=6.0,
-            note=f"Winner p75: {WINNER_IMPACT_BENCHMARKS['p75_jobs_per_mm_qei']:.0f} jobs/$MM",
+            note="Band boundaries are this tool's own. The CDFI Fund "
+                 "publishes no jobs-per-QEI benchmark in any denominator.",
         ))
 
         # Max single sector
@@ -203,9 +225,8 @@ class HistoricalBenchmarks:
             "max_single_sector_pct", "Max Single Sector %",
             value=float(s.get("max_single_sector_pct", 1.0)),
             higher_is_better=False,
-            winner_mean=WINNER_SECTOR_PATTERNS["max_single_sector_pct"],
-            winner_std=0.08,
-            note=f"Winners rarely exceed {WINNER_SECTOR_PATTERNS['max_single_sector_pct']:.0%}",
+            note="Band boundaries are this tool's own; no Fund question "
+                 "asks for a sector concentration limit.",
         ))
 
         # Sectors represented
@@ -213,9 +234,8 @@ class HistoricalBenchmarks:
             "min_sectors_represented", "Sectors Represented",
             value=float(s.get("sectors_represented", 0)),
             higher_is_better=True,
-            winner_mean=WINNER_SECTOR_PATTERNS["mean_sectors_represented"],
-            winner_std=1.2,
-            note=f"Winner mean: {WINNER_SECTOR_PATTERNS['mean_sectors_represented']:.1f} sectors",
+            note="Band boundaries are this tool's own; no Fund question "
+                 "asks how many sectors a pipeline spans.",
         ))
 
         # Pipeline project count
@@ -223,9 +243,8 @@ class HistoricalBenchmarks:
             "min_projects", "Pipeline Projects",
             value=float(pipeline_result.total_projects),
             higher_is_better=True,
-            winner_mean=WINNER_GEOGRAPHIC_PATTERNS["mean_projects"],
-            winner_std=4.0,
-            note=f"Winner median: {WINNER_GEOGRAPHIC_PATTERNS['p50_projects']:.0f} projects",
+            note="Band boundaries are this tool's own; the Fund publishes "
+                 "no project-count distribution across Allocatees.",
         ))
 
         # Eligibility rate
@@ -233,9 +252,9 @@ class HistoricalBenchmarks:
             "min_eligible_pct", "NMTC Eligibility %",
             value=pipeline_result.eligibility_pct,
             higher_is_better=True,
-            winner_mean=WINNER_DISTRESS_PATTERNS["mean_pct_eligible"],
-            winner_std=0.04,
-            note="Winners average 96% eligibility",
+            note="Band boundaries are this tool's own. Eligibility itself "
+                 "is a statutory test, but the bands over it are not a Fund "
+                 "figure.",
         ))
 
         # THE RURAL BENCHMARK IS DELETED (1.4.0 premise ruling), and this
@@ -294,14 +313,26 @@ class HistoricalBenchmarks:
         label: str,
         value: float,
         higher_is_better: bool,
-        winner_mean: float,
-        winner_std: float,
         note: str,
     ) -> MetricBenchmark:
-        thresholds = WINNER_PATTERN_THRESHOLDS.get(metric, {})
-        t_strong = float(thresholds.get("strong", winner_mean))
-        t_competitive = float(thresholds.get("competitive", winner_mean * 0.7))
-        t_weak = float(thresholds.get("weak", winner_mean * 0.4))
+        # NO FALLBACK BAND. Through 1.4.0 a metric absent from
+        # WINNER_PATTERN_THRESHOLDS silently got bands of
+        # ``winner_mean``, ``winner_mean * 0.7`` and ``winner_mean * 0.4`` —
+        # two more unsourced constants, invisible because nothing reached them
+        # (all eight metrics carry an entry). An armed-but-unreached default is
+        # how the next metric added would have got invented bands with no
+        # review, so it raises instead.
+        thresholds = WINNER_PATTERN_THRESHOLDS.get(metric)
+        if not thresholds:
+            raise KeyError(
+                f"no band is defined for metric {metric!r} in "
+                "WINNER_PATTERN_THRESHOLDS. Add one there, with an entry in "
+                "tests/scoring_attribution.txt saying where it came from — "
+                "this used to fabricate bands from the winner mean instead."
+            )
+        t_strong = float(thresholds["strong"])
+        t_competitive = float(thresholds["competitive"])
+        t_weak = float(thresholds["weak"])
 
         if higher_is_better:
             if value >= t_strong:
@@ -323,10 +354,6 @@ class HistoricalBenchmarks:
                 tier = "below_weak"
 
         score = float(BENCHMARK_SCORE_POINTS[tier])
-        std_safe = max(winner_std, 1e-9)
-        raw_pctile = _normal_cdf((value - winner_mean) / std_safe)
-        percentile = raw_pctile if higher_is_better else (1.0 - raw_pctile)
-        percentile = min(1.0, max(0.0, percentile))
 
         return MetricBenchmark(
             metric=metric,
@@ -337,7 +364,6 @@ class HistoricalBenchmarks:
             threshold_strong=t_strong,
             threshold_competitive=t_competitive,
             threshold_weak=t_weak,
-            percentile_vs_winners=round(percentile, 3),
             note=note,
         )
 
@@ -350,6 +376,3 @@ class HistoricalBenchmarks:
             total_w += w
         return (weighted / total_w) if total_w > 0 else 0.0
 
-
-def _normal_cdf(x: float) -> float:
-    return math.erfc(-x / math.sqrt(2)) * 0.5

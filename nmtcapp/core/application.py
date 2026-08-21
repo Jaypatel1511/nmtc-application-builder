@@ -177,9 +177,15 @@ class Application:
         self._pipeline: Optional[Pipeline] = None
         self._analysis_cache: Optional[ApplicationAnalysis] = None
 
+        # %,.0f IS NOT A FORMAT (1.4.1 S6). printf has no ',' flag, so this
+        # raised ValueError inside logging on EVERY Application construction at
+        # INFO or below -- swallowed by logging's own error handler, which
+        # prints a traceback to stderr and returns, so nothing crashed and
+        # nothing was logged either. The comma grouping belongs to str.format
+        # and f-strings; the %-style equivalent is to format the number first.
         logger.info(
-            "Application created for %s — round %s, allocation $%,.0f",
-            cde.name, application_round, requested_allocation,
+            "Application created for %s — round %s, allocation $%s",
+            cde.name, application_round, f"{requested_allocation:,.0f}",
         )
 
     @property

@@ -4,22 +4,25 @@ from nmtcapp.intelligence.benchmarks import (
     BenchmarkComparison,
     HistoricalBenchmarks,
     MetricBenchmark,
-    _normal_cdf,
 )
 
-
-class TestNormalCdf:
-    def test_at_zero_is_half(self):
-        assert abs(_normal_cdf(0.0) - 0.5) < 1e-10
-
-    def test_large_positive_near_one(self):
-        assert _normal_cdf(5.0) > 0.999
-
-    def test_large_negative_near_zero(self):
-        assert _normal_cdf(-5.0) < 0.001
-
-    def test_symmetric(self):
-        assert abs(_normal_cdf(1.0) + _normal_cdf(-1.0) - 1.0) < 1e-10
+# TestNormalCdf IS GONE, AND ITS FOUR TESTS PASSED (1.4.1 S3).
+#
+# They tested that erfc computes a normal CDF correctly. It did. What none of
+# them could ask is the only question that mattered: whether the CDE's figure,
+# an invented winner MEAN, an invented winner STANDARD DEVIATION and an assumed
+# NORMAL FAMILY together license the sentence "you are at the 83rd percentile
+# of NMTC winners".
+#
+# They did not. The mean and the std were unsourced constants -- six of the
+# eight stds were bare literals typed into the call site -- and
+# historical_awards.py's own header says the distribution of any winner
+# characteristic is not published at all. So the arithmetic was exactly right
+# and the claim was manufactured, which is the worst combination: four green
+# tests standing under a number that could not be true.
+#
+# percentile_vs_winners is deleted. The band (strong/competitive/weak) stays,
+# with its thresholds declared unsourced on the rendered surface.
 
 
 class TestHistoricalBenchmarks:
@@ -91,10 +94,22 @@ class TestHistoricalBenchmarks:
         for m in bc.metrics:
             assert 0.0 <= m.score <= 100.0
 
-    def test_percentiles_in_range(self, sample_pipeline_result):
+    def test_no_metric_publishes_a_percentile(self, sample_pipeline_result):
+        """The fabricated distributional claim must not come back.
+
+        A percentile asserts a POSITION IN A DISTRIBUTION. This package holds
+        no distribution of any winner characteristic, so any percentile it
+        prints is manufactured from an invented mean and an invented spread.
+        Deleted in 1.4.1 S3; this is the assertion that keeps it deleted.
+        """
         bc = HistoricalBenchmarks().compare(sample_pipeline_result, 55_000_000)
+        assert bc.metrics, "no metrics: this assertion would be vacuous"
         for m in bc.metrics:
-            assert 0.0 <= m.percentile_vs_winners <= 1.0
+            assert not hasattr(m, "percentile_vs_winners"), (
+                "MetricBenchmark republished percentile_vs_winners"
+            )
+            assert "percentile_vs_winners" not in m.to_dict()
+        assert "Pctile" not in bc.summary()
 
     def test_thresholds_present_on_metrics(self, sample_pipeline_result):
         bc = HistoricalBenchmarks().compare(sample_pipeline_result, 55_000_000)

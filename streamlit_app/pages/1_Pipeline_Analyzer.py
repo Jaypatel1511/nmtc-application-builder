@@ -106,7 +106,7 @@ with st.sidebar:
 
     st.markdown("---")
     st.caption(
-        "The sample pipeline includes 20 realistic projects across 12 states, "
+        "The sample pipeline includes 20 realistic projects across 19 states, "
         "pre-enriched with eligibility and distress data — no API calls needed."
     )
 

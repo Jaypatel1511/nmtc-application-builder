@@ -1,0 +1,117 @@
+# THE SCORING-ATTRIBUTION REGISTRY — one row per winner-pattern constant.
+#
+# WHAT THIS FILE IS FOR
+#
+# tests/test_scoring_attribution.py sweeps the winner-pattern corpus --- every
+# module-level dict in nmtcapp/data/historical_awards.py, plus SECTION B of
+# nmtcapp/data/benchmark_thresholds.py --- and requires a row here for every
+# top-level key. A key with no row FAILS. That is the whole mechanism: it makes
+# SILENCE impossible, and silence is how nine of these survived nine rounds.
+#
+# WHY THE EXISTING GATES DID NOT COVER THIS CORPUS
+#
+#   test_pinned_constants  sweeps nmtcapp/data/{schema,benchmark_thresholds}.py
+#                          ONLY. historical_awards.py has never been in
+#                          DATA_MODULES, so its four winner dicts were in no
+#                          sweep at all --- not pinned, not waived, not seen.
+#   the same file's waivers  rule Section B's three dicts "reaches no rendered
+#                          surface". That is a RENDERING answer to an
+#                          ATTRIBUTION question. Whether a number is printed
+#                          and whether anyone knows where it came from are
+#                          different facts, and 1.4.0 shipped with the second
+#                          one unasked because the first had been answered.
+#   test_fund_attribution_source  keys on an AUTHORITY TOKEN. `"std_states":
+#                          3.8` names nobody, so it is invisible there.
+#
+# ROW FORMAT
+#
+#   KIND | source | CONSTANT.key
+#
+#   CITED    a retrievable document, with enough detail to re-retrieve it.
+#   HOUSE    this package's own construct. NOT a licence to keep a number: it
+#            is a declaration that no source exists, and every HOUSE row is a
+#            standing candidate for deletion. The rendered surface must say so
+#            on its face --- see benchmarks._METHODOLOGY.
+#
+# THE STANDING RULING (1.4.1 S3): SOURCE IT OR DELETE IT. A constant that
+# cannot be attributed to a retrievable document does not get to stay behind a
+# disclaimer forever. Six keys with no consumer at all were DELETED this round
+# rather than given a row --- std_pct_deep_or_severe, mean_pct_hmr, std_states,
+# urban_pct_mean, p50_cost_per_job and min_native_area_pct. What remains has a
+# consumer, so removing it changes behaviour a CDE sees; that deletion is the
+# next release, behind a written methodology, and these rows are what make the
+# list of candidates explicit instead of buried.
+#
+# A CITED ROW IS RECORDED, NOT VERIFIED, exactly as the attribution allowlist
+# concedes for its own entries. What this gate enforces is that a number cannot
+# enter a score without SOMEBODY having had to write down where it came from.
+
+CITED | CITED: CDFI Fund NMTC award announcement for that round, cdfifund.gov/programs-training/programs/new-markets-tax-credit | NMTC_AWARD_ROUNDS.CY2020
+CITED | CITED: CDFI Fund NMTC award announcement for that round, cdfifund.gov/programs-training/programs/new-markets-tax-credit | NMTC_AWARD_ROUNDS.CY2021
+CITED | CITED: CDFI Fund NMTC award announcement for that round, cdfifund.gov/programs-training/programs/new-markets-tax-credit | NMTC_AWARD_ROUNDS.CY2022
+CITED | CITED: CDFI Fund NMTC award announcement for that round, cdfifund.gov/programs-training/programs/new-markets-tax-credit | NMTC_AWARD_ROUNDS.CY2023
+HOUSE | HOUSE: this dict's own comment says 'Award data pending --- using estimated projections based on prior rounds'. applications, awards and acceptance_rate are marked '# estimated' in the source. An estimate is not an award announcement. | NMTC_AWARD_ROUNDS.CY2024
+HOUSE | HOUSE: the dict's own header says 'Inferred from CDFI Fund award announcements'. NO CONSUMER outside its own query function get_award_size_percentiles(), which nothing in this package and nothing in docs/ calls --- deletion candidate. | AWARD_SIZE_TIERS.under_25MM
+HOUSE | HOUSE: the dict's own header says 'Inferred from CDFI Fund award announcements'. NO CONSUMER outside its own query function get_award_size_percentiles(), which nothing in this package and nothing in docs/ calls --- deletion candidate. | AWARD_SIZE_TIERS.25_to_35MM
+HOUSE | HOUSE: the dict's own header says 'Inferred from CDFI Fund award announcements'. NO CONSUMER outside its own query function get_award_size_percentiles(), which nothing in this package and nothing in docs/ calls --- deletion candidate. | AWARD_SIZE_TIERS.35_to_50MM
+HOUSE | HOUSE: the dict's own header says 'Inferred from CDFI Fund award announcements'. NO CONSUMER outside its own query function get_award_size_percentiles(), which nothing in this package and nothing in docs/ calls --- deletion candidate. | AWARD_SIZE_TIERS.50_to_65MM
+HOUSE | HOUSE: the dict's own header says 'Inferred from CDFI Fund award announcements'. NO CONSUMER outside its own query function get_award_size_percentiles(), which nothing in this package and nothing in docs/ calls --- deletion candidate. | AWARD_SIZE_TIERS.over_65MM
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_DISTRESS_PATTERNS.mean_pct_deep_or_severe
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_DISTRESS_PATTERNS.p25_pct_deep_or_severe
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_DISTRESS_PATTERNS.p50_pct_deep_or_severe
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_DISTRESS_PATTERNS.p75_pct_deep_or_severe
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_DISTRESS_PATTERNS.p90_pct_deep_or_severe
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_DISTRESS_PATTERNS.min_pct_deep_or_severe
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_DISTRESS_PATTERNS.mean_pct_native_area
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_DISTRESS_PATTERNS.mean_pct_eligible
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_GEOGRAPHIC_PATTERNS.mean_states
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_GEOGRAPHIC_PATTERNS.p25_states
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_GEOGRAPHIC_PATTERNS.p50_states
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_GEOGRAPHIC_PATTERNS.p75_states
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_GEOGRAPHIC_PATTERNS.min_states
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_GEOGRAPHIC_PATTERNS.mean_projects
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_GEOGRAPHIC_PATTERNS.p50_projects
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_GEOGRAPHIC_PATTERNS.mean_hhi
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_GEOGRAPHIC_PATTERNS.rural_pct_mean
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_SECTOR_PATTERNS.healthcare
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_SECTOR_PATTERNS.affordable_housing
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_SECTOR_PATTERNS.small_business
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_SECTOR_PATTERNS.education
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_SECTOR_PATTERNS.community_facility
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_SECTOR_PATTERNS.mixed_use
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_SECTOR_PATTERNS.clean_energy
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_SECTOR_PATTERNS.other
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_SECTOR_PATTERNS.mean_sectors_represented
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_SECTOR_PATTERNS.max_single_sector_pct
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_IMPACT_BENCHMARKS.mean_jobs_per_mm_qei
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_IMPACT_BENCHMARKS.p25_jobs_per_mm_qei
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_IMPACT_BENCHMARKS.p50_jobs_per_mm_qei
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_IMPACT_BENCHMARKS.p75_jobs_per_mm_qei
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_IMPACT_BENCHMARKS.top_decile_jobs_per_mm_qei
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_IMPACT_BENCHMARKS.mean_units_per_mm_qei
+HOUSE | HOUSE: unsourced. historical_awards.py's own header states that the 'Source: CDFI Fund Annual Reports' comment over this dict cites a publication that DOES NOT EXIST (the real series is the NMTC Public Data Release Summary Report, cumulative FY2003-FY2023) and that 'Every value under them is unsourced'. | WINNER_IMPACT_BENCHMARKS.mean_cost_per_job
+CITED | CITED: CDFI Fund NMTC award announcement for that round, cdfifund.gov/programs-training/programs/new-markets-tax-credit --- derived from the same announcements. | APPLICATION_VOLUME_TRENDS.years
+CITED | CITED: CDFI Fund NMTC award announcement for that round, cdfifund.gov/programs-training/programs/new-markets-tax-credit --- restates NMTC_AWARD_ROUNDS; CY2024 column is the estimate ruled above. | APPLICATION_VOLUME_TRENDS.applications
+CITED | CITED: CDFI Fund NMTC award announcement for that round, cdfifund.gov/programs-training/programs/new-markets-tax-credit --- restates NMTC_AWARD_ROUNDS; CY2024 column is the estimate ruled above. | APPLICATION_VOLUME_TRENDS.awards
+CITED | CITED: CDFI Fund NMTC award announcement for that round, cdfifund.gov/programs-training/programs/new-markets-tax-credit --- derived from the same announcements. | APPLICATION_VOLUME_TRENDS.acceptance_rates
+HOUSE | HOUSE: prose, and it FORECASTS --- 'Expect 30-35% acceptance in near-term rounds'. The CDFI Fund forecasts no acceptance rate. Deletion candidate. | APPLICATION_VOLUME_TRENDS.trend_note
+HOUSE | HOUSE: benchmark_thresholds.py's SECTION B header says these are 'inferred from award announcements, not published by the CDFI Fund'. Round numbers chosen by this package. Disclosed on its face by benchmarks._METHODOLOGY. | WINNER_PATTERN_THRESHOLDS.min_deep_distress_pct
+HOUSE | HOUSE: benchmark_thresholds.py's SECTION B header says these are 'inferred from award announcements, not published by the CDFI Fund'. Round numbers chosen by this package. Disclosed on its face by benchmarks._METHODOLOGY. | WINNER_PATTERN_THRESHOLDS.min_geographic_states
+HOUSE | HOUSE: benchmark_thresholds.py's SECTION B header says these are 'inferred from award announcements, not published by the CDFI Fund'. Round numbers chosen by this package. Disclosed on its face by benchmarks._METHODOLOGY. | WINNER_PATTERN_THRESHOLDS.min_projects
+HOUSE | HOUSE: benchmark_thresholds.py's SECTION B header says these are 'inferred from award announcements, not published by the CDFI Fund'. Round numbers chosen by this package. Disclosed on its face by benchmarks._METHODOLOGY. | WINNER_PATTERN_THRESHOLDS.max_geographic_hhi
+HOUSE | HOUSE: benchmark_thresholds.py's SECTION B header says these are 'inferred from award announcements, not published by the CDFI Fund'. Round numbers chosen by this package. Disclosed on its face by benchmarks._METHODOLOGY. | WINNER_PATTERN_THRESHOLDS.min_jobs_per_mm_qei
+HOUSE | HOUSE: benchmark_thresholds.py's SECTION B header says these are 'inferred from award announcements, not published by the CDFI Fund'. Round numbers chosen by this package. Disclosed on its face by benchmarks._METHODOLOGY. | WINNER_PATTERN_THRESHOLDS.max_single_sector_pct
+HOUSE | HOUSE: benchmark_thresholds.py's SECTION B header says these are 'inferred from award announcements, not published by the CDFI Fund'. Round numbers chosen by this package. Disclosed on its face by benchmarks._METHODOLOGY. | WINNER_PATTERN_THRESHOLDS.min_sectors_represented
+HOUSE | HOUSE: benchmark_thresholds.py's SECTION B header says these are 'inferred from award announcements, not published by the CDFI Fund'. Round numbers chosen by this package. Disclosed on its face by benchmarks._METHODOLOGY. | WINNER_PATTERN_THRESHOLDS.min_eligible_pct
+HOUSE | HOUSE: the points a band is worth. Carried NO comment of any kind before 1.4.1 --- one of the three Section B dicts the historical_awards header's four-dict list never covered. | BENCHMARK_SCORE_POINTS.strong
+HOUSE | HOUSE: the points a band is worth. Carried NO comment of any kind before 1.4.1 --- one of the three Section B dicts the historical_awards header's four-dict list never covered. | BENCHMARK_SCORE_POINTS.competitive
+HOUSE | HOUSE: the points a band is worth. Carried NO comment of any kind before 1.4.1 --- one of the three Section B dicts the historical_awards header's four-dict list never covered. | BENCHMARK_SCORE_POINTS.weak
+HOUSE | HOUSE: the points a band is worth. Carried NO comment of any kind before 1.4.1 --- one of the three Section B dicts the historical_awards header's four-dict list never covered. | BENCHMARK_SCORE_POINTS.below_weak
+HOUSE | HOUSE: this package's own weighting of its own bands. Carried no provenance comment before 1.4.1. | BENCHMARK_METRIC_WEIGHTS.min_deep_distress_pct
+HOUSE | HOUSE: this package's own weighting of its own bands. Carried no provenance comment before 1.4.1. | BENCHMARK_METRIC_WEIGHTS.min_jobs_per_mm_qei
+HOUSE | HOUSE: this package's own weighting of its own bands. Carried no provenance comment before 1.4.1. | BENCHMARK_METRIC_WEIGHTS.min_geographic_states
+HOUSE | HOUSE: this package's own weighting of its own bands. Carried no provenance comment before 1.4.1. | BENCHMARK_METRIC_WEIGHTS.max_geographic_hhi
+HOUSE | HOUSE: this package's own weighting of its own bands. Carried no provenance comment before 1.4.1. | BENCHMARK_METRIC_WEIGHTS.max_single_sector_pct
+HOUSE | HOUSE: this package's own weighting of its own bands. Carried no provenance comment before 1.4.1. | BENCHMARK_METRIC_WEIGHTS.min_sectors_represented
+HOUSE | HOUSE: this package's own weighting of its own bands. Carried no provenance comment before 1.4.1. | BENCHMARK_METRIC_WEIGHTS.min_projects
+HOUSE | HOUSE: this package's own weighting of its own bands. Carried no provenance comment before 1.4.1. | BENCHMARK_METRIC_WEIGHTS.min_eligible_pct

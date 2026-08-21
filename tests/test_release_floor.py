@@ -154,7 +154,37 @@ MARKER_EXPR = "not wheel"
 #: If the skip count ever approaches this, the right response is to ask why the
 #: sdist stopped being able to answer its own suite's questions -- not to raise
 #: the ceiling.
-MAX_SDIST_SKIPS = 28
+#: RE-DERIVED TO 40 IN 1.5.0, AND 28 HAD BEEN OVERTAKEN BY ITS OWN
+#: MEASUREMENT. The sdist now skips THIRTY-SIX -- a ceiling below the thing it
+#: bounds is not a ceiling, which is the sentence the 1.3.1 note wrote about
+#: 24 and which came true here.
+#:
+#: The arithmetic, restated for this tree. With 1,230 collected the lower bound
+#: is
+#:
+#:     ((1230 - MAX_SDIST_SKIPS) // 2) // 10 * 10
+#:
+#: which returns 590 for every ceiling up to 50 and drops to 580 at 51. The
+#: measurement is 37, so the live range is [37, 50] and 40 sits THREE skips
+#: above its own measurement and ELEVEN below the slack point.
+#:
+#: WHY THE COUNT JUMPED 25 -> 37. Eleven are the same environment class
+#: already enumerated: 1.5.0 adds seven test modules, several of which sweep
+#: nmtcapp/ or docs/, and neither tree sits beside tests/ in the job's
+#: directory. THE TWELFTH IS A NEW KIND and is worth naming rather than absorbing:
+#: tests/test_round_provenance.py's live cdfifund.gov check is marked
+#: `network` and skips in EVERY environment, checkout included, by the hook in
+#: tests/conftest.py. It is the first skip in this package that is not about
+#: the environment at all -- it is opt-in by design, so CI never depends on a
+#: federal website being up.
+#:
+#: 1.5.0 ALSO GAVE THIS CEILING A MEASUREMENT IT CAN FAIL AGAINST, which it
+#: never had: tests/test_small_claims.py::test_max_sdist_skips_is_measured_against_something
+#: bounds it by the number of test modules structurally capable of skipping in
+#: an sdist. Until then nothing in the suite compared this number to anything,
+#: and its own comment ("if the skip count ever approaches this...") described
+#: a watch nobody was keeping.
+MAX_SDIST_SKIPS = 40
 
 _FLOOR_RE = re.compile(r"^\s*FLOOR=(\d+)\s*$", re.MULTILINE)
 _COLLECTED_RE = re.compile(r"(\d+)(?:/\d+)? tests? collected")

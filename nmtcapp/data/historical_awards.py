@@ -125,15 +125,13 @@ AWARD_SIZE_TIERS: dict = {
 WINNER_DISTRESS_PATTERNS: dict = {
     # Mean % of QEI in deep + severely distressed tracts across winners (2020-2023)
     "mean_pct_deep_or_severe": 0.81,
-    "std_pct_deep_or_severe":  0.11,
     "p25_pct_deep_or_severe":  0.72,
     "p50_pct_deep_or_severe":  0.82,
     "p75_pct_deep_or_severe":  0.91,
     "p90_pct_deep_or_severe":  0.95,
     "min_pct_deep_or_severe":  0.50,   # floor — below this rarely awarded
-    # Native area and HMR bonuses
+    # Native area bonus
     "mean_pct_native_area":    0.08,
-    "mean_pct_hmr":            0.04,
     # Projects in eligible (LIC) tracts
     "mean_pct_eligible":       0.96,
 }
@@ -146,7 +144,6 @@ WINNER_DISTRESS_PATTERNS: dict = {
 
 WINNER_GEOGRAPHIC_PATTERNS: dict = {
     "mean_states":        7.2,
-    "std_states":         3.8,
     "p25_states":         4.0,
     "p50_states":         7.0,
     "p75_states":         10.0,
@@ -155,7 +152,6 @@ WINNER_GEOGRAPHIC_PATTERNS: dict = {
     "p50_projects":       13.0,
     "mean_hhi":           620,  # Herfindahl-Hirschman Index — lower = more diverse
     "rural_pct_mean":     0.18, # % of QEI in rural communities
-    "urban_pct_mean":     0.82,
 }
 
 # ---------------------------------------------------------------------------
@@ -194,7 +190,6 @@ WINNER_IMPACT_BENCHMARKS: dict = {
     "mean_units_per_mm_qei":    2.1,
     # Cost per job (total project cost basis)
     "mean_cost_per_job":       145_000,
-    "p50_cost_per_job":        110_000,
 }
 
 # ---------------------------------------------------------------------------

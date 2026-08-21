@@ -151,14 +151,41 @@ def on_post_build(config, **kwargs):  # noqa: D103 - mkdocs hook signature
 
 
 def _html(markdown_body: str) -> str:
-    """Minimal standalone page — the hook runs after the theme has rendered."""
-    import html
+    """Minimal standalone page — the hook runs after the theme has rendered.
+
+    IT USED TO PUBLISH THE MARKDOWN SOURCE (1.4.1 S6). The body was
+    ``html.escape``d and wrapped in ``<pre>``, so the published page showed
+    every character of the Markdown as literal preformatted text: a leading
+    ``# Sample Output``, the download list as ``- [`x.docx`](x.docx)`` with no
+    links, and — the half that matters — the FICTIONAL-DATA WARNING as a raw
+    ``!!! warning "..."`` line rather than as a warning.
+
+    That warning is the page's most important content. It tells a reader that
+    Riverbend Community Capital CDE does not exist and that these documents
+    must not be filed. Rendered as an escaped admonition marker inside a code
+    block, it read as markup noise above a list of downloadable federal
+    application documents.
+
+    The body is real Markdown, so it is converted rather than escaped.
+    ``markdown`` is a hard dependency of mkdocs itself, and this module only
+    ever runs inside a docs build, so it is always importable here.
+    """
+    import markdown as _markdown
+
+    rendered = _markdown.markdown(
+        markdown_body, extensions=["admonition", "fenced_code", "tables"]
+    )
     return (
         "<!doctype html><html><head><meta charset='utf-8'>"
+        "<meta name='viewport' content='width=device-width,initial-scale=1'>"
         "<title>Sample Output — NMTC Application Builder</title>"
         "<style>body{font:16px/1.6 system-ui,sans-serif;max-width:44rem;"
         "margin:3rem auto;padding:0 1rem}code{background:#eee;padding:.1em .3em}"
-        "</style></head><body><pre style='white-space:pre-wrap'>"
-        + html.escape(markdown_body)
-        + "</pre></body></html>"
+        ".admonition{border-left:4px solid #b26500;background:#fff6e6;"
+        "padding:.75rem 1rem;margin:1.5rem 0;border-radius:0 4px 4px 0}"
+        ".admonition.failure{border-left-color:#c00;background:#fdecec}"
+        ".admonition-title{font-weight:700;margin:0 0 .5rem}"
+        "</style></head><body>"
+        + rendered
+        + "</body></html>"
     )

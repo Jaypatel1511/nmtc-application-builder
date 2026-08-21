@@ -5,6 +5,297 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.0] — 2026-08-20
+
+**MINOR, NOT PATCH — and the version is the first ruling of the round.** It was
+planned as 1.4.1. It is not a patch: S3 deletes `MetricBenchmark.percentile_vs_winners`
+from a public dataclass and from its `to_dict()`, and deletes six public keys
+from `nmtcapp.data.historical_awards`. That is removed public API, and it would
+be breaking even if S2 changed nothing. S2 also turns a silent wrong answer into
+a raised exception — though only for installs that already VIOLATE the declared
+`nmtc-mapper>=0.5.0` floor, so a conforming install sees no behavioural change
+at all. **The per-QLICI evidence capability therefore renumbers to 1.6.0.**
+
+**This is a class-closing release, not a bug-fix release.** Every round in this
+engagement has closed a site and left the class: 1.4.0 deleted one unsourced
+winner benchmark and left eight, two of them three lines above the deletion in
+the same block. For each item below the deliverable is the fix PLUS the thing
+that makes the class unable to recur silently. Six new test modules, 39 tests net; five gates are
+proved red before green in the round's report.
+
+**The thesis held, and a tenth instance proved it.** The docs-key gate (S5) was
+written for a class this project had been bitten by once. It went red on the
+UNTOUCHED tree — `distress_analysis["vs_historical_winners"]`, documented at
+`docs/workflow/pipeline-analysis.md:217`, deleted from the code in **1.2.0**,
+and documented for four releases while a test in the same suite asserted the key
+must never return. It also found a site nobody had looked at: `examples/01_quickstart.ipynb`
+executes that key AND `distress['pct_severe']`, so the first notebook a new user
+runs raises `KeyError` twice.
+
+### S1 — round provenance: the app cited a closed round as though it were live
+
+`renderers/_round_provenance.py` is new and is the single authority for which
+round this package encodes. The disclosure renders on markdown, Word and PDF via
+`_methodology.noaa_note()`, which now reads it instead of restating a fragment.
+
+**The facts were retrieved first-hand.** `cdfifund.gov` was reachable from the
+implementing session (HTTP 200, no proxy 403), so none of this is relayed:
+
+- `cdfifund.gov/news/738`, 12 Aug 2026 — *"The upcoming calendar year (CY) 2026
+  round of the New Markets Tax Credit Program (NMTC Program) will make $5 billion
+  in Allocation Authority available"*.
+- *"The CDFI Fund will publish the CY 2026 round Application Materials
+  (Allocation Application, NOAA, Application Frequently Asked Questions, etc.)
+  on the CDFI Fund's website when the CY 2026 round opens."*
+- The certification cutoff has **two routes**, and the prior brief recorded only
+  the second: a potential Applicant must *either* "be certified as a Community
+  Development Entity (CDE) as of the Federal Register publication date of the
+  Notice of Allocation Availability (NOAA)" *or* "have submitted its CDE
+  Certification Application through the CDFI Fund's Awards Management
+  Information System (AMIS) by 11:59 p.m. Eastern Time on August 31, 2026, if
+  the organization is not currently certified." An already-certified CDE does not
+  face the August 31 deadline for this purpose. The rendered disclosure states
+  both routes.
+- The NMTC program page still shows **Opening Date November 19, 2024 / Deadline
+  January 29, 2025 / Announcement Date December 23, 2025** — the CY 2024-2025
+  timeline — and carries no CY 2026 NOAA, application link or deadline.
+
+**BOTH DIRECTIONS OF ERROR ARE NAMED, and the second is the easier to cause.**
+Overstating currency is the defect that shipped. Overstating uncertainty would be
+worse: the CY 2024-2025 Application is a real federal instrument, re-downloaded
+and re-hashed this round (1,525,626 bytes, SHA-256 unchanged), and it is the right
+basis to prepare against. A disclosure that drives a CDE to prepare against
+nothing converts a provenance error into an unprepared applicant. The text is a
+**re-check list**, not a warning label, and
+`test_the_disclosure_states_both_directions` asserts the reassuring half is
+present — that half is the one a caution-shaped rewrite drops first.
+
+**NOT CLAIMED: that Question 25's structure is round-invariant.** The CY 2022
+evidence is partial — same question number, same Yes/No shape, and the criteria
+list, the 85%-of-QLICIs value and the 0/5/10/15/20 ladder were **not** confirmed.
+Nothing rendered says or implies otherwise.
+
+**THE GATE, and the honest limit on it.** `_question_25.py:52` pinned the
+Application's SHA-256. That pin is correct and green and always will be: it asks
+*"is this the document we read?"*, never *"is this the round the CDE files?"*.
+The nineteenth recorded gate-that-cannot-fail in this project, and the first
+caught before it fired.
+
+The candidate fix — a round label and a published-status assertion pinned beside
+the hash — is half right. It makes the staleness a fact in the code, which is a
+real improvement. As a gate it is worthless alone: `UPCOMING_MATERIALS_PUBLISHED
+= False` is a sentence somebody typed, and nothing flips it.
+
+**Can a test distinguish "CY 2026 has not published" from "nobody has looked
+since August"? Offline, no — categorically.** Publication is a fact about the
+world; an offline test can only re-report what someone wrote down. So the gate
+that runs everywhere fails on the *second* condition instead:
+`test_the_round_claim_has_not_expired` goes red once `RECHECK_AFTER` passes. It
+detects stale LOOKING, which is what actually produced this defect. It degrades
+to ritual if bumped by rote, and says so; `test_the_horizon_is_not_pushed_out_of_reach`
+caps the horizon at 180 days so the cheapest escape is not "+5 years".
+`test_live_cdfi_fund_check` is the half that CAN answer the real question — and
+it is opt-in (`-m network`), so it is a **tool, not a gate**, because a suite
+whose greenness depends on a federal website is one people learn to ignore.
+
+**The hash is now typed once.** It was in two module docstrings, split across
+two source lines each; nobody proofreads 64 hex characters.
+`test_the_application_hash_is_pinned_in_exactly_one_place` enforces it.
+
+### S2 — the mapper floor is necessary and not sufficient
+
+`nmtcapp/integrations/_mapper_capabilities.py` asserts the dependency contract at
+the **point of consumption**, not only in CI. `pip install nmtc-mapper==0.4.3`
+warns and proceeds; a type annotation is not an enforcement mechanism.
+
+**It raises rather than degrading, and both degrade paths were argued and
+rejected.** Degrading the field to `None` produces a "not determined"
+indistinguishable from a real one — the exact conflation 1.4.0 shipped to fix.
+Degrading via `_mark_unavailable` reuses a signal that means "the CDFI Fund
+dataset never loaded", a fact about DATA, for a fact about the ENVIRONMENT.
+Raising is right because the condition is deterministic, detectable before the
+first lookup, and has one remedy the exception can name.
+
+**The cost of raising is stated, not skipped:** a CDE with a pinned old
+environment can no longer run the tool. That trade holds because of which
+direction the error runs — a pipeline reported 100% metropolitan understates the
+CDE's own Non-Metropolitan position to a federal agency. A tool that refuses to
+start is recoverable in one command; a filing that understates is not.
+
+**The mechanism is general, not per-field.** One declaration
+(`REQUIRED_TRI_STATE`), one assertion point, and a gate that DERIVES the fields
+needing declaration by walking the adapter for every `_prefer_determinate` call
+site — so a new tri-state-dependent field is red until declared. Two structural
+guards: `MapperCapabilityError` is not an `NMTCMapperError` (so the adapter's
+own handler cannot swallow it back into degraded mode), and the call is asserted
+to sit OUTSIDE that `try` block.
+
+### S3 — the benchmarks, all of them
+
+**The enumeration was done from the tree, and the brief's counts were an
+undercount by an order of magnitude.** Confirmed: 8 surviving metrics, 6 inline
+`winner_std` literals. Missed by the brief: **eight `note=` strings** asserting
+winner statistics (one of them, `"Winners average 96% eligibility"`, a hand-typed
+prose duplicate of a constant); the `winner_mean * 0.7` / `* 0.4` **fallback band
+derivation**, unreachable today but armed for the next metric added; and the true
+size of the corpus — **69 top-level scoring constants**, of which **61 are
+unsourced**.
+
+**DELETED — the percentile.** `percentile_vs_winners` asserted a position in a
+distribution, computed by pushing an invented mean and an invented standard
+deviation through a normal CDF, for a population whose distribution this
+package's own header says is unpublished. Location, spread and distributional
+family all fabricated. It was the most authoritative-looking number the module
+produced. Gone, with `_normal_cdf`, the `Pctile` column, the `winner_std`
+parameter and all six literals. `TestNormalCdf`'s four tests are deleted too —
+**they passed**, because the arithmetic was correct and the claim was
+manufactured, which is the worst combination.
+
+**DELETED — six orphaned constants** with no consumer in code:
+`std_pct_deep_or_severe`, `mean_pct_hmr`, `std_states`, `urban_pct_mean`,
+`p50_cost_per_job`, `min_native_area_pct`.
+
+**A test that asserted the defect is inverted.** `test_urban_rural_pct_sum_to_one`
+passed because `rural_pct_mean` 0.18 and `urban_pct_mean` 0.82 summed to exactly
+1.000 — which is the problem, not the reassurance. Two measured means over a
+population do not land on 1.000; one was arithmetic. A green test was guarding
+the exactness of a fabrication, and anyone substituting a real figure would have
+gone red and been told to put the invented number back.
+
+**Corrected — the methodology disclosure**, which credited "patterns observed in
+CDFI Fund NMTC award announcements" for values the package knows are unsourced.
+
+**THE CLASS GATE:** `tests/test_scoring_attribution.py` +
+`tests/scoring_attribution.txt`. Every top-level key of the winner-pattern corpus
+must carry a `CITED` or `HOUSE` row; a key with no row fails, a row for a deleted
+key fails, and the HOUSE count is pinned at **61 of 69** as an equality so the
+number cannot drift. No existing gate reached this corpus: `test_pinned_constants`
+sweeps only `schema` and `benchmark_thresholds` (so `historical_awards`'s 33
+constants were in no sweep at all), its waivers answer a *rendering* question
+where an *attribution* question was needed, and `test_fund_attribution_source`
+keys on an authority token that `"std_states": 3.8` does not contain.
+
+### S4 — the false docs claim that was load-bearing
+
+`docs/workflow/output-formats.md` claimed five charts are auto-embedded into the
+Word application. **Zero are** — verified by execution with `matplotlib`
+installed, so its absence could not be the reason: all four formats generate
+cleanly and the `.docx` holds no chart image. (Its one media part is
+`docProps/thumbnail.jpeg`, a python-docx template artifact — the brief's "zero
+media parts" was imprecise; zero *chart* parts is the checkable claim.)
+
+**The docs are corrected to match the code, never the reverse, and the reason is
+written at BOTH sites** — `docs/workflow/output-formats.md` and
+`nmtcapp/visualization/maps.plot_winner_alignment` — so the next reader does not
+find a one-line mismatch and helpfully fix the wrong side of it. The false claim
+was the only thing keeping three unsourced comparisons out of a filed federal
+application.
+
+**CONSTRAINT RULING AFTER S3: it still binds.** The sweep deleted the percentile
+and six constants and forced a ruling for all 69 survivors, but the nine values
+`plot_winner_alignment` draws are all still `HOUSE`. Auto-embedding becomes a
+legitimate feature when the constants a chart draws are sourced or gone — stated
+explicitly rather than left as a prohibition whose reason has expired.
+
+`tests/test_no_embedded_charts.py` holds both halves: the behaviour (no chart
+image in the generated `.docx`) and the claim (docs may not say otherwise). A
+behaviour-only gate would stay green while the page went back to promising
+something the code does not do, which is the state 1.4.0 shipped in.
+
+### S5 — the docs-key gate
+
+**The highest-value item in the round, and it earned that on its first run.**
+`tests/test_documented_keys.py` asserts every `x["key"]` in `docs/` and
+`examples/` exists in the dict the documentation names. Both sides derived: the
+left by AST with alias resolution plus a text detector for prose and
+unparseable fences, the right by introspecting live objects.
+
+**Scope widened from the brief deliberately.** The brief named one markdown
+file. Scoping there would have been site-fixing: the same class lives in
+`examples/*.ipynb` in a worse form, because a stale key in a notebook is
+executable code that raises. Both halves were live.
+
+Three sites fixed: the docs line (with a note recording why the key must not
+come back), and two notebook cells. `pct_severe` was renamed to
+`pct_severe_excluding_deep` in 1.2.1 — the label was changed with it, since the
+replacement means something different and "Severe" over a deep-inclusive figure
+would have been a new error.
+
+Boundaries are pinned rather than implied: a documented root this gate cannot
+resolve FAILS unless listed with a reason, so a renamed attribute cannot take
+its keys out of scope silently.
+
+### S6 — the small list, and one decision
+
+- **States count.** Both sites said 12; `Pipeline.sample(n=20)` spans **19**.
+  Re-derived from the object the sentence describes — it is
+  `core/pipeline._SAMPLE_PROJECTS`, not a CSV. Gated by deriving both claims.
+  The count is n-dependent (`sample(n=5)` spans 5), so the gate says so.
+- **`test_version.py`'s tautology.** `__version__` IS
+  `importlib.metadata.version(...)` — `nmtcapp/__init__.py:42`. The test compared
+  a value to itself, in the file whose subject is version integrity, and
+  `test_pinned_constants`'s rule 1 names this exact test as the example. Now
+  compared against `pyproject.toml`, an independently edited source.
+- **`MAX_SDIST_SKIPS`** was never measured against anything. Now bounded by the
+  count of test modules structurally capable of skipping in an sdist — a genuine
+  lower bound derived from the tree.
+- **`application.py`'s `"$%,.0f"`.** printf has no `,` flag. It raised
+  `ValueError` inside logging on every `Application` construction at INFO;
+  logging swallows its own formatting errors, so the message never appeared and
+  a traceback went to stderr instead. Closed by checking **every** `%`-style
+  logging call in the package.
+- **The Sample Output box rendering as `<pre>`.** `_html()` escaped the Markdown
+  body into a `<pre>`, so the published page showed its own source: an unlinked
+  download list, and — the half that matters — the fictional-data warning as a
+  literal `!!! warning` marker above four downloadable federal application
+  documents. Now rendered.
+
+**DECISION — the Streamlit pin: it stays an equality.**
+
+The pin looks like the bug and is not. Streamlit Cloud deploys the app's SOURCE
+from the branch and its LIBRARY from PyPI, so between merge and publish the two
+*cannot* agree and every pin is a choice of which failure to take:
+
+| pin | behaviour in the window |
+|---|---|
+| `==<this version>` | unresolvable → **total, loud outage** |
+| `>=<this version>` | **also unresolvable** — a floor at an unpublished version has no satisfying release. Not a fix; the same failure spelled differently |
+| `>=<last published>` | resolves to a library OLDER than the source beside it → **silent, per-page ImportError** — the exact defect gate 2 was built for |
+
+**Ruling: prefer the loud total failure.** A CDE served a half-working page
+cannot tell which half worked, and these numbers inform a federal filing. It is
+also the only option under which the deployed library is provably the audited
+artifact matching the deployed source. **Its failure mode, accepted
+deliberately:** the app is down from merge until the PyPI upload lands, and needs
+a manual reboot after.
+
+**The actual hazard is the ORDERING, and it is written into the procedure.**
+`scripts/release.sh` step 2 is "Merge to main" and step 3 is tag-and-publish.
+Streamlit Cloud deploys from `main`, so the documented sequence *causes* the
+outage; PR #12 was not a mistake anyone made. What removes the window is
+deploying from a branch advanced AFTER the publish. That is a Streamlit Cloud
+app-settings change — Jay's to make — and it is now recorded in
+`scripts/release.sh` and `streamlit_app/requirements.txt` rather than
+rediscovered.
+
+### Recorded, not fixed
+
+- **The workbook carries no methodology-notes block at all.** `noaa_note()`,
+  `distress_definitions()`, `deal_economics_note()` and `impact_bands_note()`
+  reach markdown, Word and PDF; Excel gets none of them. So S1's disclosure
+  reaches three surfaces of four — not the familiar "corrected on three, missed
+  the fourth", but a pre-existing structural gap: the workbook has never had the
+  block. Adding one is a document change and belongs in its own round.
+- **`AWARD_SIZE_TIERS` has no consumer** outside its own query function
+  `get_award_size_percentiles()`, which nothing in the package and nothing in
+  `docs/` calls. Five unsourced constants that score nothing. Deleting it is an
+  API removal; it carries HOUSE rows naming it a deletion candidate.
+- **`APPLICATION_VOLUME_TRENDS["trend_note"]` forecasts** — "Expect 30-35%
+  acceptance in near-term rounds". The CDFI Fund forecasts no acceptance rate.
+  Deletion candidate, ruled HOUSE.
+
+---
+
 ## [1.4.0] — 2026-08-20
 
 **MINOR. The non-metropolitan share stops being a guess, stops being a
@@ -219,8 +510,15 @@ negative this file's header ranks as the worst class of error in the package. So
 `Q25_AREA_TYPES_MODELLED` goes 5 → 6 and Non-Metropolitan Counties joins the
 provenance enumeration as TOOL-VERIFIED AND TRI-STATE.
 
-> **54 insertions, 44 deletions** in `tests/rendered_baseline/`, measured
+> **82 insertions, 49 deletions** in `tests/rendered_baseline/`, measured
 > `56573c0`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+>
+> **Remeasured in 1.5.0.** Read 54/44 when 1.4.0 shipped and that was correct
+> then. The gate re-derives it against the CURRENT tree, so 1.5.0's
+> round-provenance disclosure (S1) moved it: the one-sentence NOAA caveat
+> became a paragraph on markdown, Word and PDF, and the PDF gained a page.
+> The classification table below covers 1.4.0's lines; 1.5.0's are classified
+> in its own entry.
 
 **Every changed line classified, zero unexplained:**
 
@@ -232,6 +530,10 @@ provenance enumeration as TOOL-VERIFIED AND TRI-STATE.
 | Page renumbering — the longer note pushes one page break, so `@@PAGE n` and `Page n` shift by one from page 21 onward | 58 | +30 / −28 | pdf |
 | The new page's furniture — one CONFIDENTIAL footer band and one blank line | 2 | +2 / −0 | pdf |
 | `Item`/`Value` extraction rows — none; no table gained or lost a row | 0 | +0 / −0 | — |
+| **1.5.0 S1** — the round-provenance disclosure replaces the one-sentence NOAA caveat. Markdown and Word render the whole notes block as ONE line per surface, so both changes land on one line each | 4 | +2 / −2 | markdown, word |
+| **1.5.0 S1** — the same disclosure re-wrapped across the PDF column, replacing three lines with twenty-three | 26 | +23 / −3 | pdf |
+| **1.5.0 S1** — the new page's furniture: the longer note pushes one more page break, adding a `@@PAGE` marker, a CONFIDENTIAL footer band and a page number | 3 | +3 / −0 | pdf |
+| **1.5.0** — Excel: none. The workbook carries no methodology-notes block at all, so `noaa_note()` never reached it — a pre-existing gap recorded in 1.5.0's entry, not a regression | 0 | +0 / −0 | excel |
 
 **No figure moved.** Not one number in any of the four documents changed: the
 diff is the basis note's prose, the count it interpolates, and the pagination
@@ -919,8 +1221,10 @@ and the value-only projection that hid B-3's number formats.
 > source for what the Applicant is asked to COMMIT TO, because the thing the
 > Applicant fills in is the Application.**
 
-**75 mentions across 71 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
-`README.md`. **13 cite the Review Process for a substantive claim** — a
+**76 mentions across 72 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
+`README.md`. *(75 across 71 when 1.3.0 shipped; 1.5.0 added one, in
+`renderers/_round_provenance`'s re-check list, which names the Review Process
+as a document to re-verify against rather than citing it for a claim.)* **13 cite the Review Process for a substantive claim** — a
 percentage, a commitment, or a list of areas. Of those 13:
 
 > **Corrected in 1.3.0 B1.** This paragraph shipped as *"72 mentions across 68
@@ -2008,8 +2312,9 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 208 constants are swept
-where 49 were.
+colour". The rendered-string sweep demands **19**, and 223 constants are swept
+where 49 were. *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
+round label, its status, the re-check list and the pinned-document facts.)*
 
 > **Remeasured in 1.3.0, and again in FIX-2, and again in 1.4.0.** This
 > sentence read **160** when 1.2.2 shipped, **183** at `ff49064` and **203**

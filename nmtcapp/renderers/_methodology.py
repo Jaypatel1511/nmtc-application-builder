@@ -90,11 +90,25 @@ def distress_definitions() -> str:
 
 
 def noaa_note() -> str:
-    """The round-availability caveat that travels with the distress note."""
-    return (
-        "NMTC rounds are announced by a NOAA — Notice of Allocation "
-        "Availability — and the CY 2026 NOAA is not yet published."
-    )
+    """The round-provenance disclosure that travels with the distress note.
+
+    IT USED TO BE ONE SENTENCE, AND THE SENTENCE WAS TRUE AND INSUFFICIENT
+    (1.4.1 S1). It said only that the CY 2026 NOAA was unpublished. A reader
+    learned nothing about the round this package's citations actually encode --
+    CY 2024-2025, which closed on 29 Jan 2025 and was awarded on 23 Dec 2025 --
+    so every Question 25, Question 22 and Question 15 citation still read as
+    though it governed.
+
+    The text is stated once in ``renderers/_round_provenance`` and read here,
+    rather than being a fourth hand-typed round caveat beside the three this
+    package already carried (this one, ``sections/base``'s placeholder, and the
+    tail of ``_question_25.q25_basis_note()``). Three copies of one fact is the
+    shape that produced the 1.2.0 defect where a sentence was deleted from one
+    file and stayed live in a second.
+    """
+    from nmtcapp.renderers._round_provenance import round_provenance_note
+
+    return round_provenance_note()
 
 
 def deal_economics_note() -> str:
