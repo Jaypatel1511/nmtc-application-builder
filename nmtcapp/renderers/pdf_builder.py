@@ -17,7 +17,7 @@ from nmtcapp.renderers._frame_geometry import (
 )
 from nmtcapp.renderers._methodology import (
     ACS_VINTAGE, deal_economics_note, distress_definitions, impact_bands_note,
-    noaa_note, readiness_weights_note,
+    noaa_note, readiness_weights_note, readiness_inline_qualifier,
 )
 from nmtcapp.renderers.styles import COLORS, TYPOGRAPHY, PAGE_LAYOUT, rl_hex
 from nmtcapp.sections import ALL_SECTIONS
@@ -505,9 +505,21 @@ class PDFApplicationBuilder:
             ["Application Round:", app.application_round],
             ["Requested NMTC Allocation:", f"${app.requested_allocation:,.0f}"],
             ["Preparation Date:", date.today().strftime("%B %d, %Y")],
-            ["Readiness Assessment:",
-             f"Grade {score.grade} — {score.overall_score:.1f}/100"
-             + (" (PARTIAL)" if getattr(score, "partial", False) else "")],
+            # A Paragraph, NOT a bare string. A plain string in a ReportLab
+            # Table does not wrap — it draws on one line and runs off the page
+            # edge, which is 1.3.0 FIX-2 B1's class: correct in the source and
+            # invisible to extract_text(), which carries no positions. The
+            # inline qualifier makes this the longest value in the table, so it
+            # is the cell that would have gone off the page.
+            [Paragraph("Readiness Assessment:", styles["body"]),
+             Paragraph(
+                 _rl_escape(
+                     f"Grade {score.grade} — {score.overall_score:.1f}/100"
+                     + (" (PARTIAL)" if getattr(score, "partial", False) else "")
+                     + f" ({readiness_inline_qualifier()})"
+                 ),
+                 styles["body"],
+             )],
         ]
         col_w = [usable_w * 0.45, usable_w * 0.55]
         det_tbl = Table(details, colWidths=col_w)
@@ -670,7 +682,21 @@ class PDFApplicationBuilder:
             ("RIGHTPADDING", (0, 0), (-1, -1), 8),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ]))
-        flowables += [score_tbl, Spacer(1, 8)]
+        # THE DISCLOSURE GOES WHERE THE CLAIM IS (1.5.1 T3). This grade is on
+        # page 1; readiness_weights_note() rendered ~24,700 characters later —
+        # 98% of the way through the document, the last thing before the end.
+        # Excel already did this right (48 characters under the score) and this
+        # matches it. The methodology copy stays where it is; this is an
+        # addition, not a move.
+        flowables += [
+            score_tbl,
+            Spacer(1, 4),
+            Paragraph(
+                f'<font size="8"><i>{_rl_escape(readiness_weights_note())}</i></font>',
+                styles["body"],
+            ),
+            Spacer(1, 8),
+        ]
         return flowables
 
     def _appendix(self, title: str, df, styles, max_rows: int = 50,

@@ -2,7 +2,9 @@
 
 ## The problem
 
-Preparing a competitive NMTC allocation application is a discipline that rewards pattern recognition. Experienced practitioners — those who have reviewed dozens of applications, sat on NOFA panels, or advised winning CDEs — carry intuitions that take years to develop: that healthcare + education sector combinations tend to score well on sector diversity; that a pipeline with only 4 states will be penalized relative to competitors with 8–10; that a jobs-per-million-QEI figure below 6 is a meaningful flag for impact reviewers.
+Preparing an NMTC allocation application is a discipline that rewards pattern recognition. Experienced practitioners — those who have reviewed dozens of applications, sat on NOFA panels, or advised CDEs through the process — carry intuitions that take years to develop about which parts of a pipeline a reviewer will linger on.
+
+> **Three examples used to stand here and have been removed** (1.5.1). They asserted that healthcare + education combinations "score well on sector diversity", that "a pipeline with only 4 states will be penalized relative to competitors with 8–10", and that a jobs-per-million-QEI figure below 6 "is a meaningful flag for impact reviewers". None of the three is sourced, and all three are claims about how the CDFI Fund scores. The middle one is the sharpest: **the CY 2024-2025 Review Process scores no state count at all**, and the Allocation Application asks for a service area, not a minimum number of states. The same claim, in its executable form, is the geographic recommendation this release withdrew — see `MIN_GEOGRAPHIC_DIVERSITY` in `schema.py`. Leaving the prose version standing would have withdrawn the advice and kept the assertion behind it.
 
 First-time applicants and smaller CDEs typically do not have access to this tacit knowledge. They spend months preparing applications, pay for expensive consulting engagements, and often submit without a clear picture of how competitive their pipeline actually is against the 280–340 other applications the CDFI Fund receives in a typical round.
 

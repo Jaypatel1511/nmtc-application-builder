@@ -239,21 +239,48 @@ g["metro_undetermined_pct"]        # float — share of QEI whose county status 
                                    #         table). NOT metropolitan. The three sum to 1.0.
 g["metro_status_qei"]              # dict  — the three buckets in dollars, plus project counts
 g["hhi"]                           # float — Herfindahl-Hirschman Index (lower = more diverse)
-g["geographic_concentration_label"] # str — e.g. "low", "medium", "high"
+g["geographic_concentration_label"] # str — "highly_concentrated" | "moderate" | "diverse"
 g["state_breakdown"]               # dict — per-state QEI and project counts
 ```
 
 ### Readiness score interpretation
 
-| Grade | Score Range | Interpretation |
-|-------|-------------|----------------|
-| A | 85–100 | Submission-ready; focus on final review |
-| B | 70–84 | Competitive; targeted improvements will strengthen the application |
-| C | 55–69 | Below typical winner patterns; significant work needed before submission |
-| D | 40–54 | Multiple critical gaps; substantial restructuring required |
-| F | 0–39 | Application not viable in current form |
+**The readiness grade has no external referent.** It is this tool's own weighted
+composite over six components this tool chose, with weights this tool assigned
+(`READINESS_SCORING_WEIGHTS`). It is not calibrated against award data, the CDFI
+Fund publishes no such score or weighting, and **no winner population is
+involved in it at any point.** A grade is a restatement of the composite, not a
+finding about the application.
 
-Note that the readiness score is distinct from the win alignment score — it measures internal completeness and quality, while the alignment score measures competitiveness against winner patterns.
+The cut points below are `schema.GRADE_THRESHOLDS` — this tool's own bands, not
+a CDFI Fund threshold.
+
+| Grade | Score Range | What it means |
+|-------|-------------|---------------|
+| A | 85–100 | Scores in this tool's top band across its six components |
+| B | 70–84 | Scores in this tool's second band |
+| C | 55–69 | Scores in this tool's middle band |
+| D | 40–54 | Scores in this tool's fourth band; one or more components are low |
+| F | 0–39 | Scores in this tool's lowest band |
+
+**These rows previously read as claims about the applicant pool** — "Below
+typical winner patterns" for C and "Application not viable in current form" for
+F, with "Submission-ready" and "Competitive" above them. Every one of those was
+a winner-population claim attached to a score that has never been compared to a
+winner population, and this package's attribution registry rules every `WINNER_*`
+key HOUSE and unsourced. The same error was deleted from `_assess_vs_winners`,
+`sector_analysis` and `_benchmark_label`; it survived here, in the documentation,
+after all three code deletions.
+
+"Not viable" was the sharper half. A CDE reading that about its own pipeline may
+not file at all, and this tool has no basis on which to tell anyone that.
+
+**Do not read a low grade as a reason not to apply.** Whether an application is
+worth filing is a judgement this tool cannot make. For what the CDFI Fund
+actually scores, use the alignment score, which is assessed against the
+published CY 2024-2025 Review Process criteria — not against winner patterns —
+and read the recommendations, each of which cites the Review Process section
+behind it.
 
 ---
 

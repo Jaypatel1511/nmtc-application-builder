@@ -20,7 +20,7 @@ from nmtcapp.renderers._disclosure import (
 )
 from nmtcapp.renderers._methodology import (
     ACS_VINTAGE, deal_economics_note, distress_definitions, impact_bands_note,
-    noaa_note, readiness_weights_note,
+    noaa_note, readiness_weights_note, readiness_inline_qualifier,
 )
 from nmtcapp.renderers._word_helpers import (
     add_styled_paragraph, add_styled_table, shade_cell, _hex_to_rgb,
@@ -178,7 +178,8 @@ class WordApplicationBuilder:
             ("Preparation Date:", date.today().strftime("%B %d, %Y")),
             ("Readiness Assessment:",
              f"Grade {score.grade} — {score.overall_score:.1f}/100"
-             + (" (PARTIAL)" if getattr(score, "partial", False) else "")),
+             + (" (PARTIAL)" if getattr(score, "partial", False) else "")
+             + f" ({readiness_inline_qualifier()})"),
         ]
         for i, (label, value) in enumerate(details):
             label_cell = details_tbl.cell(i, 0)
@@ -341,6 +342,19 @@ class WordApplicationBuilder:
             )
         )
         r2.font.size = Pt(TYPOGRAPHY["size_body"])
+
+        # THE DISCLOSURE GOES WHERE THE CLAIM IS (1.5.1 T3). This grade is
+        # printed on page 1; readiness_weights_note() rendered in the
+        # methodology block ~16,700 characters later, about 60% of the way
+        # through the document. Excel is the surface that already had this
+        # right — its readiness block puts the note 48 characters under the
+        # score — and this matches it. The methodology copy STAYS where it is;
+        # this is an addition, not a move, because a reader who starts at the
+        # methodology section should still find it there.
+        note_p = doc.add_paragraph()
+        note_r = note_p.add_run(readiness_weights_note())
+        note_r.font.size = Pt(TYPOGRAPHY["size_caption"])
+        note_r.font.italic = True
 
     # ------------------------------------------------------------------
     # Appendices

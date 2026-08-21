@@ -299,7 +299,17 @@ with tabs[0]:
     c3.metric(
         "Readiness score" + (" (partial)" if _degraded else ""),
         f"{readiness:.1f} / 100",
-        delta=grade,
+        delta=f"Grade {grade}",
+        # AN F RENDERED AS A GREEN UP ARROW (1.5.1 T4). st.metric colours a
+        # delta by SIGN: streamlit.elements.metric treats a delta as negative
+        # only when str(delta) starts with "-" and as zero only when it is
+        # exactly "0"; everything else falls through to UP/GREEN. A grade
+        # letter has no sign, so on Streamlit 1.61.1 every grade A through F
+        # rendered green with an upward arrow — the most prominent element on
+        # the page telling a CDE with an F that things were looking up.
+        # "off" is the only setting that yields GRAY/NONE; a grade is a
+        # classification, not a movement, so it gets no direction at all.
+        delta_color="off",
     )
     c4.metric("NMTC-eligible", "Unverified" if _degraded else fmt_pct(eligible_pct))
 

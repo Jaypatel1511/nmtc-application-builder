@@ -5,6 +5,7 @@ P|Heading 1|Executive Summary
 P|Normal|Great Lakes Regional Capital CDE, LLC requests $70.0 million in New Markets Tax Credit allocation for CY2025. Our 8-project pipeline spans 4 states, with 85% of QEI committed to deep and severely distressed census tracts.
 P|Heading 2|Key Metrics
 P|Heading 2|Application Readiness Assessment
+P|Normal|READINESS SCORE: An UNSOURCED HOUSE HEURISTIC of this tool (eligibility 25%, distress concentration 25%, geographic diversity 15%, impact metrics 20%, validation 10%, completeness 5%). The weights are this tool's own judgement; they are not calibrated against award data, the CDFI Fund publishes no such weighting, and the score does not predict an award outcome.
 P|Heading 1|Section A: Business Strategy
 P|Heading 2|Investment Thesis and Strategy
 P|Normal|Great Lakes Regional Capital CDE, LLC will deploy $70.0 million in NMTC allocation across 8 projects in 4 states — targeting 85% of QEI in deep and severely distressed census tracts. The pipeline's largest sector concentration is affordable housing.
@@ -116,7 +117,7 @@ T1|R0|
 T2|R0|Application Round:|CY2025
 T2|R1|Requested NMTC Allocation:|$70,000,000
 T2|R2|Preparation Date:|<RUNDATE>
-T2|R3|Readiness Assessment:|Grade B — 84.9/100
+T2|R3|Readiness Assessment:|Grade B — 84.9/100 (this tool's own unsourced house heuristic, not a CDFI Fund evaluation)
 T3|R0|Metric|Value
 T3|R1|Total Pipeline QEI|$88,500,000
 T3|R2|Total Project Cost|$125,450,000

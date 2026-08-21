@@ -170,7 +170,7 @@ def compute_readiness_score(
     overall = min(100.0, max(0.0, round(overall, 1)))
 
     grade = _compute_grade(overall)
-    strengths = _identify_strengths(component_scores)
+    strengths = _identify_strengths(component_scores, analysis_result.geographic_diversity)
     weaknesses = _identify_weaknesses(component_scores)
     recommendations = _build_recommendations(analysis_result, component_scores, validation_results)
 
@@ -295,13 +295,34 @@ def _compute_grade(score: float) -> str:
     return "F"
 
 
-def _identify_strengths(scores: dict) -> List[str]:
+def _identify_strengths(scores: dict, geographic_diversity: dict | None = None) -> List[str]:
     strengths = []
     if scores.get("eligibility_quality", 0) >= 80:
         strengths.append("High pipeline eligibility rate (≥80% score)")
     if scores.get("distress_concentration", 0) >= 80:
         strengths.append("Strong deep/severe distress concentration")
-    if scores["geographic_diversity"] >= 70:
+    # A DIVERSITY CLAIM MAY NOT CONTRADICT THE CONCENTRATION MEASURE ONE BLOCK
+    # ABOVE IT (1.5.1 T5). The sub-score is
+    # ``min(100, states / MIN_GEOGRAPHIC_DIVERSITY * 50) + hhi_bonus``, whose
+    # first term reaches 100 at six states. So from five states upward the
+    # state count alone clears this 70 gate and the HHI term is inert — and
+    # this line asserted "Good geographic diversity" over a pipeline that
+    # geographic_analysis._concentration_label had already printed as
+    # ``highly_concentrated`` in the same document. Measured on 1.5.0: six
+    # states at HHI 9,519 (one state holding ~97.5% of QEI) scored 100.0 and
+    # emitted this strength.
+    #
+    # THE CURVE IS NOT RE-BASED HERE, DELIBERATELY. Re-basing it is calibration
+    # against MIN_GEOGRAPHIC_DIVERSITY, a constant this package already records
+    # as HOUSE and underived; replacing one unsourced shape with another is
+    # methodology, and it would move every existing user's score on a patch.
+    # What is wrong TODAY and fixable today is the tool telling a CDE it has
+    # something the tool's own measure says it does not have. The score is
+    # unchanged; only the false sentence is withheld.
+    _concentrated = (geographic_diversity or {}).get(
+        "geographic_concentration_label"
+    ) == "highly_concentrated"
+    if scores["geographic_diversity"] >= 70 and not _concentrated:
         strengths.append("Good geographic diversity across multiple states")
     if scores["impact_metrics"] >= 70:
         # NOT "Above-average". That claimed a comparison against an external
@@ -327,7 +348,22 @@ def _identify_weaknesses(scores: dict) -> List[str]:
     if scores.get("distress_concentration", 100) < 60:
         weaknesses.append("Distress concentration below competitive threshold")
     if scores["geographic_diversity"] < 50:
-        weaknesses.append("Geographic footprint too narrow — add more states")
+        # THE SECOND HALF OF T1, AND IT WAS NOT ON THE LIST. This read
+        # "Geographic footprint too narrow — add more states", which is the
+        # suppressed recommendation in a shorter sentence: "too narrow" is a
+        # verdict against a bar the CDFI Fund does not set, and "add more
+        # states" is the same instruction, on the surface a CDE reads FIRST.
+        # Withdrawing the recommendation while leaving this here would have
+        # withdrawn the paragraph and kept the advice.
+        #
+        # What survives is the measurement, which is true and is this tool's
+        # own: the sub-score is low. What is withheld is the verdict and the
+        # instruction.
+        weaknesses.append(
+            "Low geographic-diversity sub-score on this tool's own house "
+            "curve — not a CDFI Fund threshold, and not a finding about the "
+            "application"
+        )
     if scores["impact_metrics"] < 50:
         weaknesses.append(
             "Jobs and units per $1MM QEI below this tool's impact-score band"
@@ -361,10 +397,48 @@ def _build_recommendations(
             "by substituting standard LIC projects with deeper-distress alternatives"
         )
     if scores["geographic_diversity"] < 60:
+        # WITHDRAWN, NOT DROPPED (1.5.1 T1). This slot rendered "Expand
+        # geographic footprint — currently N states. Target ≥5 states…" and it
+        # fired on exactly the pipelines that were already clearing the CDFI
+        # Fund's own gate.
+        #
+        # MEASURED ON 1.5.0, not reasoned. A pipeline of two states at 100%
+        # deep/severe distress scores Community Outcomes 44/50, aggregate
+        # 94 — Highly Qualified. Its geographic sub-score is 33.3, so this
+        # recommendation fired. Following it to five states dilutes distress:
+        # at 55% deep the aggregate falls to 89 and the tier flips to Not
+        # Qualified, while the readiness headline moves 83.0 [B] to 82.0 [B].
+        # THE GRADE DOES NOT CHANGE ACROSS THE FUND'S GATE. A CDE watching the
+        # number this tool prints largest would see nothing happen while its
+        # application stopped qualifying.
+        #
+        # The Review Process scores no state count — schema.py says so at
+        # MIN_GEOGRAPHIC_DIVERSITY, and the CY 2024-2025 Allocation Application
+        # asks for a service area, not a minimum number of states. So this was
+        # the one recommendation in either engine pointing at a metric the Fund
+        # does not score, in a direction that costs points on metrics it does.
+        #
+        # SUPPRESSION, NOT CORRECTION, because writing the right advice means
+        # deriving what geographic breadth is worth — the recommendation-engine
+        # methodology, which is the next round. Suppression is reversible; the
+        # harm direction is not. The withdrawal is stated out loud because an
+        # absent recommendation and a withdrawn one read differently to a CDE
+        # who ran this tool last week.
+        #
+        # NOT SUPPRESSED: intelligence/recommendations.RecommendationEngine,
+        # which emits no geographic advice at all and cites the Review Process
+        # section behind every item it does emit. A CDE is not left without
+        # guidance here.
         recs.append(
-            f"Expand geographic footprint — currently {g.get('states_count', 0)} states. "
-            f"Target ≥{MIN_GEOGRAPHIC_DIVERSITY + 2} states to raise this "
-            f"tool's geographic-diversity sub-score"
+            "Geographic-footprint guidance is WITHDRAWN pending a methodology "
+            "review and is not offered in this release. Earlier versions "
+            "advised expanding to ≥5 states to raise this tool's "
+            "geographic-diversity sub-score; the CDFI Fund scores no state "
+            "count, and following that advice can dilute deep/severe distress "
+            "concentration, which the Fund does score. Do not treat this "
+            f"pipeline's {g.get('states_count', 0)}-state footprint as a "
+            "finding either way. See the CY 2024-2025 Review Process, "
+            "Community Outcomes, for what is actually scored"
         )
     if scores["impact_metrics"] < 60:
         recs.append(

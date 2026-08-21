@@ -70,13 +70,19 @@ st.markdown("---")
 # ---------------------------------------------------------------------------
 st.markdown("## Scoring Framework (CY 2024-2025)")
 
+# SAME DEFECT AS THE READINESS GRADE, SECOND SITE (1.5.1 T4). The third
+# positional argument to st.metric is `delta`, and Streamlit colours it by
+# sign. "Section 1", "Section 2" and "Bonus" carry no sign, so all three
+# rendered GREEN with an upward arrow on this tool's own methodology page —
+# section labels presented as favourable movement. They are labels; they get
+# no direction.
 col1, col2, col3 = st.columns(3)
 with col1:
-    st.metric("Business Strategy", "50 pts", "Section 1")
+    st.metric("Business Strategy", "50 pts", "Section 1", delta_color="off")
 with col2:
-    st.metric("Community Outcomes", "50 pts", "Section 2")
+    st.metric("Community Outcomes", "50 pts", "Section 2", delta_color="off")
 with col3:
-    st.metric("Priority Points", "10 pts", "Bonus")
+    st.metric("Priority Points", "10 pts", "Bonus", delta_color="off")
 
 st.markdown("---")
 
@@ -354,6 +360,45 @@ job estimates, or sector assignments will produce misleading results.
 ### 6. Sample data is illustrative only
 The sample pipeline (20 projects, Riverbend Community Capital CDE) is fictional.
 Do not use sample output to benchmark a real application.
+
+### 7. The readiness score has no CDFI Fund referent
+This page is the tool's disclosure page, and through 1.5.0 it did not mention
+the readiness score anywhere — not in this list, not in the scoring framework
+above. The readiness grade is the largest number on the Pipeline Analyzer and
+the first thing printed on every generated document, and it is **an unsourced
+house heuristic**: a weighted composite of six components this tool chose, with
+weights this tool assigned, calibrated against nothing. The CDFI Fund publishes
+no such score, no such weighting, and no grade. **It does not predict an award
+outcome and it is not evidence about an application.**
+
+It is also **not the alignment score** on this page. The alignment score is
+assessed against the published CY 2024-2025 Review Process criteria and carries
+the Fund's own Highly Qualified gate. The readiness grade is not, and the two
+can move in opposite directions: a pipeline can raise its readiness grade while
+its alignment score falls below the Fund's gate. **Where they disagree, the
+alignment score is the one with a published referent.**
+
+### 8. The Application and the Review Process print different Part I maxima
+A CDE reading both CDFI Fund documents will find **two different point maxima
+for the same Part I** — the Allocation Application states a *Total Maximum
+Points for Part I* of **25**, and the Review Process describes **50 points per
+section**, which is the denominator every "/50" on this page is scored against.
+Nothing in this package acknowledged the discrepancy, so a CDE who noticed it
+had no way to tell which figure this tool was using or why.
+
+**This tool scores against 50**, from the Review Process.
+
+**The reconciliation is NOT established here.** The reading this package has
+worked from is that the two figures differ because each application is scored by
+more than one reviewer, so a per-reviewer maximum aggregates to the section
+maximum. **That reading was not verified against the primary source in this
+release and is recorded as an open item, not as a fact about the CDFI Fund.**
+It is written down rather than left implicit because this package's own durable
+rule — **a summary document is not the instrument** — applies here and had not
+been applied. Treat the 25 as unexplained until it is ruled against the
+Application itself.
+
+**No scoring changes from this disclosure**; the denominators are unchanged.
 """
 )
 

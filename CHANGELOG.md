@@ -5,6 +5,145 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.1] — 2026-08-21
+
+**PATCH, and the ruling is deliberate.** No public name is added, removed or
+renamed; no score moves on any input. `_identify_strengths` grows a second
+parameter, but it is private and defaulted. What changes is what four rendered
+surfaces SAY — which is the whole point of the round, not a side effect of it.
+
+**Scope: placement, docs and recommendations. Not the score.** The readiness
+score is not the Q25 defect; Q25 computed a figure with no referent, and this
+one's referent is the tool itself. The organizing principle this round adopts
+is that **a band that classifies needs disclosure; a band that instructs needs
+a basis** — so the grade bands are disclosed and left alone, and the two
+strings that *instructed* are withdrawn.
+
+### The tool advised the qualifying CDE toward disqualification (T1)
+
+`readiness_score._build_recommendations` emitted "Expand geographic footprint —
+currently N states. Target ≥5 states". **Measured on 1.5.0, executed against
+the live scorers**, not reasoned: a two-state pipeline at 100% deep/severe
+distress scores Community Outcomes 44/50, aggregate 94 — **Highly Qualified** —
+and its geographic sub-score of 33.3 fired this recommendation. Following it to
+five states dilutes distress; at 55% deep the aggregate falls to 89 and the tier
+flips to **Not Qualified**, while the readiness headline moves **83.0 [B] to
+82.0 [B]**. The grade does not change across the CDFI Fund's own gate.
+
+The Review Process scores no state count. This was the only recommendation in
+either engine pointing at a metric the Fund does not score, in a direction that
+costs points on metrics it does.
+
+- **Withdrawn, not dropped.** The slot now says the guidance is withdrawn
+  pending methodology review and why. An absent recommendation and a withdrawn
+  one read differently to a CDE who ran the tool last week.
+- **The weakness string went with it.** `_identify_weaknesses` rendered
+  "Geographic footprint too narrow — add more states" — the same instruction, on
+  the surface a CDE reads first. **This was not on the round's list and was
+  found by walking every string the engine can emit.** Withdrawing only the
+  recommendation would have withdrawn the paragraph and kept the advice.
+- **`intelligence.RecommendationEngine` is untouched and emits no geographic
+  advice at all.** Every item it emits cites the Review Process section behind
+  it. A CDE is not left without guidance.
+
+### Grade bands claimed a winner population (T2)
+
+`docs/workflow/pipeline-analysis.md` interpreted grades as "Below typical winner
+patterns" (C) and **"Application not viable in current form"** (F). That is a
+winner-population claim about a score never compared to a winner population, and
+it is the same error already deleted from `_assess_vs_winners`, `sector_analysis`
+and `_benchmark_label` — surviving in the docs after three code deletions. "Not
+viable" is the sharper half: a CDE reading it about their own pipeline may not
+file at all.
+
+- Table rewritten to say what the grade is: this tool's composite over six
+  components it chose, no Fund referent, and not a reason to withhold a filing.
+- **Swept, and the sweep found a second site.** `docs/about/why.md` asserted
+  that "a pipeline with only 4 states will be penalized relative to competitors
+  with 8–10" — the prose twin of the recommendation withdrawn above, in the
+  project's own rationale page. Removed with the two unsourced claims beside it.
+- `geographic_concentration_label`'s documented vocabulary was wrong in the same
+  file ("low"/"medium"/"high"; the code returns
+  `highly_concentrated`/`moderate`/`diverse`).
+
+### The disclosure was 25 pages from the claim, and the gate could not see it (T3)
+
+Measured on 1.5.0: **PDF 24,739 characters** between the readiness claim and its
+disclosure (98% of the document), **Word 16,657** (60%), **Markdown 25,179**
+(88%) — a fourth surface that was not on the list — and **Excel 48**. Excel was
+the only surface that put the disclosure where the claim was.
+
+- Word, PDF and Markdown now carry `readiness_weights_note()` directly under the
+  score, matching Excel. The methodology copies stay where they are.
+- The cover/details tables print the grade *earlier* than the callout, so the
+  new `_methodology.readiness_inline_qualifier()` rides inside the value string
+  on all three. A separate paragraph can be stripped in editing; this cannot.
+- **`test_house_pins_carry_their_disclaimer` was proximity-blind** — it flattened
+  each document into one haystack, so page 26 satisfied a pin for page 1. A
+  presence check standing in for a proximity property, and the first gate of its
+  shape in this suite.
+- **`test_readiness_disclosure_is_adjacent_to_the_claim` replaces the property**,
+  and **`test_proximity_gate_fails_when_the_disclosure_is_far_away` proves it
+  red**. Driven against the untouched 1.5.0 tree the new gate reports
+  `word @415: 1,980 characters`, `pdf @176: 3,053`, `pdf @851: 2,378`. A gate
+  demonstrated only green is not known to work.
+
+### Every grade rendered as a green up arrow (T4)
+
+`st.metric(delta=grade)`. **Verified by executing Streamlit 1.61.1's own
+`_determine_delta_color_and_direction`**: a delta is negative only when
+`str(delta)` starts with `-` and zero only when it is exactly `"0"`; everything
+else falls through to UP/GREEN. So **A, B, C, D and F all rendered green with an
+upward arrow** — the most prominent element on the page inverted its meaning for
+every CDE it mattered to. Fixed with `delta_color="off"` (GRAY/NONE).
+
+- **Second site, not on the list:** the About & Methodology page passed
+  `"Section 1"`, `"Section 2"` and `"Bonus"` as deltas. Three more green arrows,
+  on the methodology page.
+
+### Geographic diversity asserted what the block above it denied (T5)
+
+`_geo_score`'s first term is `min(100, states / MIN_GEOGRAPHIC_DIVERSITY * 50)`,
+which reaches 100 at six states, so the HHI term is inert above five. A six-state
+pipeline at **HHI 9,519** — printed `highly_concentrated` by
+`geographic_analysis._concentration_label` one block above — scored **100.0** and
+emitted the strength *"Good geographic diversity across multiple states."*
+
+**Ruled NARROW: the contradiction is fixed, the curve is not re-based.** The
+strength can no longer be emitted while the concentration label reads
+`highly_concentrated`. **No score changes.** Re-basing the curve is calibration
+against `MIN_GEOGRAPHIC_DIVERSITY`, which this package already records as HOUSE
+and underived; replacing one unsourced shape with another is methodology, and it
+would move every existing user's score on a patch. Under the round's own
+principle the sub-score classifies (disclosure) while the strength string asserts
+(basis) — so the principle decides it.
+
+**The contradiction window is wider than the round believed:** it opens at **five**
+states, not six. The strength gate is ≥70 and the state term alone reaches 83.3
+at five.
+
+### Also
+
+- **`tests/pinned_constants.txt` contained a false statement, at five sites.**
+  The `GRADE_THRESHOLDS` waivers asserted "the 85/70/55/40 cut points do not
+  appear in any artifact." They render in the published docs, and `70` is drawn
+  on a Streamlit chart labelled **"Competitive (70)"** beside a `_score_color`
+  ladder that re-types 50/70/85 — hand-typed twins on surfaces a CDE reads, with
+  no gate over either. Corrected to the narrower statement that is true.
+- **The About & Methodology page never mentioned the readiness score** — 402
+  lines, six Known Limitations, zero hits. Its most prominent output was absent
+  from its own disclosure page. Added as Known Limitation 7, including that the
+  readiness grade and the alignment score can move in opposite directions and
+  which of the two has a published referent.
+- **The Part I maxima discrepancy is disclosed** (Known Limitation 8) — the
+  Allocation Application's 25 against the Review Process's 50 per section, with
+  this tool scoring against 50. **The two-reviewer reconciliation is recorded as
+  UNVERIFIED and left open**: the primary source was not opened in this release,
+  and this package does not assert an authority's content it has not read. No
+  scoring changes.
+
+---
+
 ## [1.5.0] — 2026-08-20
 
 **MINOR, NOT PATCH — and the version is the first ruling of the round.** It was
@@ -969,12 +1108,18 @@ negative this file's header ranks as the worst class of error in the package. So
 `Q25_AREA_TYPES_MODELLED` goes 5 → 6 and Non-Metropolitan Counties joins the
 provenance enumeration as TOOL-VERIFIED AND TRI-STATE.
 
-> **96 insertions, 49 deletions** in `tests/rendered_baseline/`, measured
+> **108 insertions, 52 deletions** in `tests/rendered_baseline/`, measured
 > `56573c0`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
 >
-> **Remeasured in 1.5.0, and again in its fix round.** Read 54/44 when 1.4.0
-> shipped and that was correct then; 82/49 after S1; 96/49 once B1 gave the
-> workbook a provenance sheet and F7 added the third certification obligation. The gate re-derives it against the CURRENT tree, so 1.5.0's
+> **Remeasured in 1.5.0, again in its fix round, and again in 1.5.1.** Read
+> 54/44 when 1.4.0 shipped and that was correct then; 82/49 after S1; 96/49
+> once B1 gave the workbook a provenance sheet and F7 added the third
+> certification obligation; **108/52 after 1.5.1 T3 moved the readiness
+> disclosure adjacent to the claim on Word, PDF and Markdown** — the twelve
+> added lines are the weighting note under the score on three surfaces and the
+> inline qualifier inside the cover-table value, and the three replaced lines
+> are the cover rows that gained it. No figure in the baseline moved. The gate
+> re-derives it against the CURRENT tree, so 1.5.0's
 > round-provenance disclosure (S1) moved it: the one-sentence NOAA caveat
 > became a paragraph on markdown, Word and PDF, and the PDF gained a page.
 > The classification table below covers 1.4.0's lines; 1.5.0's are classified
@@ -995,6 +1140,9 @@ provenance enumeration as TOOL-VERIFIED AND TRI-STATE.
 | **1.5.0 S1** — the new page's furniture: the longer note pushes one more page break, adding a `@@PAGE` marker, a CONFIDENTIAL footer band and a page number | 3 | +3 / −0 | pdf |
 | **Fix round, B1** — the workbook's new `Round Provenance` sheet: a `@@SHEET` marker, a heading, a pointer and the note's four paragraphs, one per row. This row read "Excel: none — the workbook carries no methodology-notes block at all", which was the defect B1 closed | 7 | +7 / −0 | excel |
 | **Fix round, F7** — the third certification obligation (prior Allocatees, Subsidiary CDEs) appended to the round-provenance note and re-wrapped across the PDF column, pushing the page furniture down by one line | 7 | +7 / −0 | pdf |
+| **1.5.1 T3** — `readiness_weights_note()` added under the readiness callout, plus its blank line, and the cover row rewritten to carry `readiness_inline_qualifier()`. Markdown renders the note as ONE line | 4 | +3 / −1 | markdown |
+| **1.5.1 T3** — the same note as one `P\|Normal` paragraph after the readiness heading, and the cover-table row rewritten to carry the inline qualifier | 3 | +2 / −1 | word |
+| **1.5.1 T3** — the note re-wrapped across the PDF column (four lines) and the cover row re-wrapped from one line to three, now that the qualifier rides inside the value and the cell is a wrapping `Paragraph` rather than a bare string | 8 | +7 / −1 | pdf |
 
 **No figure moved.** Not one number in any of the four documents changed: the
 diff is the basis note's prose, the count it interpolates, and the pagination
@@ -1682,10 +1830,14 @@ and the value-only projection that hid B-3's number formats.
 > source for what the Applicant is asked to COMMIT TO, because the thing the
 > Applicant fills in is the Application.**
 
-**77 mentions across 73 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
-`README.md`. *(75 across 71 when 1.3.0 shipped; 1.5.0 added one, in
-`renderers/_round_provenance`'s re-check list, which names the Review Process
-as a document to re-verify against rather than citing it for a claim.)* **13 cite the Review Process for a substantive claim** — a
+**87 mentions across 83 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
+`README.md`. *(75 across 71 when 1.3.0 shipped; 77 across 73 at 1.5.0, which
+added one in `renderers/_round_provenance`'s re-check list. 1.5.1 added ten
+more across ten lines — the T1 withdrawal string and its two allowlist rulings,
+the T2 docs rewrite and the `why.md` removal, the About page's two new Known
+Limitations, and the Part I disclosure. None of the ten cites the Review Process
+for a substantive claim: every one either names it to DENY a bar or points a
+reader at it as the document with the published referent.)* **13 cite the Review Process for a substantive claim** — a
 percentage, a commitment, or a list of areas. Of those 13:
 
 > **Corrected in 1.3.0 B1.** This paragraph shipped as *"72 mentions across 68
