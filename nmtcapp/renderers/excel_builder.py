@@ -11,7 +11,10 @@ from nmtcapp.renderers._cell_format import is_identifier_column
 from nmtcapp.renderers._disclosure import (
     is_partial_unverified, qualified_pct, unverified_banner,
 )
-from nmtcapp.renderers._methodology import readiness_weights_sheet_note
+from nmtcapp.renderers._methodology import (
+    readiness_inline_qualifier,
+    readiness_weights_sheet_note,
+)
 from nmtcapp.renderers._round_provenance import (
     ROUND_PROVENANCE_SHEET_NAME, round_provenance_paragraphs,
 )
@@ -217,15 +220,45 @@ class ExcelApplicationBuilder:
         degraded = getattr(pr, "eligibility_data_status", "ok") != "ok"
         partial_unverified = is_partial_unverified(pr)
         ws.merge_cells("A3:F3")
+        # THE FIFTH COVER CLAIM, AND EXCEL WAS SUPPOSED TO BE THE GOOD SURFACE
+        # (1.5.1 audit, F3). T3 added readiness_inline_qualifier() to the Word,
+        # PDF and Markdown cover tables and left this one alone, on the
+        # reasoning that "Excel was the only surface that put the disclosure
+        # where the claim was" -- measured at 48 characters.
+        #
+        # That measurement was taken with the OLD proximity matcher, which
+        # accepted any generic house disclaimer as any claim's disclosure. Under
+        # a matcher that requires the READINESS disclosure specifically, this
+        # banner's nearest one is 633 characters away AND ON A DIFFERENT SHEET:
+        # readiness_weights_sheet_note() lives on the breakdown tab, and a
+        # reader looking at the dashboard never sees it. The 48-character figure
+        # was the distance to a disclosure about something else.
+        #
+        # So the surface held up as the model for the other three was the one
+        # with an undisclosed grade on its front page.
         ws["A3"] = (
             f"{app.application_round}  |  Prepared: {date.today().strftime('%B %d, %Y')}  |  "
             f"Readiness Grade: {score.grade} ({score.overall_score:.1f}/100"
             + (" PARTIAL)" if getattr(score, "partial", False) else ")")
+            + f" — {readiness_inline_qualifier()}"
         )
         ws["A3"].font = _font(color="FFFFFF", size=9, italic=True)
         ws["A3"].fill = _fill(xl_color("accent"))
         ws["A3"].alignment = _center()
-        ws.row_dimensions[3].height = 16
+        # THE HEIGHT IS DERIVED, like the banner below and for the same reason
+        # (1.3.0 B1's class). This was a hardcoded ``16``, which fitted the
+        # banner only while the banner was short. Adding the readiness
+        # qualifier above pushed it to two lines, and a hardcoded 16 would have
+        # clipped the disclosure -- shipping an undisclosed grade in a way that
+        # looks exactly like a disclosed one in the source.
+        #
+        # Clamped on write like every other row here; test_excel_geometry
+        # asserts against the UNCLAMPED value, so reaching the ceiling fails
+        # loudly instead of truncating silently.
+        ws.row_dimensions[3].height = min(
+            MAX_ROW_HEIGHT,
+            required_row_height(ws["A3"].value, DASHBOARD_FULL_SPAN_PTS, 9),
+        )
 
         # THE BANNER ROW READS ITS OWN TEXT (1.3.0 FIX-2 B2). Both arms below
         # hardcoded ``height = 28`` — in this function, two rows above the cell

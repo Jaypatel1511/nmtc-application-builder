@@ -39,10 +39,10 @@ Projects with pre-populated eligibility fields (as returned by `Pipeline.sample(
 
 Four analyses run in parallel on the enriched pipeline:
 
-- **Distress concentration** — what percentage of QEI is deployed into deep, severe, LIC, and ineligible tracts; native area and high-migration rural percentages; comparison against winner distributions
+- **Distress concentration** — what percentage of QEI is deployed into deep, severe, LIC, and ineligible tracts; native area and high-migration rural percentages; comparison against this tool's own **HOUSE** reference bands (there is no winner distribution — see below)
 - **Geographic diversity** — states count, MSA count, a three-way Non-Metropolitan County split of QEI (non-metro / metropolitan / not determined), Herfindahl-Hirschman Index (HHI) for geographic concentration
 - **Sector mix** — sectors represented, dominant sector, high-priority sector percentage (healthcare + affordable housing + education), sector diversity score
-- **Impact aggregation** — total jobs created and retained, units built, square footage, and the critical jobs-per-million-QEI metric benchmarked against historical winners
+- **Impact aggregation** — total jobs created and retained, units built, square footage, and the jobs-per-million-QEI metric compared against this tool's own **HOUSE** impact band
 
 ### Step 4: Validation
 

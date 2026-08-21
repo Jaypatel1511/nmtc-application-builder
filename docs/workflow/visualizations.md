@@ -78,9 +78,23 @@ plot_sector_distribution(app, "./charts/sector_mix.png")
 
 **What it shows:** A horizontal bar chart of QEI by sector, sorted by QEI descending. Bars are color-coded by CDFI Fund priority tier: deep blue (high priority: healthcare, affordable housing, education), medium blue (medium priority: small business, mixed use), light blue (other sectors). Each bar shows the sector's percentage of total QEI.
 
-**Reference annotation:** The chart includes a note that "Winners typically have ≥50% in high-priority sectors (healthcare, affordable housing, education)."
+**Reference annotation:** none. The chart carried a note reading *"Winners
+typically have ≥50% in high-priority sectors (healthcare, affordable housing,
+education)"* — **removed from the chart itself in 1.5.1**, not merely from this
+page.
 
-**Why it matters:** Quick visual check on whether your sector mix aligns with CDFI Fund priority areas. A chart dominated by high-priority sectors (deep blue) is the target pattern.
+It was a winner-population claim printed onto a PNG a CDE could paste into a
+board deck, with no disclosure anywhere on the image, and this package holds no
+sector distribution for past Allocatees. It is the same class as
+`plot_winner_alignment`'s nine bands, which were relabelled `House P25 / House
+P50 (this tool's) / House P75` and given an on-figure disclaimer in an earlier
+round; this annotation was missed by that sweep and by the 1.5.1 sweep, and is
+the third site of the class.
+
+**Why it matters:** a quick visual check on how your own QEI is distributed
+across sectors, tiered by the CDFI Fund's stated priority areas. The tiering is
+sourced; **what share of QEI belongs in each tier is not a question this tool
+can answer**, and no target share is drawn.
 
 ```python
 plot_sector_distribution(app, "./sector_mix.png")
@@ -96,14 +110,42 @@ from nmtcapp.visualization import plot_readiness_radar
 plot_readiness_radar(app, "./charts/readiness_radar.png")
 ```
 
-**What it shows:** A spider/radar chart with five axes — one for each win-alignment dimension (Distress, Geographic, Impact, Sector, Pipeline). Each axis runs from 0 to 100. The chart overlays two polygons:
+**What it shows:** A spider/radar chart with **three** axes — the three scored
+sections of the CY 2024-2025 Review Process: **Business Strategy**, **Community
+Outcomes** and **Priority Points**. Each axis runs 0–100, normalised against
+that section's structural maximum (/50, /50, /10). The chart overlays two
+polygons:
 
-- **Your Pipeline** (solid deep blue line, light fill) — your dimensional alignment scores
-- **Winner Benchmark** (dashed amber line) — the competitive threshold of 75 on each dimension
+- **Your Pipeline** (solid deep blue line, light fill) — your section scores
+- **HQ Min Threshold** (dashed amber line) — **80 / 80 / 70**, the Highly
+  Qualified section minimums scaled to 0–100 (40/50 = 80; the 70 on Priority
+  Points is not a gate, as priority points do not gate)
 
-**Why it matters:** Immediately shows which dimensions are strong (extending beyond the benchmark line) and which are weak (falling inside it). The radar chart is the most effective single visualization for communicating application strengths and gaps to a CDE board or investor.
+**Why it matters:** it shows at a glance which *published* section minimum a
+pipeline is short of. Because the dashed line is derived from the Fund's own
+published gate rather than from a house band, falling inside it on either of
+the first two axes means something specific: the application would not reach
+the Highly Qualified pool.
 
-**Title includes** the composite score and competitive tier (e.g., "Win Alignment Radar — 71/100 [COMPETITIVE]"). The title color reflects the tier: green (strong), blue (competitive), yellow (marginal), red (weak).
+**Title includes** the aggregate base score and tier (e.g. `"… — 90/100 [HIGHLY
+QUALIFIED]"`). The title colour reflects the tier: green (Top Tier — **this
+tool's own label**, not a CDFI Fund tier), blue (Highly Qualified), red (Not
+Qualified).
+
+!!! warning "This section described a different chart, and was corrected in 1.5.1"
+
+    It said the radar had **five** axes (Distress, Geographic, Impact, Sector,
+    Pipeline), that the dashed line was a **"Winner Benchmark"** at **75** on
+    each dimension, and that the tiers were "strong / competitive / marginal /
+    weak". The chart has three axes, the dashed line is labelled `HQ Min
+    Threshold` at 80/80/70, and those tier names have not existed since 1.2.0.
+
+    The relabel matters beyond accuracy. "Winner Benchmark" attributes the line
+    to a population of past Allocatees this package has never held. The line it
+    actually draws is one of the few figures in this tool with a genuine
+    federal referent — the published Highly Qualified gate — and calling it a
+    winner benchmark traded a sourced threshold for an unsourced one, in the
+    wrong direction.
 
 ```python
 plot_readiness_radar(app, "./readiness_radar.png")
@@ -119,13 +161,22 @@ from nmtcapp.visualization import plot_winner_alignment
 plot_winner_alignment(app, "./charts/winner_alignment.png")
 ```
 
-**What it shows:** A three-panel horizontal bar chart comparing your pipeline on three key metrics against historical winner distributions:
+**What it shows:** A three-panel horizontal bar chart placing your pipeline
+against **this tool's own house reference bands** on three metrics:
 
-1. **Distress % (Deep + Severe)** — your value vs. winner P25, P50 (median), P75
-2. **States Served** — your state count vs. winner P25, P50, P75
-3. **Jobs per $MM QEI** — your jobs-per-million vs. winner P25, P50, P75
+1. **Distress % (Deep + Severe)** — your value vs. House P25, P50, P75
+2. **States Served** — your state count vs. House P25, P50, P75
+3. **Jobs per $MM QEI** — your jobs-per-million vs. House P25, P50, P75
 
-Each panel shows four bars: Winner P25, Winner P50 (Median), Winner P75, and Your Pipeline. A dashed amber vertical line marks the competitive threshold (P50). Your pipeline bar is dark blue; winner bars are light blue.
+Each panel shows four bars, labelled on the figure as `House P25`,
+`House P50 (this tool's)`, `House P75` and `Your Pipeline`. A dashed amber
+vertical line marks the P50 band. Your pipeline bar is dark blue.
+
+The bar labels said `Winner P25 / Winner P50 (Median) / Winner P75` on the
+figure until an earlier round relabelled them; this page went on calling them
+winner percentiles afterwards. **All nine values are `HOUSE` constants** —
+unsourced round numbers this package chose. Panel 2 in particular charts a
+state count against a band the CDFI Fund does not score at all.
 
 **Why it matters:** The most data-dense visualization — it places your pipeline
 against this tool's own reference bands on three metrics. **The P25/P50/P75

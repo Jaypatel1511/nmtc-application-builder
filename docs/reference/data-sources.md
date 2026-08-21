@@ -14,7 +14,7 @@ This page documents the primary data sources that underpin the intelligence laye
 
 **What we use from these sources:**
 - Round-level acceptance rates to populate `NMTC_AWARD_ROUNDS` and compute `acceptance_rate_baseline`
-- Aggregate patterns to infer winner distributions for distress concentration, geographic diversity, sector mix, and impact intensity
+- Round-level aggregates only. **No winner distribution is inferred or held** — the reference bands this package applies to distress concentration, geographic diversity, sector mix and impact intensity are registered `HOUSE` and unsourced, not percentiles of past Allocatees. (Corrected 1.5.1: this line claimed the aggregates were used *"to infer winner distributions"*, which is the inference the sources below explicitly cannot support.)
 
 **What is NOT available:**
 - Application-level data for non-winners (not published by the CDFI Fund)

@@ -645,7 +645,31 @@ jobs:
           # reported every module clean in the one environment where it can see
           # no modules at all. Neither failure is visible from a checkout.
           #
-          FLOOR=590
+          # RE-MEASURED IN THE 1.5.1 AUDIT ROUND, AND FLOOR MOVES FOR THE FIRST
+          # TIME SINCE 1.4.0. That round adds tests/test_readiness_geographic_
+          # surfaces.py (21 tests), which exists because the 1.5.1 fixtures both
+          # scored geographic diversity above 70 and NO test in the suite ever
+          # entered the branches the round was about -- four of its five fixes
+          # could be reverted with all 1,244 tests green. It also adds three
+          # version gates to test_small_claims.py and two proximity gates to
+          # test_pinned_constants.py.
+          #
+          # Derived the long way again, with this job's exact invocation, from a
+          # directory holding only what the sdist shipped and with nmtcapp/
+          # moved aside so it cannot shadow the installed package:
+          #
+          #     collected under -m "not wheel" 1,270
+          #     skipped in the sdist             -43
+          #     EXECUTED                       1,227
+          #     half                             613
+          #     rounded down                     610
+          #
+          # MAX_SDIST_SKIPS STAYS 45. The sdist skip count did not move: the new
+          # module's docs-reading tests are guarded by the same skipif the
+          # existing docs gates use, and its readiness tests need no tree the
+          # tarball prunes. Headroom is unchanged at two.
+          #
+          FLOOR=610
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()

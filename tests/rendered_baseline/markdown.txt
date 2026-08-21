@@ -24,9 +24,10 @@ Great Lakes Regional Capital CDE, LLC respectfully requests $70.0MM in New Marke
 **Key Strengths** (this tool's own assessment against its own thresholds — not a CDFI Fund evaluation)**:**
 - High pipeline eligibility rate (≥80% score)
 - Strong deep/severe distress concentration
-- Good geographic diversity across multiple states
+- High geographic-diversity sub-score on this tool's own house curve — not a CDFI Fund threshold, and not a finding about the application
 
 **Recommended Improvements Before Submission:**
+- Geographic-footprint guidance is WITHDRAWN pending a methodology review and is not offered in this release. Earlier versions advised expanding to ≥5 states to raise this tool's geographic-diversity sub-score; the CDFI Fund scores no state count, and following that advice can dilute deep/severe distress concentration, which the Fund does score. YOU WERE NEVERTHELESS DOCKED 1.6 POINTS of the 100-point readiness headline for this: the geographic-diversity sub-score is 89.4/100 and carries a 15% weight in a total that is itself this tool's own unsourced heuristic. That deduction is NOT evidence your footprint is a problem — the CDFI Fund does not score geographic breadth at all, so nothing in the readiness headline's geographic term has a federal referent. Do not treat this pipeline's 4-state footprint as a finding either way, and do not expand it to recover these points. See the CY 2024-2025 Review Process, Community Outcomes, for what is actually scored
 - Add operating business projects (manufacturing, healthcare) to improve jobs-per-million-QEI metric above this tool's 12 FTE screening band (a house band, not a CDFI Fund figure)
 
 ---

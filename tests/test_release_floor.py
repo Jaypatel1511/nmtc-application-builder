@@ -225,8 +225,12 @@ MARKER_EXPR = "not wheel"
 #: the file whose entire subject is stale hand-typed counts. The round adds
 #: seven FILES to tests/; the seventh is ``tests/scoring_attribution.txt``, a
 #: data file that skips nothing. The fix round then added three more modules --
-#: test_orphaned_functions and test_version_labels -- so the current figure is
-#: EIGHT modules since v1.4.0; it is stated here as a derivation of the tree
+#: test_orphaned_functions and test_version_labels -- and the 1.5.1 AUDIT round
+#: adds tests/test_readiness_geographic_surfaces.py, so the current figure is
+#: NINE modules since v1.4.0. The ninth skips nothing new: its docs-reading
+#: tests carry the same skipif the existing docs gates use, and its readiness
+#: tests need no tree the tarball prunes -- which is why MAX_SDIST_SKIPS did
+#: not move with it. It is stated here as a derivation of the tree
 #: and re-derived by
 #: ``test_the_module_count_in_this_comment_matches_the_tree`` rather than
 #: trusted.) THE TWELFTH IS A NEW KIND and is worth naming rather than absorbing:
@@ -392,7 +396,7 @@ def test_max_sdist_skips_is_bounded_from_ABOVE_as_well(collected_count):
 
 #: The number of test MODULES this release adds, as claimed in the comment
 #: above. Re-derived from the tree by the gate below rather than trusted.
-CLAIMED_NEW_TEST_MODULES = 8
+CLAIMED_NEW_TEST_MODULES = 9
 
 
 def test_the_module_count_in_this_comment_matches_the_tree():

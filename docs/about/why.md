@@ -14,9 +14,33 @@ Even experienced practitioners often work without systematic benchmarking. Pipel
 
 NMTC Application Builder is a programmatic intelligence layer on top of publicly available CDFI Fund data. It does three things that were previously either unavailable or required manual effort:
 
-**1. Automates the benchmark lookup.** Instead of manually reading CDFI Fund annual reports and award announcements to extract pattern statistics, the library embeds those statistics as Python constants and applies them to your pipeline automatically. The winner distribution for distress concentration, geographic diversity, sector mix, and impact intensity is computed the moment you call `analyze()`.
+**1. Automates the benchmark lookup.** Instead of manually reading CDFI Fund
+annual reports and award announcements, the library embeds a set of reference
+bands as Python constants and applies them to your pipeline automatically.
+Distress concentration, geographic diversity, sector mix and impact intensity
+are all compared the moment you call `analyze()`.
 
-**2. Quantifies the gaps.** A consultant might tell you "your distress concentration needs to improve." NMTC Application Builder tells you "your distress concentration is 72%, which is at the winner p25. Raising it to 82% (winner median) is estimated to add 8–15 alignment score points." Specific, measurable, actionable.
+> **Corrected 1.5.1 (audit, B2 sweep 3).** This paragraph said the library
+> computes "the winner distribution" for those four dimensions. **It does not
+> and cannot.** The `WINNER_*` constants it applies are registered **HOUSE and
+> unsourced** — round numbers this package chose. The CDFI Fund publishes no
+> application-level data for winners or non-winners, so no distribution of past
+> Allocatees exists to embed. What is automated is the comparison; what it
+> compares against is this tool's own.
+
+**2. Quantifies the gaps.** A consultant might tell you "your distress
+concentration needs to improve." NMTC Application Builder tells you the figure,
+the band it falls in, and which of this tool's own sub-scores it moves —
+consistently, and with the basis of every band stated beside it.
+
+> **Corrected 1.5.1 (audit, B2 sweep 3).** The example here read: *"your
+> distress concentration is 72%, which is at the winner p25. Raising it to 82%
+> (winner median) is estimated to add 8–15 alignment score points."* Every
+> figure in that sentence is unsourced — there is no winner p25, no winner
+> median, and the "8–15 points" estimate is not produced by any code path in
+> this package. It was the sharpest remaining instance of the class T2 removed
+> from this same file: the 1.5.1 sweep deleted three claims from the blockquote
+> at the top of this page and left this one nine lines below them.
 
 **3. Generates the documents.** Producing the formatted Word, Excel, and PDF application package that CDFI Fund reviewers expect has traditionally required significant manual effort — copying data into CDFI Fund templates, formatting tables, generating charts. The library produces a complete application package in a single function call.
 

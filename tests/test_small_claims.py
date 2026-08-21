@@ -506,3 +506,157 @@ def test_no_fstring_expression_contains_a_backslash():
         "    label = \"Band (this tool's own)\"\n"
         "    f\"{label}\"\n\n" + "\n".join(offenders)
     )
+
+
+# ---------------------------------------------------------------------------
+# B1 (1.5.1 audit) -- the release document was gated against nothing
+#
+# THE DEFECT, AND IT NEARLY SHIPPED A TAG. At 4bd26ab the CHANGELOG declared
+# ``## [1.5.1]`` while pyproject.toml, CITATION.cff and
+# streamlit_app/requirements.txt all still said 1.5.0. Every prior release in
+# this project bumped the version in the fix commit; this one did not, and the
+# artifacts of a v1.5.1 tag would have carried 1.5.0 in their metadata.
+#
+# WHY NO GATE SAW IT, WHICH IS THE POINT. Three version gates existed:
+#
+#   test_version_is_checked_against_a_second_source   __version__ <-> pyproject
+#   test_streamlit_deployment_pin (gate 1)            requirements <-> pyproject
+#   test_version_metadata_resolves                    metadata is readable
+#
+# Every one of them compares the version to ANOTHER COPY OF THE VERSION. They
+# are three mirrors in a circle: all three agreed at 1.5.0, all three were
+# green, and none of them had ever been shown the document that DECLARES what
+# release is being cut. Internal consistency mistaken for correctness -- the
+# same shape as the tautology test_version.py's docstring was written about,
+# one abstraction up. A ring of agreeing copies is not a second source; the
+# CHANGELOG is, because it is edited by the person deciding the release number
+# and by nothing else.
+#
+# CITATION.cff was gated by NOTHING AT ALL before this test. It is the file
+# that tells Zenodo and every citing paper which version they are citing.
+# ---------------------------------------------------------------------------
+
+#: ``## [1.2.3] ...`` -- the Keep a Changelog release heading. Headings that are
+#: NOT of this shape (this project writes "## Closing round (still 1.5.0 --
+#: unreleased...)") are deliberately not release headings and are skipped.
+_RELEASE_HEADING = re.compile(r"^##\s*\[(\d+\.\d+\.\d+)\]", re.MULTILINE)
+
+#: An open "Unreleased" section. This project has shipped two open headings
+#: twice, so the count is asserted rather than assumed.
+_UNRELEASED_HEADING = re.compile(r"^##\s*\[unreleased\]", re.MULTILINE | re.IGNORECASE)
+
+
+def _pyproject_version() -> str:
+    """pyproject.toml's declared version. Regex, not tomllib: CI runs 3.9."""
+    path = os.path.join(_REPO_ROOT, "pyproject.toml")
+    if not os.path.exists(path):
+        pytest.skip("pyproject.toml absent (installed tree, not a checkout)")
+    with open(path, encoding="utf-8") as handle:
+        text = handle.read()
+    matches = re.findall(r'^version\s*=\s*"([^"]+)"', text, re.MULTILINE)
+    assert len(matches) == 1, (
+        f"expected exactly one top-level version in pyproject.toml, "
+        f"found {len(matches)}: {matches}"
+    )
+    return matches[0]
+
+
+def _changelog_text() -> str:
+    path = os.path.join(_REPO_ROOT, "CHANGELOG.md")
+    if not os.path.exists(path):
+        pytest.skip("CHANGELOG.md absent (installed tree, not a checkout)")
+    with open(path, encoding="utf-8") as handle:
+        return handle.read()
+
+
+def test_the_changelog_newest_release_is_the_version_being_built():
+    """THE GATE THE THREE VERSION GATES COULD NOT BE.
+
+    Compares the CHANGELOG's newest release heading -- the document that
+    DECLARES the release -- to pyproject.toml, which is what actually gets
+    built. These two are edited by different acts: one describes the release,
+    the other cuts it. That is what makes this a second source and the other
+    three a ring.
+    """
+    declared = _RELEASE_HEADING.findall(_changelog_text())
+    assert declared, (
+        "CHANGELOG.md contains no `## [X.Y.Z]` release heading, so this gate "
+        "would adjudicate nothing. That is the failure mode the sdist sweep "
+        "shipped before 1.2.1 -- a check that walks an empty set and reports "
+        "success."
+    )
+    newest = declared[0]
+    built = _pyproject_version()
+
+    assert newest == built, (
+        f"CHANGELOG.md's newest release heading is [{newest}] but "
+        f"pyproject.toml builds {built}.\n\n"
+        "One of two things is true and both block a tag:\n"
+        f"  * the version was never bumped -- the fix commit wrote the "
+        f"[{newest}] entry and left pyproject at {built}, so a v{newest} tag "
+        f"would publish artifacts whose metadata says {built}; or\n"
+        f"  * the CHANGELOG entry is mislabelled.\n\n"
+        "This is not caught by the other three version gates: "
+        "test_version_is_checked_against_a_second_source, "
+        "test_streamlit_deployment_pin and test_version_metadata_resolves all "
+        "compare the version to another COPY of the version, so they agree "
+        "with each other at the stale value and stay green. Bump "
+        "pyproject.toml, CITATION.cff and streamlit_app/requirements.txt "
+        "together."
+    )
+
+
+def test_the_citation_file_declares_the_version_being_built():
+    """CITATION.cff was gated by nothing, and it is what gets cited.
+
+    It went to 1.5.1 in the same commit as this test. Before that commit no
+    test in the suite had ever read it, so it could have said anything --
+    including the 1.5.0 it did say while the CHANGELOG declared 1.5.1.
+    """
+    path = os.path.join(_REPO_ROOT, "CITATION.cff")
+    if not os.path.exists(path):
+        pytest.skip("CITATION.cff absent (installed tree, not a checkout)")
+    with open(path, encoding="utf-8") as handle:
+        text = handle.read()
+
+    matches = re.findall(r'^version:\s*"?([0-9][^"\s]*)"?\s*$', text, re.MULTILINE)
+    assert len(matches) == 1, (
+        f"expected exactly one `version:` key in CITATION.cff, found "
+        f"{len(matches)}: {matches}. Note cff-version is a different key and "
+        "must not match this pattern."
+    )
+    built = _pyproject_version()
+    assert matches[0] == built, (
+        f"CITATION.cff declares version {matches[0]!r} but pyproject.toml "
+        f"builds {built!r}. Every citation of this release would name the "
+        "wrong version, and Zenodo mints its DOI metadata from this file."
+    )
+
+
+def test_the_changelog_has_exactly_one_entry_for_the_version_being_built():
+    """One heading per release, and no open Unreleased section.
+
+    This project has shipped two open headings for the same version twice
+    (1.2.2 "round 1 of 2" / "round 2 of 2", and the two 1.5.0 continuation
+    headings below the release entry). Those continuation headings are
+    deliberately NOT bracketed, which is why _RELEASE_HEADING does not match
+    them -- but a genuine duplicate `## [X.Y.Z]` is a release described twice
+    and a reader cannot tell which one shipped.
+    """
+    text = _changelog_text()
+    built = _pyproject_version()
+    headings = _RELEASE_HEADING.findall(text)
+
+    count = headings.count(built)
+    assert count == 1, (
+        f"CHANGELOG.md has {count} `## [{built}]` headings, expected exactly "
+        f"one. All release headings found, newest first: {headings[:6]}"
+    )
+
+    open_unreleased = _UNRELEASED_HEADING.findall(text)
+    assert not open_unreleased, (
+        f"CHANGELOG.md still carries {len(open_unreleased)} open "
+        "`## [Unreleased]` heading(s). A release cut with an open Unreleased "
+        "section publishes an entry nobody has decided the contents of -- G8 "
+        "in the 1.3.0 round was exactly this."
+    )

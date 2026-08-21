@@ -18,6 +18,7 @@ from utils import (
     fmt_pct,
     get_or_create_app,
     apply_theme,
+    metric_classification,
 )
 from chart_style import (
     apply_matplotlib_theme, style_plotly_fig, PLOTLY_CONFIG,
@@ -165,13 +166,32 @@ _partial_tag = " (partial)" if getattr(result, "score_is_partial", False) else "
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Score before" + _partial_tag, f"{score_before:.1f} / 100",
           help="Full pipeline alignment score.")
+# THE ONE LEGITIMATE DELTA ON THIS SCREEN, and its colour was inverted
+# (1.5.1 audit, F1 sweep). `delta` here IS a signed movement — score_after
+# minus score_before — so it keeps the slot and keeps its arrow, which points
+# the right way because the string carries a real "-".
+#
+# WHAT WAS WRONG: `delta_color="normal" if delta >= 0 else "inverse"`. "normal"
+# renders UP green; "inverse" renders DOWN green. Selecting the mode BY THE
+# SIGN therefore painted the delta green in both branches — an optimizer run
+# that LOWERED the score reported the drop in green. A conditional that
+# cancels the very distinction the argument exists to draw.
+#
+# "normal" unconditionally is the correct setting: up is better here, and
+# Streamlit already colours a negative delta red under it.
 c2.metric(
     "Score after" + _partial_tag,
     f"{score_after:.1f} / 100",
     delta=f"{delta:+.1f} pts",
-    delta_color="normal" if delta >= 0 else "inverse",
+    delta_color="normal",
 )
-c3.metric("Projects selected", len(selected), delta=f"of {len(list(app.pipeline))}")
+# A DENOMINATOR IS NOT A MOVEMENT (1.5.1 audit, F1 sweep). This passed
+# "of 20" as `delta` with no delta_color at all, so it took the "normal"
+# default and rendered GREEN with an UP arrow — the pipeline's total project
+# count displayed as favourable movement, on every run, whatever was selected.
+metric_classification(
+    c3, "Projects selected", len(selected), f"of {len(list(app.pipeline))}"
+)
 c4.metric("Total QEI selected", fmt_millions(total_qei_selected))
 
 st.markdown("---")
