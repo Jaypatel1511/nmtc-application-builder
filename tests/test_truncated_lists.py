@@ -377,7 +377,7 @@ def _assert_partial(text: str, result, what: str) -> None:
 #: truncation drops, because a disclosure puts its credential first and its
 #: limitation last, and a prefix cut keeps the credential.
 _DISCLOSURES = (
-    # Reworded in 1.4.1 S3 with the disclosure itself. The clause still names
+    # Reworded in 1.5.0 S3 with the disclosure itself. The clause still names
     # the LAST thing a prefix cut would drop, and the new wording carries one
     # more denial than the old: the bands are not a percentile either, which is
     # what the deleted percentile_vs_winners used to imply they were.

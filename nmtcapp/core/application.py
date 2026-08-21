@@ -177,7 +177,7 @@ class Application:
         self._pipeline: Optional[Pipeline] = None
         self._analysis_cache: Optional[ApplicationAnalysis] = None
 
-        # %,.0f IS NOT A FORMAT (1.4.1 S6). printf has no ',' flag, so this
+        # %,.0f IS NOT A FORMAT (1.5.0 S6). printf has no ',' flag, so this
         # raised ValueError inside logging on EVERY Application construction at
         # INFO or below -- swallowed by logging's own error handler, which
         # prints a traceback to stderr and returns, so nothing crashed and

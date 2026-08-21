@@ -1,6 +1,6 @@
 """ONE place the nmtc-mapper contract is asserted at RUNTIME, not just in CI.
 
-WHAT THIS CLOSES (1.4.1 S2)
+WHAT THIS CLOSES (1.5.0 S2)
 
 ``pyproject.toml`` declares ``nmtc-mapper>=0.5.0``, and
 ``tests/integrations/test_mapper_contract.py`` proves the floor is real:

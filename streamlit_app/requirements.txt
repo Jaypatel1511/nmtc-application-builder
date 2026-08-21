@@ -1,4 +1,4 @@
-# THE PIN STAYS AN EQUALITY. Ruling recorded 1.4.1 S6; the alternatives were
+# THE PIN STAYS AN EQUALITY. Ruling recorded 1.5.0 S6; the alternatives were
 # examined and both are worse.
 #
 # WHY THIS LOOKS LIKE THE BUG. Merging PR #12 took the public app down for the

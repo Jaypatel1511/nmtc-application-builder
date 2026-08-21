@@ -47,7 +47,10 @@ SECTION A — CY 2024-2025 scoring thresholds, MIXED PROVENANCE
   individual sub-criteria" — win_probability.py, both methodology tables). No
   false wording is hiding behind them, so renaming them buys nothing this
   round and inflates a diff whose whole purpose is to be reviewable. Prefixing
-  them is deferred to 1.2.3 as a deliberate decision, not an oversight.
+  them is deferred to A LATER RELEASE as a deliberate decision, not an
+  oversight. (It said "deferred to 1.2.3" until 1.5.0 F4. There was never a
+  1.2.3: the series went 1.2.1 -> 1.3.0, so the deferral pointed at a date
+  that could not arrive, and has now outlived three releases.)
 
 SECTION B — Legacy winner-pattern thresholds (CY2020–2024)
   Used by HistoricalBenchmarks (benchmarks.py) for the 9-metric tier comparison.
@@ -139,7 +142,8 @@ DEEP_DISTRESS_MIN_PCT = 0.20         # Q25(b)(i)'s TOP RUNG, not a bar: the ladd
 # THE LIMB STAYS THIS ROUND. win_probability.py:_score_special_targeting still
 # reads this constant, and deleting the sub-score would move every Community
 # Outcomes total and the rendered baseline with it. Withdrawing the FUND
-# ATTRIBUTION is this round; withdrawing the limb is 1.2.3, behind a written
+# ATTRIBUTION is this round; withdrawing the limb is A LATER RELEASE (this
+# said "1.2.3" until 1.5.0 F4; no 1.2.3 was ever published), behind a written
 # methodology. Every surface that named the Fund here now says this is the
 # tool's own construct.
 HOUSE_SPECIAL_TARGETING_TRIGGER_PCT = 0.10   # HOUSE: 10%+ of QEI in a category; no Fund basis
@@ -208,7 +212,8 @@ HOUSE_TRACK_RECORD_DEPLOYMENT_MIN = 0.90     # HOUSE: prior-allocation deploymen
 # portfolio over a per-loan discount depth is not a ratio of anything; no label
 # makes it sensible, and the rendered surfaces now say so rather than implying
 # the sub-score is a near-miss proxy for Q15. Removing the limb moves scored
-# figures and the baseline: that is 1.2.3, behind a written methodology.
+# figures and the baseline: that is A LATER RELEASE (this said "1.2.3" until
+# 1.5.0 F4; no 1.2.3 was ever published), behind a written methodology.
 HOUSE_PRODUCT_FLEXIBILITY_BELOW_MARKET_PCT = 0.50  # HOUSE: portfolio share; Fund's 50% is a per-loan depth
 # D1 — HOUSE. Rung (a)'s "at least 5 indicia of flexible or non-traditional
 # rates and terms" is a property of an INDIVIDUAL QLICI, alternative to that
@@ -404,7 +409,7 @@ WINNER_PATTERN_THRESHOLDS: dict = {
     # only consumer, benchmarks.py's rural metric, is deleted; see the note
     # there for the four defects, and renderers/_question_22 for the
     # instrument.
-    # "min_native_area_pct" REMOVED (1.4.1 S3). Unlike its neighbours it had
+    # "min_native_area_pct" REMOVED (1.5.0 S3). Unlike its neighbours it had
     # NO CONSUMER — no metric in benchmarks.py, nothing in optimizer/ or
     # streamlit_app/ ever read it. It was three unsourced band boundaries that
     # scored nothing, which is the worst version of an unsourced constant: it

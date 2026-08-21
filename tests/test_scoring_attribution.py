@@ -42,7 +42,7 @@ in ``tests/scoring_attribution.txt``, ``CITED`` with a retrievable document or
 key that no longer exists FAILS -- a stale ruling reads as coverage.
 
 WHAT A HOUSE ROW IS NOT. It is not a licence to keep a number. It is a
-DECLARATION THAT NO SOURCE EXISTS, and the standing ruling (1.4.1 S3) is source
+DECLARATION THAT NO SOURCE EXISTS, and the standing ruling (1.5.0 S3) is source
 it or delete it. Six keys with no consumer were deleted this round rather than
 given a row. What survives has a consumer, so removing it moves a figure a CDE
 sees; that is the next release's work, and these rows are what make the
@@ -222,19 +222,28 @@ def test_house_rows_outnumber_nothing_silently(corpus, registry):
     the property EXPECTED_DEFECTS has in
     tests/test_fund_attribution_source.py, applied to values.
 
-    IT IS AN EQUALITY, and it is high on purpose. 61 of 69 winner-pattern
+    IT IS AN EQUALITY, and it is high on purpose. 60 of 69 winner-pattern
     constants are unsourced. That number is the round's actual finding and it
     should be uncomfortable to look at; a bound like "<= 70" would let it drift
     upward and still read green.
 
-    THE 61 WAS DERIVED BY RUNNING THIS TEST, not typed in advance -- the first
-    draft guessed 59 and this assertion caught it, which is the same class of
-    hand-typed count that put FLOOR through five stale values in release.yml.
+    THE COUNT WAS DERIVED BY RUNNING THIS TEST, not typed in advance -- the
+    first draft guessed 59 and this assertion caught it, which is the same
+    class of hand-typed count that put FLOOR through five stale values in
+    release.yml.
+
+    61 -> 60 IN 1.5.0 F5, and the direction is the whole point of the gate.
+    NMTC_AWARD_ROUNDS.CY2024 was HOUSE because its own comment said "Award data
+    pending --- using estimated projections based on prior rounds". The round
+    had in fact been awarded on 23 Dec 2025, thirteen months earlier; the row
+    is now CY2024-2025 and CITED to the CY 2024-2025 NMTC Program Award Book.
+    One constant left the unsourced set BY BEING SOURCED, which is the only
+    direction this number is allowed to fall for a good reason.
     """
     house = sorted(n for n in corpus if registry.get(n, ("", ""))[0] == "HOUSE")
-    assert len(house) == 61, (
+    assert len(house) == 60, (
         f"{len(house)} of {len(corpus)} winner-pattern constants are HOUSE "
-        "(unsourced); this gate was last derived at 61 of 69.\n\n"
+        "(unsourced); this gate was last derived at 60 of 69.\n\n"
         "If the count went DOWN because something was sourced or deleted, "
         "lower this number and say so in CHANGELOG.md. If it went UP, a new "
         "unsourced constant entered a score -- which is the class this whole "

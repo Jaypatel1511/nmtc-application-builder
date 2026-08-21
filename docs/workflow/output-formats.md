@@ -176,7 +176,7 @@ This section previously claimed the opposite: that `WordApplicationBuilder`
 drew all five charts and placed each one into a named section of the Word
 document. That was false for every release in which it appeared. Verified by
 execution at 1.4.0 and again at
-1.4.1, with `matplotlib` installed so its absence could not be the explanation:
+1.5.0, with `matplotlib` installed so its absence could not be the explanation:
 all four formats generate cleanly and the `.docx` contains **zero** chart images
 (its only media part is `docProps/thumbnail.jpeg`, a python-docx template
 artifact). `grep` confirms the other half: no `add_picture` call and no
@@ -215,10 +215,12 @@ inside a filed federal application is read as the applicant's own assertion.
 Embedding these would move three unsourced comparisons from a PNG a user chose
 to make into a document a CDE files with the CDFI Fund.
 
-**Status after the 1.4.1 constant sweep: the constraint still binds.** That
+**Status after the 1.5.0 constant sweep: the constraint still binds.** That
 sweep deleted the fabricated `percentile_vs_winners` and six orphaned
-constants, and forced a written ruling for all 69 survivors — but 61 of the 69
-are still `HOUSE`. `plot_winner_alignment`'s three comparisons are among them.
+constants, and forced a written ruling for all 69 survivors — but 60 of the 69
+are still `HOUSE`. (The sixtieth left the unsourced set by being SOURCED: the
+CY 2024-2025 award row, whose "award data pending" comment had expired eight
+months earlier, is now cited to the Fund's own Award Book.) `plot_winner_alignment`'s three comparisons are among them.
 Auto-embedding becomes a legitimate feature once the constants a chart draws
 are sourced or gone; it is not one before that.
 

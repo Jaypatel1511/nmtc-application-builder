@@ -1131,7 +1131,18 @@ eligible to apply in CY 2026, an organization must either already be a certified
 of the NOAA's Federal Register publication date, or have submitted its CDE
 Certification Application through AMIS by 11:59 p.m. ET on August 31, 2026. That
 deadline is not a figure this tool computes and it does not move with anything in this
-document. Verified against cdfifund.gov on 2026-08-20.
+document. AND IF YOU ARE A PRIOR ALLOCATEE, A THIRD OBLIGATION FALLS
+ON THE SAME DATE: any prior Allocatee that requires action by the CDFI Fund —
+certifying a Subsidiary entity as a CDE, or adding a Subsidiary CDE to an Allocation
+Agreement — in order to meet the Qualified Equity Investment (QEI) issuance
+thresholds published in the CY 2026 NOAA must submit a CDE Certification
+Application for its Subsidiary CDE(s) through AMIS by 11:59 p.m. ET on August 31,
+2026. Full eligibility information, including the QEI issuance thresholds themselves,
+comes with the NOAA when it publishes. Verified against cdfifund.gov on 2026-08-20.
+
+@@PAGE 23
+Great Lakes Regional Capital CDE, LLC  —  NMTC CY2025 Application  |  CONFIDENTIAL
+Page 23
 DEAL ECONOMICS: computed using the nmtc-calc library, standard leveraged NMTC
 structure. Statutory credit rate 39% of QEI over 7 years (IRC §45D(a)(2): 5% of the
 QEI on each of the first three credit allowance dates and 6% on each of the remaining
@@ -1139,10 +1150,6 @@ four). Assumed credit price $0.83/credit and CDE fee 2.5% of QEI are market
 assumptions of this model, not CDFI Fund parameters. The leverage loan is the
 residual of QEI less investor equity, so leverage plus equity equals QEI in every
 surface of this document.
-
-@@PAGE 23
-Great Lakes Regional Capital CDE, LLC  —  NMTC CY2025 Application  |  CONFIDENTIAL
-Page 23
 IMPACT SCREENING BANDS: THIS TOOL'S OWN BANDS (5 / 12 / 20 FTE per
 $1MM QEI). The CDFI Fund publishes no jobs-per-QEI benchmark in any
 denominator: it reports job counts and dollar counts separately and never divides

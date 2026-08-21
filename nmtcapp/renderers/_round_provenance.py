@@ -1,6 +1,6 @@
 """WHICH ROUND this package reads, and why that is not the round a CDE will file.
 
-THE DEFECT (1.4.1 S1)
+THE DEFECT (1.5.0 S1)
 
 Every round-specific citation in this package names the **CY 2024-2025** NMTC
 Allocation Application, and names it the way you name a live instrument.
@@ -94,6 +94,10 @@ PROGRAM_PAGE_URL = (
 )
 CY2026_ANNOUNCEMENT_URL = "https://www.cdfifund.gov/news/738"
 
+#: The tab the workbook carries this note on. Named here beside the note so a
+#: rename cannot leave the Q25 sheet's cross-reference pointing at nothing.
+ROUND_PROVENANCE_SHEET_NAME = "Round Provenance"
+
 #: The CY 2024-2025 Application, pinned. ONE COPY.
 #:
 #: It was typed into TWO module docstrings -- ``_question_22`` and
@@ -126,20 +130,24 @@ RECHECK_ITEMS = (
 )
 
 
-def round_provenance_note() -> str:
-    """The round-provenance disclosure, in the package's own voice.
+def round_provenance_paragraphs() -> tuple:
+    """``round_provenance_note()`` split into paragraphs, same text.
 
-    ONE STRING, READ EVERYWHERE. The round caveat was previously three
-    separately-typed sentences -- ``_methodology.noaa_note()``,
-    ``sections/base``'s placeholder and the tail of
-    ``_question_25.q25_basis_note()`` -- each saying a different fraction of it
-    and each able to drift from the others. That is the shape that produced the
-    1.2.0 defect where a sentence was deleted from one file and stayed live in
-    a second.
+    WHY THIS EXISTS (1.5.0 B1). Markdown, Word and PDF each render the note as
+    one flowing string. Excel cannot: a cell has a 409-pt ceiling and the note
+    is far longer, so the workbook needs it one paragraph per row. The wrong
+    way to get that is a second copy of the text in ``excel_builder`` -- which
+    is precisely the shape this module was created to remove, where the round
+    caveat existed as three separately-typed sentences that drifted apart.
+
+    So the note is DEFINED here as paragraphs and ``round_provenance_note()``
+    is their join. There is still ONE source of truth, and
+    ``tests/test_round_provenance.py`` asserts the join is exactly the note, so
+    the two views cannot diverge even in principle.
 
     Example::
 
-        note = round_provenance_note()
+        paras = round_provenance_paragraphs()
     """
     return (
         f"WHICH ROUND THIS IS BASED ON. This tool encodes the "
@@ -151,19 +159,58 @@ def round_provenance_note() -> str:
         "PUBLISHED: the CDFI Fund has announced that "
         f"{UPCOMING_ROUND} will make $5 billion available — half the prior "
         "round — and that it will publish the round's Application Materials "
-        "when the round opens. "
+        "when the round opens.",
+
         f"USE THIS, AND THEN RE-CHECK IT. The {CITED_ROUND} Application is a "
         "real federal instrument and is the right basis to prepare against "
         f"today; nothing here is unreliable. But it is a PROXY for the "
         f"{UPCOMING_ROUND} instrument, not that instrument, so every "
         f"round-specific figure in this document must be re-verified against "
         f"the {UPCOMING_ROUND} materials once the Fund releases them — "
-        f"specifically: {'; '.join(RECHECK_ITEMS)}. "
+        f"specifically: {'; '.join(RECHECK_ITEMS)}.",
+
         "SEPARATELY, AND SOONER: to be eligible to apply in "
         f"{UPCOMING_ROUND}, an organization must either already be a certified "
         "CDE as of the NOAA's Federal Register publication date, or have "
         "submitted its CDE Certification Application through AMIS by "
         "11:59 p.m. ET on August 31, 2026. That deadline is not a figure this "
-        "tool computes and it does not move with anything in this document. "
-        f"Verified against cdfifund.gov on {LAST_VERIFIED}."
+        "tool computes and it does not move with anything in this document.",
+
+        # THE THIRD OBLIGATION (1.5.0 F7). The Fund's section is headed
+        # "Important Deadlines for CDE Certification AND Subsidiary CDE
+        # Certification", and until this release this note read only the
+        # first half of it. The second half binds PRIOR ALLOCATEES -- which
+        # is this tool's audience, not an edge case -- on the same date.
+        "AND IF YOU ARE A PRIOR ALLOCATEE, A THIRD OBLIGATION FALLS ON THE "
+        "SAME DATE: any prior Allocatee that requires action by the CDFI Fund "
+        "— certifying a Subsidiary entity as a CDE, or adding a Subsidiary CDE "
+        "to an Allocation Agreement — in order to meet the Qualified Equity "
+        f"Investment (QEI) issuance thresholds published in the "
+        f"{UPCOMING_ROUND} NOAA must submit a CDE Certification Application "
+        "for its Subsidiary CDE(s) through AMIS by 11:59 p.m. ET on "
+        "August 31, 2026. Full eligibility information, including the QEI "
+        "issuance thresholds themselves, comes with the NOAA when it "
+        f"publishes. Verified against cdfifund.gov on {LAST_VERIFIED}.",
     )
+
+
+def round_provenance_note() -> str:
+    """The round-provenance disclosure, in the package's own voice.
+
+    ONE STRING, READ EVERYWHERE. The round caveat was previously three
+    separately-typed sentences -- ``_methodology.noaa_note()``,
+    ``sections/base``'s placeholder and the tail of
+    ``_question_25.q25_basis_note()`` -- each saying a different fraction of it
+    and each able to drift from the others. That is the shape that produced the
+    1.2.0 defect where a sentence was deleted from one file and stayed live in
+    a second.
+
+    The text is defined as paragraphs in ``round_provenance_paragraphs()`` and
+    joined here; Excel renders the paragraphs and the other three formats
+    render this join. Same words, two shapes, no second copy.
+
+    Example::
+
+        note = round_provenance_note()
+    """
+    return " ".join(round_provenance_paragraphs())

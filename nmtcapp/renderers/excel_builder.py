@@ -12,6 +12,9 @@ from nmtcapp.renderers._disclosure import (
     is_partial_unverified, qualified_pct, unverified_banner,
 )
 from nmtcapp.renderers._methodology import readiness_weights_sheet_note
+from nmtcapp.renderers._round_provenance import (
+    ROUND_PROVENANCE_SHEET_NAME, round_provenance_paragraphs,
+)
 from nmtcapp.renderers._question_25 import (
     Q25_BASIS_LABEL, Q25_BASIS_SHEET_NAME, Q25_QEI_BASIS_SUFFIX_SHEET,
     q25_basis_note_paragraphs,
@@ -149,6 +152,15 @@ class ExcelApplicationBuilder:
         # this sheet, and a pointer is only as good as how far the reader has
         # to look for what it names.
         self._build_q25_basis_sheet(wb)
+        # THIRD TAB, AND THE POSITION IS THE FIX (1.5.0 B1). Until this
+        # release the workbook was the ONLY one of the four formats carrying
+        # no round provenance at all: markdown, Word and PDF each stated that
+        # CY 2024-2025 is closed and awarded and that CY 2026 is unpublished,
+        # while the workbook cited that round in the present tense on the Q25
+        # Basis Note sheet and said nothing about which round it was. Excel is
+        # the format most likely to be circulated internally and pasted from,
+        # so it was the worst one to leave silent.
+        self._build_round_provenance_sheet(wb)
         self._build_pipeline_sheet(wb)
         self._build_distress_sheet(wb)
         self._build_geographic_sheet(wb)
@@ -534,6 +546,60 @@ class ExcelApplicationBuilder:
         # outgrows one row, tests/test_excel_geometry.py fails on it rather
         # than the workbook truncating it.
         for offset, para in enumerate(q25_basis_note_paragraphs()):
+            row = 4 + offset
+            ws.merge_cells(start_row=row, start_column=1,
+                           end_row=row, end_column=6)
+            cell = ws.cell(row=row, column=1, value=para)
+            cell.font = _font(size=9)
+            cell.alignment = Alignment(horizontal="left", vertical="top",
+                                       wrap_text=True)
+            ws.row_dimensions[row].height = min(
+                MAX_ROW_HEIGHT,
+                required_row_height(para, DASHBOARD_FULL_SPAN_PTS, 9),
+            )
+
+    def _build_round_provenance_sheet(self, wb: "Workbook") -> None:
+        """WHICH ROUND this workbook is based on -- the B1 fix.
+
+        The text is not composed here. It is
+        ``_round_provenance.round_provenance_paragraphs()``, whose join is the
+        exact string Word, PDF and markdown render, so the workbook cannot
+        drift from the other three formats and a sentence cannot be corrected
+        in one place and left stale here. That drift is the 1.2.0 defect this
+        module's source-of-truth rule exists to prevent.
+
+        One paragraph per row for the same reason the Q25 basis note is: a
+        merged cell has a 409-pt ceiling and this note is longer than that, so
+        a single-cell version would clip silently with every height check
+        still passing.
+        """
+        ws = wb.create_sheet(ROUND_PROVENANCE_SHEET_NAME)
+        ws.sheet_view.showGridLines = False
+        for col, width in DASHBOARD_COL_WIDTHS.items():
+            ws.column_dimensions[col].width = width
+
+        heading_text = "WHICH ROUND THIS WORKBOOK IS BASED ON"
+        ws.merge_cells("A1:F1")
+        heading = ws.cell(row=1, column=1, value=heading_text)
+        heading.font = _font(bold=True, color=xl_color("primary"), size=11)
+        heading.alignment = _left()
+        ws.row_dimensions[1].height = required_row_height(
+            heading_text, DASHBOARD_FULL_SPAN_PTS, 11,
+        )
+
+        pointer = (
+            "This applies to every round-specific citation in this workbook, "
+            f"including the '{Q25_BASIS_SHEET_NAME}' sheet."
+        )
+        ws.merge_cells("A2:F2")
+        pointer_cell = ws.cell(row=2, column=1, value=pointer)
+        pointer_cell.font = _font(color=xl_color("text_muted"), size=9)
+        pointer_cell.alignment = _left()
+        ws.row_dimensions[2].height = required_row_height(
+            pointer, DASHBOARD_FULL_SPAN_PTS, 9,
+        )
+
+        for offset, para in enumerate(round_provenance_paragraphs()):
             row = 4 + offset
             ws.merge_cells(start_row=row, start_column=1,
                            end_row=row, end_column=6)

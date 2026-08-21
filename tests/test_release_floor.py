@@ -46,6 +46,34 @@ surface the job ships but does not copy out of the tarball.
 run. A hand-typed coordinate in the paragraph recording a re-derivation, which
 is the class R3 of that round is about.)
 
+WHICH OF THE GATES IN THIS FILE ACTUALLY ENFORCES FRESHNESS (A3a). Two
+things here are easy to confuse, and 250 lines of comment above and below
+never distinguish them:
+
+  FLOOR ITSELF IS A CATASTROPHE DETECTOR, NOT A FRESHNESS GATE. It compares the
+  executed total against a floor with enormous slack -- 1,193 executed against
+  FLOOR=590 is 50.5% headroom. It cannot notice a suite that stopped growing,
+  a module that quietly stopped being collected, or a floor nobody re-measured.
+  It notices the tarball shipping tests and running almost none of them. That
+  is worth having and it is not what keeps this number honest. The paragraphs
+  above call every stale value "WRONG IN THE SAFE DIRECTION" and the reason is
+  exactly this slack: a floor that is too low never fails.
+
+  ``test_release_floor_is_derived_from_the_current_suite`` IS THE FRESHNESS
+  GATE. It re-collects the suite in a subprocess and pins FLOOR inside a band
+  roughly twenty-seven wide, so a floor that stopped tracking the tree fails
+  even though the sdist still runs fine. IT HAS FIRED IN THREE CONSECUTIVE
+  ROUNDS -- 1.3.1 went red on 530 before anything in release.yml was touched,
+  and the two rounds after it moved for the same reason. Every stale floor
+  caught by a check rather than by somebody re-reading a comment was caught by
+  that test, not by FLOOR.
+
+  AND ``MAX_SDIST_SKIPS`` IS THE ONE INPUT THAT CAN DISARM IT, because it only
+  ever widens that band downward. Which is why it is now bounded from ABOVE as
+  well as below -- see
+  ``test_max_sdist_skips_is_bounded_from_ABOVE_as_well``. Set it to 400 and,
+  before that gate existed, the whole suite stayed green.
+
 MAX_SDIST_SKIPS below is the same shape one layer in, and 1.3.0 tightened it
 for the same reason.
 
@@ -154,6 +182,28 @@ MARKER_EXPR = "not wheel"
 #: If the skip count ever approaches this, the right response is to ask why the
 #: sdist stopped being able to answer its own suite's questions -- not to raise
 #: the ceiling.
+#: RE-DERIVED TO 45 IN THE 1.5.0 FIX ROUND, AND 40 HAD BEEN OVERTAKEN BY ITS
+#: OWN MEASUREMENT -- the same sentence, for the fourth round running. The fix
+#: round adds two gates that read trees the tarball does not ship
+#: (test_orphaned_functions reads nmtcapp/, test_version_labels reads
+#: CHANGELOG.md), and both were caught by BUILDING THE SDIST AND RUNNING IT,
+#: not by reasoning: their first drafts had no environment guard at all and
+#: ERRORED there while the checkout stayed green. The sdist now skips
+#: FORTY-TWO. Measured, with the job's exact invocation, from a directory
+#: holding only what the tarball shipped:
+#:
+#:     collected under -m "not wheel" 1,238
+#:     skipped in the sdist             -42
+#:     EXECUTED                       1,196
+#:     half                             598
+#:     rounded down                     590
+#:
+#: FLOOR therefore does not move; the CEILING does. 45 sits THREE skips above
+#: its own measurement, and the band goes slack at 62, so the live range is
+#: [42, 61]. The resulting FLOOR band is [590, 620] -- thirty wide, inside the
+#: forty this file now enforces from above in
+#: test_max_sdist_skips_is_bounded_from_ABOVE_as_well.
+#:
 #: RE-DERIVED TO 40 IN 1.5.0, AND 28 HAD BEEN OVERTAKEN BY ITS OWN
 #: MEASUREMENT. The sdist now skips THIRTY-SIX -- a ceiling below the thing it
 #: bounds is not a ceiling, which is the sentence the 1.3.1 note wrote about
@@ -169,9 +219,17 @@ MARKER_EXPR = "not wheel"
 #: above its own measurement and ELEVEN below the slack point.
 #:
 #: WHY THE COUNT JUMPED 25 -> 37. Eleven are the same environment class
-#: already enumerated: 1.5.0 adds seven test modules, several of which sweep
+#: already enumerated: 1.5.0 adds SIX test modules, several of which sweep
 #: nmtcapp/ or docs/, and neither tree sits beside tests/ in the job's
-#: directory. THE TWELFTH IS A NEW KIND and is worth naming rather than absorbing:
+#: directory. (This said SEVEN until the fix round -- a hand-typed count inside
+#: the file whose entire subject is stale hand-typed counts. The round adds
+#: seven FILES to tests/; the seventh is ``tests/scoring_attribution.txt``, a
+#: data file that skips nothing. The fix round then added three more modules --
+#: test_orphaned_functions and test_version_labels -- so the current figure is
+#: EIGHT modules since v1.4.0; it is stated here as a derivation of the tree
+#: and re-derived by
+#: ``test_the_module_count_in_this_comment_matches_the_tree`` rather than
+#: trusted.) THE TWELFTH IS A NEW KIND and is worth naming rather than absorbing:
 #: tests/test_round_provenance.py's live cdfifund.gov check is marked
 #: `network` and skips in EVERY environment, checkout included, by the hook in
 #: tests/conftest.py. It is the first skip in this package that is not about
@@ -184,7 +242,7 @@ MARKER_EXPR = "not wheel"
 #: an sdist. Until then nothing in the suite compared this number to anything,
 #: and its own comment ("if the skip count ever approaches this...") described
 #: a watch nobody was keeping.
-MAX_SDIST_SKIPS = 40
+MAX_SDIST_SKIPS = 45
 
 _FLOOR_RE = re.compile(r"^\s*FLOOR=(\d+)\s*$", re.MULTILINE)
 _COLLECTED_RE = re.compile(r"(\d+)(?:/\d+)? tests? collected")
@@ -272,6 +330,122 @@ def test_release_floor_is_derived_from_the_current_suite(
         "(total - skipped) // 2 rounded down to ten. Do not nudge this test's "
         "band to accommodate a number nobody re-measured — that is how FLOOR "
         "got to 440, then 470, while the suite grew underneath it."
+    )
+
+
+def test_max_sdist_skips_is_bounded_from_ABOVE_as_well(collected_count):
+    """The ceiling must also be too SMALL to make FLOOR unfalsifiable (A3b).
+
+    THE DEFECT. The assertion above is ONE-DIRECTIONAL. It fires when the
+    ceiling is too low and never when it is too high -- and too high is the
+    entire recorded failure mode of this constant: 40 -> 20 -> 24 -> 28 -> 40,
+    where every widening bought room for a FLOOR nobody re-measured. A hostile
+    pass set MAX_SDIST_SKIPS to **400** and the whole suite stayed green.
+
+    It also compared the wrong units: MODULES on the left, a ceiling denominated
+    in TESTS on the right. Nine against forty looks like comfortable headroom
+    and is not a comparison at all.
+
+    WHAT ACTUALLY CONSTRAINS IT, and it is not a taste question. This constant
+    has exactly one consumer:
+    ``test_release_floor_is_derived_from_the_current_suite`` builds the band
+
+        lower = floor_to_ten((collected - MAX_SDIST_SKIPS) // 2)
+        upper = collected // 2
+
+    and asserts FLOOR sits inside it. MAX_SDIST_SKIPS ONLY EVER WIDENS THAT
+    BAND DOWNWARD. So raising it cannot make any test stricter and can only
+    make FLOOR harder to falsify: at 40 with 1,234 collected the band is
+    [590, 617], twenty-seven wide; at 400 it is [410, 617], two hundred and
+    seven wide, and every stale floor of the last five releases fits inside it.
+
+    So the upper bound is a bound on the BAND, which is the thing the ceiling
+    actually affects, measured from the tree rather than remembered.
+    """
+    lower = _floor_to_ten((collected_count - MAX_SDIST_SKIPS) // 2)
+    upper = collected_count // 2
+    width = upper - lower
+
+    #: The widest FLOOR band this package will accept. Measured at 27 when
+    #: derived (1,234 collected, ceiling 40); 40 is that measurement with one
+    #: rounding step of headroom, and it is stated as a number here so that
+    #: widening it is an edit somebody has to defend rather than a side effect
+    #: of raising the ceiling.
+    max_band_width = 40
+
+    assert width <= max_band_width, (
+        f"MAX_SDIST_SKIPS = {MAX_SDIST_SKIPS} opens the FLOOR band to "
+        f"[{lower}, {upper}] -- {width} wide, against a stated maximum of "
+        f"{max_band_width}.\n\n"
+        "MAX_SDIST_SKIPS only ever widens this band downward, so a large value "
+        "cannot make anything stricter; it can only stop "
+        "test_release_floor_is_derived_from_the_current_suite from failing on "
+        "a stale FLOOR. That test is what actually enforces freshness, and "
+        "this ceiling is the one input that can disarm it.\n\n"
+        "Re-derive the ceiling from a real sdist run -- build the tarball, run "
+        "the release job's exact invocation from a directory holding only what "
+        "it shipped, read the skip count off the summary -- rather than "
+        "raising it until the band admits the floor you already have. That is "
+        "the 40 -> 20 -> 24 -> 28 -> 40 history this bound exists to stop."
+    )
+
+
+#: The number of test MODULES this release adds, as claimed in the comment
+#: above. Re-derived from the tree by the gate below rather than trusted.
+CLAIMED_NEW_TEST_MODULES = 8
+
+
+def test_the_module_count_in_this_comment_matches_the_tree():
+    """A hand-typed count inside the file whose subject is hand-typed counts.
+
+    THE DEFECT (1.5.0 F8a). The MAX_SDIST_SKIPS derivation above read "1.5.0
+    adds seven test modules". The tree adds SIX. The seventh file the round
+    adds to ``tests/`` is ``tests/scoring_attribution.txt`` -- a DATA file,
+    which skips nothing and cannot contribute to a skip count, in a sentence
+    whose whole job is to explain a skip count.
+
+    That is this module's own subject turned on itself: 250 lines here exist
+    because FLOOR was hand-typed and went stale five times, and the paragraph
+    explaining why carried a hand-typed number that was wrong.
+
+    So the count is derived. Modules added since the last published release
+    (``v1.4.0``, the tag this series builds on), counting only ``test_*.py``
+    -- and counting untracked files too, because a gate that only sees
+    committed work would pass on exactly the tree a developer is about to
+    commit.
+    """
+    if not os.path.isdir(os.path.join(_REPO_ROOT, ".git")):
+        pytest.skip("not a checkout (this is an unpacked sdist)")
+
+    def _git(*args) -> str:
+        proc = subprocess.run(["git", *args], cwd=_REPO_ROOT,
+                              capture_output=True, text=True)
+        assert proc.returncode == 0, f"git {' '.join(args)} failed: {proc.stderr}"
+        return proc.stdout
+
+    if subprocess.run(["git", "rev-parse", "-q", "--verify", "v1.4.0^{commit}"],
+                      cwd=_REPO_ROOT, capture_output=True).returncode != 0:
+        pytest.skip("v1.4.0 tag not present (shallow clone); nothing to derive from")
+
+    added = set()
+    for line in _git("diff", "--name-status", "v1.4.0", "--", "tests/").splitlines():
+        if not line.startswith("A\t"):
+            continue
+        path = line.split("\t", 1)[1]
+        if os.path.basename(path).startswith("test_") and path.endswith(".py"):
+            added.add(path)
+    for path in _git("ls-files", "--others", "--exclude-standard", "tests/").split():
+        if os.path.basename(path).startswith("test_") and path.endswith(".py"):
+            added.add(path)
+
+    assert len(added) == CLAIMED_NEW_TEST_MODULES, (
+        f"this file claims {CLAIMED_NEW_TEST_MODULES} new test modules since "
+        f"v1.4.0; the tree has {len(added)}:\n\n"
+        + "\n".join(f"  {p}" for p in sorted(added))
+        + "\n\nRe-derive it. The last time this number was typed rather than "
+        "derived it counted a .txt data file as a test module, inside the "
+        "paragraph explaining a skip count -- in the one file in this "
+        "repository whose entire subject is hand-typed counts going stale."
     )
 
 

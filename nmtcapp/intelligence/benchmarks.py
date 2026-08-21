@@ -2,10 +2,37 @@
 
 NOT A COMPARISON AGAINST WINNERS, and the module summary said it was until
 1.5.0: "Compare a pipeline analysis result against historical NMTC winner
-benchmarks." No winner distribution was ever loaded and none is published. The
-CDFI Fund's award announcements name the Allocatees and their amounts; they do
-not report the distribution of any pipeline characteristic across them, and
-application-level data for non-winners is not published at all.
+benchmarks." No winner distribution was ever loaded, and the bands below are
+not derived from one.
+
+WHAT THE FUND PUBLISHES -- CORRECTED. THE TEXT THAT STOOD HERE WAS FALSE.
+This docstring and ``_METHODOLOGY`` both asserted that the CDFI Fund
+"publishes no winner-pattern distribution" and does "not report the
+distribution of any pipeline characteristic across" Allocatees. That was
+untrue on the day it was written. On **7 August 2026** -- thirteen days before
+this module was last edited -- the Fund released the **NMTC Public Data
+Release 2003-2023** (announced at cdfifund.gov/news/736): a 24-slide summary
+report and a transaction-level workbook of **21,202 QLICI rows** carrying CDE
+name, state, QLICI amount, Metro/Non-Metro, origination year, QALICB type and
+census tract. Separately, each round's **Award Book** reports pipeline
+commitments across the Allocatees of that round -- the CY 2024-2025 edition
+gives the service-area scope of all 142 (65 national, 39 multistate, 24
+statewide, 14 local) and their rural, Native-area and deep-distress
+commitments. Per-Allocatee distributions ARE published. This module gave their
+non-existence as the reason 61 constants could not be sourced.
+
+WHY THE CONSTANTS STILL DO NOT MOVE, WHICH IS A NARROWER CLAIM. The Fund's
+figures are QLICI-DOLLAR-DENOMINATED REALIZED DEPLOYMENT across Allocatees.
+The constants here are QEI-DENOMINATED APPLICATION-PIPELINE figures. Those are
+different quantities over different populations, and reconciling them is real
+inferential work on an artifact that informs a federal filing -- methodology
+written and hostile-audited BEFORE any number changes, which is this project's
+standing rule. Application-level data for non-winners remains unpublished.
+
+So every value below is a HOUSE ESTIMATE PENDING THAT RECONCILIATION. That is
+what is true today, and it is deliberately phrased so a future round can
+correct the numbers without first having to retract a false claim about the
+Fund -- which is the position the 1.5.0 sentence created.
 
 What this module does is place each metric in a strong / competitive / weak
 band against a threshold in ``data.benchmark_thresholds.WINNER_PATTERN_THRESHOLDS``
@@ -40,11 +67,16 @@ _METHODOLOGY = (
     "THESE BANDS ARE THIS TOOL'S OWN, NOT A CDFI FUND FIGURE. Each metric is "
     "placed in a strong / competitive / weak band by comparing it to a "
     "threshold in nmtcapp.data.benchmark_thresholds.WINNER_PATTERN_THRESHOLDS. "
-    "The CDFI Fund publishes no winner-pattern distribution and no such "
-    "thresholds: award announcements name the Allocatees and their amounts, "
-    "not the distribution of any pipeline characteristic across them, and "
-    "application-level data for non-winners is not published at all. The "
-    "bands are round numbers chosen by this package and are unsourced. A band "
+    "The CDFI Fund publishes no such thresholds: the bands are round numbers "
+    "chosen by this package and are unsourced. The Fund DOES publish data on "
+    "its Allocatees: the NMTC Public Data Release covering 2003 through 2023 "
+    "(released 7 August 2026; 21,202 transaction rows), and each round's "
+    "Award Book. But those report REALIZED DEPLOYMENT measured in QLICI "
+    "dollars, while these bands are APPLICATION PIPELINE figures measured in "
+    "QEI. This package has NOT reconciled the two, and application data for "
+    "entities that did not win is not published at all; these values are "
+    "house estimates pending that work. "
+    "A band "
     "is therefore a diagnostic prompt about your own pipeline, NOT a "
     "measurement of where you stand against real applicants, NOT a percentile, "
     "and NOT a prediction of any funding outcome."

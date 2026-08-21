@@ -17,7 +17,6 @@ not authoritative.
 """
 from __future__ import annotations
 
-import math
 import warnings
 from dataclasses import dataclass, field
 from typing import List, Optional, TYPE_CHECKING
@@ -805,11 +804,3 @@ def _build_peer_comparison(score: "WinProbabilityScore") -> str:
         "changes are needed before submission."
     )
 
-
-def _normal_cdf(x: float) -> float:
-    return math.erfc(-x / math.sqrt(2)) * 0.5
-
-
-def _mini_bar(score: float, width: int = 12) -> str:
-    filled = int(score / 100 * width)
-    return "█" * filled + "░" * (width - filled)

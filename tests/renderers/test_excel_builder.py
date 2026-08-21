@@ -17,13 +17,20 @@ class TestExcelBuilder:
 
     # ---- Sheet count and names ----
 
-    def test_has_eight_sheets(self, wb):
+    def test_has_nine_sheets(self, wb):
         # Eight since 1.3.0 B1: the Q25 basis note moved off the Summary
         # Dashboard onto its own sheet, which the dashboard's distress label
         # names. It was two rows at the bottom of the dashboard, pointed at by
         # "see the basis note below" — a direction whose truth depends on the
         # reader's window size, because the workbook stores no window geometry.
-        assert len(wb.sheetnames) == 8, wb.sheetnames
+        #
+        # NINE SINCE 1.5.0 B1: 'Round Provenance'. The workbook was the only
+        # one of the four formats carrying no round provenance at all, while
+        # still citing CY 2024-2025 in the present tense on the Q25 sheet.
+        assert len(wb.sheetnames) == 9, wb.sheetnames
+
+    def test_round_provenance_sheet_exists(self, wb):
+        assert "Round Provenance" in wb.sheetnames
 
     def test_summary_dashboard_exists(self, wb):
         assert "Summary Dashboard" in wb.sheetnames
@@ -115,7 +122,7 @@ class TestExcelBuilder:
         path = str(tmp_path / "application.xlsx")
         builder.save(path)
         wb2 = load_workbook(path)
-        assert len(wb2.sheetnames) == 8, wb2.sheetnames
+        assert len(wb2.sheetnames) == 9, wb2.sheetnames
 
     def test_save_creates_parent_directory(self, builder, tmp_path):
         import os

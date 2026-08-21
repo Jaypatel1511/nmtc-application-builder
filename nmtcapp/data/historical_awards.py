@@ -88,16 +88,51 @@ NMTC_AWARD_ROUNDS: dict = {
         "acceptance_rate": 0.351,
         "announcement_year": 2024,
     },
-    "CY2024": {
-        # Source: CDFI Fund NOFA (announced 2024, awards expected 2025)
-        # Award data pending — using estimated projections based on prior rounds
-        "applications": 320,   # estimated
-        "awards": 110,         # estimated
-        "total_allocated": 5_000_000_000,
-        "avg_award": 45_455_000,
-        "median_award": 42_000_000,
-        "acceptance_rate": 0.344,  # estimated
+    "CY2024-2025": {
+        # CORRECTED IN 1.5.0 (F5). EVERY FIGURE HERE WAS INVENTED, AND THE
+        # REASON GIVEN FOR INVENTING THEM EXPIRED EIGHT MONTHS BEFORE 1.5.0.
+        #
+        # This row read: "Award data pending — using estimated projections
+        # based on prior rounds", keyed "CY2024", with applications, awards and
+        # acceptance_rate each marked "# estimated". Meanwhile
+        # renderers/_round_provenance -- IN THE SAME COMMIT -- stated from
+        # first-hand retrieval that the round was awarded on 23 Dec 2025 with
+        # $10 billion. One module said pending; another said closed at double
+        # the value.
+        #
+        # It was not merely an internal contradiction. streamlit_app/pages/
+        # 4_About_and_Methodology renders this dict as a table under the
+        # caption "Source: CDFI Fund NMTC Award Announcements (public
+        # disclosures)" -- so the invented row was on a CDE's screen with a
+        # federal attribution over it. The "# estimated" markers were in the
+        # source; the screen showed none of them.
+        #
+        # SOURCE, RETRIEVED FIRST-HAND: CY 2024-2025 NMTC Program Award Book
+        # (cdfifund.gov/media/8018306/download?inline, 8 pp., linked from the
+        # 23 Dec 2025 announcement at cdfifund.gov/news/700), page 4:
+        #   "142 CDEs out of 216 applicants were awarded allocations by the
+        #    CDFI Fund. 66%"
+        #   "A total of $10 billion was awarded out of $19.2 billion
+        #    requested. 52%"
+        # avg_award and median_award are computed from the Award Book's own
+        # allocatee table (pp. 6-8): 142 amounts summing to exactly
+        # $10,000,000,000, which is the published total, so the extraction is
+        # self-checking rather than assumed.
+        #
+        # THE KEY IS "CY2024-2025", NOT "CY2024". The announcement states the
+        # awards are "a double round, covering 2024 and 2025". Filing a double
+        # round under a single year beside four single rounds is what made
+        # $10 billion look like an error against its $5 billion neighbours.
+        "applications": 216,
+        "awards": 142,
+        "total_allocated": 10_000_000_000,
+        "avg_award": 70_422_535,
+        "median_award": 75_000_000,
+        "acceptance_rate": 0.657,
         "announcement_year": 2025,
+        # Flagged so a consumer averaging this in beside single rounds can see
+        # what it is holding. get_overall_acceptance_rate does exactly that.
+        "double_round": True,
     },
 }
 
@@ -197,14 +232,32 @@ WINNER_IMPACT_BENCHMARKS: dict = {
 # ---------------------------------------------------------------------------
 
 APPLICATION_VOLUME_TRENDS: dict = {
-    "years": [2020, 2021, 2022, 2023, 2024],
-    "applications": [196, 341, 280, 305, 320],
-    "awards": [76, 100, 100, 107, 110],
-    "acceptance_rates": [0.388, 0.293, 0.357, 0.351, 0.344],
+    # The final column restates the CY 2024-2025 row above and was corrected
+    # with it (1.5.0 F5): it carried 320 applications, 110 awards and a 34.4%
+    # acceptance rate, all invented, against a published 216 / 142 / 65.7%.
+    # The label is "2024-2025" because that column is a DOUBLE ROUND covering
+    # both years, which is why its counts do not compare like-for-like with
+    # the four single rounds beside it.
+    "years": [2020, 2021, 2022, 2023, "2024-2025"],
+    "applications": [196, 341, 280, 305, 216],
+    "awards": [76, 100, 100, 107, 142],
+    "acceptance_rates": [0.388, 0.293, 0.357, 0.351, 0.657],
     "trend_note": (
-        "Application volumes rose sharply post-COVID then stabilized. "
-        "Acceptance rates have ranged from 29% (CY2021, most competitive) "
-        "to 39% (CY2020). Expect 30-35% acceptance in near-term rounds."
+        # THE FORECAST IS DELETED (1.5.0 F5). This read "Expect 30-35%
+        # acceptance in near-term rounds" and rendered as a blockquote on the
+        # Streamlit About page. The CDFI Fund forecasts no acceptance rate,
+        # this package has no basis to, and the very next round settled at
+        # 65.7% -- roughly double the forecast, which is the direction that
+        # talks a CDE out of applying. What replaces it is the record, and a
+        # statement that the record is not a prediction.
+        "Application volumes rose sharply post-COVID then stabilized. Across "
+        "the four single rounds CY2020-CY2023 acceptance ranged from 29% "
+        "(CY2021, most competitive) to 39% (CY2020). CY 2024-2025 was a "
+        "DOUBLE ROUND covering two years, and 142 of 216 applicants received "
+        "an allocation (65.7%), so it does not compare like-for-like with the "
+        "single rounds beside it. THIS IS A RECORD, NOT A FORECAST: neither "
+        "the CDFI Fund nor this tool publishes an expected acceptance rate for "
+        "any future round, and CY 2026 is a $5 billion single round."
     ),
 }
 
