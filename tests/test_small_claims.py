@@ -399,7 +399,7 @@ def test_the_sample_output_page_is_rendered_not_escaped():
 # ---------------------------------------------------------------------------
 
 def _fstring_expressions_with_backslashes(source: str, path: str):
-    """Yield (lineno, expression_source) for f-string expressions holding a ``\``.
+    r"""Yield (lineno, expression_source) for f-string expressions holding a ``\``.
 
     AST, NOT REGEX, and that is a measured decision rather than a stylistic
     one. The first draft of this gate used a regex and MISSED THE REAL LINE:

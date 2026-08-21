@@ -153,6 +153,36 @@ dev = [
     #              appears in 4.12.0; 4.11.0 has no such method.
     "streamlit>=1.36.0",
     "plotly>=4.12.0",
+    # Required by tests/test_small_claims.py::
+    # test_the_sample_output_page_is_rendered_not_escaped, which calls
+    # docs/hooks/generate_sample_output.py::_html() directly. That hook
+    # imports markdown, and the hook is RIGHT to assume it: mkdocs 1.6.1
+    # declares markdown>=3.3.6 unconditionally, so at docs-build time the
+    # import always succeeds. Verified first-hand against the installed
+    # distribution rather than assumed -- the ==3.3.6 pin in mkdocs metadata
+    # sits behind its own min-versions extra and is a different requirement.
+    #
+    # THE DEFECT WAS THAT THE GATE RAN FROM THE test JOB, WHICH INSTALLS
+    # THIS EXTRA AND NOT [docs]. CI went red on all four interpreters with
+    # ModuleNotFoundError while docs -- the only job with markdown -- stayed
+    # green. It passed in the build session's venv for a reason unrelated to
+    # the code: .venv-work had markdown 3.10.3 pulled in by an earlier
+    # pip install -e '.[docs]'.
+    #
+    # DO NOT CLOSE THIS WITH importorskip, skipif OR try/except. Any of the
+    # three turns CI green by permanently disarming the gate that keeps the
+    # FICTIONAL-DATA WARNING rendered as a warning -- the sentence telling a
+    # reader that Riverbend Community Capital CDE does not exist and the four
+    # downloadable federal application documents must not be filed. _html()
+    # once html.escaped that body into a <pre> and published the warning as a
+    # raw admonition marker. A conditionally-skipped safety gate is silently
+    # untested forever, which is this project's most-recorded failure shape.
+    #
+    # FLOOR: 3.3.6, the same lower bound mkdocs resolves under, so the test
+    # job and the docs job exercise the same one. Measured, not copied: the
+    # five assertions in that test all pass against markdown 3.3.6 on 3.9 and
+    # against 3.10.3 on 3.12, both ends of the supported range.
+    "markdown>=3.3.6",
 ]
 
 [project.urls]
