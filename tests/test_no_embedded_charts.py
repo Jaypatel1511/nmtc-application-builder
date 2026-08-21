@@ -66,21 +66,84 @@ _TEMPLATE_ARTIFACTS = {"docProps/thumbnail.jpeg"}
 _IMAGE_SUFFIXES = (".png", ".jpeg", ".jpg", ".gif", ".bmp", ".emf", ".wmf")
 
 
+def test_the_dev_extra_declares_matplotlib():
+    """The gate below is unconditional; this is what makes that safe (1.5.0 T2).
+
+    THE DEFECT THIS CLOSES. ``generated`` opened with
+    ``pytest.importorskip("matplotlib")``. Executed, not reasoned: uninstall
+    matplotlib from a clean venv and run this file and it reports **1 passed,
+    1 skipped, exit 0** -- and the half that skips is
+    ``test_the_word_document_carries_no_chart_image``, the BEHAVIOURAL half,
+    the one keeping nine unsourced house-band constants out of a document a
+    CDE files with the CDFI Fund. S4's entire mitigation rests on it.
+
+    It was green only because ``dev`` happens to declare matplotlib and
+    NOTHING ASSERTED THAT IT DOES.
+    ``test_the_output_extra_covers_every_skippable_renderer`` checks the
+    ``output`` extra, which does not carry matplotlib and never did. One edit
+    to the ``dev`` extra and the behavioural half would have gone silently
+    green forever, in every environment, with no test anywhere going red.
+
+    A GATE THAT CANNOT FAIL IS WORSE THAN NO GATE -- twenty-one recorded
+    instances in this project, two of them in this branch's own new files. So
+    the skip is deleted rather than explained: the fixture below imports
+    matplotlib unconditionally and ERRORS if it is absent, and this test makes
+    the declaration that keeps that honest a checked fact.
+
+    EVERY JOB THAT RUNS THIS SUITE INSTALLS ``[dev]`` -- verified in the
+    workflows rather than assumed: ``ci.yml`` installs ``".[dev]"``, and
+    ``release.yml`` installs ``"${WHEEL}[dev]"`` and ``"${SDIST}[dev]"``. So
+    making the fixture unconditional cannot redden a leg, and the skip count
+    does not move: matplotlib is present everywhere the suite runs, which is
+    exactly why the trap was invisible.
+
+    NOT CLOSED WITH importorskip, skipif OR try/except, for the reason the
+    ``markdown`` floor in ``pyproject.toml`` states one class over: any of the
+    three turns a red leg green by permanently disarming the gate.
+    """
+    from tests.test_output_extra_is_named import _extras
+
+    extras = _extras()
+    assert "dev" in extras, (
+        f"pyproject.toml defines {sorted(extras)} and no 'dev' extra. Every "
+        "job that runs this suite installs it; this gate's fixture imports "
+        "matplotlib unconditionally on the strength of that."
+    )
+    declared = {req.split(">")[0].split("=")[0].split("[")[0].strip().lower()
+                for req in extras["dev"]}
+    assert "matplotlib" in declared, (
+        "the 'dev' extra does not declare matplotlib.\n\n"
+        "STOP: this is the edit that used to disarm the embed gate silently. "
+        "test_the_word_document_carries_no_chart_image needs matplotlib "
+        "IMPORTABLE to mean anything -- without it charts are skipped for the "
+        "missing dependency and the .docx is chart-free for a reason that has "
+        "nothing to do with the ruling being enforced. It is what keeps nine "
+        "unsourced winner-band constants out of a document a CDE files with "
+        "the CDFI Fund.\n\n"
+        "Re-declare matplotlib in [dev]. Do NOT make the fixture skippable "
+        "again."
+    )
+
+
 @pytest.fixture(scope="module")
 def generated(tmp_path_factory):
     """All four formats, generated once, with matplotlib PRESENT.
 
     The optional-dependency path is the obvious false negative here: charts are
     skipped without matplotlib, so a run in an environment lacking it would
-    pass this gate while proving nothing. Importing it first turns that into a
-    skip with a stated reason rather than a silent pass.
+    pass this gate while proving nothing.
+
+    THE IMPORT IS UNCONDITIONAL AND THAT IS THE POINT (1.5.0 T2). This was
+    ``pytest.importorskip("matplotlib", reason=...)``, and the reason string
+    made the skip read as a considered safeguard. It was not: it meant the
+    behavioural half of this gate reported success while asking nothing, in
+    any environment where the dependency went missing. ``ImportError`` here is
+    the correct outcome -- it is loud, it names the missing package, and it
+    cannot be mistaken for a pass. ``test_the_dev_extra_declares_matplotlib``
+    above asserts the declaration that stops it from ever firing in CI.
     """
-    pytest.importorskip(
-        "matplotlib",
-        reason="matplotlib absent: charts would be skipped for that reason "
-               "alone, so this gate could not distinguish 'not embedded' from "
-               "'could not be drawn'.",
-    )
+    import matplotlib  # noqa: F401  -- unconditional ON PURPOSE; see above.
+
     app = Application(cde=CDEProfile.sample(), requested_allocation=50_000_000)
     app.add_pipeline(Pipeline.sample(n=20))
     out = tmp_path_factory.mktemp("embed_gate")

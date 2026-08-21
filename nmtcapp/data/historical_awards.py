@@ -335,12 +335,56 @@ def get_application_volume_trends() -> dict:
 
 
 def get_overall_acceptance_rate(rounds: int = 4) -> float:
-    """Return the average acceptance rate across the most recent N rounds.
+    """Return the UNWEIGHTED MEAN of the last N rounds' acceptance rates.
 
     Example::
 
         rate = get_overall_acceptance_rate()
         print(f"Recent acceptance rate: {rate:.0%}")
+
+    THE CONSTRUCTION IS STATED BECAUSE THE NUMBER REACHES A CDE (1.5.0 T4).
+    This feeds ``win_probability.score_win_probability`` as
+    ``acceptance_rate_baseline``, so what it is a mean OF is not an internal
+    detail. ON THE FIVE ROWS THIS MODULE HOLDS TODAY -- stated as a dated
+    measurement, not a standing guarantee, because the rates above are exactly
+    the kind of thing a later round corrects -- the default returns
+    **0.4145**, and that is::
+
+        (0.293 + 0.357 + 0.351 + 0.657) / 4
+
+    -- four per-round rates over a denominator of FOUR ROUNDS. It is NOT
+    ``sum(awards) / sum(applications)``; the pooled figure over the same four
+    rounds is 449/1,142 = **0.393** on those same rows. The two do not share a
+    denominator by construction and not merely by arithmetic, and
+    the mean-of-ratios sits above the pooled ratio because CY 2024-2025 has
+    the smallest applicant pool (216 against CY2021's 341) and the highest
+    rate, so equal weighting over-weights it.
+
+    AND THE FOURTH TERM IS A DOUBLE ROUND. CY 2024-2025 awarded two years of
+    allocation authority ($10B, not $5B) in one competition; 142 of 216 is a
+    published fact, but it is not a single-round acceptance rate.
+    ``APPLICATION_VOLUME_TRENDS["trend_note"]`` says so in as many words --
+    that the round "does not compare like-for-like with the single rounds
+    beside it" -- and this function averages it in regardless. Measured, both
+    ways, over the four SINGLE rounds CY2020-CY2023: mean-of-rates **0.347**,
+    pooled **0.341**.
+
+    SO THE DIRECTION OF THE REMAINING ERROR IS UP. 1.5.0 F5 replaced a
+    fabricated 0.344 that understated a CDE's odds by nearly half, which was a
+    real defect correctly fixed. What replaced it runs the other way: a CDE
+    reading 41% as its chance in the next round -- a $5 billion single round,
+    per the trend note -- is reading a figure roughly seven points above the
+    single-round record, and over-investing in an application on inflated odds
+    is its own harm.
+
+    THE VALUE IS LEFT AS IT IS, DELIBERATELY. Re-basing it means choosing
+    between pooling, weighting and excluding the double round, and that is
+    calibration on a number that informs a federal filing -- methodology-first
+    by this project's standing rule, and out of scope for a round correcting
+    unreleased entries. What is closed here is that the construction can no
+    longer be mistaken for a pooled rate or for a single-round expectation by
+    anyone reading the call site. See ``tests/data/test_historical_awards.py::
+    test_the_overall_rate_is_a_mean_of_ratios_not_a_pooled_ratio``.
     """
     recent = list(NMTC_AWARD_ROUNDS.values())[-rounds:]
     return sum(r["acceptance_rate"] for r in recent) / len(recent)
