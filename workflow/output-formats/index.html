@@ -798,13 +798,30 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-visualizations-are-embedded" class="md-nav__link">
+  <a href="#visualizations-are-not-embedded-in-any-generated-document" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How visualizations are embedded
+        Visualizations are NOT embedded in any generated document
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Visualizations are NOT embedded in any generated document">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-auto-embedding-is-not-simply-switched-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why auto-embedding is not simply switched on
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1242,13 +1259,30 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-visualizations-are-embedded" class="md-nav__link">
+  <a href="#visualizations-are-not-embedded-in-any-generated-document" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How visualizations are embedded
+        Visualizations are NOT embedded in any generated document
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Visualizations are NOT embedded in any generated document">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-auto-embedding-is-not-simply-switched-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why auto-embedding is not simply switched on
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1421,42 +1455,73 @@ label now describes it.</p>
 published at <a href="../sample-output/">Sample Output</a>. It is not committed to the
 repository, so it cannot drift from what the current code produces.</p>
 <hr />
-<h2 id="how-visualizations-are-embedded">How visualizations are embedded<a class="headerlink" href="#how-visualizations-are-embedded" title="Permanent link">&para;</a></h2>
-<p>When the Word document is generated and <code>matplotlib</code> is installed, <code>WordApplicationBuilder</code> automatically generates all five visualization charts as temporary PNG files and embeds them in the relevant sections:</p>
-<ul>
-<li><code>plot_pipeline_map</code> → Section B (Geographic Footprint)</li>
-<li><code>plot_distress_heatmap</code> → Section B (Community Need)</li>
-<li><code>plot_sector_distribution</code> → Section B (Sector Mix)</li>
-<li><code>plot_readiness_radar</code> → Executive Summary</li>
-<li><code>plot_winner_alignment</code> → Section B (Benchmark Comparison)</li>
-</ul>
-<p>If <code>matplotlib</code> is not installed, charts are omitted from the Word document without error. To ensure charts are included, install with:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"nmtc-application-builder[output,viz]"</span>
+<h2 id="visualizations-are-not-embedded-in-any-generated-document">Visualizations are NOT embedded in any generated document<a class="headerlink" href="#visualizations-are-not-embedded-in-any-generated-document" title="Permanent link">&para;</a></h2>
+<p><strong>No chart is embedded in any output format.</strong> Not in Word, not in PDF, not in
+Excel, not in Markdown. <code>app.generate()</code> produces text and tables only.</p>
+<p>This section previously claimed the opposite: that <code>WordApplicationBuilder</code>
+drew all five charts and placed each one into a named section of the Word
+document. That was false for every release in which it appeared. Verified by
+execution at 1.4.0 and again at
+1.5.0, with <code>matplotlib</code> installed so its absence could not be the explanation:
+all four formats generate cleanly and the <code>.docx</code> contains <strong>zero</strong> chart images
+(its only media part is <code>docProps/thumbnail.jpeg</code>, a python-docx template
+artifact). <code>grep</code> confirms the other half: no <code>add_picture</code> call and no
+<code>plot_*</code> call exists anywhere under <code>nmtcapp/</code>.</p>
+<p>The charts are a <strong>separate, opt-in API</strong>. Call them yourself and place the PNGs
+where you want them:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_readiness_radar</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="n">plot_readiness_radar</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">"./charts/readiness_radar.png"</span><span class="p">)</span>
 </code></pre></div>
+<p>See <a href="../visualizations/">Visualizations</a> for all five functions. They require
+<code>matplotlib</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"nmtc-application-builder[viz]"</span>
+</code></pre></div>
+<h3 id="why-auto-embedding-is-not-simply-switched-on">Why auto-embedding is not simply switched on<a class="headerlink" href="#why-auto-embedding-is-not-simply-switched-on" title="Permanent link">&para;</a></h3>
+<p>Not an oversight, and not a small feature — a deliberate hold, recorded here so
+it is not "fixed" by someone who finds this page and the code disagreeing.</p>
+<p><code>plot_winner_alignment</code> charts a pipeline against winner p25/p50/p75 values for
+three metrics. Those values are <strong>unsourced</strong>: every one of them is a <code>HOUSE</code>
+row in <code>tests/scoring_attribution.txt</code>, meaning no retrievable document
+supports it. <code>nmtcapp/data/historical_awards.py</code>'s own header states that the
+"Source: CDFI Fund Annual Reports" comments above them cite a publication that
+does not exist.</p>
+<p>A chart is read as evidence far more readily than a sentence is, and a chart
+inside a filed federal application is read as the applicant's own assertion.
+Embedding these would move three unsourced comparisons from a PNG a user chose
+to make into a document a CDE files with the CDFI Fund.</p>
+<p><strong>Status after the 1.5.0 constant sweep: the constraint still binds.</strong> That
+sweep deleted the fabricated <code>percentile_vs_winners</code> and six orphaned
+constants, and forced a written ruling for all 69 survivors — but 60 of the 69
+are still <code>HOUSE</code>. (The sixtieth left the unsourced set by being SOURCED: the
+CY 2024-2025 award row, whose "award data pending" comment had expired eight
+months earlier, is now cited to the Fund's own Award Book.) <code>plot_winner_alignment</code>'s three comparisons are among them.
+Auto-embedding becomes a legitimate feature once the constants a chart draws
+are sourced or gone; it is not one before that.</p>
 <hr />
 <h2 id="example-selective-generation">Example: selective generation<a class="headerlink" href="#example-selective-generation" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># During development — fast iteration with Markdown only</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">"./drafts/"</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="p">[</span><span class="s2">"markdown"</span><span class="p">])</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="c1"># For internal review — Word + Excel</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">"./review/"</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="p">[</span><span class="s2">"word"</span><span class="p">,</span> <span class="s2">"excel"</span><span class="p">])</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="c1"># For final submission package — all formats</span>
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">"./final/"</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="p">[</span><span class="s2">"markdown"</span><span class="p">,</span> <span class="s2">"word"</span><span class="p">,</span> <span class="s2">"excel"</span><span class="p">,</span> <span class="s2">"pdf"</span><span class="p">])</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># During development — fast iteration with Markdown only</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">"./drafts/"</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="p">[</span><span class="s2">"markdown"</span><span class="p">])</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># For internal review — Word + Excel</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">"./review/"</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="p">[</span><span class="s2">"word"</span><span class="p">,</span> <span class="s2">"excel"</span><span class="p">])</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># For final submission package — all formats</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">"./final/"</span><span class="p">,</span> <span class="n">formats</span><span class="o">=</span><span class="p">[</span><span class="s2">"markdown"</span><span class="p">,</span> <span class="s2">"word"</span><span class="p">,</span> <span class="s2">"excel"</span><span class="p">,</span> <span class="s2">"pdf"</span><span class="p">])</span>
 </code></pre></div>
 <hr />
 <h2 id="output-directory-behavior">Output directory behavior<a class="headerlink" href="#output-directory-behavior" title="Permanent link">&para;</a></h2>
 <p>The <code>output_dir</code> argument accepts any path, absolute or relative. The directory is created with <code>os.makedirs(output_dir, exist_ok=True)</code> — if it already exists, files are overwritten without prompting.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Absolute path</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">"/Users/jane/applications/2025/"</span><span class="p">)</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Relative path (relative to working directory)</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">"./drafts/"</span><span class="p">)</span>
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># Run-specific subdirectory</span>
-<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
-<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="n">run_dir</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"./runs/</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
-<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">run_dir</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># Absolute path</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">"/Users/jane/applications/2025/"</span><span class="p">)</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="c1"># Relative path (relative to working directory)</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s2">"./drafts/"</span><span class="p">)</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="c1"># Run-specific subdirectory</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="n">run_dir</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"./runs/</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="n">paths</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">run_dir</span><span class="p">)</span>
 </code></pre></div>
 
 

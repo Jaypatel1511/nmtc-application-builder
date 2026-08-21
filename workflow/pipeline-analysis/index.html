@@ -1895,8 +1895,16 @@
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">d</span><span class="p">[</span><span class="s2">"pct_non_lic"</span><span class="p">]</span>              <span class="c1"># float — fraction in non-LIC (ineligible) tracts</span>
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">d</span><span class="p">[</span><span class="s2">"pct_native_area"</span><span class="p">]</span>          <span class="c1"># float — fraction in Native American areas</span>
 <a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="n">d</span><span class="p">[</span><span class="s2">"meets_target_threshold"</span><span class="p">]</span>   <span class="c1"># bool — True if pct_deep_or_severe &gt;= 0.75</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">d</span><span class="p">[</span><span class="s2">"vs_historical_winners"</span><span class="p">]</span>    <span class="c1"># str — e.g. "above_median"</span>
 </code></pre></div>
+<p><code>vs_historical_winners</code> is <strong>not</strong> a key and must not be added back. It was
+removed in 1.2.0 and <code>tests/intelligence/test_distress_analysis.py</code> asserts it
+never returns: it ranked a CDE against a winner distribution that was never
+loaded and is not published, off a hardcoded ladder that disagreed with
+<code>WINNER_PATTERN_THRESHOLDS</code> in the same package. See
+<code>nmtcapp/intelligence/distress_analysis.py</code> for the full ruling. This line
+documented it for four releases after the deletion — 1.2.0 through 1.4.0 — and
+<code>tests/test_documented_keys.py</code> now fails on that class rather than waiting for
+someone to notice.</p>
 <h3 id="geographic-analysis-keys">Geographic analysis keys<a class="headerlink" href="#geographic-analysis-keys" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">g</span> <span class="o">=</span> <span class="n">analysis</span><span class="o">.</span><span class="n">geographic_analysis</span>
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">g</span><span class="p">[</span><span class="s2">"states_count"</span><span class="p">]</span>                  <span class="c1"># int — number of distinct states</span>
