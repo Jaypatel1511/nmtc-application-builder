@@ -135,3 +135,32 @@ def sample_pipeline_result(sample_pipeline) -> PipelineAnalysisResult:
             "avg_leverage_ratio": 0.80,
         },
     )
+
+
+# ---------------------------------------------------------------------------
+# The `network` marker: OFF unless asked for, whatever else -m says.
+#
+# WHY A HOOK AND NOT `addopts = "-m 'not network'"`. A command-line -m REPLACES
+# addopts' -m rather than combining with it, and both CI jobs pass their own
+# (`-m "not wheel"`). So an addopts-based default would be silently cancelled
+# by the exact invocations that matter -- a gate disabled by the thing that was
+# supposed to configure it, which is this suite's recurring shape.
+#
+# This hook reads the marker expression that was actually used and skips
+# network tests unless it mentions `network` affirmatively. Composes with
+# `-m "not wheel"`, and with no -m at all.
+# ---------------------------------------------------------------------------
+
+def pytest_collection_modifyitems(config, items):
+    expression = config.getoption("-m", default="") or ""
+    requested = "network" in expression and "not network" not in expression
+    if requested:
+        return
+    skip = pytest.mark.skip(
+        reason="reaches the public internet; run with `-m network` to enable. "
+               "Skipped by default so CI never depends on a federal website "
+               "being reachable."
+    )
+    for item in items:
+        if "network" in item.keywords:
+            item.add_marker(skip)

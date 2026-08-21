@@ -69,12 +69,14 @@ Applicant fills in and governs; the NOTE is off by one letter against it. The
 NOTE's own Rural CDE sentence — "commits to a figure of 50% or greater in
 response to Question 22(c)" — agrees with the table, not with itself.
 
-PROVENANCE. CY 2024-2025 NMTC Program Allocation Application, 142 pp.,
-1,525,626 bytes, SHA-256 0280c6bc7b35f6015e2c2b1be4b1c07b3864f2dcbaeadfbbbf8bde
-d8de12834f, re-downloaded and re-hashed for this round from
-https://www.cdfifund.gov/system/files/2024-11/CY_2024-2025_NMTC_Program_Allocation_Application.pdf
-and text-extracted LOCALLY with pypdf. Identical to the hash
-``renderers/_question_25.py`` pins, so both modules read the same instrument.
+PROVENANCE. CY 2024-2025 NMTC Program Allocation Application, re-downloaded,
+re-hashed and text-extracted LOCALLY with pypdf. The page count, byte count,
+URL and SHA-256 are stated ONCE, in ``renderers/_round_provenance``. Until
+1.4.1 they were typed here AND in ``renderers/_question_25`` — two hand-copied
+64-character hashes, which is provenance that nobody can proofread; the two
+happened to agree, exactly as ``Q25_QEI_BASIS_CLAUSE``'s three copies did. One
+constant now, read by both. CY 2024-2025 is a CLOSED round being used as a
+proxy for the unpublished CY 2026 instrument; see ``_round_provenance``.
 Question 22's NOTE block is printed p. 31 (PDF page 58); the question table is
 printed p. 32 (PDF page 59).
 """

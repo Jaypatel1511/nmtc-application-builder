@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nmtc-application-builder"
-version = "1.4.0"
+version = "1.5.0"
 description = "Flagship NMTC application intelligence platform — pipeline analysis, eligibility validation, readiness scoring, and visualization for CDEs"
 readme = "README.md"
 license = { text = "MIT" }
@@ -168,6 +168,13 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 markers = [
     "wheel: slow end-to-end wheel build + install test (deselect with '-m not wheel')",
+    # OPT-IN, AND DELIBERATELY NOT PART OF ANY GATE. Reaches cdfifund.gov to
+    # answer the one question no offline test can (has the CY 2026 round
+    # opened?). CI must not depend on a federal website being up: a suite that
+    # goes red for reasons outside this repository is one people learn to
+    # ignore. Run it when tests/test_round_provenance.py's expiry fires:
+    #     pytest -m network tests/test_round_provenance.py
+    "network: reaches the public internet; skipped unless -m network is given",
 ]
 # A parametrized test whose argument list comes out EMPTY is silently marked
 # skipped by default, and a skip exits 0. That is the same vacuity class the

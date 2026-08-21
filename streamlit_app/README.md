@@ -51,7 +51,7 @@ The app opens at `http://localhost:8501`.
 ## Sample data
 
 No external API calls are needed. `Pipeline.sample(n=20)` returns a pre-enriched
-set of 20 realistic projects across 12 states. All distress levels and eligibility
+set of 20 realistic projects across 19 states. All distress levels and eligibility
 flags are hard-coded in the library.
 
 ## License

@@ -167,21 +167,60 @@ repository, so it cannot drift from what the current code produces.
 
 ---
 
-## How visualizations are embedded
+## Visualizations are NOT embedded in any generated document
 
-When the Word document is generated and `matplotlib` is installed, `WordApplicationBuilder` automatically generates all five visualization charts as temporary PNG files and embeds them in the relevant sections:
+**No chart is embedded in any output format.** Not in Word, not in PDF, not in
+Excel, not in Markdown. `app.generate()` produces text and tables only.
 
-- `plot_pipeline_map` → Section B (Geographic Footprint)
-- `plot_distress_heatmap` → Section B (Community Need)
-- `plot_sector_distribution` → Section B (Sector Mix)
-- `plot_readiness_radar` → Executive Summary
-- `plot_winner_alignment` → Section B (Benchmark Comparison)
+This section previously claimed the opposite: that `WordApplicationBuilder`
+drew all five charts and placed each one into a named section of the Word
+document. That was false for every release in which it appeared. Verified by
+execution at 1.4.0 and again at
+1.4.1, with `matplotlib` installed so its absence could not be the explanation:
+all four formats generate cleanly and the `.docx` contains **zero** chart images
+(its only media part is `docProps/thumbnail.jpeg`, a python-docx template
+artifact). `grep` confirms the other half: no `add_picture` call and no
+`plot_*` call exists anywhere under `nmtcapp/`.
 
-If `matplotlib` is not installed, charts are omitted from the Word document without error. To ensure charts are included, install with:
+The charts are a **separate, opt-in API**. Call them yourself and place the PNGs
+where you want them:
+
+```python
+from nmtcapp.visualization import plot_readiness_radar
+
+plot_readiness_radar(app, "./charts/readiness_radar.png")
+```
+
+See [Visualizations](visualizations.md) for all five functions. They require
+`matplotlib`:
 
 ```bash
-pip install "nmtc-application-builder[output,viz]"
+pip install "nmtc-application-builder[viz]"
 ```
+
+### Why auto-embedding is not simply switched on
+
+Not an oversight, and not a small feature — a deliberate hold, recorded here so
+it is not "fixed" by someone who finds this page and the code disagreeing.
+
+`plot_winner_alignment` charts a pipeline against winner p25/p50/p75 values for
+three metrics. Those values are **unsourced**: every one of them is a `HOUSE`
+row in `tests/scoring_attribution.txt`, meaning no retrievable document
+supports it. `nmtcapp/data/historical_awards.py`'s own header states that the
+"Source: CDFI Fund Annual Reports" comments above them cite a publication that
+does not exist.
+
+A chart is read as evidence far more readily than a sentence is, and a chart
+inside a filed federal application is read as the applicant's own assertion.
+Embedding these would move three unsourced comparisons from a PNG a user chose
+to make into a document a CDE files with the CDFI Fund.
+
+**Status after the 1.4.1 constant sweep: the constraint still binds.** That
+sweep deleted the fabricated `percentile_vs_winners` and six orphaned
+constants, and forced a written ruling for all 69 survivors — but 61 of the 69
+are still `HOUSE`. `plot_winner_alignment`'s three comparisons are among them.
+Auto-embedding becomes a legitimate feature once the constants a chart draws
+are sourced or gone; it is not one before that.
 
 ---
 

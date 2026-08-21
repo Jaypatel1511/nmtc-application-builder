@@ -14,6 +14,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from nmtcapp.integrations._mapper_capabilities import assert_mapper_capabilities
+
 if TYPE_CHECKING:
     from nmtcapp.core.pipeline import Pipeline
 
@@ -81,6 +83,25 @@ def enrich_pipeline_eligibility(pipeline: "Pipeline") -> "Pipeline":
         return pipeline
 
     from nmtcmapper import NMTCMapper, NMTCMapperError
+
+    # THE DEPENDENCY CONTRACT, ASSERTED AT THE POINT OF CONSUMPTION (1.4.1 S2).
+    #
+    # Deliberately BEFORE NMTCMapper() and outside the try/except below. Two
+    # reasons, and the second is the one that matters:
+    #
+    #   1. It needs no dataset, no network and no tract, so failing first
+    #      costs nothing and reports the real cause instead of whatever the
+    #      loader happens to say afterwards.
+    #   2. MapperCapabilityError is NOT an NMTCMapperError, so the except
+    #      clause below cannot swallow it into degraded mode. A guard that a
+    #      neighbouring handler converts back into "continue quietly" is the
+    #      shape this whole check exists to remove; keeping it outside the
+    #      block is what makes that structural rather than a convention.
+    #
+    # It RAISES rather than degrading. See _mapper_capabilities for the
+    # argument, including the case against each degrade path and the cost of
+    # raising.
+    assert_mapper_capabilities()
 
     try:
         mapper = NMTCMapper()

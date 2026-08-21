@@ -214,8 +214,17 @@ d["pct_lic"]                  # float — fraction in standard LIC tracts
 d["pct_non_lic"]              # float — fraction in non-LIC (ineligible) tracts
 d["pct_native_area"]          # float — fraction in Native American areas
 d["meets_target_threshold"]   # bool — True if pct_deep_or_severe >= 0.75
-d["vs_historical_winners"]    # str — e.g. "above_median"
 ```
+
+`vs_historical_winners` is **not** a key and must not be added back. It was
+removed in 1.2.0 and `tests/intelligence/test_distress_analysis.py` asserts it
+never returns: it ranked a CDE against a winner distribution that was never
+loaded and is not published, off a hardcoded ladder that disagreed with
+`WINNER_PATTERN_THRESHOLDS` in the same package. See
+`nmtcapp/intelligence/distress_analysis.py` for the full ruling. This line
+documented it for four releases after the deletion — 1.2.0 through 1.4.0 — and
+`tests/test_documented_keys.py` now fails on that class rather than waiting for
+someone to notice.
 
 ### Geographic analysis keys
 

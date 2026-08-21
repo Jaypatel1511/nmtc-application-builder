@@ -84,10 +84,29 @@ class TestWinnerGeographicPatterns:
     def test_hhi_below_1000(self):
         assert WINNER_GEOGRAPHIC_PATTERNS["mean_hhi"] < 1_000
 
-    def test_urban_rural_pct_sum_to_one(self):
-        g = WINNER_GEOGRAPHIC_PATTERNS
-        total = g["urban_pct_mean"] + g["rural_pct_mean"]
-        assert abs(total - 1.0) < 0.01
+    def test_the_urban_complement_stays_deleted(self):
+        """THIS TEST USED TO ASSERT THE DEFECT (1.4.1 S3).
+
+        It was ``test_urban_rural_pct_sum_to_one``, and it passed:
+        ``urban_pct_mean`` 0.82 and ``rural_pct_mean`` 0.18 summed to exactly
+        1.000. That is the whole problem. A pair of measured means over a
+        population of award winners does not land on 1.000 to three decimals;
+        one of them was ARITHMETIC, not measurement -- the 1.4.0 rural ruling
+        says so in benchmarks.py in those words.
+
+        So a green test was standing guard over a fabricated complement, and
+        the thing it guarded was that the fabrication remained exact. Anyone
+        replacing 0.82 with a real measured figure would have gone RED and been
+        told to put the invented number back.
+
+        ``urban_pct_mean`` had no consumer in code and is deleted. This asserts
+        it stays deleted, which is the opposite assertion on the same line.
+        """
+        assert "urban_pct_mean" not in WINNER_GEOGRAPHIC_PATTERNS, (
+            "urban_pct_mean is back. It was the arithmetic complement of "
+            "rural_pct_mean, not a measurement; if a real urban share is ever "
+            "needed it must come with a source, not from 1 - rural."
+        )
 
 
 class TestWinnerSectorPatterns:

@@ -1,4 +1,45 @@
-nmtc-application-builder==1.4.0
+# THE PIN STAYS AN EQUALITY. Ruling recorded 1.4.1 S6; the alternatives were
+# examined and both are worse.
+#
+# WHY THIS LOOKS LIKE THE BUG. Merging PR #12 took the public app down for the
+# whole merge-to-publish window and needed a manual reboot afterwards, because
+# main carried `==1.4.0` before 1.4.0 existed on PyPI.
+#
+# WHY IT IS NOT. Streamlit Cloud deploys the app's SOURCE from the branch and
+# its LIBRARY from PyPI. Between merge and publish the branch is newer than
+# anything on PyPI, so the two CANNOT agree, and every pin is a choice of which
+# failure to take in that window:
+#
+#   ==<this version>     unresolvable -> TOTAL, LOUD outage. Nothing is served.
+#   >=<this version>     ALSO unresolvable. A floor at an unpublished version
+#                        has no satisfying release, so it fails identically --
+#                        it is not a fix, it is the same failure spelled
+#                        differently.
+#   >=<last published>   resolvable, and resolves to a library OLDER than the
+#                        source deployed beside it. Pages importing a new
+#                        symbol raise; pages that do not, work. That is the
+#                        exact defect gate 2 in tests/test_streamlit_deployment_pin.py
+#                        was built for -- `join_truncated` raising ImportError
+#                        on a public URL at 1.3.1.
+#
+# THE RULING: prefer the loud total failure. A CDE served a half-working page
+# cannot tell which half worked, and this tool's numbers inform a federal
+# filing. An app that is down says so; an app that renders a stale figure does
+# not. The equality pin is also the only option under which the deployed
+# library is PROVABLY the audited artifact matching the deployed source --
+# which is what makes gate 2's scope true rather than approximate.
+#
+# ITS FAILURE MODE, STATED PLAINLY: the public app is down from merge until the
+# PyPI upload completes, and needs a manual reboot after. That is a real cost
+# and it is accepted deliberately, not overlooked.
+#
+# WHAT ACTUALLY REMOVES THE WINDOW: deploy from a branch advanced AFTER the
+# publish rather than before it. See scripts/release.sh. That is a Streamlit
+# Cloud app-settings change, not a change to this file.
+#
+# tests/test_streamlit_deployment_pin.py forces this line to equal
+# pyproject.toml's version. Do not edit one without the other.
+nmtc-application-builder==1.5.0
 streamlit>=1.28.0
 plotly>=5.18.0
 pandas>=1.3

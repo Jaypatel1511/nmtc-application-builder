@@ -545,6 +545,39 @@ jobs:
           #     half                             583
           #     rounded down                     580
           #
+          # RE-DERIVED FOR 1.5.0, AND THE GATE ANNOUNCED IT A THIRD TIME.
+          # 1.5.0 adds 39 tests net across six new modules;
+          # test_release_floor_is_derived_from_the_current_suite went red on
+          # FLOOR=580 before this file was opened -- the third consecutive
+          # round caught by a check rather than by somebody re-reading the
+          # comment. Derived the long way, with this job's exact invocation:
+          #
+          #     collected under -m "not wheel" 1,230
+          #     skipped in the sdist             -37
+          #     EXECUTED                       1,193
+          #     half                             596
+          #     rounded down                     590
+          #
+          # Identical on 3.9.25 and 3.12.13: both gave 1,193 passed / 37
+          # skipped / 1 deselected, with `import nmtcapp` resolving to
+          # site-packages on both.
+          #
+          # RUNNING 3.9 IS NOT CEREMONY. The 1.5.0 rewrite of
+          # benchmarks.summary() introduced an f-string whose expression part
+          # held a backslash -- legal from 3.12, a SyntaxError on 3.9/3.10/3.11
+          # where the module then does not import AT ALL. The checkout venv is
+          # 3.12, so the whole suite was green there while 3.9 could not
+          # collect. Found only by this derivation. Gated now by
+          # tests/test_small_claims.py::test_no_fstring_expression_contains_a_backslash.
+          #
+          # The twelve new skips over 1.4.0's twenty-five are the same
+          # environment class already enumerated above (source sweeps that read
+          # nmtcapp/ or docs/, neither of which sits beside tests/ here), plus
+          # ONE OF A NEW KIND: tests/test_round_provenance.py's live
+          # cdfifund.gov check is marked `network` and is skipped by default in
+          # EVERY environment, checkout included -- deliberately, so CI never
+          # depends on a federal website being reachable.
+          #
           # Identical on 3.9.25 and 3.12.13: both gave 1,166 passed / 25 skipped
           # / 1 deselected, and `import nmtcapp` resolved to site-packages on
           # both. The five new skips over 1.3.1's twenty are the same
@@ -557,7 +590,7 @@ jobs:
           # gate would have gone red inside the tarball -- the third instance of
           # exactly the defect MANIFEST.in's own header documents.
           #
-          FLOOR=580
+          FLOOR=590
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()
