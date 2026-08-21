@@ -20,6 +20,7 @@ from utils import (
     priority_color,
     render_methodology_warning,
     apply_theme,
+    metric_classification,
 )
 from chart_style import (
     apply_matplotlib_theme, hex_rgba, style_plotly_fig, PLOTLY_CONFIG,
@@ -155,15 +156,26 @@ col1, col2, col3, col4 = st.columns(4)
 col1.metric("Aggregate Base Score" + _partial_tag, f"{agg} / {_agg_max}")
 col2.metric("With Priority Points" + _partial_tag,
             f"{agg_with_pp} / {_agg_max + pp.get('max_available', 10)}")
-col3.metric("Business Strategy", f"{bs['section_total']} / {_bs_max}",
-            delta="✓ meets min" if bs['section_total'] >= HIGHLY_QUALIFIED_SECTION_MIN else "✗ below min",
-            delta_color="normal" if bs['section_total'] >= HIGHLY_QUALIFIED_SECTION_MIN else "inverse")
+# GATING VERDICTS, NOT MOVEMENTS (1.5.1 audit, F1 sweep). Both of these passed
+# "✓ meets min" / "✗ below min" as `delta`. Neither carries a sign, so BOTH
+# rendered with an UP arrow — an application below the published Highly
+# Qualified section minimum was shown a red cross pointing upward. Two more
+# sites of T4's defect, on the page whose whole subject is the gate.
+_bs_meets = bs['section_total'] >= HIGHLY_QUALIFIED_SECTION_MIN
+metric_classification(
+    col3, "Business Strategy", f"{bs['section_total']} / {_bs_max}",
+    "✓ meets min" if _bs_meets else "✗ below min",
+    tone="good" if _bs_meets else "bad",
+)
 if _partial:
     col4.metric("Community Outcomes (partial)", f"{co['section_total']} / {_co_max}")
 else:
-    col4.metric("Community Outcomes", f"{co['section_total']} / {_co_max}",
-                delta="✓ meets min" if co['section_total'] >= HIGHLY_QUALIFIED_SECTION_MIN else "✗ below min",
-                delta_color="normal" if co['section_total'] >= HIGHLY_QUALIFIED_SECTION_MIN else "inverse")
+    _co_meets = co['section_total'] >= HIGHLY_QUALIFIED_SECTION_MIN
+    metric_classification(
+        col4, "Community Outcomes", f"{co['section_total']} / {_co_max}",
+        "✓ meets min" if _co_meets else "✗ below min",
+        tone="good" if _co_meets else "bad",
+    )
 
 # Tier badge
 st.markdown(

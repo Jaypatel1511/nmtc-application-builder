@@ -1,7 +1,7 @@
 @@SHEET Summary Dashboard
 Summary Dashboard!A1|str|fmt=General|NEW MARKETS TAX CREDIT ALLOCATION APPLICATION
 Summary Dashboard!A2|str|fmt=General|Great Lakes Regional Capital CDE, LLC
-Summary Dashboard!A3|str|fmt=General|CY2025  |  Prepared: <RUNDATE>  |  Readiness Grade: B (84.9/100)
+Summary Dashboard!A3|str|fmt=General|CY2025  |  Prepared: <RUNDATE>  |  Readiness Grade: B (84.9/100) — this tool's own unsourced house heuristic, not a CDFI Fund evaluation
 Summary Dashboard!A5|str|fmt=General|KEY APPLICATION METRICS
 Summary Dashboard!A6|str|fmt=General|Total NMTC Allocation Requested
 Summary Dashboard!C6|int|fmt="$"#,##0|70000000

@@ -89,7 +89,7 @@ Component Scores:
   Completeness                    80.0/100
 
 Top Strengths:
-  + Good geographic diversity across multiple states
+  + High geographic-diversity sub-score on this tool's own house curve — not a CDFI Fund threshold, and not a finding about the application
 
 Areas for Improvement:
   - Distress concentration below competitive threshold
@@ -220,7 +220,7 @@ Component Scores:
   Completeness                    80.0/100
 
 Top Strengths:
-  + Good geographic diversity across multiple states
+  + High geographic-diversity sub-score on this tool's own house curve — not a CDFI Fund threshold, and not a finding about the application
 
 Areas for Improvement:
   - Distress concentration below competitive threshold
@@ -351,7 +351,7 @@ Component Scores:
   Completeness                    80.0/100
 
 Top Strengths:
-  + Good geographic diversity across multiple states
+  + High geographic-diversity sub-score on this tool's own house curve — not a CDFI Fund threshold, and not a finding about the application
   + Clean validation — no blocking issues
 
 Areas for Improvement:
@@ -454,7 +454,7 @@ Component Scores:
 Top Strengths:
   + High pipeline eligibility rate (≥80% score)
   + Strong deep/severe distress concentration
-  + Good geographic diversity across multiple states
+  + High geographic-diversity sub-score on this tool's own house curve — not a CDFI Fund threshold, and not a finding about the application
 
 Areas for Improvement:
   - Jobs and units per $1MM QEI below this tool's impact-score band

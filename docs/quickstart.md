@@ -104,13 +104,30 @@ recs = app.recommendations()
 print(recs.summary())
 ```
 
-The recommendation engine benchmarks each dimension against historical winners and returns prioritized, quantified recommendations. A typical output includes:
+The recommendation engine scores each pipeline against the **published CY
+2024-2025 Review Process criteria** and returns prioritized recommendations,
+each citing the section behind it. A typical output includes:
 
-- **Critical**: if distress concentration or eligibility rate falls below minimum competitive thresholds
-- **High**: if geographic concentration is too high or a key sector is overrepresented
-- **Medium**: incremental improvements like adding non-metropolitan projects or lifting project count to winner median
+- **Critical**: the score is `Not Qualified` — a published gate was missed
+  (a section total below the Highly Qualified section minimum)
+- **High**: a Review Process sub-criterion scores materially below its
+  structural maximum
+- **Medium**: a sub-criterion is one or two steps short, or a Priority Points
+  bonus is unclaimed
 
-Each recommendation includes a specific action and a numeric improvement estimate (e.g., "+8–15 distress alignment score points").
+Each recommendation includes a specific action and an estimate of the unclaimed
+points in *this tool's own* sub-score (e.g., `"Estimated +3 points (Pipeline
+Credibility: 12/15 → 15/15)."`).
+
+!!! note "Corrected in 1.5.1"
+
+    This passage said the engine "benchmarks each dimension against historical
+    winners" and could recommend "lifting project count to winner median" or
+    act on "geographic concentration". **Those phrases are withdrawn: the
+    engine does none of these.** The engine
+    was executed at 1–5 states and emits no geographic advice at any of them,
+    no winner distribution is consulted, and no `winner median` is held. See
+    [Recommendations](workflow/recommendations.md) for the full correction.
 
 ---
 

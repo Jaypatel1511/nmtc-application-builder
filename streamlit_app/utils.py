@@ -236,3 +236,80 @@ def render_methodology_warning() -> None:
         "cannot be computed. A high alignment score improves competitiveness but "
         "does **not** guarantee an award."
     )
+
+
+# ---------------------------------------------------------------------------
+# metric_classification -- a classification is not a movement (1.5.1 audit, F1)
+#
+# T4 FIXED HALF OF THIS AND SHIPPED A CLAIM THAT IT WAS WHOLE. The round found
+# that ``st.metric(delta="Grade F")`` rendered a GREEN UP ARROW, because
+# streamlit.elements.metric._determine_delta_color_and_direction treats a delta
+# as negative only when ``str(delta)`` starts with "-" and as zero only when it
+# is exactly "0"; a grade letter falls through to UP. It fixed that by passing
+# ``delta_color="off"``, and both 1_Pipeline_Analyzer.py and CHANGELOG.md then
+# stated the result was GRAY/NONE.
+#
+# IT IS NOT. Executed against the pinned Streamlit (1.61.1), for every grade:
+#
+#     _determine_delta_color_and_direction("off", "Grade F")
+#         -> color=GRAY  direction=UP
+#
+# Read the function and the reason is structural: DIRECTION is computed from the
+# delta's sign BEFORE the colour mode is consulted, and ``delta_color`` only
+# ever selects a COLOUR. There is no value of ``delta_color`` that removes the
+# arrow. "off" greys it; the F still points up.
+#
+# So the round shipped a partial fix AND a false statement that it was complete
+# -- and the false statement is the part that stops anyone looking again. The
+# arrow was still there for anyone who opened the page.
+#
+# THE FIX IS TO STOP USING THE DELTA SLOT FOR CLASSIFICATIONS. ``delta`` means
+# "this value moved, in this direction". A grade, a section label, a
+# meets/below verdict and a denominator are none of them movements, and no
+# argument to st.metric makes the slot mean something else. They are rendered
+# below the metric as their own element, where they carry no direction at all.
+#
+# SEVEN SITES, NOT TWO. The round found the grade and the three About-page
+# section labels. Executing every delta string in the app found four more:
+# "Meets/Below this tool's own >=X% band" (RED/GREEN + UP), "of 20" (GREEN +
+# UP -- a denominator rendered as favourable movement) and the two
+# "check/cross meets min" verdicts on the scorer.
+
+#: Tone -> the colour Streamlit's own caption markdown accepts. ``None`` leaves
+#: the caption in the theme's muted grey, which is what a neutral label wants.
+_CLASSIFICATION_TONES = {"good": "green", "bad": "red", None: None}
+
+
+def metric_classification(
+    container,
+    label: str,
+    value,
+    classification: str,
+    tone: str | None = None,
+    help: str | None = None,
+) -> None:
+    """Render a metric whose sidecar text CLASSIFIES rather than moves.
+
+    Args:
+        container: the ``st`` module or a column returned by ``st.columns``.
+        label: the metric label.
+        value: the metric value.
+        classification: the grade / verdict / label. Rendered UNDER the metric
+            as a caption, never as ``delta``, so Streamlit draws no arrow.
+        tone: ``"good"``, ``"bad"`` or ``None``. Colours the caption text only.
+            A colour is a colour; it is not a direction.
+        help: forwarded to ``st.metric``.
+
+    Deliberately does NOT accept a ``delta``. A caller with a real signed
+    movement should call ``st.metric`` directly -- that is what the slot is
+    for, and the optimizer's "+3.0 pts" still uses it.
+    """
+    if tone not in _CLASSIFICATION_TONES:
+        raise ValueError(
+            f"tone must be one of {sorted(k for k in _CLASSIFICATION_TONES if k)} "
+            f"or None, got {tone!r}"
+        )
+    container.metric(label, value, help=help)
+    colour = _CLASSIFICATION_TONES[tone]
+    text = classification if colour is None else f":{colour}[{classification}]"
+    container.caption(text)

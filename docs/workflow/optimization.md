@@ -69,15 +69,34 @@ from nmtcapp.optimizer.constraints import OptimizationConstraints
 constraints = OptimizationConstraints(
     min_total_qei=45_000_000,       # don't underutilize the award
     max_total_qei=55_000_000,       # match your requested allocation
-    min_projects=10,                 # winner median is 13; 10 is minimum competitive
-    min_states=5,                    # above winner p25 of 4 states
-    min_distress_pct=0.72,          # above the winner p25 floor
+    min_projects=10,                 # your own floor — see the note below
+    min_states=5,                    # SEE THE NOTE BELOW before setting this
+    min_distress_pct=0.72,          # your own floor — see the note below
     required_sectors=["healthcare"], # must have at least one healthcare project
     max_single_sector_pct=0.40,     # enforce sector diversity ceiling
 )
 
 result = app.optimize_pipeline(constraints, max_iterations=500)
 ```
+
+!!! warning "The comments on three of these constraints were corrected in 1.5.1"
+
+    They read `# winner median is 13`, `# above winner p25 of 4 states` and
+    `# above the winner p25 floor`. **No such medians or percentiles exist.**
+    This package holds no distribution of past Allocatees' project counts,
+    state counts or distress shares; the `WINNER_*` keys are registered
+    **HOUSE and unsourced**. A reader copying this block was copying three
+    invented benchmarks into a federal filing's planning assumptions.
+
+    **`min_states=5` in particular.** That is the same "≥5 states" this release
+    withdrew from `readiness_score._build_recommendations`, and the reasoning
+    applies here unchanged: the CY 2024-2025 Review Process scores no state
+    count, and constraining the optimizer to five states can force it to drop
+    deep-distress projects for geographic spread — trading points the Fund does
+    score for a metric it does not. The value is left in the example because
+    `OptimizationConstraints` accepts it and removing it would misrepresent the
+    API, but **it is not a recommendation**. Set it from your own deployment
+    footprint, or leave it unset.
 
 `max_iterations` (default 500) controls how many swap attempts the local search makes. For pipelines under 30 projects, 500 iterations is usually sufficient to converge. For larger pipelines you can increase to 1000+ with modest additional runtime.
 

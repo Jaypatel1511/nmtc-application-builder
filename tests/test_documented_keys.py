@@ -596,9 +596,16 @@ _DETECTOR_A_INERT_FENCES = {"docs/reference/api.md": 20}
 
 #: Total ``python`` fences across ``_doc_files()``, pinned for the same reason:
 #: it is the denominator that makes the number above mean something. Twenty
-#: unparseable out of 72 is a quarter of the corpus; twenty out of 5,000 would
+#: unparseable out of 73 is a quarter of the corpus; twenty out of 5,000 would
 #: not be worth a comment. Measured, not estimated.
-_TOTAL_PYTHON_FENCES = 72
+#:
+#: 72 -> 73 in the 1.5.1 audit round (B2). The added fence is the one-liner in
+#: docs/workflow/recommendations.md showing a reader how to enumerate the
+#: categories the engine ACTUALLY emits -- added because that page documented
+#: five categories the engine cannot emit, so the correction is worth
+#: something only if a reader can check it against their own install. It
+#: parses, so Detector A's inert count is unchanged.
+_TOTAL_PYTHON_FENCES = 73
 
 
 def test_detector_A_is_inert_on_exactly_the_files_this_gate_says_it_is(docs_present):

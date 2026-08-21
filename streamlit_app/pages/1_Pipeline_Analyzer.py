@@ -38,6 +38,7 @@ from utils import (
     get_or_create_app,
     apply_theme,
     _scoring_attrs_only,
+    metric_classification,
 )
 from chart_style import (
     apply_matplotlib_theme, style_matplotlib_axes, style_plotly_fig,
@@ -296,20 +297,19 @@ with tabs[0]:
 
     c1.metric("Total projects", pr.total_projects)
     c2.metric("Total QEI requested", fmt_millions(total_qei))
-    c3.metric(
+    # AN F RENDERED WITH AN UP ARROW, AND delta_color DID NOT REMOVE IT
+    # (1.5.1 T4, completed by the 1.5.1 audit F1). T4 found that
+    # st.metric(delta="Grade F") drew a GREEN UP arrow and fixed it with
+    # delta_color="off", stating the result was GRAY/NONE. Executed against
+    # the pinned Streamlit, "off" yields GRAY/**UP** — Streamlit computes
+    # DIRECTION from the delta's sign before it consults delta_color, and
+    # delta_color only ever picks a colour. The F kept pointing up, greyer.
+    # The grade is no longer a delta at all. See utils.metric_classification.
+    metric_classification(
+        c3,
         "Readiness score" + (" (partial)" if _degraded else ""),
         f"{readiness:.1f} / 100",
-        delta=f"Grade {grade}",
-        # AN F RENDERED AS A GREEN UP ARROW (1.5.1 T4). st.metric colours a
-        # delta by SIGN: streamlit.elements.metric treats a delta as negative
-        # only when str(delta) starts with "-" and as zero only when it is
-        # exactly "0"; everything else falls through to UP/GREEN. A grade
-        # letter has no sign, so on Streamlit 1.61.1 every grade A through F
-        # rendered green with an upward arrow — the most prominent element on
-        # the page telling a CDE with an F that things were looking up.
-        # "off" is the only setting that yields GRAY/NONE; a grade is a
-        # classification, not a movement, so it gets no direction at all.
-        delta_color="off",
+        f"Grade {grade}",
     )
     c4.metric("NMTC-eligible", "Unverified" if _degraded else fmt_pct(eligible_pct))
 
@@ -407,12 +407,18 @@ with tabs[1]:
     # every reason to believe is the Question 25 answer.
     _target = TARGET_DISTRESS_THRESHOLDS["target_deep_distress"]
     c1, c2, c3 = st.columns(3)
-    c1.metric(
+    # A VERDICT IS NOT A MOVEMENT EITHER (1.5.1 audit, F1 sweep). This passed
+    # "Meets/Below this tool's own >=X% band" as `delta`. Neither string
+    # carries a sign, so BOTH rendered with an UP arrow — "Below ... band"
+    # arrived in red, pointing up. Same defect as the readiness grade above,
+    # eleven lines down, and not on T4's list.
+    metric_classification(
+        c1,
         f"Deep / Severe distress ({Q25_QEI_BASIS_CLAUSE})",
         fmt_pct(deep_severe_pct),
-        delta=(f"{'Meets' if meets_target else 'Below'} this tool's own "
-               f"\u2265{_target:.0%} band"),
-        delta_color="normal" if meets_target else "inverse",
+        (f"{'Meets' if meets_target else 'Below'} this tool's own "
+         f"\u2265{_target:.0%} band"),
+        tone="good" if meets_target else "bad",
         help="NOT a CDFI Fund threshold, and NOT an answer to Question 25. "
              f"The {_target:.0%} band is this tool's own heuristic. The Fund's "
              "distress commitments are measured on QLICIs, not on QEI, and "

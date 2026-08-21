@@ -19,7 +19,7 @@ from nmtcapp.data.benchmark_thresholds import (
     TRACK_RECORD_TO_PROJECTION_MIN,
     TOTAL_APPLICANTS_CY2024_25, TOTAL_REQUEST_CY2024_25_B, TOTAL_AVAILABLE_CY2024_25_B,
 )
-from utils import apply_theme
+from utils import apply_theme, metric_classification
 
 apply_theme()
 st.title("📖 About & Methodology")
@@ -70,19 +70,18 @@ st.markdown("---")
 # ---------------------------------------------------------------------------
 st.markdown("## Scoring Framework (CY 2024-2025)")
 
-# SAME DEFECT AS THE READINESS GRADE, SECOND SITE (1.5.1 T4). The third
-# positional argument to st.metric is `delta`, and Streamlit colours it by
-# sign. "Section 1", "Section 2" and "Bonus" carry no sign, so all three
-# rendered GREEN with an upward arrow on this tool's own methodology page —
-# section labels presented as favourable movement. They are labels; they get
-# no direction.
+# SAME DEFECT AS THE READINESS GRADE, SECOND SITE (1.5.1 T4) — AND
+# delta_color="off" DID NOT FIX IT (1.5.1 audit, F1). The third positional
+# argument to st.metric is `delta`, and Streamlit derives the arrow's DIRECTION
+# from the delta's sign before delta_color is consulted. "Section 1",
+# "Section 2" and "Bonus" carry no sign, so all three still rendered with an
+# upward arrow after T4 — grey instead of green, on this tool's own methodology
+# page. They are labels; they now get no direction because they are no longer
+# deltas.
 col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric("Business Strategy", "50 pts", "Section 1", delta_color="off")
-with col2:
-    st.metric("Community Outcomes", "50 pts", "Section 2", delta_color="off")
-with col3:
-    st.metric("Priority Points", "10 pts", "Bonus", delta_color="off")
+metric_classification(col1, "Business Strategy", "50 pts", "Section 1")
+metric_classification(col2, "Community Outcomes", "50 pts", "Section 2")
+metric_classification(col3, "Priority Points", "10 pts", "Bonus")
 
 st.markdown("---")
 

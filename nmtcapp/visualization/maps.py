@@ -438,14 +438,33 @@ def plot_sector_distribution(application: "Application", output_path: str) -> st
     _apply_professional_style(ax)
     ax.set_xlim(0, max_qei * 1.15)
 
-    # Reference annotation — CDFI Fund winner sector mix note
-    ax.annotate(
-        "Winners typically have ≥50% in high-priority sectors\n(healthcare, affordable housing, education)",
-        xy=(0.97, 0.02), xycoords="axes fraction",
-        ha="right", va="bottom", fontsize=7.5, color="#666666",
-        style="italic",
-        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="#CCCCCC", alpha=0.85),
-    )
+    # A WINNER-POPULATION CLAIM, PRINTED ONTO A PNG (1.5.1 audit, B2 sweep 3).
+    # This annotation read:
+    #
+    #     "Winners typically have >=50% in high-priority sectors
+    #      (healthcare, affordable housing, education)"
+    #
+    # It is the class T2 removed from pipeline-analysis.md and about/why.md,
+    # on the one surface where it is hardest to qualify: a rendered image a
+    # CDE pastes into a board deck, carrying no disclosure and no link back to
+    # the package that drew it. This package holds NO sector distribution for
+    # past Allocatees -- the WINNER_SECTOR_PATTERNS keys it gestures at are all
+    # registered HOUSE and unsourced -- so ">=50%" is a threshold nobody
+    # measured, attributed to applicants nobody sampled.
+    #
+    # THIRD SITE OF THE CLASS ON THIS MODULE'S OWN CHARTS. plot_winner_alignment
+    # relabelled its nine bands to "House P25 / House P50 (this tool's) /
+    # House P75" and gained an on-figure disclaimer; that sweep looked at one
+    # function and this annotation sat 200 lines above it. The 1.5.1 docs sweep
+    # then read visualizations.md's description of this note and corrected the
+    # PAGE without opening the module -- documenting the annotation accurately
+    # instead of removing it.
+    #
+    # NOT REPLACED WITH A DISCLOSED VERSION. The sector TIERING is sourced (the
+    # Fund names its priority areas) and the bars already carry it; what share
+    # of QEI belongs in each tier is the part with no referent, so there is no
+    # disclosed form of this sentence to draw. The chart says what the pipeline
+    # holds and stops there.
 
     # THE LEGEND IS BUILT FROM THE SAME TIERS THE BARS ARE (FIX-2 G-5 sweep).
     # It was a hand-written parenthetical naming two of the four medium

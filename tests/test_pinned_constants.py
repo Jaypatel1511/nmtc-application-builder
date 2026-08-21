@@ -109,6 +109,7 @@ import ast
 import os
 import re
 import subprocess
+import tempfile
 
 import pytest
 
@@ -840,12 +841,75 @@ def test_house_pins_carry_their_disclaimer(rendered):
 # above survived twenty-two releases.
 # ---------------------------------------------------------------------------
 
-#: Maximum characters between a readiness claim and its nearest disclosure.
-#: Sized from the surface that already did this right: Excel renders its
-#: disclosure 48 characters under the score. 1,200 is roughly a rendered
-#: paragraph or two — the same page, the same glance — and it is a ceiling on
-#: the defect, not a calibration of anything. It is HOUSE and says so.
-_DISCLOSURE_PROXIMITY_LIMIT = 1_200
+# THE GATE MATCHED ON DISTANCE ALONE, AND COULD NOT FAIL ON MARKDOWN
+# (1.5.1 audit, F3). The version shipped at 4bd26ab searched for ANY entry of
+# _DISCLOSURE_PHRASES near a readiness claim. Those phrases are generic --
+# "this tool's own" is the broadest of them -- so the gate was satisfied by a
+# disclosure about a DIFFERENT claim that happened to sit nearby.
+#
+# PROVED BY REVERSION, not argued. Deleting readiness_weights_note() from
+# markdown_builder's executive summary restores a 25,218-character gap between
+# the readiness score and its weighting disclosure, and THE GATE STAYS GREEN:
+# the Key Strengths heading two lines below reads "(this tool's own assessment
+# against its own thresholds ...)", contains "this tool's own", and is measured
+# at 69 characters. A disclosure about the STRENGTHS LIST was accepted as the
+# disclosure for the READINESS SCORE.
+#
+# So the wrong-disclosure attack needed no synthetic document -- it was live on
+# the shipped tree. And a gate that matches on distance alone is a presence
+# check with extra steps: exactly the defect
+# test_house_pins_carry_their_disclaimer had, one abstraction up. Replacing a
+# flattened haystack with a windowed haystack does not make a check specific.
+#
+# THE PROPERTY IS NOW: a readiness claim must be near the disclosure that
+# EXPLAINS IT -- text rendered by one of the three functions whose subject is
+# the readiness score. The anchors are derived from those functions at import
+# time, not typed here, so rewording a disclosure moves the gate with it and
+# cannot silently un-gate it.
+
+#: The functions whose output IS the readiness disclosure. Anything else on the
+#: page may be a true disclosure of something, but it does not disclose this.
+def _readiness_disclosure_anchors() -> tuple:
+    from nmtcapp.renderers._methodology import (
+        readiness_inline_qualifier,
+        readiness_weights_note,
+        readiness_weights_sheet_note,
+    )
+    return tuple(
+        _normalise(fn()).lower()[:_ANCHOR_CHARS]
+        for fn in (
+            readiness_weights_note,
+            readiness_inline_qualifier,
+            readiness_weights_sheet_note,
+        )
+    )
+
+
+#: How much of each disclosure must match. Long enough that no generic phrase
+#: can satisfy it (asserted below), short enough to survive a renderer wrapping
+#: the sentence across a table cell or a PDF line break.
+_ANCHOR_CHARS = 40
+
+#: Maximum characters between a readiness claim and the disclosure that
+#: explains it.
+#:
+#: DERIVED, NOT CHOSEN (1.5.1 audit, F3). The value here was 1,200 -- "roughly
+#: a rendered paragraph or two", which is a round number governing a gate, i.e.
+#: a house constant that had not been declared one. It is replaced by the
+#: length of the disclosure itself: a claim and its disclosure are in the same
+#: passage when less text separates them than the disclosure contains. Past
+#: that, the reader has crossed more unrelated material than explanation, which
+#: is the thing being measured.
+#:
+#: It moves automatically if the disclosure is reworded, and it needs no
+#: headroom argument because it is not a budget. Worst distance actually
+#: rendered across all four surfaces at 1.5.1: 214 characters (PDF), against a
+#: derived limit of 363 -- reported by the gate's own failure message, so a
+#: regression toward the limit is visible rather than silent.
+def _disclosure_proximity_limit() -> int:
+    from nmtcapp.renderers._methodology import readiness_weights_note
+    return len(_normalise(readiness_weights_note()))
+
 
 #: Where the readiness grade is claimed, as it renders after normalisation.
 _READINESS_CLAIM = re.compile(
@@ -854,34 +918,135 @@ _READINESS_CLAIM = re.compile(
 
 
 def _disclosure_proximity_failures(surfaces: dict) -> list:
-    """Report every readiness claim with no disclosure phrase near it.
+    """Report every readiness claim with no READINESS disclosure near it.
 
-    Shared by the live gate and by its own red-proof below, so the proof
-    exercises the real matcher rather than a paraphrase of it.
+    Shared by the live gate and by its own red-proofs below, so the proofs
+    exercise the real matcher rather than a paraphrase of it.
     """
     failures = []
+    anchors = _readiness_disclosure_anchors()
+    limit = _disclosure_proximity_limit()
     for surface, text in surfaces.items():
         low = text.lower()
         disclosure_at = [
             m.start()
-            for phrase in _DISCLOSURE_PHRASES
+            for phrase in anchors
             for m in re.finditer(re.escape(phrase), low)
         ]
         for claim in _READINESS_CLAIM.finditer(low):
             if not disclosure_at:
                 failures.append(
                     f"  {surface} @{claim.start()}: readiness claim "
-                    f"{claim.group(0)!r} — NO disclosure anywhere on this surface"
+                    f"{claim.group(0)!r} — NO READINESS disclosure anywhere on "
+                    "this surface (a house disclaimer about something else "
+                    "does not count)"
                 )
                 break
             nearest = min(abs(d - claim.start()) for d in disclosure_at)
-            if nearest > _DISCLOSURE_PROXIMITY_LIMIT:
+            if nearest > limit:
                 failures.append(
                     f"  {surface} @{claim.start()}: readiness claim "
-                    f"{claim.group(0)!r} — nearest disclosure is {nearest:,} "
-                    f"characters away (limit {_DISCLOSURE_PROXIMITY_LIMIT:,})"
+                    f"{claim.group(0)!r} — nearest READINESS disclosure is "
+                    f"{nearest:,} characters away (derived limit {limit:,} = "
+                    "the rendered length of readiness_weights_note())"
                 )
     return failures
+
+
+def test_the_readiness_anchors_cannot_be_satisfied_by_a_generic_disclaimer():
+    """THE PROPERTY THAT MAKES THIS A MATCHED CHECK RATHER THAN A NEARBY ONE.
+
+    If a readiness anchor were a substring of one of the generic
+    _DISCLOSURE_PHRASES -- or short enough to appear inside an unrelated house
+    disclaimer -- the gate would silently degrade back into the proximity-only
+    check that could not fail on markdown. Asserted, not assumed.
+    """
+    anchors = _readiness_disclosure_anchors()
+    assert len(anchors) == 3, anchors
+    for anchor in anchors:
+        assert len(anchor) == _ANCHOR_CHARS, (anchor, len(anchor))
+        for generic in _DISCLOSURE_PHRASES:
+            assert anchor not in generic, (
+                f"readiness anchor {anchor!r} is contained in the generic "
+                f"house phrase {generic!r}, so any house disclaimer anywhere "
+                "would satisfy the readiness gate."
+            )
+        assert "readiness" in anchor or "this tool's own unsourced" in anchor, (
+            f"anchor {anchor!r} does not identify the readiness score as its "
+            "subject, so it cannot establish that the disclosure explains THIS "
+            "claim."
+        )
+
+    # And the live Key Strengths disclaimer -- the exact string that satisfied
+    # the old gate at 69 characters -- must NOT satisfy the new one.
+    key_strengths = (
+        "key strengths (this tool's own assessment against its own "
+        "thresholds — not a cdfi fund evaluation):"
+    )
+    assert not any(a in key_strengths for a in anchors), (
+        "the Key Strengths disclaimer still satisfies the readiness anchors. "
+        "That string is a disclosure ABOUT THE STRENGTHS LIST, and accepting "
+        "it for the readiness score is the defect F3 recorded."
+    )
+
+
+def test_proximity_gate_fails_on_markdown_when_only_the_readiness_note_is_removed():
+    """THE MARKDOWN RED PROOF, on real rendered output, not a synthetic.
+
+    F3's finding was that reverting ONLY the markdown disclosure fix left the
+    gate green, because the Key Strengths disclaimer sat 69 characters from the
+    claim and contained "this tool's own". This drives the real matcher with
+    the real markdown surface, with only the readiness note removed, and
+    asserts it now reports the true gap.
+
+    A synthetic document cannot prove this: the whole point of F3 is that the
+    live document already had a decoy in it. This uses the live one.
+    """
+    import re as _re
+
+    from nmtcapp.renderers import markdown_builder as _mb
+
+    src = _extract_markdown_exec_summary_source(_mb)
+    assert "readiness_weights_note()" in src, (
+        "markdown_builder's executive summary no longer calls "
+        "readiness_weights_note(); this proof has lost its subject."
+    )
+
+    app = _fixture_application()
+    out = tempfile.mkdtemp(prefix="nmtcapp-f3-")
+    paths = app.generate(out, formats=["markdown"])
+    with open(paths["markdown"], encoding="utf-8") as handle:
+        text = handle.read()
+
+    # Remove ONLY the executive-summary readiness note, exactly as reverting
+    # the T3 markdown fix would. The methodology copy far below is untouched,
+    # and so is the Key Strengths disclaimer that decoyed the old gate.
+    from nmtcapp.renderers._methodology import readiness_weights_note
+
+    note = readiness_weights_note()
+    assert text.count(note) >= 2, (
+        f"expected the readiness note at both the exec summary and the "
+        f"methodology block, found {text.count(note)}"
+    )
+    reverted = text.replace(f"*{note}*\n\n", "", 1)
+    assert reverted != text, "the exec-summary note was not removed"
+
+    failures = _disclosure_proximity_failures({"markdown": _normalise(reverted)})
+    assert failures, (
+        "THE GATE DID NOT FAIL with the markdown readiness disclosure removed. "
+        "It is matching on distance alone again: the Key Strengths disclaimer "
+        "~69 characters below the claim is being accepted as the readiness "
+        "score's disclosure."
+    )
+    assert any("characters away" in f for f in failures), failures
+    # And the untouched document must pass, so this is not failing everything.
+    assert not _disclosure_proximity_failures({"markdown": _normalise(text)})
+
+
+def _extract_markdown_exec_summary_source(module) -> str:
+    import inspect
+
+    return inspect.getsource(module)
 
 
 def test_readiness_disclosure_is_adjacent_to_the_claim(rendered):
@@ -1829,7 +1994,36 @@ def test_the_changelogs_baseline_class_table_adds_up():
         if needle not in text:
             continue
         after = text[text.index(needle) + len(needle):]
-        rows = _CLASS_ROW_RE.findall(after[:4000])
+        # THE WINDOW IS BOUNDED BY THE TABLE, NOT BY A MAGIC 4,000 (1.5.1
+        # audit). This read ``after[:4000]``, and a 4,000-character window is a
+        # silent row filter: prose added between the blockquote and the table
+        # pushes the LAST rows out of the window, the sum drops by exactly
+        # those rows, and the failure message blames the arithmetic. That
+        # happened in this round -- the gate reported "13 rows sum to 152"
+        # against a 15-row table, and the two missing rows were the two most
+        # recently added.
+        #
+        # A gate that adjudicates a SUBSET and reports on the whole is the
+        # defect this file exists to chase; it does not get to have one. The
+        # window now runs to the end of the table -- the first blank line after
+        # the last row -- so every row is either counted or absent, and a table
+        # that grows cannot silently fall out of range.
+        # Bound the region to THIS claim: stop at the next release heading or
+        # the next delta claim, so a table belonging to a different entry can
+        # never be counted against this one.
+        stop = min(
+            [m.start() for m in re.finditer(r"\n##\s", after)]
+            + [m.start() for m in re.finditer(r"insertions,\s*\d+\s*deletions", after)]
+            + [len(after)]
+        )
+        region = after[:stop]
+        if "| Class | Lines |" in region:
+            table = region[region.index("| Class | Lines |"):]
+            end = re.search(r"\n\s*\n", table)
+            table = table[: end.start()] if end else table
+        else:
+            table = region
+        rows = _CLASS_ROW_RE.findall(table)
         if not rows:
             continue
         checked += 1

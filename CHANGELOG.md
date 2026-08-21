@@ -95,11 +95,36 @@ the only surface that put the disclosure where the claim was.
 `str(delta)` starts with `-` and zero only when it is exactly `"0"`; everything
 else falls through to UP/GREEN. So **A, B, C, D and F all rendered green with an
 upward arrow** — the most prominent element on the page inverted its meaning for
-every CDE it mattered to. Fixed with `delta_color="off"` (GRAY/NONE).
+every CDE it mattered to.
 
-- **Second site, not on the list:** the About & Methodology page passed
-  `"Section 1"`, `"Section 2"` and `"Bonus"` as deltas. Three more green arrows,
-  on the methodology page.
+- **CORRECTION, made in the same release (audit F1). The `delta_color="off"`
+  fix was PARTIAL, and the sentence claiming it was complete was FALSE.** This
+  entry read *"Fixed with `delta_color="off"` (GRAY/NONE)"*, and
+  `1_Pipeline_Analyzer.py` said the same in a comment. Executed against the
+  pinned Streamlit, `"off"` yields **GRAY / UP** for every grade A–F: Streamlit
+  computes the arrow's DIRECTION from the delta's sign *before* it consults
+  `delta_color`, which only ever selects a colour. **No value of `delta_color`
+  removes the arrow.** The F kept pointing up; it was merely grey. The false
+  claim is the worse half — a fix recorded as complete is a fix nobody reopens.
+- **The real fix: the delta slot is no longer used for classifications.**
+  `st.metric`'s `delta` means "this value moved, in this direction", and a
+  grade is not a movement. `utils.metric_classification()` renders the metric
+  with no delta and the classification beneath it as its own element, where it
+  carries no direction at all.
+- **Seven sites, not two.** Every delta string in the app was executed through
+  Streamlit's own colour/direction function. Beyond the grade and the About
+  page's three section labels, four more rendered a classification as an arrow:
+  the Deep/Severe `"Meets/Below this tool's own ≥X% band"` verdict, the
+  optimizer's `"of 20"` denominator (green, upward, on every run), and the
+  scorer's two `"✓ meets min"` / `"✗ below min"` gating verdicts — so an
+  application **below** the published Highly Qualified minimum was shown a red
+  cross pointing upward, on the page whose subject is that gate.
+- **And one inverted colour.** `3_Pipeline_Optimizer` selected
+  `delta_color="normal" if delta >= 0 else "inverse"` for a genuinely signed
+  delta. `"normal"` renders up green and `"inverse"` renders down green, so
+  choosing the mode *by the sign* painted the delta green in both branches: an
+  optimizer run that **lowered** the score reported the drop in green. Now
+  `"normal"` unconditionally.
 
 ### Geographic diversity asserted what the block above it denied (T5)
 
@@ -121,6 +146,339 @@ principle the sub-score classifies (disclosure) while the strength string assert
 **The contradiction window is wider than the round believed:** it opens at **five**
 states, not six. The strength gate is ≥70 and the state term alone reaches 83.3
 at five.
+
+---
+
+## The audit round — closing 1.5.1
+
+**A hostile audit of `0f3c07d` returned SHIP-AFTER-FIX. Two blockers and four
+findings, none of them a regression from the round.** Every figure below was
+re-derived by executing, not carried over from the audit's report. Where
+execution disagreed with the brief, the brief is corrected in place and the
+disagreement is stated.
+
+### B1 — the version was never bumped, and no gate could see it
+
+`pyproject.toml`, `CITATION.cff` and `streamlit_app/requirements.txt` all still
+said **1.5.0** while the CHANGELOG declared `[1.5.1]`. Every prior release
+bumped the version in the fix commit. This one did not, and a `v1.5.1` tag would
+have published artifacts whose metadata said 1.5.0.
+
+**Three version gates existed and all three were green on the defect**, verified
+by reproducing `4bd26ab` exactly and running them:
+
+| Gate | Compares | Green on the defect |
+|---|---|---|
+| `test_version_is_checked_against_a_second_source` | `__version__` ↔ `pyproject` | yes |
+| `test_streamlit_deployment_pin` gate 1 | `requirements` ↔ `pyproject` | yes |
+| `test_version_metadata_resolves` | metadata is readable | yes |
+
+**Eleven assertions, all passing, none of which had ever been shown the document
+that declares the release.** They are three mirrors in a circle: each compares
+the version to another *copy* of the version, so they agreed with each other at
+the stale value. **Internal consistency mistaken for correctness — the
+twenty-third instance**, and the same shape as the tautology `test_version.py`'s
+docstring was written about, one abstraction up.
+
+- All three bumped to **1.5.1**; `CITATION.cff`'s `date-released` to 2026-08-21.
+- **`test_the_changelog_newest_release_is_the_version_being_built`** compares the
+  CHANGELOG's newest release heading to `pyproject.toml`. The CHANGELOG is a
+  genuine second source because it is edited by the act of *deciding* the
+  release, not by the act of cutting it. **Proved red** by reverting the bump:
+  it reports `CHANGELOG.md's newest release heading is [1.5.1] but
+  pyproject.toml builds 1.5.0` while all eleven legacy assertions stay green.
+- **`CITATION.cff` was gated by nothing at all** before this round — no test in
+  the suite had ever opened it — and it is the file Zenodo mints DOI metadata
+  from. Now gated, and proved red the same way.
+- `test_the_changelog_has_exactly_one_entry_for_the_version_being_built` asserts
+  one `[1.5.1]` heading and zero open `[Unreleased]` sections. This project has
+  shipped two open headings twice.
+
+**Accepted consequence, not a finding:** pinning `requirements.txt` to an
+unpublished version takes the public app down from merge until publish. That is
+the equality pin's known cost, ruled in 1.5.0 S6 and not weakened here.
+
+### B2 — a third and fourth site, live on gh-pages, stronger than what was withdrawn
+
+`docs/workflow/recommendations.md` was **published** telling readers *"The goal
+is to reach at least the winner p25 of 4 states, ideally 7+ states"*, that only
+1 state is `critical` and **"Blocks competitive consideration"**, and that
+critical items *"represent gaps that historically correlate with non-funding"*.
+
+**Two defects at once, and the second is the worse one.**
+
+It is a winner-population claim of exactly the class T2 removed — in a package
+whose registry rules every `WINNER_*` key HOUSE and unsourced. *"Blocks
+competitive consideration"* is the same wrong-conclusion shape as *"not viable
+in current form"*.
+
+**And it is false about the code.** `RecommendationEngine` was executed at 1, 2,
+3, 4 and 5 states: **zero geographic advice at any state count.** The page
+documented behaviour the engine does not have — **while being the load-bearing
+defence for T1's suppression.** T1 withdrew the readiness engine's geographic
+advice on the stated ground that the second engine emits none; the published
+docs for that second engine said, in stronger terms than the withdrawn string,
+that it does.
+
+**Executing the engine found the page is wrong about more than geography:**
+
+- It documents **five categories** (`distress`, `geographic`, `impact`,
+  `sector`, `pipeline`). The engine emits **three** — `business_strategy`,
+  `community_outcomes`, `priority_points` — and none of the five. A reader
+  filtering `rec.category == "geographic"` got an empty list and no error.
+- Its three-step process description is wrong at steps 1 and 2. The
+  `benchmark_comparison` argument `recommend()` accepts is **never read**; no
+  percentile is computed anywhere in the engine.
+- Its sample output block is **fabricated** — a `[HIGH] distress` category the
+  engine cannot emit, a "winner median of 82%" it does not hold, and an estimate
+  in a unit no field of `Recommendation` carries. Replaced with real output.
+- The `overall_assessment` example named a tier the engine has not had since
+  1.2.0.
+
+### The third docs sweep — four more sites, and one of them is not in the docs
+
+**Two sweeps had each missed sites the next one found, so this one is written as
+an assertion rather than a reading.** It found four more:
+
+- **`docs/workflow/optimization.md`** — `min_states=5` in the worked example,
+  commented *"above winner p25 of 4 states"*, beside *"winner median is 13"* and
+  *"above the winner p25 floor"*. **The fifth site of the withdrawn advice, as
+  executable example code a reader copies.**
+- **`docs/quickstart.md`** — described the engine as benchmarking "against
+  historical winners" and recommending "lifting project count to winner median".
+- **`docs/workflow/visualizations.md`** — `plot_readiness_radar` documented with
+  **five axes**, a **"Winner Benchmark"** dashed line at **75**, and tier names
+  from 1.2.0. The chart has **three** axes, and its dashed line is labelled `HQ
+  Min Threshold` at **80/80/70** — the published Highly Qualified section
+  minimums scaled to 0–100. **The page relabelled one of the few figures in this
+  tool with a genuine federal referent as a winner benchmark**, trading a sourced
+  threshold for an unsourced one in the wrong direction.
+- **`nmtcapp/visualization/maps.py` — not a docs site at all.**
+  `plot_sector_distribution` drew *"Winners typically have ≥50% in high-priority
+  sectors"* onto the PNG, with no disclosure on the image. **Removed from the
+  chart, not merely from the page describing it.** Third site of the class on
+  this module's own charts: `plot_winner_alignment`'s nine bands were relabelled
+  `House P25 / House P50 (this tool's) / House P75` in an earlier round, and this
+  annotation sat 200 lines above that function and was missed; the 1.5.1 sweep
+  then read the page's description of it and corrected the **page** without
+  opening the module.
+
+**And two more the gate found once it existed**, both in files an earlier sweep
+had already edited: `docs/about/why.md` still asserted *"your distress
+concentration is 72%, which is at the winner p25. Raising it to 82% (winner
+median) is estimated to add 8–15 alignment score points"* — nine lines below the
+blockquote where T2 removed three claims of the same class — and
+`docs/reference/data-sources.md` said the aggregates are used *"to infer winner
+distributions"*, which is the inference its own source list says cannot be made.
+
+### F1 — T4's fix was partial, and the package asserted it was complete
+
+`delta_color="off"` does **not** yield GRAY/NONE. Executed against the pinned
+Streamlit (1.61.1), for every grade A–F:
+
+```
+_determine_delta_color_and_direction("off", "Grade F")  ->  GRAY / UP
+```
+
+Reading the function shows why it is structural: **direction is computed from
+the delta's sign before the colour mode is consulted**, and `delta_color` only
+ever selects a colour. **No value of `delta_color` removes the arrow.** The F
+kept pointing up; it was merely grey.
+
+`1_Pipeline_Analyzer.py:307` and this CHANGELOG both said otherwise. **The false
+claim is the worse half** — a fix recorded as complete is a fix nobody reopens.
+Both statements are corrected in place.
+
+**The fix is to stop using the delta slot for classifications.**
+`utils.metric_classification()` renders the metric with no delta and the
+classification beneath it, where it carries no direction at all.
+
+**Seven sites, not two.** Every delta string in the app was driven through
+Streamlit's own function:
+
+| Site | delta | Rendered |
+|---|---|---|
+| `1_Pipeline_Analyzer:302` | `Grade F` | GRAY ↑ |
+| `1_Pipeline_Analyzer:413` | `Below this tool's own ≥X% band` | RED ↑ |
+| `2_Win_Alignment_Scorer:159` | `✗ below min` | RED ↑ |
+| `2_Win_Alignment_Scorer:165` | `✗ below min` | RED ↑ |
+| `3_Pipeline_Optimizer:174` | `of 20` | GREEN ↑ |
+| `4_About_and_Methodology:81/83/85` | `Section 1` … | GRAY ↑ |
+
+An application **below** the published Highly Qualified section minimum was
+shown a red cross **pointing upward**, on the page whose whole subject is that
+gate. A denominator was rendered as favourable movement on every run.
+
+**And one inverted colour, same sweep.** `3_Pipeline_Optimizer` selected
+`delta_color="normal" if delta >= 0 else "inverse"` for a genuinely signed
+delta. `"normal"` renders up green and `"inverse"` renders down green — so
+choosing the mode *by the sign* painted it green in both branches: **an
+optimizer run that lowered the score reported the drop in green.**
+
+### F2 — four of five fixes were ungated, and the root cause is one line
+
+**The audit re-added the withdrawn instruction, restored "Application not viable
+in current form" and dropped the T5 guard — each passed all 1,244 tests.**
+
+**Root cause:** both readiness fixtures score geographic diversity above the
+gates. `Pipeline.sample(n=20)` is 19 states at HHI 592; `Pipeline.sample(n=5)`
+is 5 states at HHI 2,109. Both score **100.0**, so `_build_recommendations`'s
+`< 60` branch and `_identify_weaknesses`'s `< 50` branch **were never entered by
+any test in the suite**. The withdrawal notice was rendered by nothing at all.
+
+**A round about disclosure shipped disclosures that nothing asserted.**
+
+`tests/test_readiness_geographic_surfaces.py` (21 tests) builds deliberately
+concentrated pipelines at 1, 2, 3, 4 and 6 states, asserts the sub-score bands
+so it cannot go vacuous, and gates all five fixes. **Every one proved red by
+reversion:**
+
+| Fix reverted | Result |
+|---|---|
+| withdrawal notice deleted | **5 failed** |
+| `"Expand geographic footprint… Target ≥5 states"` restored | **9 failed** |
+| T5 concentration guard dropped | **1 failed** |
+| F4's strength basis language removed | **2 failed** |
+| B2's page advice restored | **1 failed** |
+| a winner claim restored to `pipeline-analysis.md` | **1 failed** |
+| the grade returned to `delta_color="off"` | **1 failed** |
+
+**The docs gate was itself defective on its first draft, and reversion is what
+found it.** Splitting pages on blank lines put every bullet of a list into one
+block, so a sibling bullet's `HOUSE` marker excused an unrelated bullet's winner
+claim — **F3's defect one level up, in the gate written to close F3's class.**
+Each list item is now its own unit.
+
+### F3 — the proximity gate could not fail on markdown
+
+**Reverting only the markdown fix leaves a real gap of 25,218 characters and the
+gate stays green.** The Key Strengths heading two lines below the claim reads
+*"(this tool's own assessment against its own thresholds…)"*, contains the
+generic phrase `this tool's own`, and is measured at **69 characters**. A
+disclosure about the **strengths list** was accepted as the disclosure for the
+**readiness score**.
+
+**The wrong-disclosure attack needed no synthetic document. It was live on the
+shipped tree.**
+
+A gate that matches on distance alone is a presence check with extra steps —
+which is the defect it replaced, one abstraction up. The property is now that a
+readiness claim must be near **the disclosure that explains it**: anchors are
+derived at import time from the three functions whose subject is the readiness
+score, so rewording a disclosure moves the gate with it.
+`test_the_readiness_anchors_cannot_be_satisfied_by_a_generic_disclaimer` asserts
+no generic phrase can satisfy them, and the Key Strengths string specifically
+cannot.
+
+**The stronger matcher immediately found a live defect the old one had
+certified.** Excel's Summary Dashboard banner prints the readiness grade with
+**no readiness disclosure**: its nearest one is **633 characters away and on a
+different sheet**. T3 added `readiness_inline_qualifier()` to the Word, PDF and
+Markdown cover tables and left the workbook out, on the reasoning that *"Excel
+was the only surface that put the disclosure where the claim was"* — a 48-
+character measurement taken against the loose matcher, to a disclosure about
+something else. **The surface held up as the model for the other three was the
+one with an undisclosed grade on its front page.** Fixed; its row height is now
+derived rather than the hardcoded `16` that would have clipped it.
+
+**Ruling on the 1,200-character limit: it was a house constant that had not been
+declared one, and it is replaced by a derived value.** "Roughly a rendered
+paragraph or two" is a chosen round number governing a gate. The limit is now
+`len(readiness_weights_note())` — **363** — on the principle that a claim and
+its disclosure are in the same passage when *less text separates them than the
+disclosure itself contains*. Past that, the reader has crossed more unrelated
+material than explanation, which is the thing being measured. It needs no
+headroom argument because it is not a budget, and it moves automatically if the
+disclosure is reworded. Worst distance actually rendered across all four
+surfaces: **214 characters** (PDF), reported in the gate's own failure message
+so a regression toward the limit is visible rather than silent.
+
+### F4 — the round withdrew the stick and kept the carrot
+
+The weakness read *"this tool's own house curve — not a CDFI Fund threshold"*.
+The strength read *"Good geographic diversity across multiple states"* —
+**unqualified, in the tool's own voice, asserting a quality.** One direction
+caveated and the other not, which points toward overstatement; and **uncaveated
+praise is the more dangerous half, because a CDE has no reason to go looking
+behind good news.** Both halves now carry the same basis.
+
+**And the closing premise is confirmed — with the state count corrected.** The
+brief said a 3-state pipeline is docked 5.0 points while told nothing. Executed:
+a **3**-state pipeline scores 50.0, which is below the `< 60` trigger, so it
+*does* get the withdrawal notice. **The silent case is FOUR states**: it scores
+66.7, clears both the `< 60` notice and the `< 50` weakness, and is docked
+**4.99 points** of the 100-point headline it is shown — with no mention of
+geography in strengths, weaknesses or recommendations anywhere.
+
+**The rendered baseline fixture is one of these pipelines.** Four states, 89.4,
+docked 1.6 points, silent about it for the whole of 1.5.1.
+
+**A tool may decline to advise. It may not deduct silently.** The trigger is now
+any deduction at all — `< 100`, the only honest condition — and the notice
+states the size of the deduction, derives the weight from
+`READINESS_SCORING_WEIGHTS` rather than typing it beside the comparison, and
+says the deduction is not evidence the footprint is a problem.
+
+### Version ruling
+
+**Still a PATCH, and the test is the same one 1.5.1 already applied.** No public
+name is added, removed or renamed. `metric_classification` is new but lives in
+`streamlit_app/utils.py`, which is not part of the distributed package. **No
+score moves on any input**: `_geo_score`, the weights and every sub-scorer are
+untouched, and the rendered baseline confirms it — three changed lines, all
+disclosure text, no figure moved.
+
+**One emitted-output change is beyond disclosure text and is ruled explicitly.**
+The geographic notice now fires on pipelines scoring 60–99 that previously
+received nothing, so some pipelines gain a recommendation string. That is a
+change in *what is said*, not in *what is computed*, and the recommendation list
+is capped at five with the geographic item third — so nothing is displaced. It
+is the same class as the round's own T1, which changed what a slot says and was
+ruled PATCH on that basis.
+
+### Recorded, not fixed
+
+- **A `KNOWN` registry row can name a non-existent constant with all 23 registry
+  tests green.** Found by the audit, **not a regression from this round**.
+  **Twenty-fourth instance** of the class. The registry adjudicates that every
+  constant *read* is *named*; it never asks whether a name it holds *exists*.
+- **`docs/about/limitations.md` and `quickstart.md` describing the alignment
+  score as "alignment with historical winner patterns" — RULED NOT THE SAME
+  DEFECT**, and the ruling is stated because the sweep was asked to make it. The
+  alignment score genuinely *is* computed against the `WINNER_*` constants, so
+  the description is true of the code; its defect is that those constants are
+  unsourced, which `limitations.md` already discloses at length in its own
+  "Data provenance" section. B2's defect is a claim about a winner population
+  attached to a score never compared to one, **and false about the code**.
+  Different defects, and the second is the one this round closes.
+- The methodology round is unchanged in scope: the composite's shape, the 91
+  inline literals in `readiness_score.py`, deriving `0.75` and `3`, and
+  re-basing `_geo_score`.
+
+### Should the geographic sub-score contribute at all?
+
+**The prompt asked whether suppression plus disclosure is a stable resting
+place. On the evidence of this round it is not, and the honest answer is that
+`_geo_score` should not contribute to the composite until it is re-based.**
+
+The case: the sub-score carries **15%** of the headline; its curve
+(`states / MIN_GEOGRAPHIC_DIVERSITY * 50` plus an HHI term) is HOUSE and
+underived at every term; the CDFI Fund scores no state count; and the round has
+now had to add a paragraph of disclosure to every docked pipeline explaining
+that a deduction it just applied means nothing. **A term that must be explained
+away on every render is not carrying information.**
+
+**It is not removed here, and the cost of removing it is stated rather than
+deferred silently.** Dropping the component renormalises the remaining five
+weights and **moves every existing user's score** — a two-state pipeline at
+100% deep/severe distress goes from a headline docked ~10 points to one docked
+none. That is a scoring change, it is not a patch, and it would land without the
+re-basing analysis that would say what *should* replace the term. **The ruling
+is that this is the first item of the methodology round, ahead of the composite's
+shape** — and that if that round does not happen, this disclosure paragraph is
+what a CDE is left with, which is worse than either fixing or removing the term.
+
+---
 
 ### Also
 
@@ -1108,17 +1466,12 @@ negative this file's header ranks as the worst class of error in the package. So
 `Q25_AREA_TYPES_MODELLED` goes 5 → 6 and Non-Metropolitan Counties joins the
 provenance enumeration as TOOL-VERIFIED AND TRI-STATE.
 
-> **108 insertions, 52 deletions** in `tests/rendered_baseline/`, measured
+> **111 insertions, 54 deletions** in `tests/rendered_baseline/`, measured
 > `56573c0`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
 >
-> **Remeasured in 1.5.0, again in its fix round, and again in 1.5.1.** Read
-> 54/44 when 1.4.0 shipped and that was correct then; 82/49 after S1; 96/49
-> once B1 gave the workbook a provenance sheet and F7 added the third
-> certification obligation; **108/52 after 1.5.1 T3 moved the readiness
-> disclosure adjacent to the claim on Word, PDF and Markdown** — the twelve
-> added lines are the weighting note under the score on three surfaces and the
-> inline qualifier inside the cover-table value, and the three replaced lines
-> are the cover rows that gained it. No figure in the baseline moved. The gate
+> **Remeasured four times.** 54/44 at 1.4.0; 82/49 after S1; 96/49 after B1 and
+> F7; 108/52 after 1.5.1 T3; **111/54 after the audit round**. No figure in the
+> baseline moved. The gate
 > re-derives it against the CURRENT tree, so 1.5.0's
 > round-provenance disclosure (S1) moved it: the one-sentence NOAA caveat
 > became a paragraph on markdown, Word and PDF, and the PDF gained a page.
@@ -1141,8 +1494,10 @@ provenance enumeration as TOOL-VERIFIED AND TRI-STATE.
 | **Fix round, B1** — the workbook's new `Round Provenance` sheet: a `@@SHEET` marker, a heading, a pointer and the note's four paragraphs, one per row. This row read "Excel: none — the workbook carries no methodology-notes block at all", which was the defect B1 closed | 7 | +7 / −0 | excel |
 | **Fix round, F7** — the third certification obligation (prior Allocatees, Subsidiary CDEs) appended to the round-provenance note and re-wrapped across the PDF column, pushing the page furniture down by one line | 7 | +7 / −0 | pdf |
 | **1.5.1 T3** — `readiness_weights_note()` added under the readiness callout, plus its blank line, and the cover row rewritten to carry `readiness_inline_qualifier()`. Markdown renders the note as ONE line | 4 | +3 / −1 | markdown |
-| **1.5.1 T3** — the same note as one `P\|Normal` paragraph after the readiness heading, and the cover-table row rewritten to carry the inline qualifier | 3 | +2 / −1 | word |
+| **1.5.1 T3** — the same note as one Normal-styled `P` paragraph after the readiness heading, and the cover-table row rewritten to carry the inline qualifier. (The label said `` `P\|Normal` `` until the 1.5.1 audit round: an escaped pipe inside a markdown table cell, which made this row invisible to `test_the_changelogs_baseline_class_table_adds_up` — a row excluded from the sum it was supposed to be checked by, in the gate written because a breakdown can be arbitrarily wrong so long as it adds up) | 3 | +2 / −1 | word |
 | **1.5.1 T3** — the note re-wrapped across the PDF column (four lines) and the cover row re-wrapped from one line to three, now that the qualifier rides inside the value and the cell is a wrapping `Paragraph` rather than a bare string | 8 | +7 / −1 | pdf |
+| **1.5.1 audit, F3** — the Summary Dashboard banner row rewritten to carry `readiness_inline_qualifier()`. T3 gave that qualifier to the Word, PDF and Markdown cover tables and left the workbook out, on the reasoning that Excel already disclosed at 48 characters; under a matcher that requires the READINESS disclosure rather than any house disclaimer, its nearest one was 633 characters away and on another sheet | 2 | +1 / −1 | excel |
+| **1.5.1 audit, F4** — the geographic STRENGTH line rewritten to carry the same basis language its mirror weakness already had, and the geographic deduction notice added to Recommended Improvements. The baseline fixture is a four-state pipeline scoring 89.4 — docked 1.6 points and told nothing until this round | 3 | +2 / −1 | markdown |
 
 **No figure moved.** Not one number in any of the four documents changed: the
 diff is the basis note's prose, the count it interpolates, and the pagination
@@ -1830,14 +2185,21 @@ and the value-only projection that hid B-3's number formats.
 > source for what the Applicant is asked to COMMIT TO, because the thing the
 > Applicant fills in is the Application.**
 
-**87 mentions across 83 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
+**100 mentions across 96 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
 `README.md`. *(75 across 71 when 1.3.0 shipped; 77 across 73 at 1.5.0, which
-added one in `renderers/_round_provenance`'s re-check list. 1.5.1 added ten
-more across ten lines — the T1 withdrawal string and its two allowlist rulings,
-the T2 docs rewrite and the `why.md` removal, the About page's two new Known
-Limitations, and the Part I disclosure. None of the ten cites the Review Process
-for a substantive claim: every one either names it to DENY a bar or points a
-reader at it as the document with the published referent.)* **13 cite the Review Process for a substantive claim** — a
+added one in `renderers/_round_provenance`'s re-check list. 1.5.1's first round
+added ten more across ten lines — the T1 withdrawal string and its two
+allowlist rulings, the T2 docs rewrite and the `why.md` removal, the About
+page's two new Known Limitations, and the Part I disclosure. **The 1.5.1 audit
+round added thirteen more across thirteen lines**, all in the B2 docs sweep and
+the F4 disclosure: the `recommendations.md` rewrite, which now cites the Review
+Process for what the engine ACTUALLY scores; `quickstart.md`'s corrected
+description of the same engine; `visualizations.md`'s radar section, where the
+dashed line is restored to the published Highly Qualified gate it was always
+drawing; and the geographic deduction notice, which names the Review Process as
+the place a CDE should look instead. None of the twenty-three cites the Review
+Process for a substantive claim: every one either names it to DENY a bar or
+points a reader at it as the document with the published referent.)* **13 cite the Review Process for a substantive claim** — a
 percentage, a commitment, or a list of areas. Of those 13:
 
 > **Corrected in 1.3.0 B1.** This paragraph shipped as *"72 mentions across 68

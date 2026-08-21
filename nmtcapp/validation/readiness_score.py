@@ -319,11 +319,25 @@ def _identify_strengths(scores: dict, geographic_diversity: dict | None = None) 
     # What is wrong TODAY and fixable today is the tool telling a CDE it has
     # something the tool's own measure says it does not have. The score is
     # unchanged; only the false sentence is withheld.
+    #
+    # ONE DIRECTION CAVEATED, THE OTHER NOT (1.5.1 audit, F4). T5 fixed the
+    # contradiction and T1 rewrote the WEAKNESS to say "this tool's own house
+    # curve -- not a CDFI Fund threshold". This line, the mirror of it, was
+    # left reading "Good geographic diversity across multiple states":
+    # unqualified, in the tool's own voice, asserting a quality. The round
+    # withdrew the stick and kept the carrot, and an uncaveated praise is the
+    # more dangerous half -- a CDE has no reason to go looking behind good
+    # news. Both halves now carry the same basis, because they are scored by
+    # the same unsourced curve.
     _concentrated = (geographic_diversity or {}).get(
         "geographic_concentration_label"
     ) == "highly_concentrated"
     if scores["geographic_diversity"] >= 70 and not _concentrated:
-        strengths.append("Good geographic diversity across multiple states")
+        strengths.append(
+            "High geographic-diversity sub-score on this tool's own house "
+            "curve — not a CDFI Fund threshold, and not a finding about the "
+            "application"
+        )
     if scores["impact_metrics"] >= 70:
         # NOT "Above-average". That claimed a comparison against an external
         # average — IMPACT_BENCHMARKS["jobs_per_million_qei_avg"], a constant
@@ -396,7 +410,22 @@ def _build_recommendations(
             f"Increase deep/severe distress concentration from {current:.0%} to ≥{target:.0%} "
             "by substituting standard LIC projects with deeper-distress alternatives"
         )
-    if scores["geographic_diversity"] < 60:
+    # THE TRIGGER IS ANY DEDUCTION, NOT A BAND (1.5.1 audit, F4). This read
+    # ``< 60``, which left a hole the round did not see: a FOUR-state pipeline
+    # scores 66.7 on this curve, clears both the ``< 60`` notice here and the
+    # ``< 50`` weakness above, and is told NOTHING about geography -- while
+    # being docked 4.99 points of the 100-point readiness headline it is shown.
+    #
+    # MEASURED, not reasoned: geo 66.7 costs (100 - 66.7) * 0.15 = 4.99. The
+    # pipeline sees a lower grade and no reason for it anywhere in strengths,
+    # weaknesses or recommendations.
+    #
+    # THAT IS THE FAILURE MODE SUPPRESSION PRODUCES, and it is worse than
+    # either half alone: the CDE stops being warned and keeps being penalised.
+    # A tool may decline to advise. It may not deduct silently. So the trigger
+    # is now "this component cost you points" -- the only honest condition --
+    # and the notice states the size of the deduction.
+    if scores["geographic_diversity"] < 100:
         # WITHDRAWN, NOT DROPPED (1.5.1 T1). This slot rendered "Expand
         # geographic footprint — currently N states. Target ≥5 states…" and it
         # fired on exactly the pipelines that were already clearing the CDFI
@@ -429,16 +458,32 @@ def _build_recommendations(
         # which emits no geographic advice at all and cites the Review Process
         # section behind every item it does emit. A CDE is not left without
         # guidance here.
+        _geo_sub = scores["geographic_diversity"]
+        _dock = (100.0 - _geo_sub) * READINESS_SCORING_WEIGHTS[
+            "geographic_diversity"
+        ]
         recs.append(
             "Geographic-footprint guidance is WITHDRAWN pending a methodology "
             "review and is not offered in this release. Earlier versions "
             "advised expanding to ≥5 states to raise this tool's "
             "geographic-diversity sub-score; the CDFI Fund scores no state "
             "count, and following that advice can dilute deep/severe distress "
-            "concentration, which the Fund does score. Do not treat this "
-            f"pipeline's {g.get('states_count', 0)}-state footprint as a "
-            "finding either way. See the CY 2024-2025 Review Process, "
-            "Community Outcomes, for what is actually scored"
+            "concentration, which the Fund does score. "
+            # THE DEDUCTION IS STATED (audit F4). Withholding the advice while
+            # keeping the deduction silent is the worse of the two failures.
+            f"YOU WERE NEVERTHELESS DOCKED {_dock:.1f} POINTS of the "
+            "100-point readiness headline for this: "
+            f"the geographic-diversity sub-score is {_geo_sub:.1f}/100 and "
+            f"carries a {READINESS_SCORING_WEIGHTS['geographic_diversity']:.0%} "
+            "weight in a total that is itself this tool's own unsourced "
+            "heuristic. That deduction is NOT evidence your footprint is a "
+            "problem — the CDFI Fund does not score geographic breadth at all, "
+            "so nothing in the readiness headline's geographic term has a "
+            "federal referent. Do not treat this pipeline's "
+            f"{g.get('states_count', 0)}-state footprint as a finding either "
+            "way, and do not expand it to recover these points. See the "
+            "CY 2024-2025 Review Process, Community Outcomes, for what is "
+            "actually scored"
         )
     if scores["impact_metrics"] < 60:
         recs.append(
