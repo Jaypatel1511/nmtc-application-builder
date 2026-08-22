@@ -1213,13 +1213,42 @@
 
 <h1 id="why-nmtc-application-builder">Why NMTC Application Builder<a class="headerlink" href="#why-nmtc-application-builder" title="Permanent link">&para;</a></h1>
 <h2 id="the-problem">The problem<a class="headerlink" href="#the-problem" title="Permanent link">&para;</a></h2>
-<p>Preparing a competitive NMTC allocation application is a discipline that rewards pattern recognition. Experienced practitioners — those who have reviewed dozens of applications, sat on NOFA panels, or advised winning CDEs — carry intuitions that take years to develop: that healthcare + education sector combinations tend to score well on sector diversity; that a pipeline with only 4 states will be penalized relative to competitors with 8–10; that a jobs-per-million-QEI figure below 6 is a meaningful flag for impact reviewers.</p>
+<p>Preparing an NMTC allocation application is a discipline that rewards pattern recognition. Experienced practitioners — those who have reviewed dozens of applications, sat on NOFA panels, or advised CDEs through the process — carry intuitions that take years to develop about which parts of a pipeline a reviewer will linger on.</p>
+<blockquote>
+<p><strong>Three examples used to stand here and have been removed</strong> (1.5.1). They asserted that healthcare + education combinations "score well on sector diversity", that "a pipeline with only 4 states will be penalized relative to competitors with 8–10", and that a jobs-per-million-QEI figure below 6 "is a meaningful flag for impact reviewers". None of the three is sourced, and all three are claims about how the CDFI Fund scores. The middle one is the sharpest: <strong>the CY 2024-2025 Review Process scores no state count at all</strong>, and the Allocation Application asks for a service area, not a minimum number of states. The same claim, in its executable form, is the geographic recommendation this release withdrew — see <code>MIN_GEOGRAPHIC_DIVERSITY</code> in <code>schema.py</code>. Leaving the prose version standing would have withdrawn the advice and kept the assertion behind it.</p>
+</blockquote>
 <p>First-time applicants and smaller CDEs typically do not have access to this tacit knowledge. They spend months preparing applications, pay for expensive consulting engagements, and often submit without a clear picture of how competitive their pipeline actually is against the 280–340 other applications the CDFI Fund receives in a typical round.</p>
 <p>Even experienced practitioners often work without systematic benchmarking. Pipeline decisions — which projects to include, how to size the request, which markets to expand into — are made based on relationship availability and organizational capacity rather than alignment with the scoring criteria that determine outcomes.</p>
 <h2 id="the-solution">The solution<a class="headerlink" href="#the-solution" title="Permanent link">&para;</a></h2>
 <p>NMTC Application Builder is a programmatic intelligence layer on top of publicly available CDFI Fund data. It does three things that were previously either unavailable or required manual effort:</p>
-<p><strong>1. Automates the benchmark lookup.</strong> Instead of manually reading CDFI Fund annual reports and award announcements to extract pattern statistics, the library embeds those statistics as Python constants and applies them to your pipeline automatically. The winner distribution for distress concentration, geographic diversity, sector mix, and impact intensity is computed the moment you call <code>analyze()</code>.</p>
-<p><strong>2. Quantifies the gaps.</strong> A consultant might tell you "your distress concentration needs to improve." NMTC Application Builder tells you "your distress concentration is 72%, which is at the winner p25. Raising it to 82% (winner median) is estimated to add 8–15 alignment score points." Specific, measurable, actionable.</p>
+<p><strong>1. Automates the benchmark lookup.</strong> Instead of manually reading CDFI Fund
+annual reports and award announcements, the library embeds a set of reference
+bands as Python constants and applies them to your pipeline automatically.
+Distress concentration, geographic diversity, sector mix and impact intensity
+are all compared the moment you call <code>analyze()</code>.</p>
+<blockquote>
+<p><strong>Corrected 1.5.1 (audit, B2 sweep 3).</strong> This paragraph said the library
+computes "the winner distribution" for those four dimensions. <strong>It does not
+and cannot.</strong> The <code>WINNER_*</code> constants it applies are registered <strong>HOUSE and
+unsourced</strong> — round numbers this package chose. The CDFI Fund publishes no
+application-level data for winners or non-winners, so no distribution of past
+Allocatees exists to embed. What is automated is the comparison; what it
+compares against is this tool's own.</p>
+</blockquote>
+<p><strong>2. Quantifies the gaps.</strong> A consultant might tell you "your distress
+concentration needs to improve." NMTC Application Builder tells you the figure,
+the band it falls in, and which of this tool's own sub-scores it moves —
+consistently, and with the basis of every band stated beside it.</p>
+<blockquote>
+<p><strong>Corrected 1.5.1 (audit, B2 sweep 3).</strong> The example here read: <em>"your
+distress concentration is 72%, which is at the winner p25. Raising it to 82%
+(winner median) is estimated to add 8–15 alignment score points."</em> Every
+figure in that sentence is unsourced — there is no winner p25, no winner
+median, and the "8–15 points" estimate is not produced by any code path in
+this package. It was the sharpest remaining instance of the class T2 removed
+from this same file: the 1.5.1 sweep deleted three claims from the blockquote
+at the top of this page and left this one nine lines below them.</p>
+</blockquote>
 <p><strong>3. Generates the documents.</strong> Producing the formatted Word, Excel, and PDF application package that CDFI Fund reviewers expect has traditionally required significant manual effort — copying data into CDFI Fund templates, formatting tables, generating charts. The library produces a complete application package in a single function call.</p>
 <h2 id="who-benefits">Who benefits<a class="headerlink" href="#who-benefits" title="Permanent link">&para;</a></h2>
 <p><strong>CDEs applying for their first or second allocation</strong> — the library accelerates the learning curve and reduces the risk of submitting a pipeline with fundamental competitiveness gaps.</p>

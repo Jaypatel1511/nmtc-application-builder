@@ -1457,15 +1457,33 @@
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">constraints</span> <span class="o">=</span> <span class="n">OptimizationConstraints</span><span class="p">(</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">min_total_qei</span><span class="o">=</span><span class="mi">45_000_000</span><span class="p">,</span>       <span class="c1"># don't underutilize the award</span>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="n">max_total_qei</span><span class="o">=</span><span class="mi">55_000_000</span><span class="p">,</span>       <span class="c1"># match your requested allocation</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">min_projects</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>                 <span class="c1"># winner median is 13; 10 is minimum competitive</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">min_states</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>                    <span class="c1"># above winner p25 of 4 states</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">min_distress_pct</span><span class="o">=</span><span class="mf">0.72</span><span class="p">,</span>          <span class="c1"># above the winner p25 floor</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">min_projects</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>                 <span class="c1"># your own floor — see the note below</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">min_states</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>                    <span class="c1"># SEE THE NOTE BELOW before setting this</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="n">min_distress_pct</span><span class="o">=</span><span class="mf">0.72</span><span class="p">,</span>          <span class="c1"># your own floor — see the note below</span>
 <a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="n">required_sectors</span><span class="o">=</span><span class="p">[</span><span class="s2">"healthcare"</span><span class="p">],</span> <span class="c1"># must have at least one healthcare project</span>
 <a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="n">max_single_sector_pct</span><span class="o">=</span><span class="mf">0.40</span><span class="p">,</span>     <span class="c1"># enforce sector diversity ceiling</span>
 <a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="p">)</span>
 <a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
 <a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="n">result</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">optimize_pipeline</span><span class="p">(</span><span class="n">constraints</span><span class="p">,</span> <span class="n">max_iterations</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
 </code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">The comments on three of these constraints were corrected in 1.5.1</p>
+<p>They read <code># winner median is 13</code>, <code># above winner p25 of 4 states</code> and
+<code># above the winner p25 floor</code>. <strong>No such medians or percentiles exist.</strong>
+This package holds no distribution of past Allocatees' project counts,
+state counts or distress shares; the <code>WINNER_*</code> keys are registered
+<strong>HOUSE and unsourced</strong>. A reader copying this block was copying three
+invented benchmarks into a federal filing's planning assumptions.</p>
+<p><strong><code>min_states=5</code> in particular.</strong> That is the same "≥5 states" this release
+withdrew from <code>readiness_score._build_recommendations</code>, and the reasoning
+applies here unchanged: the CY 2024-2025 Review Process scores no state
+count, and constraining the optimizer to five states can force it to drop
+deep-distress projects for geographic spread — trading points the Fund does
+score for a metric it does not. The value is left in the example because
+<code>OptimizationConstraints</code> accepts it and removing it would misrepresent the
+API, but <strong>it is not a recommendation</strong>. Set it from your own deployment
+footprint, or leave it unset.</p>
+</div>
 <p><code>max_iterations</code> (default 500) controls how many swap attempts the local search makes. For pipelines under 30 projects, 500 iterations is usually sufficient to converge. For larger pipelines you can increase to 1000+ with modest additional runtime.</p>
 <hr />
 <h2 id="reading-the-optimizationresult">Reading the OptimizationResult<a class="headerlink" href="#reading-the-optimizationresult" title="Permanent link">&para;</a></h2>

@@ -1329,8 +1329,21 @@
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">plot_sector_distribution</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">"./charts/sector_mix.png"</span><span class="p">)</span>
 </code></pre></div>
 <p><strong>What it shows:</strong> A horizontal bar chart of QEI by sector, sorted by QEI descending. Bars are color-coded by CDFI Fund priority tier: deep blue (high priority: healthcare, affordable housing, education), medium blue (medium priority: small business, mixed use), light blue (other sectors). Each bar shows the sector's percentage of total QEI.</p>
-<p><strong>Reference annotation:</strong> The chart includes a note that "Winners typically have ≥50% in high-priority sectors (healthcare, affordable housing, education)."</p>
-<p><strong>Why it matters:</strong> Quick visual check on whether your sector mix aligns with CDFI Fund priority areas. A chart dominated by high-priority sectors (deep blue) is the target pattern.</p>
+<p><strong>Reference annotation:</strong> none. The chart carried a note reading <em>"Winners
+typically have ≥50% in high-priority sectors (healthcare, affordable housing,
+education)"</em> — <strong>removed from the chart itself in 1.5.1</strong>, not merely from this
+page.</p>
+<p>It was a winner-population claim printed onto a PNG a CDE could paste into a
+board deck, with no disclosure anywhere on the image, and this package holds no
+sector distribution for past Allocatees. It is the same class as
+<code>plot_winner_alignment</code>'s nine bands, which were relabelled <code>House P25 / House
+P50 (this tool's) / House P75</code> and given an on-figure disclaimer in an earlier
+round; this annotation was missed by that sweep and by the 1.5.1 sweep, and is
+the third site of the class.</p>
+<p><strong>Why it matters:</strong> a quick visual check on how your own QEI is distributed
+across sectors, tiered by the CDFI Fund's stated priority areas. The tiering is
+sourced; <strong>what share of QEI belongs in each tier is not a question this tool
+can answer</strong>, and no target share is drawn.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">plot_sector_distribution</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">"./sector_mix.png"</span><span class="p">)</span>
 </code></pre></div>
 <hr />
@@ -1339,13 +1352,40 @@
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">plot_readiness_radar</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">"./charts/readiness_radar.png"</span><span class="p">)</span>
 </code></pre></div>
-<p><strong>What it shows:</strong> A spider/radar chart with five axes — one for each win-alignment dimension (Distress, Geographic, Impact, Sector, Pipeline). Each axis runs from 0 to 100. The chart overlays two polygons:</p>
+<p><strong>What it shows:</strong> A spider/radar chart with <strong>three</strong> axes — the three scored
+sections of the CY 2024-2025 Review Process: <strong>Business Strategy</strong>, <strong>Community
+Outcomes</strong> and <strong>Priority Points</strong>. Each axis runs 0–100, normalised against
+that section's structural maximum (/50, /50, /10). The chart overlays two
+polygons:</p>
 <ul>
-<li><strong>Your Pipeline</strong> (solid deep blue line, light fill) — your dimensional alignment scores</li>
-<li><strong>Winner Benchmark</strong> (dashed amber line) — the competitive threshold of 75 on each dimension</li>
+<li><strong>Your Pipeline</strong> (solid deep blue line, light fill) — your section scores</li>
+<li><strong>HQ Min Threshold</strong> (dashed amber line) — <strong>80 / 80 / 70</strong>, the Highly
+  Qualified section minimums scaled to 0–100 (40/50 = 80; the 70 on Priority
+  Points is not a gate, as priority points do not gate)</li>
 </ul>
-<p><strong>Why it matters:</strong> Immediately shows which dimensions are strong (extending beyond the benchmark line) and which are weak (falling inside it). The radar chart is the most effective single visualization for communicating application strengths and gaps to a CDE board or investor.</p>
-<p><strong>Title includes</strong> the composite score and competitive tier (e.g., "Win Alignment Radar — 71/100 [COMPETITIVE]"). The title color reflects the tier: green (strong), blue (competitive), yellow (marginal), red (weak).</p>
+<p><strong>Why it matters:</strong> it shows at a glance which <em>published</em> section minimum a
+pipeline is short of. Because the dashed line is derived from the Fund's own
+published gate rather than from a house band, falling inside it on either of
+the first two axes means something specific: the application would not reach
+the Highly Qualified pool.</p>
+<p><strong>Title includes</strong> the aggregate base score and tier (e.g. <code>"… — 90/100 [HIGHLY
+QUALIFIED]"</code>). The title colour reflects the tier: green (Top Tier — <strong>this
+tool's own label</strong>, not a CDFI Fund tier), blue (Highly Qualified), red (Not
+Qualified).</p>
+<div class="admonition warning">
+<p class="admonition-title">This section described a different chart, and was corrected in 1.5.1</p>
+<p>It said the radar had <strong>five</strong> axes (Distress, Geographic, Impact, Sector,
+Pipeline), that the dashed line was a <strong>"Winner Benchmark"</strong> at <strong>75</strong> on
+each dimension, and that the tiers were "strong / competitive / marginal /
+weak". The chart has three axes, the dashed line is labelled <code>HQ Min
+Threshold</code> at 80/80/70, and those tier names have not existed since 1.2.0.</p>
+<p>The relabel matters beyond accuracy. "Winner Benchmark" attributes the line
+to a population of past Allocatees this package has never held. The line it
+actually draws is one of the few figures in this tool with a genuine
+federal referent — the published Highly Qualified gate — and calling it a
+winner benchmark traded a sourced threshold for an unsourced one, in the
+wrong direction.</p>
+</div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">plot_readiness_radar</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">"./readiness_radar.png"</span><span class="p">)</span>
 </code></pre></div>
 <hr />
@@ -1354,13 +1394,21 @@
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">plot_winner_alignment</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">"./charts/winner_alignment.png"</span><span class="p">)</span>
 </code></pre></div>
-<p><strong>What it shows:</strong> A three-panel horizontal bar chart comparing your pipeline on three key metrics against historical winner distributions:</p>
+<p><strong>What it shows:</strong> A three-panel horizontal bar chart placing your pipeline
+against <strong>this tool's own house reference bands</strong> on three metrics:</p>
 <ol>
-<li><strong>Distress % (Deep + Severe)</strong> — your value vs. winner P25, P50 (median), P75</li>
-<li><strong>States Served</strong> — your state count vs. winner P25, P50, P75</li>
-<li><strong>Jobs per $MM QEI</strong> — your jobs-per-million vs. winner P25, P50, P75</li>
+<li><strong>Distress % (Deep + Severe)</strong> — your value vs. House P25, P50, P75</li>
+<li><strong>States Served</strong> — your state count vs. House P25, P50, P75</li>
+<li><strong>Jobs per $MM QEI</strong> — your jobs-per-million vs. House P25, P50, P75</li>
 </ol>
-<p>Each panel shows four bars: Winner P25, Winner P50 (Median), Winner P75, and Your Pipeline. A dashed amber vertical line marks the competitive threshold (P50). Your pipeline bar is dark blue; winner bars are light blue.</p>
+<p>Each panel shows four bars, labelled on the figure as <code>House P25</code>,
+<code>House P50 (this tool's)</code>, <code>House P75</code> and <code>Your Pipeline</code>. A dashed amber
+vertical line marks the P50 band. Your pipeline bar is dark blue.</p>
+<p>The bar labels said <code>Winner P25 / Winner P50 (Median) / Winner P75</code> on the
+figure until an earlier round relabelled them; this page went on calling them
+winner percentiles afterwards. <strong>All nine values are <code>HOUSE</code> constants</strong> —
+unsourced round numbers this package chose. Panel 2 in particular charts a
+state count against a band the CDFI Fund does not score at all.</p>
 <p><strong>Why it matters:</strong> The most data-dense visualization — it places your pipeline
 against this tool's own reference bands on three metrics. <strong>The P25/P50/P75
 bands are <code>HOUSE</code> values: unsourced round numbers this package chose, not a

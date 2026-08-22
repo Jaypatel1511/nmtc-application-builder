@@ -1601,10 +1601,10 @@
 <h3 id="step-3-intelligence-analyses">Step 3: Intelligence analyses<a class="headerlink" href="#step-3-intelligence-analyses" title="Permanent link">&para;</a></h3>
 <p>Four analyses run in parallel on the enriched pipeline:</p>
 <ul>
-<li><strong>Distress concentration</strong> — what percentage of QEI is deployed into deep, severe, LIC, and ineligible tracts; native area and high-migration rural percentages; comparison against winner distributions</li>
+<li><strong>Distress concentration</strong> — what percentage of QEI is deployed into deep, severe, LIC, and ineligible tracts; native area and high-migration rural percentages; comparison against this tool's own <strong>HOUSE</strong> reference bands (there is no winner distribution — see below)</li>
 <li><strong>Geographic diversity</strong> — states count, MSA count, a three-way Non-Metropolitan County split of QEI (non-metro / metropolitan / not determined), Herfindahl-Hirschman Index (HHI) for geographic concentration</li>
 <li><strong>Sector mix</strong> — sectors represented, dominant sector, high-priority sector percentage (healthcare + affordable housing + education), sector diversity score</li>
-<li><strong>Impact aggregation</strong> — total jobs created and retained, units built, square footage, and the critical jobs-per-million-QEI metric benchmarked against historical winners</li>
+<li><strong>Impact aggregation</strong> — total jobs created and retained, units built, square footage, and the jobs-per-million-QEI metric compared against this tool's own <strong>HOUSE</strong> impact band</li>
 </ul>
 <h3 id="step-4-validation">Step 4: Validation<a class="headerlink" href="#step-4-validation" title="Permanent link">&para;</a></h3>
 <p>Three validation checks run automatically:</p>
@@ -1916,47 +1916,70 @@ someone to notice.</p>
 <a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>                                   <span class="c1">#         table). NOT metropolitan. The three sum to 1.0.</span>
 <a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="n">g</span><span class="p">[</span><span class="s2">"metro_status_qei"</span><span class="p">]</span>              <span class="c1"># dict  — the three buckets in dollars, plus project counts</span>
 <a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="n">g</span><span class="p">[</span><span class="s2">"hhi"</span><span class="p">]</span>                           <span class="c1"># float — Herfindahl-Hirschman Index (lower = more diverse)</span>
-<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="n">g</span><span class="p">[</span><span class="s2">"geographic_concentration_label"</span><span class="p">]</span> <span class="c1"># str — e.g. "low", "medium", "high"</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="n">g</span><span class="p">[</span><span class="s2">"geographic_concentration_label"</span><span class="p">]</span> <span class="c1"># str — "highly_concentrated" | "moderate" | "diverse"</span>
 <a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="n">g</span><span class="p">[</span><span class="s2">"state_breakdown"</span><span class="p">]</span>               <span class="c1"># dict — per-state QEI and project counts</span>
 </code></pre></div>
 <h3 id="readiness-score-interpretation">Readiness score interpretation<a class="headerlink" href="#readiness-score-interpretation" title="Permanent link">&para;</a></h3>
+<p><strong>The readiness grade has no external referent.</strong> It is this tool's own weighted
+composite over six components this tool chose, with weights this tool assigned
+(<code>READINESS_SCORING_WEIGHTS</code>). It is not calibrated against award data, the CDFI
+Fund publishes no such score or weighting, and <strong>no winner population is
+involved in it at any point.</strong> A grade is a restatement of the composite, not a
+finding about the application.</p>
+<p>The cut points below are <code>schema.GRADE_THRESHOLDS</code> — this tool's own bands, not
+a CDFI Fund threshold.</p>
 <table>
 <thead>
 <tr>
 <th>Grade</th>
 <th>Score Range</th>
-<th>Interpretation</th>
+<th>What it means</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>A</td>
 <td>85–100</td>
-<td>Submission-ready; focus on final review</td>
+<td>Scores in this tool's top band across its six components</td>
 </tr>
 <tr>
 <td>B</td>
 <td>70–84</td>
-<td>Competitive; targeted improvements will strengthen the application</td>
+<td>Scores in this tool's second band</td>
 </tr>
 <tr>
 <td>C</td>
 <td>55–69</td>
-<td>Below typical winner patterns; significant work needed before submission</td>
+<td>Scores in this tool's middle band</td>
 </tr>
 <tr>
 <td>D</td>
 <td>40–54</td>
-<td>Multiple critical gaps; substantial restructuring required</td>
+<td>Scores in this tool's fourth band; one or more components are low</td>
 </tr>
 <tr>
 <td>F</td>
 <td>0–39</td>
-<td>Application not viable in current form</td>
+<td>Scores in this tool's lowest band</td>
 </tr>
 </tbody>
 </table>
-<p>Note that the readiness score is distinct from the win alignment score — it measures internal completeness and quality, while the alignment score measures competitiveness against winner patterns.</p>
+<p><strong>These rows previously read as claims about the applicant pool</strong> — "Below
+typical winner patterns" for C and "Application not viable in current form" for
+F, with "Submission-ready" and "Competitive" above them. Every one of those was
+a winner-population claim attached to a score that has never been compared to a
+winner population, and this package's attribution registry rules every <code>WINNER_*</code>
+key HOUSE and unsourced. The same error was deleted from <code>_assess_vs_winners</code>,
+<code>sector_analysis</code> and <code>_benchmark_label</code>; it survived here, in the documentation,
+after all three code deletions.</p>
+<p>"Not viable" was the sharper half. A CDE reading that about its own pipeline may
+not file at all, and this tool has no basis on which to tell anyone that.</p>
+<p><strong>Do not read a low grade as a reason not to apply.</strong> Whether an application is
+worth filing is a judgement this tool cannot make. For what the CDFI Fund
+actually scores, use the alignment score, which is assessed against the
+published CY 2024-2025 Review Process criteria — not against winner patterns —
+and read the recommendations, each of which cites the Review Process section
+behind it.</p>
 <hr />
 <h2 id="caching-behavior">Caching behavior<a class="headerlink" href="#caching-behavior" title="Permanent link">&para;</a></h2>
 <p><code>analyze()</code> caches its result after the first call. Calling <code>analyze()</code> again on the same <code>Application</code> object returns the cached result immediately. The cache is invalidated if you call <code>add_pipeline()</code> or <code>add_project()</code> after the initial analysis.</p>
