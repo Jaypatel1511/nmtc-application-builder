@@ -406,6 +406,17 @@ _COMPONENT_BASIS = {
 }
 
 
+# THE NOTE'S ONE COLUMN (1.5.3 T1). Every fixed-width surface lays the note
+# out through :func:`wrap_note`, which reads this, so the CLI block and the
+# Streamlit block are the same width by construction rather than by two
+# numbers that happen to agree. The CLI adds a two-space indent on top of it,
+# and the FUND continuation lines inside the deduction rows land on the same
+# 78 columns (``textwrap.wrap(fund, width=64)`` under a 14-space indent).
+# tests/test_streamlit_frame_geometry.py re-derives both and fails if either
+# drifts from this constant.
+NOTE_PROSE_WIDTH = 76
+
+
 def narrative_withdrawal_note(component_scores: dict) -> str:
     """The ONE statement of the 1.5.2 withdrawal, read by every surface.
 
@@ -756,22 +767,74 @@ def _build_recommendations(
     return recs[:5]
 
 
-def _wrap_note(note: str, width: int = 76) -> List[str]:
-    """Wrap the withdrawal note for the fixed-width CLI block.
+def wrap_note(
+    note: str, width: int = NOTE_PROSE_WIDTH, indent: str = ""
+) -> List[str]:
+    """Lay the withdrawal note out for a surface that will NOT reflow it.
 
-    Lines that are already indented are pre-formatted (the deduction table)
-    and pass through untouched -- rewrapping them would destroy the column
-    alignment that makes the arithmetic readable.
+    THE ONE COPY OF THIS LAYOUT RULE (1.5.3 T1). PUBLIC BECAUSE TWO SURFACES
+    NEED IT AND NEITHER MAY OWN IT.
+
+    ``narrative_withdrawal_note`` returns the note as LOGICAL PARAGRAPHS -- one
+    line per paragraph, unwrapped. That is the canonical form and it is
+    deliberate: of the surfaces that render it, only some have a frame.
+
+        markdown    reflows to whatever renders it, and this package's frame
+                    gate rules exactly that (``test_render_frame_geometry.
+                    test_markdown_has_no_frame_to_fall_out_of``). It takes the
+                    note unwrapped and must keep doing so -- see below.
+        nmtcapp     a terminal column. ``ReadinessScore.summary()`` calls this
+        analyze     with ``indent="  "``.
+        Streamlit   ``st.code`` renders <pre> with ``white-space: pre``, which
+                    NEVER WRAPS AT ANY VIEWPORT. Measured against the deployed
+                    app 2026-08-22: 125 columns visible, 715-character lines,
+                    content 5.7x wider than its own box, seven of nine prose
+                    lines running off the right edge and taking what was
+                    withdrawn, why, and the no-trade-off rule with them.
+                    The page calls this with the default (no) indent.
+
+    WHY THE NOTE IS NOT SIMPLY PRE-WRAPPED AT SOURCE, which was tried first and
+    is the obvious move. Pre-wrapping makes the WRAPPED form canonical, and
+    then every surface that does not want it has to undo it:
+
+      * MARKDOWN CANNOT UNDO IT LOSSLESSLY. ``textwrap`` breaks on hyphens, so
+        "jobs-per-$1MM-QEI" splits across two lines and re-joining on spaces
+        yields "jobs-per-$1MM- QEI" -- a space inserted into a unit token, in a
+        document a CDE files.
+      * CARRYING THE BREAKS INTO MARKDOWN INSTEAD BREAKS A GATE.
+        ``tests/test_attributed_claims`` treats a clause as a WRAP only when
+        the same sentence appears unbroken somewhere in the corpus -- "one
+        clause seen through two geometries" -- and markdown WAS that unbroken
+        geometry. Wrapping it too left three fragments with no whole parent and
+        the gate reported them as uncited attributions inheriting a ruling by
+        substring. That is how this was found: by execution, not by reading.
+
+    So the note stays logical, wrapping is a rendering concern, and the rule
+    lives here once rather than beside each ``st.code``.
+
+    PRE-FORMATTED LINES PASS THROUGH. A four-space indent marks the deduction
+    table, whose column alignment is the thing that makes the arithmetic
+    readable; rewrapping it would destroy that. Those rows are WIDER THAN
+    ``width`` and are not fixed here --
+    ``tests/test_streamlit_frame_geometry.py`` records the measurement and
+    ratchets it.
     """
     out = []
     for para in note.split("\n"):
         if not para.strip():
             out.append("")
         elif para.startswith("    "):
-            out.append(f"  {para}")
+            out.append(f"{indent}{para}")
         else:
-            out.extend(f"  {line}" for line in textwrap.wrap(para, width=width))
+            out.extend(
+                f"{indent}{line}" for line in textwrap.wrap(para, width=width)
+            )
     return out
+
+
+def _wrap_note(note: str, width: int = NOTE_PROSE_WIDTH) -> List[str]:
+    """The CLI's call into :func:`wrap_note`, with the terminal's two-space indent."""
+    return wrap_note(note, width=width, indent="  ")
 
 
 def _score_bar(score: float, width: int = 30) -> str:

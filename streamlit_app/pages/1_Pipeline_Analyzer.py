@@ -34,6 +34,7 @@ from nmtcapp.renderers._methodology import (
     readiness_inline_qualifier,
     readiness_weights_note,
 )
+from nmtcapp.validation.readiness_score import wrap_note
 from nmtcapp.renderers._question_25 import Q25_QEI_BASIS_CLAUSE, q25_basis_note
 from nmtcapp.renderers._question_22 import (
     Q22_METRO_LABEL, Q22_NON_METRO_LABEL, Q22_NON_METRO_METRIC_LABEL,
@@ -105,7 +106,7 @@ with st.sidebar:
                 file_name="nmtc_pipeline_template.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 help="Pre-formatted with dropdowns and sample rows. Fill in your projects, save, and upload the .xlsx directly.",
-                use_container_width=True,
+                width="stretch",
             )
 
     data_source = st.radio(
@@ -184,7 +185,7 @@ def _summarise_cde_defaults(cde_extra: dict | None) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 # Main — run analysis
 # ---------------------------------------------------------------------------
-run_clicked = st.button("▶  Run Analysis", type="primary", use_container_width=False)
+run_clicked = st.button("▶  Run Analysis", type="primary", width="content")
 
 if run_clicked:
     pipeline = None
@@ -427,7 +428,7 @@ with tabs[0]:
         ax.set_xlim(0, 118)
         style_matplotlib_axes(ax, xlabel="Score (0–100)")
         fig.tight_layout()
-        st.pyplot(fig, use_container_width=True)
+        st.pyplot(fig, width="stretch")
         plt.close(fig)
     else:
         st.markdown(f"**Overall readiness grade:** `{grade}` ({readiness:.1f}/100)")
@@ -446,7 +447,18 @@ with tabs[0]:
     # object, so this page cannot drift from them.
     if getattr(rs, "narrative_withdrawn", False) and getattr(rs, "narrative_note", ""):
         st.markdown("**Readiness narrative — withdrawn, and the arithmetic**")
-        st.code(rs.narrative_note, language=None)
+        # LAID OUT BEFORE IT IS RENDERED (1.5.3 T1). st.code emits <pre> with
+        # white-space: pre, which never wraps at any viewport -- measured
+        # against this deployed page on 2026-08-22: 125 columns visible,
+        # 715-character lines, content 5.7x wider than its own box, and seven
+        # of nine prose lines running off the right edge carrying what was
+        # withdrawn, why, and the no-trade-off rule.
+        #
+        # wrap_note() is the SAME layout rule `nmtcapp analyze` uses, imported
+        # rather than restated, so this block cannot drift to a different
+        # column from the CLI one. The note itself is still READ, not
+        # re-rendered.
+        st.code("\n".join(wrap_note(rs.narrative_note)), language=None)
 
 # =============================================================================
 # TAB 1 — Distress
@@ -565,7 +577,7 @@ with tabs[1]:
                 xref="paper", yref="paper",
             )],
         )
-        st.plotly_chart(fig_pie, use_container_width=True, config=PLOTLY_CONFIG)
+        st.plotly_chart(fig_pie, width="stretch", config=PLOTLY_CONFIG)
 
     with right:
         # --- B: distress concentration vs. this tool's own screening band ---
@@ -610,7 +622,7 @@ with tabs[1]:
         style_matplotlib_axes(ax_bench, ylabel="% of QEI in deep/severe tracts")
         ax_bench.tick_params(axis="x", rotation=10)
         fig_bench.tight_layout()
-        st.pyplot(fig_bench, use_container_width=True)
+        st.pyplot(fig_bench, width="stretch")
         plt.close(fig_bench)
         st.caption(
             f"The {screening_band:.0%} line is **this tool's own screening band**, "
@@ -696,7 +708,7 @@ with tabs[2]:
         ax_states.tick_params(axis="x", rotation=45)
         style_matplotlib_axes(ax_states, title="QEI by state", ylabel="QEI ($ millions)")
         fig_states.tight_layout()
-        st.pyplot(fig_states, use_container_width=True)
+        st.pyplot(fig_states, width="stretch")
         plt.close(fig_states)
 
     # --- D: Urban / rural donut ---
@@ -745,7 +757,7 @@ with tabs[2]:
                 xref="paper", yref="paper",
             )],
         )
-        st.plotly_chart(fig_ur, use_container_width=True, config=PLOTLY_CONFIG)
+        st.plotly_chart(fig_ur, width="stretch", config=PLOTLY_CONFIG)
 
     with right:
         st.markdown("**Geographic benchmarks**")
@@ -890,7 +902,7 @@ with tabs[3]:
         style_matplotlib_axes(ax_sector, title="QEI allocation by sector",
                                xlabel="QEI ($ millions)")
         fig_sector.tight_layout()
-        st.pyplot(fig_sector, use_container_width=True)
+        st.pyplot(fig_sector, width="stretch")
         plt.close(fig_sector)
 
     # Sector QEI share breakdown table
@@ -908,7 +920,7 @@ with tabs[3]:
                 for k, v in sorted(sector_breakdown.items(), key=lambda x: -x[1].get("pct", 0))
             ]
         )
-        st.dataframe(share_df, use_container_width=True, hide_index=True)
+        st.dataframe(share_df, width="stretch", hide_index=True)
 
 # =============================================================================
 # TAB 4 — Impact
@@ -1017,7 +1029,7 @@ with tabs[4]:
             ylabel="Jobs / $1MM QEI",
         )
         fig_jpm.tight_layout()
-        st.pyplot(fig_jpm, use_container_width=True)
+        st.pyplot(fig_jpm, width="stretch")
         plt.close(fig_jpm)
         st.caption(
             "The p25 / median / p75 / top-decile lines are "
@@ -1096,7 +1108,7 @@ with tabs[4]:
                     ),
                     margin=dict(l=50, r=20, t=70, b=50),
                 )
-                st.plotly_chart(fig_wf, use_container_width=True, config=PLOTLY_CONFIG)
+                st.plotly_chart(fig_wf, width="stretch", config=PLOTLY_CONFIG)
 
             st.markdown("**Deal economics**")
             st.markdown(f"- Total NMTCs: **{fmt_millions(nmtcs_val)}**")

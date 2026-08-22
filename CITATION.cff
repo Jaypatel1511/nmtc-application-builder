@@ -17,8 +17,8 @@ authors:
 repository-code: "https://github.com/Jaypatel1511/nmtc-application-builder"
 url: "https://jaypatel1511.github.io/nmtc-application-builder/"
 license: MIT
-version: "1.5.2"
-date-released: "2026-08-21"
+version: "1.5.3"
+date-released: "2026-08-22"
 keywords:
   - NMTC
   - CDFI
