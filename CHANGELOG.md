@@ -448,7 +448,7 @@ components off the result, in `test_qlici_not_supplied` (four),
 `FLOOR` 610 → **650**, re-derived the long way twice — once for T1–T4 and
 again for the audit round, each time with the sdist built, unpacked, `nmtcapp/`
 moved aside, and the optional renderers installed before counting:
-**1,349 collected** under `-m "not wheel"`, **43 skipped**, **1,306 executed**,
+**1,350 collected** under `-m "not wheel"`, **43 skipped**, **1,307 executed**,
 half 653, rounded down 650. `MAX_SDIST_SKIPS` stays 45 — headroom two, for the
 third release running.
 

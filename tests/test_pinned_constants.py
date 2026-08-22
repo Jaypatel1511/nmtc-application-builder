@@ -1094,42 +1094,72 @@ def _streamlit_disclosure_substitutions() -> dict:
     }
 
 
-def _streamlit_page_surface(path: str) -> str:
-    """Every string a Streamlit page hands to a render call, in source order."""
-    import ast
+def _call_name(node) -> str:
+    fn = node.func
+    if isinstance(fn, ast.Attribute):
+        return fn.attr
+    if isinstance(fn, ast.Name):
+        return fn.id
+    return ""
 
+
+def _streamlit_page_surface(path: str) -> str:
+    """Every string a Streamlit page hands to a render call, in source order.
+
+    ORDER COMES FROM AN ORDERED TRAVERSAL, NOT FROM ast POSITIONS, and that is
+    not a style preference -- it is a portability bug this gate shipped once and
+    CI caught on three interpreters.
+
+    Before PEP 701 (Python 3.12) the expressions inside an f-string do not carry
+    their own true line and column; they are parsed from a synthesised
+    sub-source and the positions can land far from where the text renders.
+    Sorting chunks by ``(lineno, col_offset)`` therefore produced a sane surface
+    on 3.12 and a scrambled one on 3.9, 3.10 and 3.11 -- where an interpolated
+    disclosure sorted thousands of characters away from the claim it sits
+    beside, and the gate failed on a page that is correct.
+
+    So: the render CALLS are ordered by position, which is a statement-level
+    fact every version gets right, and within each call the arguments are walked
+    depth-first through ``iter_child_nodes``, which yields ``JoinedStr.values``
+    in textual order by construction.
+
+    WHAT IT CANNOT SEE, DECLARED. Text arriving through a variable is not a
+    literal here. Calls to the three _methodology disclosure functions are
+    substituted with their VALUES so the anchors they carry are measured where
+    they render; any OTHER interpolation is invisible, and a disclosure
+    smuggled in through one would NOT satisfy this gate. That is the
+    conservative direction.
+    """
     subs = _streamlit_disclosure_substitutions()
     with open(path, encoding="utf-8") as fh:
         tree = ast.parse(fh.read())
 
     chunks: list = []
 
-    def _emit(node):
-        for sub in ast.walk(node):
-            if isinstance(sub, ast.Constant) and isinstance(sub.value, str):
-                chunks.append((sub.lineno, sub.col_offset, sub.value))
-            elif isinstance(sub, ast.Call):
-                fn = sub.func
-                name = fn.attr if isinstance(fn, ast.Attribute) else (
-                    fn.id if isinstance(fn, ast.Name) else None
-                )
-                if name in subs:
-                    chunks.append((sub.lineno, sub.col_offset, subs[name]))
+    def _emit_in_order(node):
+        """Depth-first, field order — the order a reader meets the text."""
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            chunks.append(node.value)
+            return
+        if isinstance(node, ast.Call) and _call_name(node) in subs:
+            chunks.append(subs[_call_name(node)])
+            return
+        for child in ast.iter_child_nodes(node):
+            _emit_in_order(child)
 
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Call):
-            continue
-        fn = node.func
-        name = fn.attr if isinstance(fn, ast.Attribute) else (
-            fn.id if isinstance(fn, ast.Name) else None
-        )
-        if name not in _ST_RENDER_CALLS:
-            continue
+    calls = [
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and _call_name(node) in _ST_RENDER_CALLS
+    ]
+    # Statement-level positions, which every supported interpreter reports
+    # correctly. Nested render calls (a column's .caption inside a with-block)
+    # sort by their own position, which is where they render.
+    calls.sort(key=lambda n: (n.lineno, n.col_offset))
+    for node in calls:
         for arg in list(node.args) + [kw.value for kw in node.keywords]:
-            _emit(arg)
+            _emit_in_order(arg)
 
-    chunks.sort()
-    return _normalise(" ".join(text for _, _, text in chunks))
+    return _normalise(" ".join(chunks))
 
 
 #: Computed here rather than through _repo_root(), which this module defines
@@ -1150,6 +1180,54 @@ def _streamlit_surfaces() -> dict:
             os.path.join(_STREAMLIT_PAGES_DIR, name)
         )
     return out
+
+
+@pytest.mark.skipif(
+    not os.path.isdir(_STREAMLIT_PAGES_DIR),
+    reason="streamlit_app/ absent (installed tree or unpacked sdist, not a checkout)",
+)
+def test_the_streamlit_extractor_keeps_interpolated_text_in_place():
+    """THE PORTABILITY PROPERTY, NAMED RATHER THAN LEFT INCIDENTAL.
+
+    The first version of this extractor sorted its chunks by
+    ``(lineno, col_offset)``. Before PEP 701 (Python 3.12) the expressions
+    inside an f-string do not carry their true position, so an interpolated
+    disclosure sorted THOUSANDS of characters from the claim beside which it
+    actually renders: green on 3.12, red on 3.9, 3.10 and 3.11, on a page that
+    was correct. CI caught it; nothing in this file asked the question.
+
+    So it is asked directly, on a synthetic whose answer does not depend on how
+    any real page happens to be written. If this fails, the surface's character
+    offsets are fiction and every distance the proximity gate reports is too.
+    """
+    import textwrap
+
+    page = os.path.join(_STREAMLIT_PAGES_DIR, "1_Pipeline_Analyzer.py")
+    surface = _streamlit_page_surface(page)
+    qualifier = _normalise(_streamlit_disclosure_substitutions()[
+        "readiness_inline_qualifier"
+    ]).lower()
+    low = surface.lower()
+    assert qualifier in low, (
+        "the analyzer page's interpolated readiness qualifier does not appear "
+        "in the extracted surface at all — the substitution is not firing"
+    )
+
+    claim = _READINESS_CLAIM.search(low)
+    assert claim, "no readiness claim in the extracted analyzer surface"
+    nearest = min(
+        abs(m.start() - claim.start())
+        for m in re.finditer(re.escape(qualifier), low)
+    )
+    limit = _disclosure_proximity_limit()
+    assert nearest <= limit, (
+        f"the interpolated qualifier lands {nearest:,} characters from the "
+        f"page's first readiness claim (limit {limit:,}). On the page itself "
+        "it renders in the same column as the metric. The extractor is "
+        "ordering interpolations by ast position again, which is unreliable "
+        "before Python 3.12 — order must come from the traversal.\n\n"
+        + textwrap.shorten(surface[:400], 380)
+    )
 
 
 @pytest.mark.skipif(
