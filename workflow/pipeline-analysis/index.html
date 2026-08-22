@@ -1920,6 +1920,27 @@ someone to notice.</p>
 <a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="n">g</span><span class="p">[</span><span class="s2">"state_breakdown"</span><span class="p">]</span>               <span class="c1"># dict — per-state QEI and project counts</span>
 </code></pre></div>
 <h3 id="readiness-score-interpretation">Readiness score interpretation<a class="headerlink" href="#readiness-score-interpretation" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">The composite's narrative is withdrawn (1.5.2)</p>
+<p><code>compute_readiness_score()</code> no longer emits strengths, weaknesses or
+recommendations. Every one of those lines was triggered by a band this
+tool set for itself — <code>READINESS_SCORING_WEIGHTS</code>, <code>IMPACT_BENCHMARKS</code>,
+<code>TARGET_DISTRESS_THRESHOLDS</code> and <code>MIN_GEOGRAPHIC_DIVERSITY</code> are all
+recorded <strong>HOUSE</strong> in this package's constant registry — and they were
+instructing CDEs to restructure real pipelines.</p>
+<p><code>top_strengths</code>, <code>top_weaknesses</code> and <code>recommendations</code> are <strong>still on the
+object and still in <code>to_dict()</code></strong>; they are empty of composite-derived
+narrative, and <code>narrative_withdrawn</code> / <code>narrative_note</code> say so to a
+machine reader. What renders in their place is the composite's own
+deduction arithmetic: which component cost how many points, against which
+house constant. <em>A tool may decline to advise; it may not deduct silently.</em></p>
+<p><strong>The sourced guidance is unaffected.</strong>
+<code>intelligence.RecommendationEngine</code> never read this composite and cites a
+CY 2024-2025 Review Process section behind every item — reach it with
+<code>Application.recommendations()</code> or the Win Alignment Scorer page.
+<strong><code>nmtcapp analyze</code> and the generated documents do not run that engine</strong>,
+so neither now carries improvement guidance of any kind.</p>
+</div>
 <p><strong>The readiness grade has no external referent.</strong> It is this tool's own weighted
 composite over six components this tool chose, with weights this tool assigned
 (<code>READINESS_SCORING_WEIGHTS</code>). It is not calibrated against award data, the CDFI
