@@ -743,14 +743,41 @@ jobs:
           # gate and T7's literal gate), so CLAIMED_NEW_TEST_MODULES moves
           # 12 -> 18.
           #
-          # SKIPS: 49, MEASURED, against MAX_SDIST_SKIPS = 45. This release
+          # SKIPS: 49, MEASURED. MAX_SDIST_SKIPS was RAISED 45 -> 49 in the
+          # audit close, because 45 sat four below the thing it bounds and this
+          # file's own sentence is that a ceiling below its measurement is not
+          # a ceiling. The FLOOR band is identical at both values, so nothing
+          # about FLOOR's falsifiability changed. This release
           # adds none -- it REMOVED one, a gate that skipped rather than
           # asserting its own precondition. Every skip here carries an explicit
           # written reason and every one is environmental ("this is an unpacked
-          # sdist, not a checkout"): 8 test_documented_keys (docs/ and
-          # examples/ pruned), 7 test_pinned_constants (no nmtcapp/ source), 4
-          # test_no_committed_generated_artifacts (no git checkout), 3
-          # test_readiness_geographic_surfaces, and the rest one or two apiece.
+          # sdist, not a checkout").
+          #
+          # THE BREAKDOWN IS NO LONGER HAND-TYPED, and the 1.5.4 audit close is
+          # why. This paragraph read "7 test_pinned_constants" against a
+          # measured TEN, and "the rest one or two apiece" against a measured
+          # SIX in test_small_claims and THREE apiece in
+          # test_121_financial_tables and test_release_floor. A stale
+          # hand-typed count, inside the comment whose whole subject is stale
+          # hand-typed counts. This file has now been bitten four times by a
+          # number somebody retyped instead of deriving (FLOOR at 125, 440,
+          # 470 and 500), so the breakdown is EMITTED from the junit report by
+          # the step below and the reader is pointed at the run rather than at
+          # a paragraph.
+          #
+          # Measured at 1.5.4-audit-close, from a real sdist run on 3.12.13:
+          #   10 test_pinned_constants           (no nmtcapp/ source)
+          #    8 test_documented_keys            (docs/ and examples/ pruned)
+          #    6 test_small_claims
+          #    4 test_no_committed_generated_artifacts  (no git checkout)
+          #    3 test_121_financial_tables
+          #    3 test_readiness_geographic_surfaces
+          #    3 test_release_floor
+          #    2 each: test_fund_attribution_source, test_orphaned_functions,
+          #            test_truncated_lists, test_version_labels
+          #    1 each: test_docs_refusal_claims, test_no_embedded_charts,
+          #            test_round_provenance, test_test_count_claims
+          #
           # The count measures the ENVIRONMENT as much as the tarball -- a venv
           # missing one optional renderer skips a whole module on importorskip
           # -- which is why the ceiling only ever widens the FLOOR band
@@ -768,6 +795,33 @@ jobs:
           PY
           )"
           echo "tests actually executed: ${EXECUTED}  (floor ${FLOOR})"
+
+          # THE SKIP BREAKDOWN, DERIVED (1.5.4 audit close, B5). The paragraph
+          # above used to be the only record of which modules skip and how
+          # often, and it went stale the way every hand-typed count in this
+          # file has. Printed from the junit report the run just produced, so
+          # re-deriving it is reading a log line rather than counting by hand.
+          echo "--- skips by module, from this run ---"
+          python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
+          import collections, sys, xml.etree.ElementTree as ET
+          root = ET.parse(sys.argv[1]).getroot()
+          def module_of(classname):
+              # The last dotted component that names a test module. Not
+              # split(".")[1]: that yields "validation" for a nested
+              # tests.validation.test_x, and 36 of this suite's modules are
+              # nested.
+              parts = [p for p in classname.split(".") if p.startswith("test_")]
+              return parts[-1] if parts else classname or "<unknown>"
+
+          counts = collections.Counter(
+              module_of(case.get("classname", ""))
+              for case in root.iter("testcase")
+              if case.find("skipped") is not None
+          )
+          for module, count in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])):
+              print(f"{count:5d}  {module}")
+          print(f"{sum(counts.values()):5d}  TOTAL")
+          PY
           if [ "${EXECUTED}" -lt "${FLOOR}" ]; then
             echo "::error::the sdist suite executed only ${EXECUTED} tests, below the floor of ${FLOOR}."
             echo "::error::Shipping every test module is not the same as running them. Check for a"

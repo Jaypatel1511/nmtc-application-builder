@@ -253,7 +253,31 @@ MARKER_EXPR = "not wheel"
 #: an sdist. Until then nothing in the suite compared this number to anything,
 #: and its own comment ("if the skip count ever approaches this...") described
 #: a watch nobody was keeping.
-MAX_SDIST_SKIPS = 45
+#:
+#: 1.5.4 AUDIT CLOSE -- RAISED 45 -> 49, BECAUSE 45 HAD BEEN OVERTAKEN BY ITS
+#: OWN MEASUREMENT AGAIN. The 1.5.4 sdist skips FORTY-NINE, re-measured this
+#: round with the job's exact invocation, and release.yml recorded that number
+#: beside "MAX_SDIST_SKIPS = 45 ... Recorded, not raised." A ceiling four below
+#: the thing it bounds is not a ceiling -- this file's own sentence, written
+#: about 24 and true twice since.
+#:
+#: THE DIRECTION OF THE ERROR IS THE POINT, and it is the opposite of this
+#: constant's recorded failure mode. Every past move (40 -> 20 -> 24 -> 28 ->
+#: 40 -> 45) RAISED it to buy room for a FLOOR nobody re-measured. Too LOW does
+#: the reverse: ``lower = floor_to_ten((collected - MAX_SDIST_SKIPS) // 2)``
+#: rises as the ceiling falls, so an undersized ceiling makes the band TOO
+#: TIGHT and can fail a FLOOR that is correct. That is a false red, not a
+#: loophole.
+#:
+#: AND IT IS FREE TODAY, WHICH IS WHY IT IS DONE NOW RATHER THAN UNDER
+#: PRESSURE. Measured on this tree (1,421 collected under -m "not wheel"), the
+#: FLOOR band is [680, 710] at 45 and [680, 710] at 49 -- IDENTICAL. Nothing
+#: about FLOOR's falsifiability changes; only the sentence about what the
+#: ceiling bounds becomes true again. FLOOR was re-derived from a real sdist
+#: run this round regardless, so no unmeasured number is being accommodated.
+#: Band width is 30, inside the 40 that
+#: test_max_sdist_skips_is_bounded_from_ABOVE_as_well enforces.
+MAX_SDIST_SKIPS = 49
 
 _FLOOR_RE = re.compile(r"^\s*FLOOR=(\d+)\s*$", re.MULTILINE)
 _COLLECTED_RE = re.compile(r"(\d+)(?:/\d+)? tests? collected")

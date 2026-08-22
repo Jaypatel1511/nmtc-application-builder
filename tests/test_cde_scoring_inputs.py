@@ -263,11 +263,160 @@ def test_a_scaffold_key_that_is_filled_in_does_reach_extra(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_page_one_discloses_defaults_for_every_scored_input():
-    """Page 1 tells a CDE which fields it is being defaulted on. All of them."""
+    """Page 1 tells a CDE which fields it is being defaulted on. All of them.
+
+    THIS GATE WAS DEAD FROM BIRTH TOO (1.5.4 audit close). It asserted
+    ``"cde_inputs" in source``, which is a string search over a file including
+    its comments -- the same shape as B1 and B3, added by the same commit.
+    Measured: ``_CDE_DEFAULTS_DISCLOSURE`` was reverted to a hand-maintained
+    TWO-key literal (against seventeen scoring inputs), the import was replaced
+    with ``# TODO: derive this from nmtcapp.intelligence.cde_inputs``, and the
+    FULL SUITE stayed green -- 1,415 passed. The third copy this module exists
+    to remove could be reinstated with the gate against it untouched.
+
+    WHAT IT ASSERTS NOW. Two things the AST can see and a comment cannot:
+
+      1. the page IMPORTS ``CDE_SCORING_INPUTS`` from the registry, as an
+         ``ast.ImportFrom`` node;
+      2. ``_CDE_DEFAULTS_DISCLOSURE`` is a COMPREHENSION that iterates that
+         name -- so the dict is DERIVED from the seventeen inputs rather than
+         listing some of them.
+
+    (2) is the load-bearing half. (1) alone would pass a page that imports the
+    registry and then hand-types the dict beside it, which is the defect with
+    one extra line of camouflage.
+    """
     with open(_PAGE1, encoding="utf-8") as handle:
         source = handle.read()
-    assert "cde_inputs" in source, (
-        "1_Pipeline_Analyzer.py still hand-maintains _CDE_DEFAULTS_DISCLOSURE. "
-        "It is the third copy of the input list and it disagreed with the "
-        "other two; derive it from nmtcapp.intelligence.cde_inputs."
+    tree = ast.parse(source, filename="1_Pipeline_Analyzer.py")
+
+    imported = {
+        alias.asname or alias.name
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ImportFrom)
+        and (node.module or "").endswith("cde_inputs")
+        for alias in node.names
+    }
+    assert "CDE_SCORING_INPUTS" in imported, (
+        "1_Pipeline_Analyzer.py does not import CDE_SCORING_INPUTS from "
+        "nmtcapp.intelligence.cde_inputs. A mention of the module in a comment "
+        "is not an import: this gate used to accept one, and a hand-maintained "
+        f"third copy passed it.\nimported from cde_inputs: {sorted(imported)}"
+    )
+
+    derived = []
+    for node in ast.walk(tree):
+        # AnnAssign as well as Assign: the page writes
+        # ``_CDE_DEFAULTS_DISCLOSURE: dict[str, str] = {...}``, and matching
+        # only Assign would make this branch unreachable -- a gate that cannot
+        # fail, which is the defect being fixed here.
+        if isinstance(node, ast.AnnAssign):
+            targets = [node.target]
+        elif isinstance(node, ast.Assign):
+            targets = node.targets
+        else:
+            continue
+        if not any(isinstance(t, ast.Name) and t.id == "_CDE_DEFAULTS_DISCLOSURE"
+                   for t in targets):
+            continue
+        if node.value is None:
+            continue
+        iterated = {
+            name.id
+            for comp in ast.walk(node.value)
+            if isinstance(comp, ast.comprehension)
+            for name in ast.walk(comp.iter)
+            if isinstance(name, ast.Name)
+        }
+        derived.append(iterated)
+
+    assert derived, (
+        "_CDE_DEFAULTS_DISCLOSURE is not assigned anywhere in "
+        "1_Pipeline_Analyzer.py; this gate is asserting nothing."
+    )
+    assert any("CDE_SCORING_INPUTS" in iterated for iterated in derived), (
+        "_CDE_DEFAULTS_DISCLOSURE is hand-maintained again. It must be a "
+        "comprehension over CDE_SCORING_INPUTS, so that a field added to the "
+        "model reaches this disclosure without anybody retyping it. It is the "
+        "THIRD copy of the input list, and the three disagreed: the template "
+        "offered two Phase-2 flags that score nothing and none of the three "
+        "offered pct_persistent_poverty, pct_us_territories or "
+        f"non_metro_commitment_pct.\niterated instead: "
+        f"{sorted(set().union(*derived)) if derived else []}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# B4 (1.5.4 audit close) -- every disclosure basis is reachable
+# ---------------------------------------------------------------------------
+
+def _reachable_subscores() -> set:
+    """The sub-scores ``unsupplied_inputs`` can actually name.
+
+    Derived from the registry rather than listed: a sub-score is reportable
+    only if at least ONE of its inputs has no measured substitute, because
+    ``unsupplied_inputs`` skips every input that does.
+    """
+    return {item.subscore for item in cde_inputs.CDE_SCORING_INPUTS
+            if not item.has_measured_substitute}
+
+
+def test_every_not_supplied_basis_entry_can_actually_be_reached():
+    """B4. A disclosure basis for text that can never render is not a basis.
+
+    THE DEFECT. ``_NOT_SUPPLIED_BASIS`` carried entries for
+    ``special_targeting`` and ``unrelated_entities``, and
+    ``unsupplied_inputs`` can never ask for either: both sub-scores have a
+    measured substitute for EVERY input they read, so the registry's own rule
+    -- correctly -- never reports them absent. A
+    ``fund_attribution_allowlist.txt`` row was written and ruled for one of
+    them, which is an allowlist adjudicating a Fund attribution in a sentence
+    no CDE can be shown.
+
+    BOTH DIRECTIONS, because the failure that matters is not symmetric. An
+    unreachable entry is dead weight that reads as coverage; a MISSING entry is
+    a ``KeyError`` in ``_not_supplied_rec`` on a real CDE's run.
+    """
+    from nmtcapp.intelligence.recommendations import _NOT_SUPPLIED_BASIS
+
+    reachable = _reachable_subscores()
+    declared = set(_NOT_SUPPLIED_BASIS)
+
+    assert not (declared - reachable), (
+        "_NOT_SUPPLIED_BASIS declares a disclosure basis for "
+        f"{sorted(declared - reachable)}, which unsupplied_inputs can never "
+        "name: every input those sub-scores read has a measured substitute, "
+        "so they are always scored from a measurement of the CDE's own "
+        "pipeline. Text that cannot render is not covered by having a basis; "
+        "delete the entry, or give the sub-score an input with no substitute "
+        "and say why absence there is unknown rather than measured."
+    )
+    assert not (reachable - declared), (
+        f"{sorted(reachable - declared)} can be reported unsupplied and has no "
+        "entry in _NOT_SUPPLIED_BASIS. RecommendationEngine._not_supplied_rec "
+        "indexes that dict directly, so this is a KeyError on the run of any "
+        "CDE that leaves the field blank -- which is what the shipped scaffold "
+        "and the Streamlit upload path both produce."
+    )
+
+
+def test_the_reachable_set_is_measured_not_assumed():
+    """The derivation above, checked against the function itself.
+
+    ``_reachable_subscores`` reasons from the registry; this drives the real
+    ``unsupplied_inputs`` over every one of the 2**17 presence combinations of
+    the seventeen scoring inputs and asserts the emitted set is identical. If
+    the skip rule ever changes, the two disagree and this fails rather than the
+    gate above quietly asserting the wrong set.
+    """
+    keys = [item.key for item in cde_inputs.CDE_SCORING_INPUTS]
+    emitted = set()
+    for mask in range(2 ** len(keys)):
+        attrs = {key: 0.5 for index, key in enumerate(keys) if mask >> index & 1}
+        emitted |= set(cde_inputs.unsupplied_inputs(attrs))
+
+    assert emitted == _reachable_subscores(), (
+        f"unsupplied_inputs emits {sorted(emitted)} across all "
+        f"{2 ** len(keys):,} presence combinations, but the registry-derived "
+        f"reachable set is {sorted(_reachable_subscores())}."
     )

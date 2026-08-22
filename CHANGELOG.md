@@ -290,10 +290,168 @@ no skip.**
 - **The distress contradiction itself** is now *named* rather than *removed*: two
   surfaces still report different distress figures, and until the 2.0.0 rename the
   disambiguation lives in the constant's comment and this entry.
-- **`MAX_SDIST_SKIPS`** — the sdist run measured **50** skips against a ceiling of
+- **`MAX_SDIST_SKIPS`** — the sdist run measured **49** skips against a ceiling of
   45. Every one carries an explicit written reason and every one is environmental
   ("this is an unpacked sdist, not a checkout"); the count measures the environment
-  as much as the tarball, and this release adds none. Recorded, not raised.
+  as much as the tarball, and this release adds none. *(This line said **50**
+  before the audit close. `release.yml` said 49 and the measurement is 49 — a
+  third copy of one number, disagreeing with the other two, in a release whose
+  own subject is numbers that disagree. Corrected, and the ceiling was raised to
+  49; see below.)*
+
+### AUDIT CLOSE — an amendment to 1.5.4, before it shipped
+
+A read-only hostile audit of 1.5.4 returned SHIP-AFTER-FIX. **`v1.5.4` was never
+tagged and never published**, so this is an amendment to the release above rather
+than a new one; the version does not move.
+
+**Everything here is a gate or a disclosure. No score moves.** Re-verified by the
+same A/B as the header claim, widened to **nine** fixtures (sample and neutral
+CDE × sample, all-ineligible, one-small-ineligible and mostly-ineligible
+pipelines, plus 5-, 10- and 20-project sizes): every sub-score, both section
+totals, both aggregates, the tier, the readiness composite, its grade and all six
+components are **byte-identical to `4fcfb5b`**.
+
+#### B1 — the gate named for this release's defect could not fail
+
+`test_a_board_at_44_percent_is_not_told_to_reach_33_percent` was **dead from
+birth**, and the same commit killed it: T2 added the gate *and* added
+`_gating_unscored_clause`, which appends **every** `SUBSCORE_LABELS` value into
+the gating item's `finding`. That item is `critical` and sorts first, so
+`_item()`'s `needle in r.finding` matched `[0, 1, <the real item>]` for all seven
+labels and `hits[0]` returned the **gating** item — which contains neither `0/10`
+nor the board instruction.
+
+Measured: the exact shipped false instruction was re-inserted into the Community
+Accountability disclosure and the module stayed **green, 13 passed**.
+
+`_item()` now matches `r.finding.startswith(needle)` — the disclosure item's
+finding opens with its label; the gating item only mentions it mid-sentence. The
+test additionally asserts both forbidden strings across the **whole rendered
+corpus**, so the gate no longer depends on item selection at all. Proved both
+directions: green on the shipped tree, red on the reinstated instruction.
+
+#### B2 — a shipped false statement, in the release that exists to remove them
+
+T4 introduced three `:.0%` renders and floored none of them. On **one $50,000
+ineligible project in a $114,050,000 pipeline** — a share of 0.0438% — every one
+printed `0%`, and the assessment sentence carried **no project count at all**:
+
+> ELIGIBILITY FIRST: 0% of pipeline QEI is in tracts that are not a Low-Income
+> Community…
+
+`0%` and *no ineligible QEI* are the same words to a reader, and the two states
+are a pipeline that passes the statutory gate and one that does not.
+
+- **A non-zero share never renders as `0%`.** `<1%` instead. Applied to
+  `unknown_note` as well.
+- **Every surface that states the share now states the count.** A disclosure of
+  what was measured, so it sits inside the principle T2 adopted.
+- **The mirror is closed too, and the audit did not name it.** `f"{0.996:.0%}"`
+  is `"100%"` — a pipeline with one small *eligible* project among nineteen
+  ineligible ones would be told **100%** of its QEI is in a tract that does not
+  qualify. False in the direction that makes a CDE withdraw a project it could
+  have filed. Same rounding, opposite end, one branch of the same helper.
+- **The threshold is derived from the render, not typed.** The helper formats the
+  number and asks what came out, rather than hard-coding `0.005` as a second copy
+  of one format spec's rounding rule.
+
+Three new gates, all proved **RED against `4fcfb5b`**.
+
+#### B3 — the round-provenance gate was still satisfiable by a mention
+
+Narrowed twice before (module name → function name) and still open, because both
+narrowings were **string searches over source**. Deleting the import and the
+render from `2_Win_Alignment_Scorer.py` and leaving `pass  #
+round_provenance_paragraphs` behind kept the suite green.
+
+It now asserts an actual **`ast.Call`** node. A comment cannot satisfy it —
+the AST does not carry comments at all, which is a property of the
+representation rather than a cleverer pattern. Proved red by exactly that
+mutation, on both pages.
+
+**And `_STREAMLIT_PAGES` is derived from the pages directory** instead of being a
+hand-maintained two-entry list — the same shape whose widening found the
+About-page defect. It found a **third instance on the first run**:
+`1_Pipeline_Analyzer.py` cites the closed round in rendered markdown prose and
+rendered no provenance. It does now.
+
+That page's citation is also why the **precondition** moved to the AST: the
+string is split across two source lines by implicit concatenation, so the
+characters `CY 2024-2025` never appear contiguously in the file. `grep` cannot
+see this citation; the parser can.
+
+#### B4 — two dead branches and an allowlist row for text that can never render
+
+`special_targeting` and `unrelated_entities` had `_NOT_SUPPLIED_BASIS` entries and
+`_unsupplied` guards that `unsupplied_inputs` can never reach: every input those
+sub-scores read has a **measured substitute**. Proved by exhausting all
+**2¹⁷ = 131,072** presence combinations of the seventeen scoring inputs — the
+emitted set is the same seven sub-scores every time.
+
+**Ruled: deleted, not made reachable.** The alternative reverses a *correct*
+ruling — both sub-scores **are** scored, from a QEI-weighted measurement of the
+CDE's own pipeline — so printing "NOT SCORED" over them would be a new false
+statement in the opposite direction, which is the error
+`test_a_cde_that_supplies_everything_is_still_given_scores` exists to catch.
+
+The `fund_attribution_allowlist.txt` row adjudicating the unreachable Question 23
+sentence went with it: an allowlist entry ruling on text no CDE can be shown is
+the "registry entry that adjudicates nothing while appearing to" shape a session
+correctly refused to create at 1.5.2.
+
+Replaced by a gate that **derives** the reachable set from `CDE_SCORING_INPUTS`
+and asserts `_NOT_SUPPLIED_BASIS` is exactly it, **both directions** — an
+unreachable entry is dead weight that reads as coverage; a missing one is a
+`KeyError` on a real CDE's run.
+
+#### B5 — the skip breakdown was wrong, in a comment about stale hand-typed counts
+
+`release.yml` claimed **7** `test_pinned_constants`; measured **10**. "The rest one
+or two apiece" was wrong too — `test_small_claims` skips **6**, and
+`test_121_financial_tables` and `test_release_floor` **3** each.
+
+Corrected, **and derived**: the sdist job now emits the full per-module breakdown
+from the junit report it already produces, so the next round reads a log line
+instead of counting by hand.
+
+#### A THIRD GATE WAS KILLED THE SAME WAY B1 WAS — the audit found one of three
+
+The audit's premise was that B1 was the only gate this round wrote dead. It was
+not. `test_page_one_discloses_defaults_for_every_scored_input` asserted
+`"cde_inputs" in source` — the B3 shape, added by the same commit.
+
+Measured: `_CDE_DEFAULTS_DISCLOSURE` was reverted to a hand-maintained **two**-key
+literal (against seventeen scoring inputs) — the exact third copy that module
+exists to remove — the import was replaced with `# TODO: derive this from
+nmtcapp.intelligence.cde_inputs`, and the **full suite stayed green, 1,415
+passed**.
+
+It now asserts on the AST that the page **imports** `CDE_SCORING_INPUTS` *and*
+that `_CDE_DEFAULTS_DISCLOSURE` is a comprehension **iterating** it. Both halves
+proved red independently — the second catches the camouflaged form where the
+import is kept and the dict hand-typed beside it.
+
+The round's other four new modules were mutation-screened the same way and all
+fire correctly.
+
+#### `MAX_SDIST_SKIPS` — raised 45 → 49
+
+`45` sat **four below** its own measurement, and this file's own sentence is that
+*a ceiling below the thing it bounds is not a ceiling*. The direction of the error
+is the opposite of this constant's recorded failure mode: too **low** makes the
+FLOOR band too **tight** and can fail a floor that is correct.
+
+Free today — the FLOOR band is **identical at 45 and 49** — and `FLOOR` was
+re-derived from a real sdist run this round regardless, so no unmeasured number
+is being accommodated.
+
+#### N4 — a docstring measurement that described no state of the tree
+
+`test_recommendation_surface_disclosures`'s headline read "`CY 2024-2025` 13 hits,
+`CY 2026` 0" as one observation. No revision produces both halves. Re-measured and
+stated **per revision**; what the 13 counted could not be established and is
+recorded as such. No assertion ever read the figure.
 
 ---
 
