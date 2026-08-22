@@ -33,6 +33,21 @@ block that needs a full analysis run and a live ``st`` context. The property
 asserted here — "the literal is not typed here, the constant is read here" — is
 a property OF THE SOURCE, and reading the source is the direct way to ask it.
 ``tests/test_streamlit_page_imports.py`` covers importability separately.
+
+AND THE SAME GATE NOW COVERS T4's OTHER FOUR SITES (1.5.2 audit, F3). T4
+de-duplicated SIX rendered numbers on this page, not two: the three-rung colour
+ladder plus the four ``WINNER_IMPACT_BENCHMARKS`` percentiles on the
+jobs-per-$1MM chart. This module honestly covered the ladder and the
+competitiveness label, and left the other four ungated -- so reverting
+``WIN_P25`` / ``WIN_MED`` / ``WIN_P75`` / ``WIN_TOP10`` to the hardcoded
+``6.0 / 10.0 / 18.0 / 28.0`` they replaced left the ENTIRE SUITE GREEN, 1,332
+passed. At ``fde3eca`` the twins agreed BY LUCK.
+
+THIS PACKAGE HAS BEEN BITTEN BY THAT EXACT SHAPE TWICE -- the
+``Q25_QEI_BASIS_CLAUSE`` three-copies pattern and the ``maps._MED_PRIORITY``
+drift. A twin that currently agrees is not a twin that is checked; it is a
+defect waiting for one of the two copies to move. See
+``test_no_winner_impact_benchmark_is_typed_as_a_literal_in_the_jobs_chart``.
 """
 from __future__ import annotations
 
@@ -42,6 +57,7 @@ import re
 
 import pytest
 
+from nmtcapp.data.historical_awards import WINNER_IMPACT_BENCHMARKS
 from nmtcapp.data.schema import GRADE_THRESHOLDS
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -118,9 +134,105 @@ def _readiness_chart_block(source: str) -> str:
     return block
 
 
+def _jobs_chart_block(source: str) -> str:
+    """The jobs-per-$1MM benchmark chart block only.
+
+    Delimited the same way ``_readiness_chart_block`` is, and asserted the same
+    way, so a rename fails loudly rather than silently narrowing the scanned
+    region to nothing.
+    """
+    start_marker = "_WIB = WINNER_IMPACT_BENCHMARKS"
+    end_marker = "ax_jpm.tick_params"
+    assert start_marker in source, (
+        "the jobs-per-$1MM chart no longer reads WINNER_IMPACT_BENCHMARKS into "
+        "_WIB. Either the constant is being re-typed again -- the reversion "
+        "this gate exists to catch -- or the block was renamed and this gate "
+        "no longer knows which region to read."
+    )
+    assert end_marker in source, (
+        "the jobs-per-$1MM chart block's closing marker is gone; this gate "
+        "would read to end-of-file."
+    )
+    block = source[source.index(start_marker):source.index(end_marker)]
+    assert len(block) > 800, f"scanned block is {len(block)} chars -- too small"
+    return block
+
+
+def _jobs_chart_block_lines(source: str) -> tuple:
+    block = _jobs_chart_block(source)
+    start = source[:source.index(block)].count("\n") + 1
+    return start, start + block.count("\n")
+
+
 # ---------------------------------------------------------------------------
 # The duplication
 # ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("key", [
+    "p25_jobs_per_mm_qei", "p50_jobs_per_mm_qei",
+    "p75_jobs_per_mm_qei", "top_decile_jobs_per_mm_qei",
+])
+def test_no_winner_impact_benchmark_is_typed_as_a_literal_in_the_jobs_chart(key):
+    """F3. The four T4 sites this module did not cover, closed.
+
+    THE MEASUREMENT THAT MADE THIS NECESSARY. Reverting WIN_P25 / WIN_MED /
+    WIN_P75 / WIN_TOP10 to the hardcoded 6.0 / 10.0 / 18.0 / 28.0 they replaced
+    left the entire suite green -- 1,332 passed. The twins agreed by luck, and
+    an agreeing twin is exactly what the Q25_QEI_BASIS_CLAUSE and
+    maps._MED_PRIORITY incidents were: correct until one copy moved.
+
+    Same instrument as the grade-cut case above and for the same reason: the
+    comments in this block QUOTE the numbers they removed, so a grep would trip
+    on prose. A comment is not an ast node.
+
+    ONE ASSERTION, FOUR CASES, and each names its own key -- so a reversion of
+    one percentile does not hide behind three that are still read.
+    """
+    source = _page_source()
+    first, last = _jobs_chart_block_lines(source)
+    tree = ast.parse(source)
+    literals = [
+        node.value for node in ast.walk(tree)
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float))
+        and not isinstance(node.value, bool)
+        and first <= node.lineno <= last
+    ]
+    assert literals, (
+        "no numeric literal at all was found in the jobs-per-$1MM chart block. "
+        "The line range is wrong and this gate is reading nothing."
+    )
+    value = WINNER_IMPACT_BENCHMARKS[key]
+    assert value not in literals, (
+        f"{value} is WINNER_IMPACT_BENCHMARKS[{key!r}] and it is typed as a "
+        "literal inside the jobs-per-$1MM chart block. Read the constant "
+        "instead.\n\nThese four values are printed to a CDE under the labels "
+        "'p25 / median / p75 / top decile' as a claim about a population of "
+        "past allocatees, and historical_awards.py's own header records that "
+        "the publication cited above them DOES NOT EXIST and that every value "
+        "under them is unsourced. A hand-typed twin here means re-basing or "
+        "withdrawing the constant leaves this chart drawing the old figures "
+        "with nothing red -- which is measured, not hypothetical: at 1.5.2 "
+        "that reversion left 1,332 tests passing.\n\n"
+        f"Numeric literals found in the block: {sorted(set(literals))}"
+    )
+
+
+def test_the_jobs_chart_reads_all_four_percentiles_from_the_constant():
+    """NON-VACUITY for the four cases above.
+
+    Those cases assert an ABSENCE, and an absence passes trivially if the chart
+    stopped drawing the benchmarks at all. This asserts the presence they are
+    the complement of.
+    """
+    block = _jobs_chart_block(_page_source())
+    for key in ("p25_jobs_per_mm_qei", "p50_jobs_per_mm_qei",
+                "p75_jobs_per_mm_qei", "top_decile_jobs_per_mm_qei"):
+        assert f'_WIB["{key}"]' in block, (
+            f"the jobs-per-$1MM chart no longer reads {key} from "
+            "WINNER_IMPACT_BENCHMARKS. If the benchmark was withdrawn that is "
+            "a decision to record; if it was re-typed, that is the reversion "
+            "this module exists to catch."
+        )
 
 def test_the_chart_reads_grade_thresholds_rather_than_re_typing_them():
     """The constant must be IMPORTED and READ by the block that draws it."""

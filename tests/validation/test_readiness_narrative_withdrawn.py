@@ -16,40 +16,67 @@ rules ``READINESS_SCORING_WEIGHTS`` an "unsourced house heuristic",
 band"; ``MIN_GEOGRAPHIC_DIVERSITY``'s own comment records that the CY 2024-2025
 Review Process scores no state count.
 
-THE COVERAGE PROBLEM THIS MODULE EXISTS TO SOLVE, AND IT IS WORSE THAN 1.5.1'S
+THE COVERAGE PROBLEM THIS MODULE EXISTS TO SOLVE — AND THE FALSE DIAGNOSIS THAT
+SHIPPED WITH IT IN 1.5.2, CORRECTED HERE
 
 1.5.1's F2 finding was that both shipped readiness fixtures score geographic
 diversity above 70, so two withdrawn branches were never entered by any test.
-This round found the same failure one level deeper and affecting twice as much
-ground:
+1.5.2 measured a real gap one level deeper — restoring ``_identify_strengths``'s
+eligibility branch turned SEVEN of this module's cases red and left every
+``pipeline:`` case green — and then attributed it to the wrong cause. What this
+docstring said, in block capitals, was:
 
     ``nmtc_mapper`` IS NOT INSTALLED IN THIS SUITE'S ENVIRONMENT.
 
-A pipeline built through ``Application.analyze()`` therefore runs the DEGRADED
-path — ``eligibility_data_status != "ok"`` — and ``compute_readiness_score``
-emits FOUR components, not six: ``eligibility_quality`` and
-``distress_concentration`` are absent from ``component_scores`` entirely, so
-``_identify_strengths``'s eligibility and distress branches and
-``_build_recommendations``'s distress branch cannot be entered at all.
+ALL THREE LIMBS OF THAT WERE FALSE, and the audit that found it is the reason
+this paragraph exists. Re-derived by execution, not by reading:
 
-STATED PRECISELY, BECAUSE THE STRONGER VERSION OF THIS SENTENCE IS FALSE. It is
-not true that no fixture in the suite reaches six components. Two modules force
-the status — ``tests/test_rendered_output_baseline`` and
-``tests/test_invariant_output`` both set ``pipeline.eligibility_data_status =
-"ok"`` on purpose — and ``conftest``'s ``sample_pipeline_result`` is hand-built
-with ``eligibility_pct=1.0``. What is true is narrower and is the part that
-matters: those first two are CORPUS gates that compare a rendered document to a
-stored baseline, which is precisely the instrument 1.5.1's F2 found insufficient
-("a round whose entire subject was disclosure shipped disclosures that no test
-rendered"), and a baseline diff is not an assertion about these three
-functions.
+1. THE LIBRARY IS INSTALLED. The DISTRIBUTION is ``nmtc-mapper`` (0.5.0, the
+   floor ``pyproject.toml`` pins); the IMPORT NAME is ``nmtcmapper``. The round
+   probed ``import nmtc_mapper``, which raises, and read the raise as absence.
+   This package's own contract gate has always known the right name —
+   ``tests/integrations/test_mapper_contract.py`` imports
+   ``nmtcmapper.eligibility.checker`` and passes.
+2. THE LIVE PATH RUNS. ``NMTCMapper()`` loads 85,395 census tracts from the
+   cached CDFI Fund workbook, reports ``data_source == "cdfi_fund"``, geocodes,
+   and ``enrich_pipeline_eligibility`` returns
+   ``eligibility_data_status == "ok"``.
+3. THE SUITE REACHES SIX COMPONENTS CONSTANTLY. Instrumenting every
+   ``compute_readiness_score`` call across the suite: 429 calls, 339 of them
+   six-component, 165 of those reached through ``Application.analyze()``, from
+   147 distinct tests in 31 files. Six of those tests reach six components
+   through the adapter's REAL live path — ``_enrich_via_api`` with an actual
+   ``NMTCMapper``, not a mock.
 
-So this module drives BOTH paths deliberately: pipelines through
-``Application.analyze()`` for the degraded four, and hand-built
-``PipelineAnalysisResult`` objects — the same construction ``conftest``'s
-``sample_pipeline_result`` uses — for the full six. Measured, not assumed:
-restoring ``_identify_strengths``'s eligibility branch turns SIX of this
-module's cases red and leaves every ``pipeline:`` case green.
+WHY A TRUE MEASUREMENT PRODUCED A FALSE DIAGNOSIS, WHICH IS THE LESSON WORTH
+KEEPING. The seven-red row above reproduces exactly. Its cause is not the
+environment: it is THIS FILE. ``_project`` sets ``is_nmtc_eligible=True``, so
+every fixture project is already ``is_enriched``; the adapter short-circuits on
+"all projects already enriched", declines to vouch for a provenance the run
+cannot support, and stamps ``pre_enriched`` over ``Pipeline.__init__``'s
+fail-closed ``"unenriched"``. THE FIXTURES ARE DEGRADED BECAUSE THIS MODULE
+BUILDS THEM DEGRADED. Deleting the library would not change the measurement by
+one case, and installing it does not change it either.
+
+The mechanism that carries the rest of the suite to six is ``Pipeline.sample()``
+(``nmtcapp/core/pipeline.py``), the one construction path documented as allowed
+to vouch for its own pre-verified eligibility data. The round never looked
+there.
+
+So this module drives THREE fixture shapes deliberately:
+
+* ``pipeline:``  — pipelines through ``Application.analyze()`` left in the
+  degraded four. Two tests below assert that degraded path on purpose, so it
+  stays.
+* ``enriched:``  — a pipeline through ``Application.analyze()`` stamped ``"ok"``
+  the way ``Pipeline.sample()`` stamps itself, reaching the full six. This is
+  the shape 1.5.2 lacked, and it is what makes the pipeline path sensitive to
+  an eligibility or distress reversion at all. Measured: with it present, the
+  same eligibility reversion that produced seven red now produces eight, and
+  the eighth is a ``pipeline`` case.
+* ``result:``    — hand-built ``PipelineAnalysisResult`` objects, the same
+  construction ``conftest``'s ``sample_pipeline_result`` uses, spanning both
+  ends of every band.
 
 Every band is asserted, so a fixture that stops reaching its branch fails here
 rather than going quietly vacuous.
@@ -99,13 +126,31 @@ def _project(index, state, qei, distress, jobs):
     )
 
 
-def _score_from_pipeline(spec):
+def _score_from_pipeline(spec, *, enriched: bool = False):
+    """Score a pipeline built by hand and run through ``Application.analyze()``.
+
+    ``enriched=False`` (the default) leaves the pipeline DEGRADED, and the cause
+    is this function, not the environment. ``_project`` populates
+    ``is_nmtc_eligible``, so the adapter takes its "already enriched"
+    short-circuit, performs no CDFI Fund lookup, and stamps ``pre_enriched`` —
+    correctly, since nothing here was tool-verified. Four components result.
+
+    ``enriched=True`` stamps ``"ok"`` before ``analyze()``, which is exactly
+    what ``Pipeline.sample()`` does at construction and for the same stated
+    reason: a fixture that ships pre-verified eligibility data is the one
+    construction allowed to vouch for it. Six components result. This is a
+    FIXTURE claim about a FIXTURE, not a provenance claim about live data — no
+    production path may set this attribute itself.
+    """
     projects = [_project(i, *args) for i, args in enumerate(spec)]
     app = Application(
         cde=CDEProfile.sample(),
         requested_allocation=sum(p.qei_request for p in projects),
     )
-    app.add_pipeline(Pipeline(projects=projects))
+    pipeline = Pipeline(projects=projects)
+    if enriched:
+        pipeline.eligibility_data_status = "ok"
+    app.add_pipeline(pipeline)
     analysis = app.analyze()
     return compute_readiness_score(
         analysis.pipeline_result, analysis.validation_results
@@ -122,6 +167,22 @@ _PIPELINE_SHAPES = {
                         ("IL", "OH", "MI")],
 }
 
+#: THE SHAPE 1.5.2 LACKED, and the reason it lacked it was a false belief about
+#: the environment rather than a judgement about coverage. Same construction as
+#: above, same ``Application.analyze()`` call, one attribute different — and
+#: with it the pipeline path reaches all SIX components and becomes sensitive to
+#: a reversion in ``_eligibility_score`` or ``_distress_score``.
+#:
+#: Sized on purpose so one shape enters three withdrawn branches at once, each
+#: verified by ``test_the_enriched_pipeline_shape_reaches_six_components``:
+#:     eligibility_quality  100.0  >= 80  — _identify_strengths' eligibility arm
+#:     distress_concentration 0.0  <  75  — _build_recommendations' distress arm
+#:     impact_metrics        13.5  <  60  — _build_recommendations' impact arm
+_ENRICHED_PIPELINE_SHAPES = {
+    "lic_only_low_impact": [(s, 10_000_000, "lic", 25) for s in
+                            ("IL", "OH", "MI", "IN")],
+}
+
 
 # ---------------------------------------------------------------------------
 # Fixtures — path B: hand-built results (full six components)
@@ -130,10 +191,16 @@ _PIPELINE_SHAPES = {
 def _result(eligibility_pct, pct_deep_or_severe, states, hhi, jobs_per_mm):
     """A PipelineAnalysisResult with eligibility data PRESENT.
 
-    Built directly rather than through Application.analyze() because
-    nmtc_mapper is absent here and every analysed pipeline is degraded. This
-    is the only route to the eligibility_quality and distress_concentration
-    branches, and without it half the withdrawal is untested.
+    Built directly rather than through Application.analyze() so that the two
+    eligibility-dependent components can be DIALLED to either side of every
+    band independently of what a real pipeline of PipelineProjects happens to
+    produce — ``_project`` fixes ``is_nmtc_eligible=True``, so an analysed
+    pipeline can only ever land eligibility_quality at 100.
+
+    NOT because the library is missing. 1.5.2 said that here and it was false:
+    ``nmtcmapper`` 0.5.0 is installed and the live path runs. See the module
+    docstring. ``_ENRICHED_PIPELINE_SHAPES`` now covers the analysed route to
+    six components; these hand-built results cover the range.
     """
     return PipelineAnalysisResult(
         total_projects=8,
@@ -178,25 +245,95 @@ _FAILING = [
 # The coverage claim
 # ---------------------------------------------------------------------------
 
-def test_the_degraded_path_is_what_pipeline_fixtures_actually_exercise():
-    """FAIL CLOSED on the finding that motivated path B.
+def test_the_library_this_module_once_declared_missing_is_installed():
+    """B1. The correction, asserted rather than narrated.
 
-    If nmtc_mapper ever becomes installable in this environment, these
-    fixtures stop being degraded and path B stops being the ONLY route to two
-    of the six components. That is a good change and it must not happen
-    silently, because the reason path B exists would no longer hold and the
-    docstring above would be wrong.
+    1.5.2 shipped ``nmtc_mapper IS NOT INSTALLED IN THIS SUITE'S ENVIRONMENT``
+    in this docstring and in the CHANGELOG. It was false three ways, and the
+    first way is why the other two followed: the round probed the DISTRIBUTION
+    name with an underscore. The import name has no underscore.
+
+    Both spellings are asserted, in both directions, so the sentence cannot
+    come back. If ``nmtc_mapper`` ever becomes importable this fails and the
+    correction gets re-read rather than silently rotting.
     """
-    score = _score_from_pipeline(_PIPELINE_SHAPES["middling"])
-    assert score.partial, (
-        "an analysed pipeline is no longer partial, so nmtc_mapper is now "
-        "available. Re-read this module's premise: the degraded path may no "
-        "longer be what an unforced Application.analyze() produces."
+    import importlib
+
+    importlib.import_module("nmtcmapper")
+
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module("nmtc_mapper")
+
+    from importlib.metadata import version
+    assert version("nmtc-mapper") >= "0.5.0", (
+        "the distribution is installed under the name nmtc-mapper; only the "
+        "import name is nmtcmapper. Neither is absent."
     )
+
+
+def test_the_degraded_pipeline_fixtures_are_degraded_by_construction():
+    """FAIL CLOSED on the CORRECTED diagnosis, which is a fact about this file.
+
+    The three ``_PIPELINE_SHAPES`` are degraded because ``_project`` populates
+    ``is_nmtc_eligible``, so the adapter short-circuits on "already enriched"
+    and stamps ``pre_enriched`` rather than performing a lookup it did not
+    perform. The library's presence is irrelevant to this, and
+    ``test_the_library_this_module_once_declared_missing_is_installed`` above
+    pins that it IS present.
+
+    The status is asserted by name, not merely as "not ok": ``pre_enriched``
+    and ``unavailable`` are different findings and only one of them is a fact
+    about this fixture.
+    """
+    from nmtcapp.core.application import Application as _App
+
+    projects = [_project(i, *args) for i, args in
+                enumerate(_PIPELINE_SHAPES["middling"])]
+    assert all(p.is_enriched for p in projects), (
+        "the short-circuit this test is about is keyed on is_enriched"
+    )
+    app = _App(cde=CDEProfile.sample(), requested_allocation=30_000_000)
+    app.add_pipeline(Pipeline(projects=projects))
+    analysis = app.analyze()
+    assert analysis.pipeline_result.eligibility_data_status == "pre_enriched", (
+        "the fixture is no longer degraded by the caller-supplied-eligibility "
+        "route. Re-read this module's premise before adjusting the assertion: "
+        "the 1.5.2 version of this test blamed a missing library for this and "
+        f"was wrong. Status: {analysis.pipeline_result.eligibility_data_status}"
+    )
+
+    score = _score_from_pipeline(_PIPELINE_SHAPES["middling"])
+    assert score.partial
     assert set(score.component_scores) == {
         "geographic_diversity", "impact_metrics",
         "validation_pass_rate", "completeness",
     }, score.component_scores
+
+
+def test_the_enriched_pipeline_shape_reaches_six_components():
+    """FAIL CLOSED for the shape 1.5.2 lacked.
+
+    One attribute separates this from the test above. If it stops reaching six
+    components — or stops landing on the three bands it was sized for — every
+    ``enriched:`` case below goes quietly vacuous and the pipeline path loses
+    its only sensitivity to an eligibility or distress reversion.
+    """
+    score = _score_from_pipeline(
+        _ENRICHED_PIPELINE_SHAPES["lic_only_low_impact"], enriched=True
+    )
+    assert not score.partial, score.partial_note
+    assert set(score.component_scores) == {
+        "eligibility_quality", "distress_concentration",
+        "geographic_diversity", "impact_metrics",
+        "validation_pass_rate", "completeness",
+    }, score.component_scores
+
+    # The three withdrawn branches this one shape is sized to enter, read off
+    # the same cuts the hand-built fixtures use.
+    c = score.component_scores
+    assert c["eligibility_quality"] >= 80, c    # _identify_strengths
+    assert c["distress_concentration"] < 75, c  # _build_recommendations
+    assert c["impact_metrics"] < 60, c          # _build_recommendations
 
 
 def test_the_hand_built_fixtures_reach_every_band_that_used_to_fire():
@@ -252,6 +389,8 @@ def test_the_pipeline_fixtures_reach_both_ends_of_the_live_components():
 def _every_score():
     for label, spec in _PIPELINE_SHAPES.items():
         yield f"pipeline:{label}", _score_from_pipeline(spec)
+    for label, spec in _ENRICHED_PIPELINE_SHAPES.items():
+        yield f"enriched:{label}", _score_from_pipeline(spec, enriched=True)
     for label, result in _RESULT_SHAPES.items():
         yield f"result:{label}", compute_readiness_score(result, _PASSING)
         yield f"result:{label}+failures", compute_readiness_score(result, _FAILING)
@@ -317,11 +456,19 @@ def test_the_composite_emits_no_narrative(label, score):
 def test_every_surviving_recommendation_is_sourced_outside_the_composite(label, score):
     """The mirror defect. Withdrawal must not become indiscriminate silence.
 
-    Two emitters in ``_build_recommendations`` never read ``component_scores``
-    — the degraded-data notice and the validation-issue echo — and both are
-    deliberately retained. This asserts that what survives is EXACTLY those
-    two, so a future edit cannot smuggle a band-triggered line back in under
-    the heading that says these are not composite-derived.
+    Two emitters in ``_build_recommendations`` are deliberately retained — the
+    degraded-data notice and the validation-issue echo — because NO HOUSE BAND
+    DECIDES WHETHER EITHER FIRES. This asserts that what survives is EXACTLY
+    those two, so a future edit cannot smuggle a band-triggered line back in
+    under the heading that says these are not composite-derived.
+
+    NOT "neither reads ``component_scores``", which is what 1.5.2 wrote here
+    and in the function's own docstring, and which is false of the first one
+    (1.5.2 audit, F6): the degraded-data notice triggers on
+    ``"distress_concentration" not in scores`` — a membership test on
+    ``component_scores``. It reads the KEY SET, never a value, and key absence
+    is a fact about the run rather than a band that was crossed. The code was
+    right; the reason given for it was not.
     """
     for text in score.recommendations:
         assert (
@@ -350,11 +497,21 @@ def test_the_validation_echo_actually_survives_on_a_failing_pipeline():
     assert "26163515700" in " ".join(echoes), echoes
 
 
-def test_the_degraded_notice_survives_and_is_not_a_band(): 
-    """The other retained emitter, on the path that produces it."""
+def test_the_degraded_notice_survives_and_is_not_a_band():
+    """The other retained emitter, on the path that produces it.
+
+    And its mirror: the notice must NOT fire on the enriched shape, or it is
+    not a fact about the run at all.
+    """
     score = _score_from_pipeline(_PIPELINE_SHAPES["middling"])
     assert any(r.startswith("Restore eligibility data access")
                for r in score.recommendations), score.recommendations
+
+    ok = _score_from_pipeline(
+        _ENRICHED_PIPELINE_SHAPES["lic_only_low_impact"], enriched=True
+    )
+    assert not any(r.startswith("Restore eligibility data access")
+                   for r in ok.recommendations), ok.recommendations
 
 
 # ---------------------------------------------------------------------------

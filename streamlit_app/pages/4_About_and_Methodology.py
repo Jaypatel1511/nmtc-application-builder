@@ -9,6 +9,7 @@ import pandas as pd
 import streamlit as st
 
 from nmtcapp.data.historical_awards import NMTC_AWARD_ROUNDS, APPLICATION_VOLUME_TRENDS
+from nmtcapp.renderers._methodology import readiness_inline_qualifier
 from nmtcapp.data.benchmark_thresholds import (
     HIGHLY_QUALIFIED_AGGREGATE_MIN, HIGHLY_QUALIFIED_SECTION_MIN,
     HOUSE_TOP_TIER_AGGREGATE_MIN, HOUSE_TOP_TIER_SECTION_MIN,
@@ -329,7 +330,7 @@ st.markdown("---")
 # Limitations
 # ---------------------------------------------------------------------------
 st.markdown(
-    """
+    f"""
 ## Known Limitations
 
 ### 1. Phase 2 not modeled
@@ -364,13 +365,14 @@ Do not use sample output to benchmark a real application.
 This page is the tool's disclosure page, and through 1.5.0 it did not mention
 the readiness score anywhere — not in this list, not in the scoring framework
 above. The readiness grade is the largest number on the Pipeline Analyzer and
-the first thing printed on every generated document, and it is **an unsourced
-house heuristic**: a weighted composite of six components this tool chose, with
-weights this tool assigned, calibrated against nothing. The CDFI Fund publishes
-no such score, no such weighting, and no grade. **It does not predict an award
-outcome and it is not evidence about an application.**
+the first thing printed on every generated document, and it is
+**{readiness_inline_qualifier()}**: a weighted composite of six components this
+tool chose, with weights this tool assigned, calibrated against nothing. The
+CDFI Fund publishes no such score, no such weighting, and no grade. **It does
+not predict an award outcome and it is not evidence about an application.**
 
-It is also **not the alignment score** on this page. The alignment score is
+It is also **not the alignment score** on this page — the readiness grade is
+{readiness_inline_qualifier()}, and the alignment score is not. The alignment score is
 assessed against the published CY 2024-2025 Review Process criteria and carries
 the Fund's own Highly Qualified gate. The readiness grade is not, and the two
 can move in opposite directions: a pipeline can raise its readiness grade while
@@ -387,8 +389,13 @@ had no way to tell which figure this tool was using or why.
 
 **This tool scores against 50**, from the Review Process.
 
-**The reconciliation is now established, from the primary source.** The CY
-2024-2025 NMTC Program Review Process states on **PDF p.2**, verbatim:
+**The reconciliation is not printed anywhere; it is NECESSARILY IMPLIED BY THE
+PRIMARY SOURCES.** Three published figures and one published gate are quoted
+below, and only one reading of them is arithmetically consistent. That is a
+strong claim and a different one from "the Fund says so", which this page said
+through 1.5.2 and which was contradicted four paragraphs later by its own
+closing sentence. The CY 2024-2025 NMTC Program Review Process states on **PDF
+p.2**, verbatim:
 
 > "The CDFI Fund's Phase 1 review process, for all eligible Applicants, required
 > **two reviewers** to independently evaluate and score the Business Strategy and
@@ -401,22 +408,49 @@ breath as the gate: *"an aggregate score of at least 40 out of a possible total
 of **50 points** in each of the two scored Application sections; and (ii) an
 aggregate base score (excluding priority points) of at least 85 points."*
 
-**The arithmetic corroborates it independently.** At 25 points per section the
-aggregate base maximum would be 50, and a gate requiring "at least 85 points"
-would be unreachable. At 2 × 25 = 50 per section the maximum is 100 and the 85
-gate is coherent — as is that page's own worked example, where 40 + 38 = 78
-falls short of 85.
+**A SECOND ANCHOR, from the same page, and it is the one that settles what a
+"base score" belongs to.** The Review Process's **p.2** describes the
+anomaly check verbatim:
 
-**What is quoted and what is inferred, kept apart.** The two-reviewer fact and
-both point figures are quotations. That the 25 is *per reviewer* is the
-inference joining them, and it is the only reading on which both published
-numbers and the 85 gate are simultaneously true. The CDFI Fund does not print
-the reconciliation itself.
+> "An anomalous base score was deemed to have occurred when the difference
+> between **the two reviewer base scores**, divided by the higher of the two
+> base scores, was significant."
 
-*Retrieved and text-extracted locally with pypdf on 2026-08-21 — Review Process,
-7pp, 187,497 bytes, SHA-256 `ad0dc777eab0dc8cf437d970418bcdbea8403eb99b79dd1662f4ce94eab98749`;
-Allocation Application re-verified the same day against the SHA-256 already
-pinned in `renderers/_round_provenance`, byte count and hash both unchanged.*
+A *base score* is therefore a quantity **each reviewer produces**, for the whole
+Application, not a single number the Application carries. Two of them exist per
+Application, and p.3's "aggregate base score ... of at least 85 points" is what
+they aggregate to.
+
+**A THIRD FIGURE, and it doubles the arithmetic.** The Allocation Application
+states a maximum for *each* scored Part, not only for Part I: **PDF p.65**
+(printed p.38) reads *"Total Maximum Points for Part II: 25 points"*, matching
+**PDF p.40** (printed p.13)'s *"Total Maximum Points for Part I: 25 points,
+plus up to 10 additional 'priority points'"*. So one reviewer's base score
+maxes at 25 + 25 = **50**, and two reviewers aggregate to **100**.
+
+**The arithmetic then admits one reading and no other.** At 25 points per
+section the aggregate base maximum would be 50, and a gate requiring "at least
+85 points" would be unreachable — the Fund would have published a threshold no
+Application could ever meet. At 2 × 25 = 50 per section the maximum is 100 and
+the 85 gate is coherent, as is that page's own worked example, where 40 + 38 =
+78 falls short of 85.
+
+**What is quoted and what is inferred, kept apart.** The two-reviewer fact, the
+two-reviewer-base-scores sentence, both Part maxima and the 85 gate are all
+QUOTATIONS from the two pinned documents. That the 25 is *per reviewer* is the
+INFERENCE joining them. It is not printed anywhere: **the CDFI Fund does not
+print the reconciliation itself**, and this page does not claim it does. What
+the page claims is narrower and checkable — that no other reading leaves every
+published figure simultaneously true.
+
+*Both instruments re-opened and text-extracted locally with pypdf on 2026-08-22
+for the two citations added above — Review Process, 7pp, 187,497 bytes, SHA-256
+`ad0dc777eab0dc8cf437d970418bcdbea8403eb99b79dd1662f4ce94eab98749`; Allocation
+Application, 142pp, 1,525,626 bytes, SHA-256
+`0280c6bc7b35f6015e2c2b1be4b1c07b3864f2dcbaeadfbbbf8bded8de12834f`. Both hashes
+match the values already pinned in `renderers/_round_provenance` exactly. Part
+II's maximum was read from the Application's own page, not inferred from Part
+I's.*
 
 **No scoring changes from this disclosure**; the denominators are unchanged.
 """

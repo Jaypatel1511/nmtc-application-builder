@@ -7,6 +7,145 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [1.5.2] — 2026-08-21
 
+### AUDIT ROUND — 2026-08-22
+
+A hostile audit of the T1–T4 work returned **SHIP-AFTER-FIX, one blocker**. It
+found the code sound: T1's withdrawal, T2, T3 and T4 are correct and it could
+not break the substance of any of them. **The blocker was not code. It was a
+false factual claim about test coverage, written into this file and into a
+shipped test module in block capitals — the exact defect class this release
+exists to close in T2.** Six findings, all closed below, every figure
+re-derived by execution rather than inherited. **1.5.2 stands**; nothing about
+the release's version, its scores or its public API changes.
+
+**B1 — the declared coverage hole does not exist.** Corrected in place above.
+Five sites carried the claim, not the two first identified: this file and four
+passages in `tests/validation/test_readiness_narrative_withdrawn.py`. The
+fixture gap it stood in front of is now genuinely closed —
+`_score_from_pipeline` takes an explicit `enriched=` flag and a fourth,
+non-degraded shape joins the parametrisation, so the analysed-pipeline path
+reaches all six components. Measured: the same eligibility reversion that
+produced 7 red now produces **8**, and the new one is a `pipeline` case; a
+distress reversion goes from 2 red to **3** the same way.
+
+**F1 — the deduction table quantified one side of a trade.** T1's table renders
+six house bands into **one commensurable currency**, and an ordered, quantified,
+sourced loss list is a priority list however hard the surrounding prose
+disclaims it. Measured, and this is the finding:
+
+```
+3 states -> 6 states, distress unchanged
+  readiness 57.8 [C] -> 67.8 [C]   exactly the 10.0 the table itemised
+  CDFI Fund base score under WinProbabilityModel   NO MOVEMENT
+
+2 states @100% severe -> 3 states @80% severe
+  readiness       73.9 [B] -> 76.0 [B]   UP 2.1
+  distress sub       100.0 -> 90.0       DOWN
+  Fund base score       78 -> 77         DOWN
+```
+
+A full headline point per state, worth nothing at the Fund's gate — and the
+move that buys the second one **costs** a Fund point. The fix is a second axis
+in the `[basis]` column and a **partition**: rows whose underlying quantity the
+Fund also scores are subtotalled apart from rows that are house bookkeeping end
+to end, each row states the Fund's relation to its own quantity, and a closing
+paragraph states that the two blocks are not the same currency. The table
+stays; F4's rule — *a tool may decline to advise, it may not deduct silently* —
+is untouched, and every per-row deduction still renders.
+
+**F2 — Streamlit deducted silently, and this round had widened the gap.**
+`streamlit_app/pages/1_Pipeline_Analyzer.py` rendered the composite three ways
+plus a six-component bar chart and carried **no readiness disclosure at all**:
+an AST scan of every rendered string on the page found four readiness claims
+and zero anchors. Pre-existing — but CLI and markdown went from a
+one-component notice to a six-component table this release while Streamlit went
+from nothing to nothing, under a refusal claim this release ships as an
+executed test. **And the gate that blocks exactly this could not see the page**:
+`test_pinned_constants`'s proximity gate iterated the four document surfaces
+and three text surfaces, and Streamlit was in none of them. The page now reads
+`readiness_inline_qualifier()` and `readiness_weights_note()` from
+`renderers/_methodology`, renders the withdrawal note in full, and **every
+Streamlit page is now a proximity surface**. Extending the gate immediately
+found a second instance: the About page's Limitation 7 was a substantively
+correct disclosure **retyped in its own words**, invisible to the anchors. It
+now interpolates the shared function.
+
+**F3 — four of T4's six sites could silently revert.** Reverting `WIN_P25` /
+`WIN_MED` / `WIN_P75` / `WIN_TOP10` from `WINNER_IMPACT_BENCHMARKS` back to the
+hardcoded `6.0 / 10.0 / 18.0 / 28.0` they replaced left the **entire suite
+green — 1,332 passed**. At `fde3eca` the twins agreed by luck. This is the
+`Q25_QEI_BASIS_CLAUSE` three-copies pattern and the `maps._MED_PRIORITY` drift
+pattern, both of which have bitten this package before.
+`test_grade_threshold_twins` now covers all six sites, one case per percentile
+plus a non-vacuity twin: **5 red** under that reversion.
+
+**F4 — five working evasions of the T2 comment gate, five closed, one
+declared.** The gate's mechanism and its red-proof are honest — restoring the
+exact `fde3eca` block still goes red and still names the constant — but five
+ways of writing the same false attribution passed straight through it, and
+passed *silently*. A blank line above the assignment (A), the sentence inside
+the dict literal (B) or as a trailing comment (D) were region bugs.
+*"NOT A HOUSE FIGURE. The CDFI Fund publishes this weighting…"* (C) was exempt
+**because it said "HOUSE"** — the most dangerous shape available, an explicit
+denial immunising a false claim. And appending to an already-disclaimed block
+(E) was undetectable on all 13 HOUSE-ruled constants that carry one, which is
+how these defects actually arise. All five now go red. The granularity question
+was **measured before it was decided**: the broad predicate per sentence flags
+24 legitimate audit sentences, the narrow one flags five — so the gate is two
+layers, block-level broad and sentence-level narrow, with five hand-written
+rulings and a test that fails if any ruling stops matching. **What remains open
+is declared in the gate's own scope limit**: a sentence appended to a disclaimed
+block naming an authority and stating **no number** is caught by neither layer,
+and closing it costs the 24-entry allowlist this module has twice refused.
+
+**F5 — "established" overclaimed, by the page's own admission.** The About page
+led with *"The reconciliation is now established, from the primary source"* and
+closed four paragraphs later with *"The CDFI Fund does not print the
+reconciliation itself."* It now reads **"not printed anywhere; it is
+NECESSARILY IMPLIED BY THE PRIMARY SOURCES"**, which is the claim the evidence
+supports. **The underlying claim is not weakened — it is stronger, on two
+anchors the round missed, both opened first-hand:** Review Process **PDF p.2**,
+*"the difference between the two reviewer base scores, divided by the higher of
+the two base scores"* — establishing that a base score is a quantity **each
+reviewer produces** — and Allocation Application **PDF p.65** (printed p.38),
+*"Total Maximum Points for Part II: 25 points"*, matching Part I's 25 at PDF
+p.40. So one reviewer's base score maxes at 25 + 25 = **50** and two aggregate
+to **100**, on which the published 85 gate and the worked 40 + 38 = 78 example
+are both coherent. Both instruments were re-hashed before quoting and both
+match the values pinned in `renderers/_round_provenance`.
+
+**Recorded by this round, not attempted.**
+
+- **Pricing the other side of F1's trade.** Reporting, per component, what
+  recovering it does to the Review-Process-scored total is the only fix that
+  removes the asymmetry rather than annotating it. It is **methodology** — it
+  requires deciding what "recover geographic diversity" means as a change to a
+  real pipeline — and this package has refused to invent that every time it has
+  come up. The second axis annotates the asymmetry; it does not remove it, and
+  `narrative_withdrawal_note`'s docstring now says so in those words.
+- **F4-E′, declared in the gate's own scope limit**: a sentence appended to an
+  already-disclaimed comment block that names an authority and states **no
+  number** is caught by neither layer.
+- **The prompt for this round predicted a residual gap that is not there.** It
+  expected every six-component test to reach `"ok"` through
+  `Pipeline.sample()`'s pre-verified shortcut, leaving the adapter's own live
+  path — lookup → `_enrich_via_api` → `"ok"` — exercised by no test.
+  Instrumented across the whole suite: **six tests** drive a real `NMTCMapper`
+  through `_enrich_via_api` and compute a six-component readiness score off the
+  result, in `test_qlici_not_supplied` (four), `test_no_fabricated_output` and
+  `test_truncated_lists`. Nothing to build.
+
+**F6 — one word in a docstring.** The justification for keeping two emitters
+said *"Two emitters here never read `component_scores`."* **The first one
+does** — `if "distress_concentration" not in scores` is a membership test on
+it. Both are clean by another route, verified by enumeration: emitter 1 reads
+the **key set**, never a value, and key absence is a fact about the run;
+emitter 2's 14 reachable `issues.append` sites all carry a statutory or
+data-integrity referent. **The reasoning is corrected in all three places it
+was written; the code is unchanged.**
+
+---
+
 **PATCH, and the establish step is what ruled it one.** T1's first question was
 whether `strengths`, `weaknesses` and `recommendations` are public API. They
 are — the real names are `top_strengths`, `top_weaknesses` and
@@ -60,10 +199,20 @@ sub-score, its weight, its deduction in points, and the name of the house
 constant that produced it.
 
 **What is retained, and why it is not the same class.** Two emitters in
-`_build_recommendations` never read `component_scores` — the degraded-data
-notice (its trigger is that eligibility data would not load) and the
-validation-issue echo (its referent is the check that raised it). Both survive,
-under a heading that says they are not composite-derived.
+`_build_recommendations` survive under a heading that says they are not
+composite-derived: the degraded-data notice and the validation-issue echo. The
+reason is that **no house band decides whether either fires** — not, as this
+entry and both docstrings originally put it, that neither reads
+`component_scores`. **The first one does** (1.5.2 audit, F6): its trigger is
+`if "distress_concentration" not in scores`, a membership test on
+`component_scores`. It reads the **key set**, never a value, and key absence is
+a fact about the run — eligibility data would not load — rather than a
+threshold that was crossed. The echo reads nothing from the composite at all;
+verified by enumeration, all **14** reachable `issues.append` sites carry a
+statutory referent (a tract that is not a LIC, a QLICI exceeding its QEI) or a
+data-integrity one (a missing field, a non-positive cost, a negative job count,
+one figure disagreeing with itself across two surfaces of the same document).
+**The code was right and is unchanged; the reason given for it was not.**
 
 **THE CLI IS NOW SILENT ON IMPROVEMENT GUIDANCE, AND THIS ROUND SAYS SO RATHER
 THAN SHIPPING IT QUIETLY.** The §2 map above is why: `cli.py` never imported
@@ -224,31 +373,93 @@ methodology and is not attempted.**
 
 | Gate | Proved red by | Result |
 |---|---|---|
-| `test_readiness_narrative_withdrawn` (51 cases) | restoring the impact recommendation | 8 red across **both** fixture paths |
-| same | restoring `_identify_strengths`' eligibility branch | 7 red — **all on hand-built results, every `pipeline:` case green** |
+| `test_readiness_narrative_withdrawn` (57 cases) | restoring the impact recommendation | 8 red across **both** fixture paths |
+| same | restoring `_identify_strengths`' eligibility branch | **8 red** — 7 hand-built plus the `enriched:` pipeline case |
+| same | restoring `_identify_weaknesses`' distress branch | **3 red** — 2 hand-built plus the `enriched:` pipeline case |
 | `test_no_house_constant_is_attributed_…_comment` | restoring both T2 comments | 2 red, named by constant |
-| `test_grade_threshold_twins` (8 cases) | restoring the ladder and the label | 5 red |
+| `test_grade_threshold_twins` (9 cases) | restoring the ladder, the label and the four winner-impact percentiles | 6 red |
+| `test_pinned_constants._disclosure_proximity_failures` | stripping the Streamlit readiness disclosure | 1 red, naming the page |
 
-**A COVERAGE FINDING WORSE THAN 1.5.1's, AND IT IS WHY THE SECOND RED PROOF
-MATTERS.** `nmtc_mapper` is not installed in this suite's environment, so a
-pipeline built through `Application.analyze()` runs the **degraded** path and
-`compute_readiness_score` emits **four** components, not six —
-`eligibility_quality` and `distress_concentration` are absent entirely, and
-`_identify_strengths`' eligibility and distress branches cannot be entered at
-all. Stated precisely, because the stronger version is false: two modules force
-`eligibility_data_status = "ok"` and `conftest`'s `sample_pipeline_result` is
-hand-built, but the first two are **corpus** gates comparing a document to a
-stored baseline — the instrument 1.5.1's F2 found insufficient. So the new
-module drives **both** paths, and the measurement above is the evidence: the
-eligibility reversion left every pipeline-based fixture green.
+**A COVERAGE FINDING, AND THE FALSE DIAGNOSIS THAT SHIPPED WITH IT.** The second
+row above was measured honestly and explained wrongly, and the wrong explanation
+shipped in this file and in the new test module in block capitals. What it said:
 
-> **18 insertions, 8 deletions** in `tests/rendered_baseline/`, measured
-> `fde3eca`..`HEAD`, in `markdown.txt` only.
+> `nmtc_mapper` is not installed in this suite's environment, so a pipeline
+> built through `Application.analyze()` runs the degraded path and
+> `compute_readiness_score` emits four components, not six.
 
-`tests/cli_baseline/analyze.txt` moves 200/42 across all five analyzer states.
-`FLOOR` 610 → **640**, re-derived the long way: sdist built, unpacked,
-`nmtcapp/` moved aside, 1,332 collected, **43 skipped**, 1,289 executed.
-`MAX_SDIST_SKIPS` stays 45 — headroom two, the same figure 1.5.1 measured.
+**All three limbs were false**, and 1.5.2's audit is what caught it. Re-derived
+by execution:
+
+1. **The library is installed.** The **distribution** is `nmtc-mapper` 0.5.0 —
+   the floor `pyproject.toml` pins. The **import name is `nmtcmapper`**. The
+   round probed `import nmtc_mapper`, which raises, and read the raise as
+   absence. `tests/integrations/test_mapper_contract.py` has always imported
+   the right name and has always passed.
+2. **The live path runs.** `NMTCMapper()` loads **85,395 census tracts** from
+   the cached CDFI Fund workbook, reports `data_source == "cdfi_fund"`,
+   geocodes, and `enrich_pipeline_eligibility` returns
+   `eligibility_data_status == "ok"`.
+3. **The suite reaches six components constantly.** Instrumenting every
+   `compute_readiness_score` call across the suite: **429 calls, 339
+   six-component, 165 of those through `Application.analyze()`, from 147
+   distinct tests in 31 files.** Six of those tests reach six components
+   through the adapter's **real** live path — `_enrich_via_api` with an actual
+   `NMTCMapper`, not a mock.
+
+**WHY A TRUE MEASUREMENT PRODUCED A FALSE DIAGNOSIS.** The seven-red row
+reproduces exactly. Its cause was the test file, not the environment:
+`_project` sets `is_nmtc_eligible=True`, so every fixture project is already
+`is_enriched`, the adapter takes its "already enriched" short-circuit, declines
+to vouch for a lookup it did not perform, and stamps `pre_enriched` over
+`Pipeline.__init__`'s fail-closed `"unenriched"`. **The fixtures were degraded
+because the module built them degraded.** Removing the library would not have
+moved the measurement by one case. The mechanism carrying the rest of the suite
+to six is `Pipeline.sample()`, which stamps `"ok"` at construction as the one
+path documented to vouch for its own pre-verified data — `core/pipeline.py`.
+The round never looked there.
+
+**Both halves are fixed.** Every occurrence of the claim is corrected — five
+sites, not the two first identified: `CHANGELOG.md` here and four in
+`tests/validation/test_readiness_narrative_withdrawn.py`. And the fixture gap
+the false claim was standing in front of is actually closed:
+`_score_from_pipeline` gains an explicit `enriched=` flag and a fourth,
+non-degraded shape joins the parametrization, so the analysed-pipeline path now
+reaches all six components and is sensitive to a reversion in either
+eligibility-dependent branch. The two tests that assert the degraded path on
+purpose keep asserting it, and one of them now asserts the **corrected** cause
+by name (`pre_enriched`) rather than the environment.
+
+**The residual gap 1.5.2's audit expected to find is not there either.** It
+predicted that every six-component test reaches `"ok"` through
+`Pipeline.sample()`'s shortcut and that the adapter's own live path —
+lookup → `_enrich_via_api` → `"ok"` — is exercised by no test. Instrumented:
+**six tests** drive a real `NMTCMapper` through `_enrich_via_api` and score six
+components off the result, in `test_qlici_not_supplied` (four),
+`test_no_fabricated_output` and `test_truncated_lists`.
+
+> **32 insertions, 8 deletions** in `tests/rendered_baseline/`, measured
+> `fde3eca`..`HEAD`, in `markdown.txt` only. *(18/8 through the T1 withdrawal;
+> the 1.5.2 audit round's F1 adds the other 14 — the deduction table's two
+> block headings, its per-row Fund axis, its two subtotals, and the closing
+> paragraph that says the blocks are not the same currency.)*
+
+`tests/cli_baseline/analyze.txt` moves 316/42 across all five analyzer states.
+`FLOOR` 610 → **650**, re-derived the long way twice — once for T1–T4 and
+again for the audit round, each time with the sdist built, unpacked, `nmtcapp/`
+moved aside, and the optional renderers installed before counting:
+**1,349 collected** under `-m "not wheel"`, **43 skipped**, **1,306 executed**,
+half 653, rounded down 650. `MAX_SDIST_SKIPS` stays 45 — headroom two, for the
+third release running.
+
+> **THE SKIP COUNT MEASURES THE ENVIRONMENT AS MUCH AS THE TARBALL, and the
+> audit is what established that.** It re-ran this derivation and got **29**,
+> could not reconcile it, and correctly declined to certify the 43. Both
+> numbers are right about their own venv: `matplotlib`, `reportlab`,
+> `python-docx`, `openpyxl` and `pypdf` each guard a module with
+> `pytest.importorskip`, so a venv without them skips a different set. This
+> re-derivation installs all five first, which is what `release.yml`'s own job
+> does — and against that environment the 43 reproduces exactly.
 
 ### Incidental, and both were already false before this round
 
@@ -2468,7 +2679,7 @@ and the value-only projection that hid B-3's number formats.
 > source for what the Applicant is asked to COMMIT TO, because the thing the
 > Applicant fills in is the Application.**
 
-**104 mentions across 100 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
+**107 mentions across 103 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
 `README.md`. *(75 across 71 when 1.3.0 shipped; 77 across 73 at 1.5.0, which
 added one in `renderers/_round_provenance`'s re-check list. 1.5.1's first round
 added ten more across ten lines — the T1 withdrawal string and its two
@@ -3573,11 +3784,14 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 225 constants are swept
+colour". The rendered-string sweep demands **19**, and 227 constants are swept
 where 49 were. *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
 round label, its status, the re-check list and the pinned-document facts; 1.5.2
 adds `readiness_score._COMPONENT_BASIS`, the withdrawal note's per-component
-basis labels, pinned on `markdown` and `cli_summary`.)*
+basis labels, pinned on `markdown` and `cli_summary`. The 1.5.2 AUDIT ROUND
+adds two more, both in `readiness_score` and both created by F1's second axis:
+`_FUND_SCORED` and `_HOUSE_ONLY`, the two classes the deduction table is now
+partitioned by.)*
 
 > **Remeasured in 1.3.0, and again in FIX-2, and again in 1.4.0.** This
 > sentence read **160** when 1.2.2 shipped, **183** at `ff49064` and **203**

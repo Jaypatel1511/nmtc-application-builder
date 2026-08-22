@@ -30,6 +30,10 @@ from nmtcapp.data.historical_awards import (
     WINNER_GEOGRAPHIC_PATTERNS,
     WINNER_IMPACT_BENCHMARKS,
 )
+from nmtcapp.renderers._methodology import (
+    readiness_inline_qualifier,
+    readiness_weights_note,
+)
 from nmtcapp.renderers._question_25 import Q25_QEI_BASIS_CLAUSE, q25_basis_note
 from nmtcapp.renderers._question_22 import (
     Q22_METRO_LABEL, Q22_NON_METRO_LABEL, Q22_NON_METRO_METRIC_LABEL,
@@ -314,7 +318,26 @@ with tabs[0]:
         f"{readiness:.1f} / 100",
         f"Grade {grade}",
     )
+    # THE DISCLOSURE THE LARGEST NUMBER ON THIS PAGE DID NOT CARRY (1.5.2
+    # audit F2). Through 1.5.2 this page rendered the readiness composite
+    # three ways -- the metric above, the "Overall readiness grade" fallback
+    # below, and the six-component bar chart -- and carried NO readiness
+    # disclosure of any kind. An AST scan of every rendered string on the page
+    # found four readiness claims and zero disclosures.
+    #
+    # It was never exempt. tests/test_pinned_constants's proximity gate
+    # iterated DOCUMENT_SURFACES plus three text surfaces and Streamlit was
+    # not in the dict, so no gate could see the page. The gate now renders
+    # this page's strings as a surface of its own; adding a fourth claim here
+    # without a disclosure beside it goes red.
+    #
+    # The wording is not retyped. Both strings come from renderers/_methodology
+    # -- the same functions the gate derives its anchors and its distance limit
+    # from -- so rewording the disclosure moves this caption with it.
+    c3.caption(readiness_inline_qualifier())
     c4.metric("NMTC-eligible", "Unverified" if _degraded else fmt_pct(eligible_pct))
+
+    st.caption(readiness_weights_note())
 
     st.markdown("---")
 
@@ -340,6 +363,7 @@ with tabs[0]:
     # --- H: Readiness score breakdown ---
     st.markdown("---")
     st.markdown("**Readiness score breakdown**")
+    st.caption(readiness_inline_qualifier())
     breakdown = rs.component_scores if hasattr(rs, "component_scores") else {}
     if breakdown:
         breakdown_df = pd.DataFrame(
@@ -407,6 +431,22 @@ with tabs[0]:
         plt.close(fig)
     else:
         st.markdown(f"**Overall readiness grade:** `{grade}` ({readiness:.1f}/100)")
+        st.caption(readiness_inline_qualifier())
+
+    # "A TOOL MAY DECLINE TO ADVISE. IT MAY NOT DEDUCT SILENTLY" -- SHIPPED AS
+    # AN EXECUTED REFUSAL CLAIM IN 1.5.2 (tests/test_docs_refusal_claims.py)
+    # WHILE THIS PAGE DID EXACTLY THAT (1.5.2 audit F2). T1 took the CLI from a
+    # one-component notice to a six-component deduction table and took the
+    # generated markdown with it. This page went from nothing to nothing: it
+    # rendered six sub-scores as a bar chart, docked the headline by all six,
+    # and stated neither the withdrawal nor the arithmetic.
+    #
+    # The note is READ, not re-rendered. narrative_withdrawal_note() is the one
+    # statement of the withdrawal and every other surface prints the same
+    # object, so this page cannot drift from them.
+    if getattr(rs, "narrative_withdrawn", False) and getattr(rs, "narrative_note", ""):
+        st.markdown("**Readiness narrative — withdrawn, and the arithmetic**")
+        st.code(rs.narrative_note, language=None)
 
 # =============================================================================
 # TAB 1 — Distress

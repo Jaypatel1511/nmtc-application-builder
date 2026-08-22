@@ -687,7 +687,36 @@ jobs:
           # tests/validation/test_readiness_narrative_withdrawn.py reads no
           # tree at all.
           #
-          FLOOR=640
+          # 1.5.2 AUDIT ROUND -- RE-DERIVED THE LONG WAY A THIRD TIME. Built
+          # the sdist, unpacked it, moved nmtcapp/ aside so it could not shadow
+          # the installed package, installed the tarball plus the optional
+          # renderers into a clean venv, and ran this job's exact invocation:
+          #
+          #     collected under -m "not wheel" 1,349
+          #     skipped in the sdist             -43
+          #     EXECUTED                       1,306
+          #     half                             653
+          #     rounded down                     650
+          #
+          # THE ROUND ADDS NO NEW TEST MODULE. The 17 new tests land inside
+          # four existing ones -- test_readiness_narrative_withdrawn (the
+          # corrected coverage claim plus the enriched pipeline shape),
+          # test_grade_threshold_twins (F3's four WINNER_IMPACT_BENCHMARKS
+          # sites), test_fund_attribution_source (F4's five evasion closures)
+          # and test_pinned_constants (F2's Streamlit surface). So
+          # CLAIMED_NEW_TEST_MODULES does not move either.
+          #
+          # MAX_SDIST_SKIPS STAYS 45, AND THE 43 IS RE-MEASURED RATHER THAN
+          # INHERITED -- headroom is still two, for the third release running.
+          # The 1.5.2 audit reported 29 skips here and could not reconcile it;
+          # the difference is environmental and is the same trap this figure
+          # has always carried. A venv missing matplotlib, reportlab,
+          # python-docx, openpyxl or pypdf skips whole modules on
+          # importorskip, so the skip count measures the ENVIRONMENT as much as
+          # the tarball. This derivation installs all five before counting,
+          # which is what release.yml's own job does.
+          #
+          FLOOR=650
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()

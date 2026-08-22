@@ -1049,14 +1049,143 @@ def _extract_markdown_exec_summary_source(module) -> str:
     return inspect.getsource(module)
 
 
+#: The Streamlit pages, as a proximity surface. Added by the 1.5.2 audit's F2.
+#:
+#: THE GATE THAT BLOCKS EXACTLY THIS COULD NOT SEE THE PAGE. Through 1.5.2
+#: ``test_readiness_disclosure_is_adjacent_to_the_claim`` iterated the four
+#: DOCUMENT_SURFACES only, and no other gate covered Streamlit. Meanwhile
+#: ``1_Pipeline_Analyzer.py`` rendered the composite three ways -- the metric,
+#: the "Overall readiness grade" fallback, and the six-component bar chart --
+#: and carried no readiness disclosure at all. CLI and markdown went from a
+#: one-component notice to a six-component deduction table in the same release;
+#: Streamlit went from nothing to nothing, under a shipped refusal claim that
+#: reads "a tool may decline to advise, it may not deduct silently".
+#:
+#: WHY AST AND NOT A RENDER. Driving Streamlit needs a script run and a running
+#: server, and every other surface here is text. What a reader sees on this
+#: page is the sequence of literals handed to the render calls, so that is what
+#: is extracted, IN SOURCE ORDER, which is what makes a character distance
+#: between a claim and its disclosure meaningful.
+#:
+#: WHAT IT CANNOT SEE, DECLARED. Text that arrives through a variable or a
+#: function call -- ``readiness_inline_qualifier()`` among them -- is not a
+#: literal in this file. Calls to the three _methodology disclosure functions
+#: are therefore substituted with their VALUES, by name, so the anchors they
+#: carry are measured where they actually render. Any other interpolated text
+#: is invisible to this surface, and a disclosure smuggled in through one would
+#: NOT satisfy this gate. That is the conservative direction.
+_ST_RENDER_CALLS = frozenset({
+    "markdown", "write", "caption", "info", "warning", "error", "success",
+    "subheader", "header", "title", "text", "code", "latex", "metric",
+    "expander", "badge", "toast", "popover", "metric_classification",
+})
+
+
+def _streamlit_disclosure_substitutions() -> dict:
+    from nmtcapp.renderers._methodology import (
+        readiness_inline_qualifier,
+        readiness_weights_note,
+        readiness_weights_sheet_note,
+    )
+    return {
+        fn.__name__: fn()
+        for fn in (readiness_inline_qualifier, readiness_weights_note,
+                   readiness_weights_sheet_note)
+    }
+
+
+def _streamlit_page_surface(path: str) -> str:
+    """Every string a Streamlit page hands to a render call, in source order."""
+    import ast
+
+    subs = _streamlit_disclosure_substitutions()
+    with open(path, encoding="utf-8") as fh:
+        tree = ast.parse(fh.read())
+
+    chunks: list = []
+
+    def _emit(node):
+        for sub in ast.walk(node):
+            if isinstance(sub, ast.Constant) and isinstance(sub.value, str):
+                chunks.append((sub.lineno, sub.col_offset, sub.value))
+            elif isinstance(sub, ast.Call):
+                fn = sub.func
+                name = fn.attr if isinstance(fn, ast.Attribute) else (
+                    fn.id if isinstance(fn, ast.Name) else None
+                )
+                if name in subs:
+                    chunks.append((sub.lineno, sub.col_offset, subs[name]))
+
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        fn = node.func
+        name = fn.attr if isinstance(fn, ast.Attribute) else (
+            fn.id if isinstance(fn, ast.Name) else None
+        )
+        if name not in _ST_RENDER_CALLS:
+            continue
+        for arg in list(node.args) + [kw.value for kw in node.keywords]:
+            _emit(arg)
+
+    chunks.sort()
+    return _normalise(" ".join(text for _, _, text in chunks))
+
+
+#: Computed here rather than through _repo_root(), which this module defines
+#: two hundred lines further down.
+_STREAMLIT_PAGES_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "streamlit_app", "pages",
+)
+
+
+def _streamlit_surfaces() -> dict:
+    """{surface_name: extracted text} for every Streamlit page."""
+    out = {}
+    for name in sorted(os.listdir(_STREAMLIT_PAGES_DIR)):
+        if not name.endswith(".py"):
+            continue
+        out[f"streamlit:{name}"] = _streamlit_page_surface(
+            os.path.join(_STREAMLIT_PAGES_DIR, name)
+        )
+    return out
+
+
+@pytest.mark.skipif(
+    not os.path.isdir(_STREAMLIT_PAGES_DIR),
+    reason="streamlit_app/ absent (installed tree or unpacked sdist, not a checkout)",
+)
 def test_readiness_disclosure_is_adjacent_to_the_claim(rendered):
-    """Every readiness claim carries a disclosure within reach of it."""
+    """Every readiness claim carries a disclosure within reach of it.
+
+    SEVEN SURFACES NOW, NOT FOUR (1.5.2 audit F2). The four generated documents
+    plus every Streamlit page, because the page carrying the LARGEST rendered
+    instance of this claim was the one surface the gate could not see.
+    """
     surfaces = {
         name: rendered[name]
         for name in ("word", "pdf", "excel", "markdown")
         if name in rendered
     }
     assert surfaces, "no document surfaces rendered — this gate would pin nothing"
+
+    streamlit_surfaces = _streamlit_surfaces()
+    assert streamlit_surfaces, (
+        "no Streamlit page was extracted — this half of the gate would pin "
+        "nothing, which is the state F2 found it in"
+    )
+    # FAIL CLOSED ON THE EXTRACTOR ITSELF. If the AST walk stopped finding
+    # rendered strings — a renamed render call, a page rewritten around a
+    # helper — every Streamlit surface would go empty and pass vacuously.
+    analyzer = streamlit_surfaces.get("streamlit:1_Pipeline_Analyzer.py", "")
+    assert _READINESS_CLAIM.search(analyzer), (
+        "the Pipeline Analyzer surface contains no readiness claim at all. "
+        "That page renders the grade three ways, so the extractor is broken, "
+        "not the page."
+    )
+    surfaces.update(streamlit_surfaces)
+
     failures = _disclosure_proximity_failures(surfaces)
     assert not failures, (
         "Readiness claims render too far from their disclosure. A CDE who reads "

@@ -321,16 +321,88 @@ def _compute_grade(score: float) -> str:
     return "F"
 
 
-#: The readiness composite's own components, in the order summary() prints
-#: them, mapped to the house constant each one's band comes from. Stated once
-#: so the withdrawal note cannot drift from what the scorers actually read.
+#: TWO AXES, AND THE SECOND ONE IS THE POINT (1.5.2 audit F1).
+#:
+#: The first axis is the house constant each band comes from. Stated once so
+#: the withdrawal note cannot drift from what the scorers actually read.
+#:
+#: THE FIRST AXIS ALONE MADE THE TABLE A PRIORITY LIST, which is the finding
+#: that added the second. Six rows, all labelled HOUSE, all denominated in the
+#: same 100-point headline currency, is an ordered and quantified loss list —
+#: and an ordered, quantified, sourced loss list is a priority list no matter
+#: what the surrounding prose disclaims. A CDE can believe every word of "NONE
+#: OF THAT IS A FINDING ABOUT YOUR APPLICATION" and still read off which row
+#: returns the most points. Measured, and this is why one column was not
+#: enough on its own:
+#:
+#:     3 states -> 6 states, distress unchanged
+#:       readiness 57.8 [C] -> 67.8 [C]   exactly the 10.0 this table itemised
+#:       CDFI Fund base score      NO MOVEMENT
+#:
+#:     2 states @100% severe -> 3 states @80% severe
+#:       readiness      73.9 [B] -> 76.0 [B]   UP 2.1
+#:       distress sub      100.0 -> 90.0      DOWN
+#:       CDFI Fund base score 78 -> 77        DOWN
+#:
+#: A full headline point per state, worth nothing at the Fund's gate — and the
+#: move that buys the second one COSTS a Fund point. The rows are not alike and
+#: the table must not render them alike.
+#:
+#: SO THE SECOND AXIS IS THE FUND'S RELATION TO THE SAME QUANTITY, and it
+#: partitions the table: rows the Fund also scores are grouped and subtotalled
+#: apart from rows that are house bookkeeping end to end. Each string states a
+#: relation this package already has a source for. NOTHING HERE ASSERTS A FUND
+#: FIGURE — the Fund-scored row says the Fund uses a DIFFERENT basis and names
+#: the difference; the rest say the Fund scores nothing corresponding.
+_FUND_SCORED = "fund_scored"
+_HOUSE_ONLY = "house_only"
+
 _COMPONENT_BASIS = {
-    "eligibility_quality":    "this tool's own eligibility curve",
-    "distress_concentration": "schema.TARGET_DISTRESS_THRESHOLDS (HOUSE)",
-    "geographic_diversity":   "schema.MIN_GEOGRAPHIC_DIVERSITY (HOUSE)",
-    "impact_metrics":         "schema.IMPACT_BENCHMARKS (HOUSE)",
-    "validation_pass_rate":   "this tool's own pass-rate curve",
-    "completeness":           "this tool's own completeness curve",
+    "eligibility_quality": (
+        "this tool's own eligibility curve",
+        _FUND_SCORED,
+        "the eligible share reaches the Fund framework only as Pipeline "
+        "Credibility's eligibility penalty, and LIC status itself is a "
+        "STATUTORY GATE rather than a scored band. The 0-100 curve docking "
+        "you here is this tool's.",
+    ),
+    "distress_concentration": (
+        "schema.TARGET_DISTRESS_THRESHOLDS (HOUSE)",
+        _FUND_SCORED,
+        "THE FUND SCORES DISTRESS, ON A DIFFERENT BASIS. Higher Distress "
+        "Targeting and Deep Distress Commitment are scored against shares of "
+        "QLICI dollars; this sub-score divides a share of QEI by that bar. "
+        "The bands docking you here are this tool's, but the underlying "
+        "quantity does move a Fund score -- in either direction.",
+    ),
+    "geographic_diversity": (
+        "schema.MIN_GEOGRAPHIC_DIVERSITY (HOUSE)",
+        _HOUSE_ONLY,
+        "THE CDFI FUND DOES NOT SCORE GEOGRAPHIC BREADTH AT ALL. No state "
+        "count is scored anywhere in the CY 2024-2025 Review Process, so "
+        "these points exist only inside this tool. Measured: taking a sample "
+        "pipeline from 3 states to 6 returned exactly the 10.0 itemised here "
+        "and moved the Fund base score by zero.",
+    ),
+    "impact_metrics": (
+        "schema.IMPACT_BENCHMARKS (HOUSE)",
+        _HOUSE_ONLY,
+        "The Fund scores whether outcomes are QUANTIFIED and THIRD-PARTY "
+        "VALIDATED. It publishes no jobs-per-$1MM-QEI band, so no Fund "
+        "quantity corresponds to the rate docking you here.",
+    ),
+    "validation_pass_rate": (
+        "this tool's own pass-rate curve",
+        _HOUSE_ONLY,
+        "An internal check of this tool's own input rules. It has no Fund "
+        "analogue and is not part of any application.",
+    ),
+    "completeness": (
+        "this tool's own completeness curve",
+        _HOUSE_ONLY,
+        "An internal check that this tool's own fields are populated. It has "
+        "no Fund analogue and is not part of any application.",
+    ),
 }
 
 
@@ -367,19 +439,71 @@ def narrative_withdrawal_note(component_scores: dict) -> str:
     components, so F4's rule now applies six times over. What replaces the
     advice is therefore not silence but arithmetic — the composite's own
     accounting, in the tool's own terms, instructing nothing.
+
+    AND THE ARITHMETIC BECAME THE INSTRUCTION, WHICH IS THE 1.5.2 AUDIT'S F1.
+    Six rows, all labelled HOUSE, all denominated in the same 100-point
+    currency, ordered and quantified: that is a priority list, and a CDE can
+    believe every word of "NONE OF THAT IS A FINDING ABOUT YOUR APPLICATION"
+    and still read off which row returns the most points. Credibility and
+    actionability come apart. The partition below is the answer -- see
+    ``_COMPONENT_BASIS`` for the measurements that forced it.
+
+    HOW FAR THE PARTITION ACTUALLY GOES, STATED RATHER THAN ASSUMED, because
+    overstating it would be the same error one level up.
+
+    IT DOES NOT REMOVE THE PRIORITY READ. A reader who wants the largest
+    recoverable number can still find it: the per-row deductions are still
+    printed, still in points, still comparable. Re-measured after the fix, both
+    scenarios return EXACTLY the figures that produced the finding -- 57.8 [C]
+    -> 67.8 [C] for a state count, 73.9 [B] -> 76.0 [B] for the distress
+    dilution -- unchanged, because the fix changes the DISCLOSURE and not the
+    arithmetic. What it changes is that the largest number now arrives inside a
+    subtotal that names its currency, that the geographic row carries the
+    measured counter-fact next to the points rather than four paragraphs below
+    them, and that the closing sentence states the two blocks can move in
+    OPPOSITE directions and gives the case where they did.
+
+    WHAT WOULD ACTUALLY REMOVE IT, and why none of the three is taken here:
+
+      * Printing no per-row figure. Forbidden by F4's own rule -- that is
+        deducting silently, which is the defect this note exists to answer.
+        The tension is real and is not resolvable by wording.
+      * Pricing the OTHER side of each trade: reporting, per component, what
+        recovering it does to the Review-Process-scored total. That is the only
+        fix that removes the asymmetry rather than annotating it, and it is
+        METHODOLOGY -- it requires deciding what "recover geographic
+        diversity" means as a change to a real pipeline, which this package has
+        refused to invent every time it has come up. Recorded, not attempted.
+      * Withdrawing the composite headline itself. The 2.0.0 deletion of
+        ``overall_score`` and ``grade`` is the only change that removes the
+        INCENTIVE rather than disclosing it, and it is a breaking change a
+        patch may not make.
     """
     weights = READINESS_SCORING_WEIGHTS
-    docked = []
-    for key, score in component_scores.items():
-        if score >= 100:
-            continue
-        weight = weights[key]
-        dock = (100.0 - score) * weight
-        label = key.replace("_", " ").title()
-        docked.append(
-            f"    {label:<26} {score:5.1f}/100 at a {weight:>3.0%} weight  ->  "
-            f"DOCKED {dock:.1f} POINTS  [{_COMPONENT_BASIS[key]}]"
-        )
+
+    def _rows(axis):
+        """Docked rows for one Fund-relation class, with their subtotal."""
+        out, subtotal = [], 0.0
+        for key, score in component_scores.items():
+            if score >= 100 or _COMPONENT_BASIS[key][1] != axis:
+                continue
+            weight = weights[key]
+            dock = (100.0 - score) * weight
+            subtotal += dock
+            label = key.replace("_", " ").title()
+            house, _cls, fund = _COMPONENT_BASIS[key]
+            out.append(
+                f"    {label:<26} {score:5.1f}/100 at a {weight:>3.0%} weight  ->  "
+                f"DOCKED {dock:.1f} POINTS  [{house}]"
+            )
+            wrapped = textwrap.wrap(fund, width=64)
+            out += [f"        FUND: {wrapped[0]}"]
+            out += [f"              {line}" for line in wrapped[1:]]
+        return out, subtotal
+
+    scored_rows, scored_total = _rows(_FUND_SCORED)
+    house_rows, house_total = _rows(_HOUSE_ONLY)
+    docked = scored_rows + house_rows
     total = sum(
         (100.0 - v) * weights[k] for k, v in component_scores.items() if v < 100
     )
@@ -421,9 +545,54 @@ def narrative_withdrawal_note(component_scores: dict) -> str:
         "decline to advise. It may not deduct silently.",
     ]
     if docked:
-        lines += ["", *docked, "",
-                  f"    TOTAL DEDUCTION {total:.1f} POINTS of the 100-point "
-                  f"readiness headline."]
+        # PARTITIONED, NOT MERELY ANNOTATED (1.5.2 audit F1). Rendering all six
+        # rows in one block and one subtotal is what made them commensurable;
+        # a reader who wanted a lever read off the largest number and got
+        # geography. Two blocks and two subtotals mean the largest number now
+        # arrives inside a subtotal that says whether it is a lever at all.
+        lines += [""]
+        if scored_rows:
+            lines += [
+                "ROWS WHOSE UNDERLYING QUANTITY THE CDFI FUND ALSO SCORES "
+                "-- on its own basis, not this one:",
+                "",
+                *scored_rows,
+                "",
+                # SHORT ON PURPOSE. A line indented four spaces is
+                # pre-formatted to _wrap_note and ships unwrapped; the
+                # qualification lives in the block heading above, which wraps.
+                f"    SUBTOTAL FOR THIS BLOCK: {scored_total:.1f} POINTS.",
+                "",
+            ]
+        if house_rows:
+            lines += [
+                "ROWS THAT ARE HOUSE BOOKKEEPING END TO END -- the Fund "
+                "scores no corresponding quantity:",
+                "",
+                *house_rows,
+                "",
+                f"    SUBTOTAL FOR THIS BLOCK: {house_total:.1f} POINTS.",
+                "",
+            ]
+        lines += [
+            f"    TOTAL DEDUCTION {total:.1f} POINTS of the 100-point "
+            f"readiness headline.",
+            "",
+            # NOT INDENTED: four leading spaces mark a line pre-formatted to
+            # _wrap_note, which then ships it as one unwrapped 600-character
+            # line. This paragraph is prose and must wrap like prose.
+            "THE BLOCKS ABOVE ARE NOT THE SAME CURRENCY AND MUST NOT BE "
+            "TRADED OFF AGAINST EACH OTHER. A point recovered on a house "
+            "bookkeeping row changes this tool's headline and nothing else. "
+            "Worse, the two blocks can move in OPPOSITE directions: a "
+            "measured sample pipeline that added a state and diluted its "
+            "severe-distress share gained 2.1 readiness points here while "
+            "its aggregate base score under this package's model of the "
+            "Review Process FELL by a point, 78 to 77. THIS TABLE CANNOT TELL "
+            "YOU WHICH TRADE IS WORTH MAKING, AND IT IS NOT TRYING TO -- it "
+            "is an account of what this tool did to its own number, not a "
+            "list of things to fix.",
+        ]
     else:
         lines += ["", "    No component was docked on this run."]
     lines += [
@@ -538,19 +707,40 @@ def _build_recommendations(
         branches above produced nothing and instructed a pipeline that had
         triggered no band at all.
 
-    WHAT IS RETAINED, AND WHY IT IS NOT THE SAME CLASS. Two emitters here
-    never read ``component_scores``:
+    WHAT IS RETAINED, AND WHY IT IS NOT THE SAME CLASS.
 
-      * the degraded-data notice, whose trigger is that eligibility data could
-        not be loaded. That is a fact about this run, not a comparison against
-        a band, and its instruction is to fix the tool's own data access.
-      * the validation-issue echo, whose text is an issue string produced by
-        the validation checks and already printed in full above it. Its
-        referent is the check that raised it.
+    THE 1.5.2 VERSION OF THIS PARAGRAPH SAID "Two emitters here never read
+    ``component_scores``", AND THE FIRST ONE DOES (1.5.2 audit, F6). Its
+    trigger is ``if "distress_concentration" not in scores`` -- a membership
+    test on ``component_scores``. Reading the KEY SET and reading the VALUES
+    are different things, and the justification rested on the stronger claim.
+    Both emitters are clean, but by a different route, and the route is what
+    the reasoning has to name:
+
+      * the degraded-data notice reads whether a key is PRESENT, never what it
+        holds. Its trigger is that eligibility data could not be loaded at all
+        -- a fact about the RUN, established upstream by
+        ``eligibility_data_status``, of which the missing key is the local
+        symptom. No threshold is consulted, no value is compared, and the
+        instruction it emits is to fix this tool's own data access rather than
+        to change a pipeline. The distinction that matters is not "does it
+        touch component_scores" but "does a house BAND decide whether it
+        fires", and nothing here has a band to cross.
+      * the validation-issue echo genuinely reads nothing from
+        ``component_scores``. Its text is an issue string produced by the
+        validation checks and already printed in full above it, and its
+        referent is the check that raised it. Verified by enumeration rather
+        than assumed: all 14 reachable ``issues.append`` sites across
+        ``eligibility_check``, ``completeness_check`` and ``consistency_check``
+        carry either a STATUTORY referent (a tract that does not qualify as a
+        LIC; a QLICI exceeding its QEI, "not permitted") or a DATA-INTEGRITY
+        one (a required field missing, a cost that is not positive, a job count
+        below zero, one figure disagreeing with itself between two surfaces of
+        the same document). Not one is a comparison against a house band.
 
     Retaining these is deliberate and is the answer to the mirror defect: a
     surface that says only "withdrawn" gives a CDE nothing, and these two
-    items are the ones on this surface that were never house-band-derived.
+    items are the ones on this surface that no house band ever triggered.
     """
     recs = []
 

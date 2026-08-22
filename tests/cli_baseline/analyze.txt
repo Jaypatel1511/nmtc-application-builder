@@ -113,13 +113,51 @@ Component Scores:
   YOU WERE NEVERTHELESS DOCKED, AND HERE IS THE ARITHMETIC. A tool may decline
   to advise. It may not deduct silently.
 
+  ROWS WHOSE UNDERLYING QUANTITY THE CDFI FUND ALSO SCORES -- on its own
+  basis, not this one:
+
       Eligibility Quality         68.0/100 at a 25% weight  ->  DOCKED 8.0 POINTS  [this tool's own eligibility curve]
+          FUND: the eligible share reaches the Fund framework only as Pipeline
+                Credibility's eligibility penalty, and LIC status itself is a
+                STATUTORY GATE rather than a scored band. The 0-100 curve
+                docking you here is this tool's.
       Distress Concentration      58.2/100 at a 25% weight  ->  DOCKED 10.4 POINTS  [schema.TARGET_DISTRESS_THRESHOLDS (HOUSE)]
+          FUND: THE FUND SCORES DISTRESS, ON A DIFFERENT BASIS. Higher Distress
+                Targeting and Deep Distress Commitment are scored against shares
+                of QLICI dollars; this sub-score divides a share of QEI by that
+                bar. The bands docking you here are this tool's, but the
+                underlying quantity does move a Fund score -- in either
+                direction.
+
+      SUBTOTAL FOR THIS BLOCK: 18.4 POINTS.
+
+  ROWS THAT ARE HOUSE BOOKKEEPING END TO END -- the Fund scores no
+  corresponding quantity:
+
       Impact Metrics              38.2/100 at a 20% weight  ->  DOCKED 12.4 POINTS  [schema.IMPACT_BENCHMARKS (HOUSE)]
+          FUND: The Fund scores whether outcomes are QUANTIFIED and THIRD-PARTY
+                VALIDATED. It publishes no jobs-per-$1MM-QEI band, so no Fund
+                quantity corresponds to the rate docking you here.
       Validation Pass Rate        36.7/100 at a 10% weight  ->  DOCKED 6.3 POINTS  [this tool's own pass-rate curve]
+          FUND: An internal check of this tool's own input rules. It has no Fund
+                analogue and is not part of any application.
       Completeness                80.0/100 at a  5% weight  ->  DOCKED 1.0 POINTS  [this tool's own completeness curve]
+          FUND: An internal check that this tool's own fields are populated. It
+                has no Fund analogue and is not part of any application.
+
+      SUBTOTAL FOR THIS BLOCK: 19.7 POINTS.
 
       TOTAL DEDUCTION 38.1 POINTS of the 100-point readiness headline.
+
+  THE BLOCKS ABOVE ARE NOT THE SAME CURRENCY AND MUST NOT BE TRADED OFF
+  AGAINST EACH OTHER. A point recovered on a house bookkeeping row changes
+  this tool's headline and nothing else. Worse, the two blocks can move in
+  OPPOSITE directions: a measured sample pipeline that added a state and
+  diluted its severe-distress share gained 2.1 readiness points here while its
+  aggregate base score under this package's model of the Review Process FELL
+  by a point, 78 to 77. THIS TABLE CANNOT TELL YOU WHICH TRADE IS WORTH
+  MAKING, AND IT IS NOT TRYING TO -- it is an account of what this tool did to
+  its own number, not a list of things to fix.
 
   NONE OF THAT IS A FINDING ABOUT YOUR APPLICATION. The deduction is this
   tool's own bookkeeping against its own bands. In particular the CDFI Fund
@@ -285,13 +323,51 @@ Component Scores:
   YOU WERE NEVERTHELESS DOCKED, AND HERE IS THE ARITHMETIC. A tool may decline
   to advise. It may not deduct silently.
 
+  ROWS WHOSE UNDERLYING QUANTITY THE CDFI FUND ALSO SCORES -- on its own
+  basis, not this one:
+
       Eligibility Quality         60.0/100 at a 25% weight  ->  DOCKED 10.0 POINTS  [this tool's own eligibility curve]
+          FUND: the eligible share reaches the Fund framework only as Pipeline
+                Credibility's eligibility penalty, and LIC status itself is a
+                STATUTORY GATE rather than a scored band. The 0-100 curve
+                docking you here is this tool's.
       Distress Concentration      49.2/100 at a 25% weight  ->  DOCKED 12.7 POINTS  [schema.TARGET_DISTRESS_THRESHOLDS (HOUSE)]
+          FUND: THE FUND SCORES DISTRESS, ON A DIFFERENT BASIS. Higher Distress
+                Targeting and Deep Distress Commitment are scored against shares
+                of QLICI dollars; this sub-score divides a share of QEI by that
+                bar. The bands docking you here are this tool's, but the
+                underlying quantity does move a Fund score -- in either
+                direction.
+
+      SUBTOTAL FOR THIS BLOCK: 22.7 POINTS.
+
+  ROWS THAT ARE HOUSE BOOKKEEPING END TO END -- the Fund scores no
+  corresponding quantity:
+
       Impact Metrics              38.2/100 at a 20% weight  ->  DOCKED 12.4 POINTS  [schema.IMPACT_BENCHMARKS (HOUSE)]
+          FUND: The Fund scores whether outcomes are QUANTIFIED and THIRD-PARTY
+                VALIDATED. It publishes no jobs-per-$1MM-QEI band, so no Fund
+                quantity corresponds to the rate docking you here.
       Validation Pass Rate        36.7/100 at a 10% weight  ->  DOCKED 6.3 POINTS  [this tool's own pass-rate curve]
+          FUND: An internal check of this tool's own input rules. It has no Fund
+                analogue and is not part of any application.
       Completeness                80.0/100 at a  5% weight  ->  DOCKED 1.0 POINTS  [this tool's own completeness curve]
+          FUND: An internal check that this tool's own fields are populated. It
+                has no Fund analogue and is not part of any application.
+
+      SUBTOTAL FOR THIS BLOCK: 19.7 POINTS.
 
       TOTAL DEDUCTION 42.4 POINTS of the 100-point readiness headline.
+
+  THE BLOCKS ABOVE ARE NOT THE SAME CURRENCY AND MUST NOT BE TRADED OFF
+  AGAINST EACH OTHER. A point recovered on a house bookkeeping row changes
+  this tool's headline and nothing else. Worse, the two blocks can move in
+  OPPOSITE directions: a measured sample pipeline that added a state and
+  diluted its severe-distress share gained 2.1 readiness points here while its
+  aggregate base score under this package's model of the Review Process FELL
+  by a point, 78 to 77. THIS TABLE CANNOT TELL YOU WHICH TRADE IS WORTH
+  MAKING, AND IT IS NOT TRYING TO -- it is an account of what this tool did to
+  its own number, not a list of things to fix.
 
   NONE OF THAT IS A FINDING ABOUT YOUR APPLICATION. The deduction is this
   tool's own bookkeeping against its own bands. In particular the CDFI Fund
@@ -457,10 +533,30 @@ Component Scores:
   YOU WERE NEVERTHELESS DOCKED, AND HERE IS THE ARITHMETIC. A tool may decline
   to advise. It may not deduct silently.
 
+  ROWS THAT ARE HOUSE BOOKKEEPING END TO END -- the Fund scores no
+  corresponding quantity:
+
       Impact Metrics              38.2/100 at a 20% weight  ->  DOCKED 12.4 POINTS  [schema.IMPACT_BENCHMARKS (HOUSE)]
+          FUND: The Fund scores whether outcomes are QUANTIFIED and THIRD-PARTY
+                VALIDATED. It publishes no jobs-per-$1MM-QEI band, so no Fund
+                quantity corresponds to the rate docking you here.
       Completeness                80.0/100 at a  5% weight  ->  DOCKED 1.0 POINTS  [this tool's own completeness curve]
+          FUND: An internal check that this tool's own fields are populated. It
+                has no Fund analogue and is not part of any application.
+
+      SUBTOTAL FOR THIS BLOCK: 13.4 POINTS.
 
       TOTAL DEDUCTION 13.4 POINTS of the 100-point readiness headline.
+
+  THE BLOCKS ABOVE ARE NOT THE SAME CURRENCY AND MUST NOT BE TRADED OFF
+  AGAINST EACH OTHER. A point recovered on a house bookkeeping row changes
+  this tool's headline and nothing else. Worse, the two blocks can move in
+  OPPOSITE directions: a measured sample pipeline that added a state and
+  diluted its severe-distress share gained 2.1 readiness points here while its
+  aggregate base score under this package's model of the Review Process FELL
+  by a point, 78 to 77. THIS TABLE CANNOT TELL YOU WHICH TRADE IS WORTH
+  MAKING, AND IT IS NOT TRYING TO -- it is an account of what this tool did to
+  its own number, not a list of things to fix.
 
   NONE OF THAT IS A FINDING ABOUT YOUR APPLICATION. The deduction is this
   tool's own bookkeeping against its own bands. In particular the CDFI Fund
@@ -597,10 +693,30 @@ Component Scores:
   YOU WERE NEVERTHELESS DOCKED, AND HERE IS THE ARITHMETIC. A tool may decline
   to advise. It may not deduct silently.
 
+  ROWS THAT ARE HOUSE BOOKKEEPING END TO END -- the Fund scores no
+  corresponding quantity:
+
       Impact Metrics              38.2/100 at a 20% weight  ->  DOCKED 12.4 POINTS  [schema.IMPACT_BENCHMARKS (HOUSE)]
+          FUND: The Fund scores whether outcomes are QUANTIFIED and THIRD-PARTY
+                VALIDATED. It publishes no jobs-per-$1MM-QEI band, so no Fund
+                quantity corresponds to the rate docking you here.
       Completeness                80.0/100 at a  5% weight  ->  DOCKED 1.0 POINTS  [this tool's own completeness curve]
+          FUND: An internal check that this tool's own fields are populated. It
+                has no Fund analogue and is not part of any application.
+
+      SUBTOTAL FOR THIS BLOCK: 13.4 POINTS.
 
       TOTAL DEDUCTION 13.4 POINTS of the 100-point readiness headline.
+
+  THE BLOCKS ABOVE ARE NOT THE SAME CURRENCY AND MUST NOT BE TRADED OFF
+  AGAINST EACH OTHER. A point recovered on a house bookkeeping row changes
+  this tool's headline and nothing else. Worse, the two blocks can move in
+  OPPOSITE directions: a measured sample pipeline that added a state and
+  diluted its severe-distress share gained 2.1 readiness points here while its
+  aggregate base score under this package's model of the Review Process FELL
+  by a point, 78 to 77. THIS TABLE CANNOT TELL YOU WHICH TRADE IS WORTH
+  MAKING, AND IT IS NOT TRYING TO -- it is an account of what this tool did to
+  its own number, not a list of things to fix.
 
   NONE OF THAT IS A FINDING ABOUT YOUR APPLICATION. The deduction is this
   tool's own bookkeeping against its own bands. In particular the CDFI Fund

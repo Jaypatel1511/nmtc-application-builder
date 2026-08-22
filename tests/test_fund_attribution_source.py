@@ -721,6 +721,59 @@ def test_allowlist_has_no_dead_entries(scan):
 # does NOT adjudicate comments above constants that are not registry-ruled
 # HOUSE, comments inside function bodies, or the 47 audit notes above. Those
 # remain covered by review, and widening this is a deliberate future decision.
+#
+# ---------------------------------------------------------------------------
+# 1.5.2 AUDIT, F4: FIVE WORKING EVASIONS, FIVE CLOSED, ONE DECLARED.
+#
+# The gate's mechanism and its red-proof were both honest -- restoring the
+# exact fde3eca block still goes red and still names the constant. But five
+# ways of writing the same false attribution passed straight through it, and
+# they were passing silently, which is worse than a limit that is written down.
+# Every row below was executed against this tree, before and after:
+#
+#   A  same false sentence, ONE BLANK LINE above the assignment
+#         cause: _comment_block_above stopped at any non-# line
+#         fixed: blank lines no longer stop the walk; code still does
+#   B  false sentence INSIDE the dict literal
+#         cause: only the block above the assignment was read
+#         fixed: _comments_within_statement tokenises the statement's own span
+#   D  TRAILING inline comment on the assignment line
+#         cause: same -- not part of the block above
+#         fixed: same region scan
+#   C  "NOT A HOUSE FIGURE. The CDFI Fund publishes this weighting..."
+#         cause: _HOUSE_TAG matched \bHOUSE\b anywhere and short-circuited, so
+#                the block was exempt BECAUSE it denied being house. The most
+#                dangerous shape available: an explicit denial of house status
+#                immunising a false Fund claim.
+#         fixed: _NEGATED_HOUSE, plus the per-sentence layer, which sees the
+#                claim as its own sentence carrying no ruling. Cost measured
+#                before adopting: zero false positives on the current tree.
+#   E  false sentence APPENDED to an existing disclaimed block
+#         cause: block-level adjudication -- one _DISCLAIMERS phrase anywhere
+#                neutralised the whole block, and all 13 HOUSE-ruled constants
+#                that carry a block carry a large disclaimed one, so appending
+#                to any of them was undetectable. This is how these defects
+#                actually arise.
+#         fixed: the per-sentence narrow layer. Cost measured before adopting:
+#                the BROAD predicate per sentence flags 24 legitimate audit
+#                sentences (11 per paragraph) and would need an allowlist this
+#                module's own header rejects; the NARROW predicate flags five,
+#                and those five are ruled by hand in _RULED_COMMENT_SENTENCES.
+#
+# AND WHAT IS STILL OPEN, DECLARED RATHER THAN DISCOVERED LATER:
+#
+#   E'  a sentence appended to an already-disclaimed block that names an
+#       authority and states NO NUMBER -- "The CDFI Fund publishes this
+#       weighting in its Review Process." -- is caught by NEITHER layer. The
+#       broad layer is block-level and the block is disclaimed; the narrow
+#       layer needs a bar and there is none. Executed: it passes green today.
+#
+#       CLOSING IT COSTS THE 24-ENTRY ALLOWLIST, which is the same trade this
+#       module already refused once and refuses again here, in writing, rather
+#       than by omission. The half that matters most is closed: a false FIGURE
+#       attributed to the Fund cannot be appended silently, and a false
+#       attribution with no figure at least states no threshold a reader could
+#       act on.
 # ---------------------------------------------------------------------------
 
 import io as _io
@@ -771,21 +824,66 @@ def _module_paths() -> dict:
 
 
 def _comment_block_above(lines: list, lineno: int) -> str:
-    """The contiguous ``#`` block immediately above a 1-indexed line.
+    """Every comment line between the previous STATEMENT and a 1-indexed line.
 
-    Contiguous means no blank line and no code between: that is what makes the
-    block a comment ABOUT this assignment rather than the tail of an unrelated
-    note further up.
+    BLANK LINES NO LONGER STOP THE WALK (1.5.2 audit, F4-A). This read
+    "contiguous means no blank line and no code between", and one blank line
+    above the assignment was therefore a complete evasion: planting the false
+    sentence one line higher than the round's own red-proof planted it left the
+    gate green. A blank line between a note and the assignment beneath it is
+    typography, not a change of subject.
+
+    CODE still stops the walk, which is what keeps the block ABOUT this
+    assignment rather than absorbing the tail of an unrelated note further up.
+    Verified against the tree: the 13 HOUSE-ruled constants that carry a block
+    read identically before and after this change.
     """
     out = []
     index = lineno - 2
     while index >= 0:
         stripped = lines[index].strip()
-        if not stripped.startswith("#"):
+        if stripped.startswith("#"):
+            out.append(stripped.lstrip("#").strip())
+        elif not stripped:
+            out.append("")
+        else:
             break
-        out.append(stripped.lstrip("#").strip())
         index -= 1
-    return "\n".join(reversed(out))
+    return "\n".join(reversed(out)).strip()
+
+
+def _comments_within_statement(source: str, tree, const: str) -> list:
+    """Comments INSIDE the assignment statement, including its trailing one.
+
+    F4-B AND F4-D (1.5.2 audit), which are the same hole seen from two angles:
+    the gate read only the block ABOVE the assignment, so a false attribution
+    written INSIDE the dict literal, or as a trailing ``#`` on the assignment
+    line itself, was outside everything it looked at. Both are ordinary places
+    to write a note about a value, and neither was adjudicated.
+
+    Tokenised rather than regexed so a ``#`` inside a string literal is not
+    mistaken for a comment.
+    """
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            targets = node.targets
+        elif isinstance(node, ast.AnnAssign):
+            targets = [node.target]
+        else:
+            continue
+        if not any(isinstance(t, ast.Name) and t.id == const for t in targets):
+            continue
+        first = node.lineno
+        last = getattr(node, "end_lineno", None) or node.lineno
+        out = []
+        readline = _io.StringIO(source).readline
+        for tok in _tokenize.generate_tokens(readline):
+            if tok.type != _tokenize.COMMENT:
+                continue
+            if first <= tok.start[0] <= last:
+                out.append(tok.string.lstrip("#").strip())
+        return out
+    return []
 
 
 def _assignment_line(tree, const: str):
@@ -802,18 +900,134 @@ def _assignment_line(tree, const: str):
     return None
 
 
+#: F4-C (1.5.2 audit). THE MOST DANGEROUS SHAPE THE OLD CHECK ADMITTED: an
+#: EXPLICIT DENIAL of house status followed by a false Fund claim, immunised by
+#: the very word it denies. ``_HOUSE_TAG`` matches ``\bHOUSE\b`` ANYWHERE in
+#: the block and short-circuits, so
+#:
+#:     # NOT A HOUSE FIGURE. The CDFI Fund publishes this weighting...
+#:
+#: was exempt BECAUSE it said "HOUSE". The tag is a RULING, and a negated
+#: ruling is not one. Measured before adopting: zero of the 13 HOUSE-ruled
+#: constants' existing blocks match, so this costs no false positives on the
+#: current tree.
+_NEGATED_HOUSE = re.compile(
+    r"\b(?:not|isn'?t|never|no)\s+(?:an?\s+)?house\b|\bnot\s+(?:a\s+)?house\s+"
+    r"(?:figure|band|number|value|heuristic|constant)\b",
+    re.I,
+)
+
+
+def _rules_the_value_house(block: str) -> bool:
+    """The block RULES this value house, rather than merely saying the word."""
+    if _NEGATED_HOUSE.search(block):
+        return False
+    return bool(_HOUSE_TAG.search(block))
+
+
 def _attributes_to_the_fund(block: str) -> bool:
     """The block names an authority and does not rule the value house."""
     low = block.lower()
     if not any(authority in low for authority in AUTHORITIES):
         return False
-    if _HOUSE_TAG.search(block):
+    if _rules_the_value_house(block):
         return False
     return any(disclaimer in low for disclaimer in _DISCLAIMERS) is False
 
 
+#: F4-E (1.5.2 audit). SENTENCE-LEVEL ADJUDICATION, AND WHY IT IS A SECOND
+#: LAYER RATHER THAN A REPLACEMENT.
+#:
+#: E is how these defects actually arise: somebody appends a line to an
+#: existing audit note. The block check above is BLOCK-level -- any one
+#: ``_DISCLAIMERS`` phrase or HOUSE tag anywhere neutralises the whole block --
+#: and all 13 HOUSE-ruled constants that carry a block carry a large disclaimed
+#: one, so appending a false Fund attribution to any of them was undetectable.
+#:
+#: THE OBVIOUS FIX IS THE WRONG SHAPE, AND IT WAS MEASURED BEFORE BEING
+#: REJECTED. Re-running the block check's own BROAD predicate (authority
+#: present, no bar required -- broad on purpose, because the known 1.5.1 defect
+#: "Weights reflect relative importance in CDFI Fund published scoring rubric."
+#: CONTAINS NO NUMBER and a bar requirement would miss it) sentence by sentence
+#: flags 24 sentences across 6 constants; paragraph by paragraph, 11 across 5.
+#: Every one is legitimate audit prose. That is a 24-entry hand-written
+#: allowlist, which is precisely the instrument this module's own header
+#: rejects -- "an allowlist of 47 hand-written citations is the one nobody
+#: reads, which is the failure mode that put six fabricated citations into the
+#: sibling allowlist in the first place".
+#:
+#: SO THE SECOND LAYER USES THE NARROW PREDICATE INSTEAD. ``_is_prose_attribution``
+#: -- authority AND a claim verb AND a BAR, minus disclaimers -- applied per
+#: sentence, flags FIVE sentences on the whole tree. Five is readable, so five
+#: are ruled below by hand. The two layers divide the ground cleanly:
+#:
+#:     block-level, broad   catches a false attribution with NO number,
+#:                          which is the 1.5.1 defect's own shape
+#:     sentence-level, narrow  catches a false attribution WITH a number
+#:                          appended to an already-disclaimed block, which is E
+#:
+#: AND IT CLOSES C FOR FREE. "NOT A HOUSE FIGURE. The CDFI Fund publishes this
+#: weighting ... 25%." splits into two sentences, and the second carries no
+#: ruling of its own.
+#:
+#: WHAT REMAINS OPEN IS STATED IN THE SCOPE LIMIT BELOW, not left to be
+#: discovered: a sentence appended to a disclaimed block that names the Fund
+#: and states NO number is caught by neither layer.
+#:
+#: Format: (distinctive substring, ruling). Keyed on a substring rather than
+#: the whole sentence so ordinary rewrapping does not break the gate -- but
+#: short enough that rewriting the CLAIM does, which is the point.
+_RULED_COMMENT_SENTENCES = (
+    ('The Review Process does contain a "95%"',
+     'CITED and TRUE, and the paragraph it sits in is headed "THE 95 IS A '
+     'COINCIDENCE, NOT A SOURCE". Verified first-hand against the pinned '
+     'Review Process (SHA-256 ad0dc777..., 7pp): p.6 Part II.A.1 reads '
+     '"committed to require the selling CDE to re-invest at least 95% of '
+     'these proceeds as QLICIs". The note quotes it in order to deny that it '
+     'is the source of HOUSE_TOP_TIER_AGGREGATE_MIN.'),
+    ('Special Targeting awards up to 1.25 Priority Points',
+     'A Fund-scored quantity named to establish that NATIVE_AREA_BASIS is a '
+     'SCORED figure and therefore may not be house-invented -- the sentence '
+     'is the reason the constant is ruled HOUSE, not a claim that the Fund '
+     'published it.'),
+    ('Both are IRC \u00a745D(a)(2)',
+     'STATUTORY, not an agency figure, and the paragraph says so in its own '
+     'first three words ("STATUTE, NOT THE AGENCY"). 5% for each of the first '
+     'three credit allowance dates and 6% for each of the remaining four is '
+     'the statute, cited to its section.'),
+    ('it does not score eligibility rate',
+     'A DENIAL. The sentence states what the Review Process does score (two '
+     'sections at 50 points each) in order to say that it scores none of '
+     "READINESS_SCORING_WEIGHTS' six components. This is the corrected "
+     'replacement for the false sentence T2 removed.'),
+    ('understating the published 85% bar by ten points',
+     'A HISTORICAL NOTE about a defect this package REMOVED -- a prior release '
+     'printed 50%/75% under the Fund\'s name. The 85% is the real published '
+     'bar, quoted to show what the removed labels understated.'),
+)
+
+
+def _sentence_units(block: str) -> list:
+    """The block as sentences, comment line breaks flattened first."""
+    flat = " ".join(part for part in block.split("\n"))
+    return [s.strip() for s in re.split(r"(?<=[.!?])\s+", flat) if s.strip()]
+
+
+def _is_ruled_comment_sentence(sentence: str) -> bool:
+    return any(key in sentence for key, _ in _RULED_COMMENT_SENTENCES)
+
+
 def _house_comment_offenders() -> tuple:
-    """(offenders, examined). Shared by the gate and by its red-proof."""
+    """(offenders, examined). Shared by the gate and by its red-proofs.
+
+    FOUR REGIONS AND TWO LAYERS (1.5.2 audit, F4). The regions are the block
+    above the assignment -- now permitting blank lines (A) -- plus every
+    comment inside the assignment statement, which covers a note written into
+    the dict literal (B) and a trailing comment on the assignment line (D).
+    The layers are the broad block check, which needs no number, and the narrow
+    per-sentence check, which needs one but sees through an already-disclaimed
+    block (C and E).
+    """
     modules = _module_paths()
     offenders = []
     examined = []
@@ -823,14 +1037,43 @@ def _house_comment_offenders() -> tuple:
         if path is None:
             continue  # resolution is test_every_pinned_constant_name_resolves'
         source = open(path, encoding="utf-8").read()
-        lineno = _assignment_line(ast.parse(source), const)
+        tree = ast.parse(source)
+        lineno = _assignment_line(tree, const)
         if lineno is None:
             continue
-        block = _comment_block_above(source.splitlines(), lineno)
+        rel = os.path.relpath(path, _repo_root())
         examined.append(full)
-        if block and _attributes_to_the_fund(block):
-            rel = os.path.relpath(path, _repo_root())
-            offenders.append(f"  {full}  ({rel}:{lineno})\n      {block[:300]}")
+
+        block = _comment_block_above(source.splitlines(), lineno)
+        regions = [("block above", block)] if block else []
+        regions += [
+            ("inside the assignment", text)
+            for text in _comments_within_statement(source, tree, const)
+        ]
+
+        for where, text in regions:
+            # LAYER 1 --- broad, whole region. No number required.
+            if _attributes_to_the_fund(text):
+                offenders.append(
+                    f"  {full}  ({rel}:{lineno}, {where})\n"
+                    f"      [undisclaimed Fund attribution]\n"
+                    f"      {text[:300]}"
+                )
+                continue
+            # LAYER 2 --- narrow, per sentence. Sees INTO a disclaimed region.
+            for sentence in _sentence_units(text):
+                if not _is_prose_attribution(sentence):
+                    continue
+                if _rules_the_value_house(sentence):
+                    continue
+                if _is_ruled_comment_sentence(sentence):
+                    continue
+                offenders.append(
+                    f"  {full}  ({rel}:{lineno}, {where})\n"
+                    f"      [Fund-attributed BAR in one sentence of an "
+                    f"otherwise disclaimed region]\n"
+                    f"      {sentence[:300]}"
+                )
     return offenders, examined
 
 
@@ -869,6 +1112,136 @@ def test_no_house_constant_is_attributed_to_the_fund_in_its_own_comment():
         "actually is -- or the registry ruling is wrong, in which case change "
         "the ruling and its citation, not this test.\n\n"
         + "\n".join(offenders)
+    )
+
+
+#: F4's five evasions, as the gate must now see them. Each is a REGION and the
+#: text planted in it, driven through the real detector rather than through a
+#: paraphrase of it -- the same discipline _disclosure_proximity_failures uses.
+_F4_FALSE = (
+    "The CDFI Fund publishes this weighting in the CY 2024-2025 Review "
+    "Process, which sets eligibility at 25%."
+)
+_F4_EVASIONS = {
+    "A_blank_line_above": f"# {_F4_FALSE}\n\n",
+    "C_denies_being_house": f"# NOT A HOUSE FIGURE. {_F4_FALSE}\n",
+    "E_appended_to_a_disclaimed_block": (
+        "# HOUSE. This value is this tool's own and the CDFI Fund publishes no "
+        "such weighting.\n"
+        f"# {_F4_FALSE}\n"
+    ),
+}
+
+
+@pytest.mark.parametrize("label", sorted(_F4_EVASIONS))
+def test_the_comment_gate_catches_each_of_f4s_evasions(label):
+    """RED PROOF for F4's fixes, driven through the real predicates.
+
+    All five passed green at 1.5.2. A, B and D were region bugs; C and E were
+    adjudication-granularity bugs. Only the three that are expressible as a
+    block of text are parametrised here -- B and D plant into a statement's own
+    span and are covered by ``test_the_gate_reads_comments_inside_the_statement``
+    below, which drives the region scanner on the real tree.
+    """
+    planted = _F4_EVASIONS[label] + "READINESS_SCORING_WEIGHTS = {"
+    lines = planted.splitlines()
+    block = _comment_block_above(lines, len(lines))
+    assert block, f"{label}: the region scanner read nothing"
+
+    caught = _attributes_to_the_fund(block) or any(
+        _is_prose_attribution(sentence)
+        and not _rules_the_value_house(sentence)
+        and not _is_ruled_comment_sentence(sentence)
+        for sentence in _sentence_units(block)
+    )
+    assert caught, (
+        f"{label}: the comment gate does NOT see this false Fund attribution. "
+        f"All five of F4's evasions passed green at 1.5.2 and each is closed by "
+        f"a named mechanism; this one has regressed.\n\nRegion read:\n{block}"
+    )
+
+
+def test_a_blank_line_no_longer_ends_the_comment_region():
+    """F4-A, as a property of the scanner rather than of one planted string."""
+    lines = [
+        "SOMETHING_ELSE = 1",
+        "# first run of the note",
+        "",
+        "# second run, directly above the assignment",
+        "TARGET = 2",
+    ]
+    block = _comment_block_above(lines, 5)
+    assert "first run of the note" in block, (
+        "a blank line still truncates the comment region, so planting a false "
+        "attribution one line higher than the round's red-proof planted it is "
+        f"still a complete evasion:\n{block!r}"
+    )
+    assert "second run" in block, block
+    assert "SOMETHING_ELSE" not in block, (
+        "the walk crossed a line of CODE. That is what keeps the region about "
+        f"THIS assignment rather than absorbing an unrelated note:\n{block!r}"
+    )
+
+
+def test_the_gate_reads_comments_inside_the_statement():
+    """F4-B and F4-D. NON-VACUITY for the region scanner, on real source.
+
+    Both evasions are the same hole: a note written into the dict literal, or
+    as a trailing ``#`` on the assignment line, was outside everything the gate
+    looked at. This drives the real tokeniser against the real schema.py, where
+    READINESS_SCORING_WEIGHTS carries a trailing comment on every one of its
+    six entries.
+    """
+    modules = _module_paths()
+    path = modules["schema"]
+    source = open(path, encoding="utf-8").read()
+    tree = ast.parse(source)
+    inside = _comments_within_statement(source, tree, "READINESS_SCORING_WEIGHTS")
+    assert len(inside) >= 6, (
+        "the statement-span scan found "
+        f"{len(inside)} comment(s) inside READINESS_SCORING_WEIGHTS; that dict "
+        "has a trailing comment on every entry, so the scanner is reading "
+        f"nothing and F4-B and F4-D are open again:\n{inside}"
+    )
+    assert any("LIC tracts" in text for text in inside), inside
+
+
+def test_the_ruled_comment_sentences_all_still_match_something():
+    """The five hand-written rulings must describe text that still ships.
+
+    A ruling for a sentence nobody wrote any more is an exemption sitting in
+    the gate with nothing behind it -- the shape the sibling allowlist's own
+    header warns about. If a note is reworded, the ruling has to be re-read.
+    """
+    modules = _module_paths()
+    corpus = []
+    for full in _house_ruled_constants():
+        module, const = full.rsplit(".", 1)
+        path = modules.get(module)
+        if path is None:
+            continue
+        source = open(path, encoding="utf-8").read()
+        tree = ast.parse(source)
+        lineno = _assignment_line(tree, const)
+        if lineno is None:
+            continue
+        # FLATTENED THE SAME WAY THE DETECTOR FLATTENS. A ruling is keyed on a
+        # sentence, and a sentence in a comment block is wrapped across several
+        # `#` lines; matching against the raw block would fail on the line
+        # break rather than on the claim.
+        corpus.extend(_sentence_units(
+            _comment_block_above(source.splitlines(), lineno)
+        ))
+        for text in _comments_within_statement(source, tree, const):
+            corpus.extend(_sentence_units(text))
+    joined = "\n".join(corpus)
+    assert len(joined) > 5_000, f"corpus is {len(joined)} chars — reading nothing"
+
+    orphans = [key for key, _ in _RULED_COMMENT_SENTENCES if key not in joined]
+    assert not orphans, (
+        "these _RULED_COMMENT_SENTENCES rulings match no comment that ships. "
+        "Either the note was reworded — re-read the ruling and re-key it — or "
+        f"it was deleted and the ruling goes with it:\n  " + "\n  ".join(orphans)
     )
 
 

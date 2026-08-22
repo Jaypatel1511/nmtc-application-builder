@@ -29,10 +29,24 @@ Great Lakes Regional Capital CDE, LLC respectfully requests $70.0MM in New Marke
 
 *YOU WERE NEVERTHELESS DOCKED, AND HERE IS THE ARITHMETIC. A tool may decline to advise. It may not deduct silently.*
 
+*ROWS THAT ARE HOUSE BOOKKEEPING END TO END -- the Fund scores no corresponding quantity:*
+
     Geographic Diversity        89.4/100 at a 15% weight  ->  DOCKED 1.6 POINTS  [schema.MIN_GEOGRAPHIC_DIVERSITY (HOUSE)]
+        FUND: THE CDFI FUND DOES NOT SCORE GEOGRAPHIC BREADTH AT ALL. No state
+              count is scored anywhere in the CY 2024-2025 Review Process, so
+              these points exist only inside this tool. Measured: taking a
+              sample pipeline from 3 states to 6 returned exactly the 10.0
+              itemised here and moved the Fund base score by zero.
     Impact Metrics              32.6/100 at a 20% weight  ->  DOCKED 13.5 POINTS  [schema.IMPACT_BENCHMARKS (HOUSE)]
+        FUND: The Fund scores whether outcomes are QUANTIFIED and THIRD-PARTY
+              VALIDATED. It publishes no jobs-per-$1MM-QEI band, so no Fund
+              quantity corresponds to the rate docking you here.
+
+    SUBTOTAL FOR THIS BLOCK: 15.1 POINTS.
 
     TOTAL DEDUCTION 15.1 POINTS of the 100-point readiness headline.
+
+*THE BLOCKS ABOVE ARE NOT THE SAME CURRENCY AND MUST NOT BE TRADED OFF AGAINST EACH OTHER. A point recovered on a house bookkeeping row changes this tool's headline and nothing else. Worse, the two blocks can move in OPPOSITE directions: a measured sample pipeline that added a state and diluted its severe-distress share gained 2.1 readiness points here while its aggregate base score under this package's model of the Review Process FELL by a point, 78 to 77. THIS TABLE CANNOT TELL YOU WHICH TRADE IS WORTH MAKING, AND IT IS NOT TRYING TO -- it is an account of what this tool did to its own number, not a list of things to fix.*
 
 *NONE OF THAT IS A FINDING ABOUT YOUR APPLICATION. The deduction is this tool's own bookkeeping against its own bands. In particular the CDFI Fund does not score geographic breadth at all, so nothing in the headline's geographic term has a federal referent; do not treat this pipeline's footprint as a finding either way, and do not expand it to recover those points.*
 

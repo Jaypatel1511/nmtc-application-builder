@@ -288,7 +288,7 @@ Contributions welcome — bug fixes, additional data sources, visualization impr
 git clone https://github.com/Jaypatel1511/nmtc-application-builder.git
 cd nmtc-application-builder
 pip install -e ".[dev]"
-PYTHONPATH=. pytest tests/ -v          # 1,333 tests, should all pass
+PYTHONPATH=. pytest tests/ -v          # 1,350 tests, should all pass
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on pull requests, code style, and issue reporting.
