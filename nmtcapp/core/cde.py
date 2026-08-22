@@ -197,7 +197,31 @@ class CDEProfile:
             "target_markets", "prior_awards", "contact", "governance",
             "website",
         }
-        extra = {k: v for k, v in data.items() if k not in known_keys}
+        # A KEY PRESENT BUT BLANK IS NOT AN ANSWER — THE SAME RULE THIS
+        # FUNCTION ALREADY APPLIES TO ITS REQUIRED FIELDS, twenty lines above
+        # (1.5.4 T3). It did not apply it here, and until 1.5.4 that cost
+        # nothing because the scaffold's whole scoring block was commented out
+        # and only ``ein``/``headquarters_state``/``organization_type`` — none
+        # of them read by anything — arrived as empty strings.
+        #
+        # 1.5.4 uncomments that block, so it costs something now. A blank
+        # ``pipeline_pct_identified:`` reaching ``extra`` as ``None`` would
+        # make WinProbabilityModel divide by it; reaching as ``0.0`` would drop
+        # the sub-score from the 0.65 default's 10/15 to 0/15. Either way an
+        # UNTOUCHED scaffold would score differently from — and worse than — no
+        # scaffold at all, and this is a patch.
+        #
+        # ``False``, ``0`` and ``0.0`` SURVIVE. The membership test compares by
+        # equality and none of them equals "", [], {} or None, so a CDE that
+        # answered No has answered. This is the same rule
+        # ``streamlit_app.utils._scoring_attrs_only`` has always applied to the
+        # workbook path, so absent and blank now mean the same thing on both
+        # paths a CDE can take.
+        extra = {
+            k: v for k, v in data.items()
+            if k not in known_keys
+            and not any(v is blank or v == blank for blank in ("", [], {}, None))
+        }
         return cls(
             name=data["name"],
             cde_id=data["cde_id"],

@@ -19,6 +19,7 @@ import streamlit as st
 from nmtcapp.core.application import Application
 from nmtcapp.core.cde import CDEProfile
 from nmtcapp.core.pipeline import Pipeline
+from nmtcapp.intelligence.cde_inputs import CDE_SCORING_INPUTS
 from nmtcapp.core.upload_handler import load_uploaded_pipeline
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -150,24 +151,29 @@ def load_sample_pipeline(n: int = 20) -> Pipeline:
 # ---------------------------------------------------------------------------
 # Graceful-degradation: map missing CDE attrs to their default impact
 # ---------------------------------------------------------------------------
+# DERIVED, NOT RETYPED (1.5.4 T3). This was the THIRD hand-maintained copy of
+# the model's scoring-input list, after win_probability.py's reads and the
+# scaffold's commented block, and all three disagreed: this one omitted
+# nothing the other two had but carried its own prose defaults, which drifted
+# from what the model actually does when a key is absent.
+#
+# The registry now supplies both halves. ``absent_default`` is the model's own
+# behaviour, quoted from beside the read, so this panel can no longer tell a
+# CDE its sub-score "defaulted to 0" for a field whose default is 0.65 or True
+# — which it did, for pipeline_pct_identified and has_quantified_outcomes.
+#
+# ``measured_substitute`` is why three of them do not say "defaulted" at all:
+# the model uses a measurement of the CDE's own pipeline for those, so absence
+# there is not a default and reporting it as one would be its own small lie.
 _CDE_DEFAULTS_DISCLOSURE: dict[str, str] = {
-    "products_below_market_pct":            "0 (no Product Flexibility credit from below-market pct)",
-    "products_flexible_indicia_count":      "0 (no Product Flexibility credit from indicia count)",
-    "pipeline_pct_identified":              "0.65 (moderate Pipeline Credibility credit)",
-    "has_own_capital_at_risk":              "False (no Track Record bonus)",
-    "prior_award_count":                    "0 (no Track Record Strength credit)",
-    "years_in_operation":                   "0 (no Track Record Strength credit)",
-    "track_record_pipeline_alignment_pct":  "0 (no Track Record Alignment credit)",
-    "track_record_deployment_pct":          "0 (no Track Record Alignment credit)",
-    "pct_persistent_poverty":               "computed from pipeline flags or 0",
-    "pct_us_territories":                   "computed from pipeline flags or 0",
-    "has_quantified_outcomes":              "True (assumed)",
-    "has_third_party_validation":           "False (no Outcomes Quality bonus)",
-    "lic_board_representation_pct":         "0 (no Community Accountability credit)",
-    "has_community_engagement_track_record":"False (no Community Accountability bonus)",
-    "dbc_focus_years":                      "0 (no DBC Priority Points)",
-    "dbc_dollar_volume_pct":                "computed from pipeline flags or 0",
-    "unrelated_entities_pct":               "computed from pipeline flags or 0",
+    item.key: (
+        f"computed from the pipeline ({item.measured_substitute})"
+        if item.has_measured_substitute
+        else f"NOT SUPPLIED — the model reads {item.absent_default}, and the "
+             "Win Alignment Scorer reports this sub-score as not scored rather "
+             "than as a zero"
+    )
+    for item in CDE_SCORING_INPUTS
 }
 
 

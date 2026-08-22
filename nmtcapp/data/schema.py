@@ -60,9 +60,56 @@ DISTRESS_LEVELS = {
 # Competitive Minimum" and "CDFI Fund Target", understating the published
 # 85% bar by ten points under the Fund's name. Hence this header.)
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# BOTH KEYS BELOW ARE MISNAMED, AND THE NAME IS RECORDED RATHER THAN FIXED
+# (1.5.4 T5).
+#
+# WHAT THEY MEASURE: ``pct_deep_or_severe`` -- the share of QEI in tracts that
+# are deep OR severely distressed, the two tiers COLLAPSED INTO ONE BAND. Every
+# read site compares them against that key and none of them looks at
+# ``pct_deep``:
+#
+#   validation/readiness_score._distress_score      pct_deep_or_severe
+#   intelligence/distress_analysis                  meets_min/target_threshold
+#   validation/eligibility_check                    deep+severe QEI share
+#   sections/section_a_business, pipeline_analyzer  render target_deep_distress
+#
+# WHAT THEIR NAMES SAY: deep distress. The CDFI Fund scores deep and severe as
+# TWO SEPARATE sub-scores with DISTINCT bars -- benchmark_thresholds
+# .SEVERE_DISTRESS_MIN_PCT (0.85) and .DEEP_DISTRESS_MIN_PCT (0.20) -- and
+# intelligence/win_probability keeps them separate. Only this composite
+# collapses them, under a key naming the half it is not measuring.
+#
+# WHAT THAT PRODUCES, MEASURED on an all-severe / no-deep pipeline:
+#
+#     readiness   distress_concentration  100.0/100, not docked
+#     engine      Deep Distress Commitment  0/10, named as a gating reason
+#
+# THOSE TWO STATEMENTS ARE BOTH TRUE AND THEY ARE NOT IN CONFLICT. They are
+# about different quantities that share a word: the share in deep-OR-severe
+# tracts, and the share in deep tracts alone. Nothing needs reconciling between
+# them. What is false is this key's NAME, which tells the next reader the band
+# measures deep distress -- the "files agree with each other but not with the
+# truth" class, and it misleads every future reader of the constant.
+#
+# NOT RENAMED HERE. This dict is exported as
+# ``nmtcapp.data.TARGET_DISTRESS_THRESHOLDS``, its keys are read by four
+# modules and asserted BY NAME in tests/validation/
+# test_readiness_narrative_withdrawn.py, so renaming a key is a breaking change
+# and 1.5.4 is a patch. Queued for 2.0.0 alongside ``overall_score``,
+# ``grade`` and ``GRADE_THRESHOLDS``.
+#
+# THE GATE THAT MAKES THIS SAFE TO DEFER: tests/test_distress_band_semantics.py
+# holds ``pct_deep_or_severe`` fixed while moving ``pct_deep`` underneath it and
+# fails if the band responds -- so the documented semantics above and the
+# measured quantity cannot diverge without the suite going red. Proved by
+# mutating _distress_score to read ``pct_deep``: five of seven fail.
+# ---------------------------------------------------------------------------
 TARGET_DISTRESS_THRESHOLDS = {
-    "min_deep_distress":   0.50,   # house heuristic: internal scoring band
-    "target_deep_distress": 0.75,  # house heuristic: internal scoring band
+    # house heuristic, internal scoring band. MEASURED ON pct_deep_or_severe.
+    "min_deep_distress":   0.50,
+    # house heuristic, internal scoring band. MEASURED ON pct_deep_or_severe.
+    "target_deep_distress": 0.75,
 }
 
 # HOUSE. This comment read "CDFI Fund historically prefers applicants serving

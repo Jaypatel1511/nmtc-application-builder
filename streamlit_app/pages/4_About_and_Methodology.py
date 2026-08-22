@@ -10,6 +10,7 @@ import streamlit as st
 
 from nmtcapp.data.historical_awards import NMTC_AWARD_ROUNDS, APPLICATION_VOLUME_TRENDS
 from nmtcapp.renderers._methodology import readiness_inline_qualifier
+from nmtcapp.renderers._round_provenance import round_provenance_paragraphs
 from nmtcapp.data.benchmark_thresholds import (
     HIGHLY_QUALIFIED_AGGREGATE_MIN, HIGHLY_QUALIFIED_SECTION_MIN,
     HOUSE_TOP_TIER_AGGREGATE_MIN, HOUSE_TOP_TIER_SECTION_MIN,
@@ -63,6 +64,23 @@ st.info(
     "(https://www.cdfifund.gov/system/files/2025-12/CY_2024_25_NMTC_Program_Review_Process.pdf)"
     " — U.S. Department of the Treasury, CDFI Fund"
 )
+
+# THE SECOND INSTANCE, FOUND BY WIDENING THE SURFACE LIST BY ONE NOTCH
+# (1.5.4 T1). This page names CY 2024-2025 FIFTEEN times, links the Review
+# Process PDF directly above, and is the page a CDE opens to find out what this
+# tool is scoring against. It rendered no round provenance at all: the source
+# link above sat in the present tense over a round that closed on 29 Jan 2025
+# and was awarded on 23 Dec 2025.
+#
+# It also MENTIONED `_round_provenance` in prose further down the page, which
+# is why the first draft of the gate in
+# tests/test_recommendation_surface_disclosures.py passed here while the page
+# rendered nothing. The gate now looks for the FUNCTION.
+#
+# Both paragraphs render here, not just the first: this is the methodology
+# page, so the re-check list is exactly what its reader came for.
+for _para in round_provenance_paragraphs()[:2]:
+    st.warning(_para)
 
 st.markdown("---")
 
