@@ -446,6 +446,27 @@ Free today — the FLOOR band is **identical at 45 and 49** — and `FLOOR` was
 re-derived from a real sdist run this round regardless, so no unmeasured number
 is being accommodated.
 
+#### Recorded, not fixed
+
+- **N3** — the registry gate walks only `attrs.get("literal")` and is blind to
+  `attrs["subscript"]` reads. Low exposure (the model must default every read),
+  but the gate asserts less than its name. Not touched this round.
+- **N7** — a wholly-unverified pipeline gets no disclosure on the
+  recommendations surface, because `unknown_note` renders only when the
+  eligibility gate fires. The round's *unknown ≠ ineligible* ruling is correct
+  and is what produces the silence; the silence itself is undisclosed. **1.6.0.**
+- **N8 (latent)** — the gate item's `action`, `expected_impact` and
+  `quantified_improvement` all say *"the items below"*. Rendered alone, three
+  sentences would be false of their own artifact — the T6b class, reintroduced
+  by T4. Not reachable in the audit's 72-case matrix (minimum item count 6), and
+  no reachable path was found this round. Not built for.
+- **The `unknown_note` share floor is a fix by inspection, not by reproduction.**
+  `<1%` and the project count are applied to it identically to the two
+  eligibility surfaces, and `_share_text` itself is gate-tested at both ends —
+  but a small non-zero `unknown` bucket could not be driven end to end, because
+  `Pipeline.sample()` ships pre-verified eligibility data and the live mapper
+  resolves any project set unverified. Named here rather than left implied.
+
 #### N4 — a docstring measurement that described no state of the tree
 
 `test_recommendation_surface_disclosures`'s headline read "`CY 2024-2025` 13 hits,
