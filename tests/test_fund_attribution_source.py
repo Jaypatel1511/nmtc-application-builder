@@ -669,3 +669,271 @@ def test_allowlist_has_no_dead_entries(scan):
         "so the list stays a description of what ships:\n"
         + "\n".join(f"  {d[:160]}" for d in dead)
     )
+
+
+# ---------------------------------------------------------------------------
+# DETECTOR C --- COMMENTS. The half no scan could ever reach (1.5.2 T2).
+#
+# THE FINDING. nmtcapp/data/schema.py carried, directly above
+# READINESS_SCORING_WEIGHTS and for the whole life of the constant:
+#
+#     # Weights reflect relative importance in CDFI Fund published scoring
+#     # rubric.
+#
+# False, and contradicted by this package's own registry, which rules the same
+# constant an "unsourced house heuristic" whose weighting "the CDFI Fund
+# publishes no" version of. It is the IDENTICAL defect 1.2.0 removed from
+# MIN_GEOGRAPHIC_DIVERSITY ("CDFI Fund historically prefers >=3 states"), one
+# dict away in the same file, and it outlived that fix by five releases.
+#
+# TWO INDEPENDENT REASONS THE EXISTING GATE COULD NOT SEE IT, and both had to
+# be true at once:
+#
+#   1. A COMMENT IS NOT AN AST NODE. _scan() parses each .py file with
+#      ast.parse and walks Constant/JoinedStr nodes, which is a deliberate
+#      choice recorded at its call site -- it is what stops the FIX-3 notes
+#      that QUOTE removed sentences from matching them. Correct for that
+#      purpose, and it means no comment in this package has ever been read by
+#      this gate.
+#
+#   2. _BAR REQUIRES A FIGURE. Even fed to _is_prose_attribution directly, the
+#      sentence names an authority ("CDFI Fund") and a claim verb
+#      ("published") and contains NO NUMBER, so the X2 scope limit -- "this
+#      gate's subject is a BAR attributed to an authority" -- excludes it.
+#      A comment sweep alone would not have caught this one.
+#
+# WHAT THE SWEEP MEASURED. Applying _is_prose_attribution to every contiguous
+# comment block under nmtcapp/ and streamlit_app/ yields 47 blocks that name an
+# authority and state a bar. Read individually, all 47 are the audit notes this
+# package writes to record WHY a figure is house or how a Fund quotation was
+# ruled -- they are the disclosure record, not defects. An allowlist of 47
+# hand-written citations is the one nobody reads, which is the failure mode
+# that put six fabricated citations into the sibling allowlist in the first
+# place, and the schema.py sentence is not among the 47 anyway.
+#
+# SO THE GATE IS NOT THE BROAD SWEEP. It asks the narrow question the broad
+# sweep cannot: does a comment CONTRADICT THE REGISTRY? A constant this package
+# has already ruled HOUSE may not have a comment above it attributing it to the
+# CDFI Fund. That is checkable with no allowlist at all, it fails closed, and
+# it is exactly the shape of both known instances of the defect.
+#
+# STATED SCOPE LIMIT, because a gate is as good as the ground it claims. This
+# does NOT adjudicate comments above constants that are not registry-ruled
+# HOUSE, comments inside function bodies, or the 47 audit notes above. Those
+# remain covered by review, and widening this is a deliberate future decision.
+# ---------------------------------------------------------------------------
+
+import io as _io
+import tokenize as _tokenize
+
+_PINNED_PATH = os.path.join(os.path.dirname(__file__), "pinned_constants.txt")
+
+#: A ruling that the value is this package's own. Uppercase HOUSE is this
+#: package's idiom for it -- benchmark_thresholds writes "D4 --- HOUSE, NOT
+#: PUBLISHED" -- so the tag is matched case-sensitively in the raw block, and
+#: the lowercase phrase list is the prose form of the same statement.
+_HOUSE_TAG = re.compile(r"\bHOUSE\b")
+
+
+def _house_ruled_constants() -> list:
+    """Dotted names the constant registry rules HOUSE, deduplicated.
+
+    Subscripts are stripped: a comment sits above the DICT, so a dict with any
+    HOUSE-ruled key is in scope. schema.NMTC_PROGRAM_CONSTRAINTS is the case
+    that makes this matter -- four of its six keys are house or waived market
+    figures and its header comment read "CDFI Fund NMTC program hard
+    constraints", which is false about all six.
+    """
+    names = set()
+    with open(_PINNED_PATH, encoding="utf-8") as handle:
+        for line in handle:
+            row = line.strip()
+            if not row or row.startswith("#") or row.startswith("WAIVE"):
+                continue
+            parts = [p.strip() for p in row.split("|")]
+            if len(parts) < 4 or not parts[2].upper().startswith("HOUSE"):
+                continue
+            names.add(parts[0].split("[")[0])
+    return sorted(names)
+
+
+def _module_paths() -> dict:
+    """{module basename: path} for every .py under the imported package."""
+    import nmtcapp
+    root = os.path.dirname(os.path.abspath(nmtcapp.__file__))
+    out = {}
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d != "__pycache__"]
+        for name in sorted(filenames):
+            if name.endswith(".py"):
+                out.setdefault(name[:-3], os.path.join(dirpath, name))
+    return out
+
+
+def _comment_block_above(lines: list, lineno: int) -> str:
+    """The contiguous ``#`` block immediately above a 1-indexed line.
+
+    Contiguous means no blank line and no code between: that is what makes the
+    block a comment ABOUT this assignment rather than the tail of an unrelated
+    note further up.
+    """
+    out = []
+    index = lineno - 2
+    while index >= 0:
+        stripped = lines[index].strip()
+        if not stripped.startswith("#"):
+            break
+        out.append(stripped.lstrip("#").strip())
+        index -= 1
+    return "\n".join(reversed(out))
+
+
+def _assignment_line(tree, const: str):
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            targets = node.targets
+        elif isinstance(node, ast.AnnAssign):
+            targets = [node.target]
+        else:
+            continue
+        for target in targets:
+            if isinstance(target, ast.Name) and target.id == const:
+                return node.lineno
+    return None
+
+
+def _attributes_to_the_fund(block: str) -> bool:
+    """The block names an authority and does not rule the value house."""
+    low = block.lower()
+    if not any(authority in low for authority in AUTHORITIES):
+        return False
+    if _HOUSE_TAG.search(block):
+        return False
+    return any(disclaimer in low for disclaimer in _DISCLAIMERS) is False
+
+
+def _house_comment_offenders() -> tuple:
+    """(offenders, examined). Shared by the gate and by its red-proof."""
+    modules = _module_paths()
+    offenders = []
+    examined = []
+    for full in _house_ruled_constants():
+        module, const = full.rsplit(".", 1)
+        path = modules.get(module)
+        if path is None:
+            continue  # resolution is test_every_pinned_constant_name_resolves'
+        source = open(path, encoding="utf-8").read()
+        lineno = _assignment_line(ast.parse(source), const)
+        if lineno is None:
+            continue
+        block = _comment_block_above(source.splitlines(), lineno)
+        examined.append(full)
+        if block and _attributes_to_the_fund(block):
+            rel = os.path.relpath(path, _repo_root())
+            offenders.append(f"  {full}  ({rel}:{lineno})\n      {block[:300]}")
+    return offenders, examined
+
+
+def test_no_house_constant_is_attributed_to_the_fund_in_its_own_comment():
+    """T2 (1.5.2). A comment may not contradict the constant registry.
+
+    Proved red by planting, on this tree: restoring "Weights reflect relative
+    importance in CDFI Fund published scoring rubric." above
+    READINESS_SCORING_WEIGHTS turns this test red naming that constant, and
+    restoring "CDFI Fund NMTC program hard constraints" above
+    NMTC_PROGRAM_CONSTRAINTS turns it red naming that one. Both were live at
+    fde3eca and neither turned anything red there.
+    """
+    offenders, examined = _house_comment_offenders()
+
+    # FAIL CLOSED. A registry that stopped yielding HOUSE rows, or a walk that
+    # resolved no module, would pass this vacuously.
+    assert len(examined) >= 10, (
+        f"only {len(examined)} HOUSE-ruled constants were examined "
+        f"({examined}). This gate reads tests/pinned_constants.txt for rows "
+        "whose SOURCE column opens with HOUSE and resolves each to its "
+        "definition; too few means the registry format moved or the module "
+        "walk found nothing, and the gate is passing on ground it never read."
+    )
+
+    assert not offenders, (
+        f"{len(offenders)} constant(s) this package's own registry rules "
+        "HOUSE carry a comment attributing them to a federal authority, with "
+        "no disclaimer in the same block.\n\n"
+        "A comment is not a rendered surface and no CDE reads one. It is "
+        "worse than that: it is a claim a future round re-cites having "
+        "assumed somebody checked it, which is how 'CDFI Fund historically "
+        "prefers >=3 states' survived nine releases above "
+        "MIN_GEOGRAPHIC_DIVERSITY.\n\n"
+        "Either the comment is wrong -- correct it and say what the value "
+        "actually is -- or the registry ruling is wrong, in which case change "
+        "the ruling and its citation, not this test.\n\n"
+        + "\n".join(offenders)
+    )
+
+
+def test_the_comment_sweep_can_see_comments_at_all():
+    """NON-VACUITY FOR DETECTOR C, asserted rather than assumed.
+
+    ``_comment_block_above`` returning "" everywhere would make the gate above
+    green forever. This proves it reads real blocks off the real tree, and it
+    proves the specific property that made the defect invisible: the EXISTING
+    string scan cannot see the same text.
+    """
+    modules = _module_paths()
+    source = open(modules["schema"], encoding="utf-8").read()
+    lineno = _assignment_line(ast.parse(source), "READINESS_SCORING_WEIGHTS")
+    block = _comment_block_above(source.splitlines(), lineno)
+
+    assert len(block) > 200, (
+        "the comment block above READINESS_SCORING_WEIGHTS is "
+        f"{len(block)} characters; the sweep is reading nothing:\n{block!r}"
+    )
+    assert "HOUSE" in block, (
+        "the corrected comment no longer rules this constant HOUSE:\n" + block
+    )
+
+    # And the AST scan the rest of this module uses genuinely cannot reach it.
+    literals = [text for text, _ in _string_units(ast.parse(source))]
+    assert not any("relative importance in CDFI Fund" in t for t in literals)
+    for text in literals:
+        assert block[:120] not in text, (
+            "the comment block is reachable as a string literal, so detector "
+            "C is redundant and this module's premise is wrong."
+        )
+
+
+def test_docstrings_are_already_covered_by_the_existing_string_scan():
+    """Docstrings need no detector C, and that is PROVED here, not assumed.
+
+    T2 asked for a sweep of "comments and docstrings". A module, class or
+    function docstring is an ``ast.Expr`` wrapping an ``ast.Constant``, so
+    ``_string_units`` already yields it and ``_scan`` already adjudicates it --
+    which is why eleven docstring-derived entries sit in the allowlist. Adding
+    a second detector for docstrings would double-count them. Asserted against
+    a real docstring so a future change to _string_units cannot quietly make
+    this false.
+    """
+    modules = _module_paths()
+    source = open(modules["_round_provenance"], encoding="utf-8").read()
+    tree = ast.parse(source)
+    # The RAW node value, not ast.get_docstring(), which cleans indentation
+    # and would compare a normalised string against unnormalised literals.
+    first = tree.body[0]
+    assert isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant)
+    raw = first.value.value
+    assert isinstance(raw, str) and len(raw) > 200, (
+        "_round_provenance has no module docstring to test with"
+    )
+
+    literals = [text for text, _ in _string_units(tree)]
+    assert raw in literals, (
+        "_string_units no longer yields module docstrings, so the docstring "
+        "half of the T2 sweep is NOT covered and detector C must grow one."
+    )
+    # And the scan actually adjudicates it: this docstring is allowlisted, so
+    # a scan that skipped docstrings would leave a dead allowlist entry.
+    assert any(_is_prose_attribution(text) for text, _ in _string_units(tree)), (
+        "_round_provenance yields no prose attribution at all, so this file "
+        "no longer demonstrates that docstrings reach the detector."
+    )

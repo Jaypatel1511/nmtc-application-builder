@@ -31,7 +31,12 @@ def test_readiness_score_summary_method():
     assert isinstance(summary, str)
     assert "80.0" in summary
     assert "Grade: B" in summary or "[B]" in summary
-    assert "Recommendations" in summary
+    # 1.5.2 T1: a hand-built ReadinessScore keeps whatever lists it was given,
+    # so this constructed object still renders its recommendations under the
+    # heading that says they are NOT composite-derived. What no longer holds
+    # is that compute_readiness_score() produces any — see
+    # test_the_composite_emits_no_narrative below.
+    assert "Add deep-distress projects" in summary
 
 
 def test_compute_readiness_score_returns_readiness_score(sample_pipeline_result):
@@ -77,7 +82,19 @@ def test_readiness_score_to_dict(sample_pipeline_result):
     assert "recommendations" in d
 
 
-def test_readiness_score_has_strengths_and_weaknesses(sample_pipeline_result):
+def test_the_narrative_fields_survive_as_public_api(sample_pipeline_result):
+    """RENAMED AND INVERTED BY 1.5.2 T1, AND THE FIELDS ARE THE POINT.
+
+    This asserted ``len(score.top_strengths) > 0``. T1 withdrew the composite's
+    narrative, so that is now false by design.
+
+    WHAT IS ASSERTED INSTEAD IS THE THING THE WITHDRAWAL HAD TO PRESERVE. The
+    three fields are public API and they are still here, still lists, still in
+    to_dict(). Emptying them is a patch; REMOVING them is a breaking change
+    and belongs with the 2.0.0 deletion of overall_score and grade. If a later
+    round deletes them, this test is what goes red — and it should, because
+    that release is not a patch.
+    """
     score = compute_readiness_score(
         sample_pipeline_result,
         [ValidationResult("check", True, [], [])],
@@ -85,4 +102,13 @@ def test_readiness_score_has_strengths_and_weaknesses(sample_pipeline_result):
     assert isinstance(score.top_strengths, list)
     assert isinstance(score.top_weaknesses, list)
     assert isinstance(score.recommendations, list)
-    assert len(score.top_strengths) > 0
+
+    d = score.to_dict()
+    for key in ("top_strengths", "top_weaknesses", "recommendations",
+                "narrative_withdrawn", "narrative_note"):
+        assert key in d, (
+            f"to_dict() no longer carries {key!r}. The withdrawal was supposed "
+            "to empty the narrative, not remove the API that reports it."
+        )
+    assert d["narrative_withdrawn"] is True
+    assert "WITHDRAWN" in d["narrative_note"]

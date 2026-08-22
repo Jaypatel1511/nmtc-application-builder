@@ -245,6 +245,29 @@ g["state_breakdown"]               # dict — per-state QEI and project counts
 
 ### Readiness score interpretation
 
+!!! warning "The composite's narrative is withdrawn (1.5.2)"
+
+    `compute_readiness_score()` no longer emits strengths, weaknesses or
+    recommendations. Every one of those lines was triggered by a band this
+    tool set for itself — `READINESS_SCORING_WEIGHTS`, `IMPACT_BENCHMARKS`,
+    `TARGET_DISTRESS_THRESHOLDS` and `MIN_GEOGRAPHIC_DIVERSITY` are all
+    recorded **HOUSE** in this package's constant registry — and they were
+    instructing CDEs to restructure real pipelines.
+
+    `top_strengths`, `top_weaknesses` and `recommendations` are **still on the
+    object and still in `to_dict()`**; they are empty of composite-derived
+    narrative, and `narrative_withdrawn` / `narrative_note` say so to a
+    machine reader. What renders in their place is the composite's own
+    deduction arithmetic: which component cost how many points, against which
+    house constant. *A tool may decline to advise; it may not deduct silently.*
+
+    **The sourced guidance is unaffected.**
+    `intelligence.RecommendationEngine` never read this composite and cites a
+    CY 2024-2025 Review Process section behind every item — reach it with
+    `Application.recommendations()` or the Win Alignment Scorer page.
+    **`nmtcapp analyze` and the generated documents do not run that engine**,
+    so neither now carries improvement guidance of any kind.
+
 **The readiness grade has no external referent.** It is this tool's own weighted
 composite over six components this tool chose, with weights this tool assigned
 (`READINESS_SCORING_WEIGHTS`). It is not calibrated against award data, the CDFI

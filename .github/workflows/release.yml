@@ -669,7 +669,25 @@ jobs:
           # existing docs gates use, and its readiness tests need no tree the
           # tarball prunes. Headroom is unchanged at two.
           #
-          FLOOR=610
+          # 1.5.2 -- RE-DERIVED THE LONG WAY AGAIN, not extrapolated. Built the
+          # sdist, unpacked it, moved nmtcapp/ aside so it could not shadow the
+          # installed package, and ran this job's exact invocation:
+          #
+          #     collected under -m "not wheel" 1,332
+          #     skipped in the sdist             -43
+          #     EXECUTED                       1,289
+          #     half                             644
+          #     rounded down                     640
+          #
+          # MAX_SDIST_SKIPS STAYS 45 AND THE MEASUREMENT AGREES WITH 1.5.1's:
+          # 43 skips, headroom two. The round's two new modules add none.
+          # tests/test_grade_threshold_twins.py reads
+          # streamlit_app/pages/1_Pipeline_Analyzer.py, which MANIFEST.in
+          # ships, so its skipif does not fire in the tarball;
+          # tests/validation/test_readiness_narrative_withdrawn.py reads no
+          # tree at all.
+          #
+          FLOOR=640
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()

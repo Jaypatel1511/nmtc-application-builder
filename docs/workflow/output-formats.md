@@ -49,8 +49,17 @@ The Word document follows the CDFI Fund application structure with a cover page,
 
 **Executive Summary:**
 - Pipeline overview (project count, total QEI, eligibility rate)
-- Readiness score and grade
-- Top strengths and key areas for improvement
+- Readiness score and grade, with its house-heuristic disclosure
+
+!!! note "This line used to claim more than the Word document ever contained"
+
+    It read "Top strengths and key areas for improvement". **The Word builder
+    has never rendered either.** Only the markdown builder carried a Key
+    Strengths list, and 1.5.2 withdrew that too — the readiness composite's
+    strengths, weaknesses and recommendations were all triggered by bands this
+    tool set for itself, with no CDFI Fund referent. See
+    [Recommendations](recommendations.md) for the engine that *does* cite the
+    Review Process behind every item it emits.
 
 **Section A — Business Strategy:**
 - CDE mission and target markets narrative

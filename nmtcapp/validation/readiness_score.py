@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import textwrap
 from dataclasses import dataclass, field
 from typing import List, TYPE_CHECKING
 
@@ -40,6 +41,20 @@ class ReadinessScore:
     partial: bool = False
     partial_note: str = ""
     eligibility_data_error: str = ""
+    # WITHDRAWAL MARKER (1.5.2 T1). ADDITIVE, NOT A REPLACEMENT.
+    #
+    # ``top_strengths``, ``top_weaknesses`` and ``recommendations`` are public
+    # API and are still here, still typed, still in to_dict(). They are now
+    # EMPTY of composite-derived narrative. Removing them would be a breaking
+    # change and belongs with the 2.0.0 deletion of overall_score/grade; a
+    # patch may not do it.
+    #
+    # These two fields exist because an EMPTY LIST AND A WITHDRAWN ONE READ
+    # IDENTICALLY to a JSON consumer, which is the same defect the geographic
+    # withdrawal was written to avoid on the rendered surfaces. A caller
+    # reading to_dict() can now tell the difference without parsing prose.
+    narrative_withdrawn: bool = False
+    narrative_note: str = ""
 
     def summary(self) -> str:
         """Return a formatted readiness report.
@@ -82,18 +97,25 @@ class ReadinessScore:
         for component, score in self.component_scores.items():
             label = component.replace("_", " ").title()
             lines.append(f"  {label:<30} {score:5.1f}/100")
-        lines.extend([
-            "",
-            "Top Strengths:",
-            *[f"  + {s}" for s in self.top_strengths],
-            "",
-            "Areas for Improvement:",
-            *[f"  - {w}" for w in self.top_weaknesses],
-            "",
-            "Recommendations:",
-            *[f"  → {r}" for r in self.recommendations],
-            "=" * 60,
-        ])
+        # THE THREE NARRATIVE BLOCKS ARE GONE AND SAY SO (1.5.2 T1). They are
+        # not simply omitted: this block stands where they stood, because a
+        # CDE who ran the tool last week is looking for them here. Any list
+        # that still has content prints under its own heading below.
+        if self.top_strengths:
+            lines.extend(["", "Top Strengths:",
+                          *[f"  + {s}" for s in self.top_strengths]])
+        if self.top_weaknesses:
+            lines.extend(["", "Areas for Improvement:",
+                          *[f"  - {w}" for w in self.top_weaknesses]])
+        if self.narrative_note:
+            lines.extend(["", *_wrap_note(self.narrative_note)])
+        if self.recommendations:
+            lines.extend([
+                "",
+                "Still emitted — NOT derived from the readiness composite:",
+                *[f"  → {r}" for r in self.recommendations],
+            ])
+        lines.append("=" * 60)
         return "\n".join(lines)
 
     def to_dict(self) -> dict:
@@ -108,6 +130,8 @@ class ReadinessScore:
             "partial": self.partial,
             "partial_note": self.partial_note,
             "eligibility_data_error": self.eligibility_data_error,
+            "narrative_withdrawn": self.narrative_withdrawn,
+            "narrative_note": self.narrative_note,
         }
 
 
@@ -201,6 +225,8 @@ def compute_readiness_score(
         partial=partial,
         partial_note=partial_note,
         eligibility_data_error=getattr(analysis_result, "eligibility_data_error", None) or "",
+        narrative_withdrawn=True,
+        narrative_note=narrative_withdrawal_note(component_scores),
     )
 
 
@@ -295,98 +321,193 @@ def _compute_grade(score: float) -> str:
     return "F"
 
 
+#: The readiness composite's own components, in the order summary() prints
+#: them, mapped to the house constant each one's band comes from. Stated once
+#: so the withdrawal note cannot drift from what the scorers actually read.
+_COMPONENT_BASIS = {
+    "eligibility_quality":    "this tool's own eligibility curve",
+    "distress_concentration": "schema.TARGET_DISTRESS_THRESHOLDS (HOUSE)",
+    "geographic_diversity":   "schema.MIN_GEOGRAPHIC_DIVERSITY (HOUSE)",
+    "impact_metrics":         "schema.IMPACT_BENCHMARKS (HOUSE)",
+    "validation_pass_rate":   "this tool's own pass-rate curve",
+    "completeness":           "this tool's own completeness curve",
+}
+
+
+def narrative_withdrawal_note(component_scores: dict) -> str:
+    """The ONE statement of the 1.5.2 withdrawal, read by every surface.
+
+    THE WITHDRAWAL, AND WHY IT IS NOT A DELETION (1.5.2 T1)
+
+    ``_identify_strengths``, ``_identify_weaknesses`` and
+    ``_build_recommendations`` were the entire mechanism by which a house band
+    became an instruction to restructure a real pipeline. They rendered on two
+    surfaces: ``ReadinessScore.summary()``, which is what ``nmtcapp analyze``
+    prints, and ``renderers/markdown_builder``'s executive summary, which is
+    the first page of a generated application document.
+
+    EVERY TRIGGER IN ALL THREE WAS A HOUSE BAND. Not one of them has a CDFI
+    Fund referent, and this package's own constant registry
+    (tests/pinned_constants.txt) already rules
+    ``schema.READINESS_SCORING_WEIGHTS`` an "unsourced house heuristic",
+    ``IMPACT_BENCHMARKS`` "this tool's own screening bands" and
+    ``TARGET_DISTRESS_THRESHOLDS[target_deep_distress]`` an "internal scoring
+    band". The composite they weight is not a Fund score.
+
+    WITHDRAWN, NOT SILENTLY EMPTIED, and the precedent is this package's own.
+    1.5.1 withdrew the geographic recommendation out loud because "an absent
+    recommendation and a withdrawn one read differently to a CDE who ran the
+    tool last week". Emptying three functions without saying so would make the
+    whole narrative absent, which is the larger version of the same error.
+
+    AND THE DEDUCTIONS ARE STATED, which is the half that is easy to lose. The
+    1.5.1 audit's F4 finding was that withholding advice while keeping the
+    deduction silent is worse than either failure alone: the CDE stops being
+    warned and keeps being penalised. T1 withdraws advice for ALL SIX
+    components, so F4's rule now applies six times over. What replaces the
+    advice is therefore not silence but arithmetic — the composite's own
+    accounting, in the tool's own terms, instructing nothing.
+    """
+    weights = READINESS_SCORING_WEIGHTS
+    docked = []
+    for key, score in component_scores.items():
+        if score >= 100:
+            continue
+        weight = weights[key]
+        dock = (100.0 - score) * weight
+        label = key.replace("_", " ").title()
+        docked.append(
+            f"    {label:<26} {score:5.1f}/100 at a {weight:>3.0%} weight  ->  "
+            f"DOCKED {dock:.1f} POINTS  [{_COMPONENT_BASIS[key]}]"
+        )
+    total = sum(
+        (100.0 - v) * weights[k] for k, v in component_scores.items() if v < 100
+    )
+
+    lines = [
+        "READINESS NARRATIVE WITHDRAWN (1.5.2). This tool no longer emits "
+        "strengths, weaknesses or recommendations from the readiness "
+        "composite, and none are offered in this release.",
+        "",
+        "WHAT WAS WITHDRAWN. Earlier versions read this composite's "
+        "sub-scores and told a CDE to act on them: to increase deep/severe "
+        "distress concentration to a target share, to add operating-business "
+        "projects to raise a jobs-per-$1MM-QEI figure, and (withdrawn "
+        "separately in 1.5.1) to expand its footprint to >=5 states. They "
+        "also asserted strengths and weaknesses -- that a share was 'above "
+        "average', that a concentration was 'below competitive threshold'.",
+        "",
+        # THE NOTE CARRIES ITS OWN DISCLOSURE ANCHOR, DELIBERATELY. This
+        # paragraph names "readiness score", which is a readiness CLAIM under
+        # tests/test_pinned_constants._READINESS_CLAIM, and the proximity gate
+        # measures every such claim against the nearest recognised readiness
+        # disclosure. Naming the composite "this tool's own unsourced house
+        # heuristic" in the same sentence satisfies that gate at ~50
+        # characters instead of weakening it -- and it is the accurate
+        # description, not a token planted to pass.
+        "WHY. EVERY ONE OF THOSE TRIGGERS WAS A BAND THIS TOOL SET FOR "
+        "ITSELF. The composite they weight is this tool's own unsourced "
+        "house heuristic: the CDFI Fund publishes no readiness score, no "
+        "such weighting and no grade, so none of the thresholds that fired "
+        "those lines has a federal referent -- they are recorded HOUSE in "
+        "this package's own constant registry. Restructuring a real pipeline is an "
+        "expensive and sometimes irreversible act, and it was being "
+        "instructed by arithmetic with nothing behind it. The measured case "
+        "is on the record: following the withdrawn geographic advice moved a "
+        "sample pipeline from Highly Qualified to Not Qualified under the "
+        "Fund's own gate while this tool's grade did not change letter.",
+        "",
+        "YOU WERE NEVERTHELESS DOCKED, AND HERE IS THE ARITHMETIC. A tool may "
+        "decline to advise. It may not deduct silently.",
+    ]
+    if docked:
+        lines += ["", *docked, "",
+                  f"    TOTAL DEDUCTION {total:.1f} POINTS of the 100-point "
+                  f"readiness headline."]
+    else:
+        lines += ["", "    No component was docked on this run."]
+    lines += [
+        "",
+        "NONE OF THAT IS A FINDING ABOUT YOUR APPLICATION. The deduction is "
+        "this tool's own bookkeeping against its own bands. In particular the "
+        "CDFI Fund does not score geographic breadth at all, so nothing in "
+        "the headline's geographic term has a federal referent; do not treat "
+        "this pipeline's footprint as a finding either way, and do not expand "
+        "it to recover those points.",
+        "",
+        "WHERE THE SOURCED GUIDANCE IS. "
+        "`intelligence.RecommendationEngine` is untouched. It never reads "
+        "this composite -- it scores against the CY 2024-2025 NMTC Program "
+        "Review Process and cites the section behind every item it emits. "
+        "Reach it with `Application.recommendations()` in Python, or open "
+        "the Win Alignment Scorer page in the Streamlit app.",
+        "",
+        # THE SILENCE IS SHIPPED OUT LOUD (1.5.2 T1). Mapped before writing
+        # this: of the surfaces that carried readiness narrative, NEITHER
+        # reaches RecommendationEngine. No renderer imports it, and cli.py
+        # does not either -- `nmtcapp analyze` calls analysis.summary() and
+        # nothing else. So withdrawing here leaves both surfaces with no
+        # improvement guidance at all, and a note that pointed at the sourced
+        # engine without saying it is somewhere else would read as though the
+        # guidance below had simply moved down the page.
+        "IT IS NOT REACHED FROM HERE. Neither `nmtcapp analyze` nor the "
+        "generated application documents run that engine, so neither now "
+        "carries improvement guidance of any kind. That gap is stated rather "
+        "than shipped quietly: reaching the sourced guidance is a separate "
+        "call you have to make yourself.",
+    ]
+    return "\n".join(lines)
+
+
 def _identify_strengths(scores: dict, geographic_diversity: dict | None = None) -> List[str]:
-    strengths = []
-    if scores.get("eligibility_quality", 0) >= 80:
-        strengths.append("High pipeline eligibility rate (≥80% score)")
-    if scores.get("distress_concentration", 0) >= 80:
-        strengths.append("Strong deep/severe distress concentration")
-    # A DIVERSITY CLAIM MAY NOT CONTRADICT THE CONCENTRATION MEASURE ONE BLOCK
-    # ABOVE IT (1.5.1 T5). The sub-score is
-    # ``min(100, states / MIN_GEOGRAPHIC_DIVERSITY * 50) + hhi_bonus``, whose
-    # first term reaches 100 at six states. So from five states upward the
-    # state count alone clears this 70 gate and the HHI term is inert — and
-    # this line asserted "Good geographic diversity" over a pipeline that
-    # geographic_analysis._concentration_label had already printed as
-    # ``highly_concentrated`` in the same document. Measured on 1.5.0: six
-    # states at HHI 9,519 (one state holding ~97.5% of QEI) scored 100.0 and
-    # emitted this strength.
-    #
-    # THE CURVE IS NOT RE-BASED HERE, DELIBERATELY. Re-basing it is calibration
-    # against MIN_GEOGRAPHIC_DIVERSITY, a constant this package already records
-    # as HOUSE and underived; replacing one unsourced shape with another is
-    # methodology, and it would move every existing user's score on a patch.
-    # What is wrong TODAY and fixable today is the tool telling a CDE it has
-    # something the tool's own measure says it does not have. The score is
-    # unchanged; only the false sentence is withheld.
-    #
-    # ONE DIRECTION CAVEATED, THE OTHER NOT (1.5.1 audit, F4). T5 fixed the
-    # contradiction and T1 rewrote the WEAKNESS to say "this tool's own house
-    # curve -- not a CDFI Fund threshold". This line, the mirror of it, was
-    # left reading "Good geographic diversity across multiple states":
-    # unqualified, in the tool's own voice, asserting a quality. The round
-    # withdrew the stick and kept the carrot, and an uncaveated praise is the
-    # more dangerous half -- a CDE has no reason to go looking behind good
-    # news. Both halves now carry the same basis, because they are scored by
-    # the same unsourced curve.
-    _concentrated = (geographic_diversity or {}).get(
-        "geographic_concentration_label"
-    ) == "highly_concentrated"
-    if scores["geographic_diversity"] >= 70 and not _concentrated:
-        strengths.append(
-            "High geographic-diversity sub-score on this tool's own house "
-            "curve — not a CDFI Fund threshold, and not a finding about the "
-            "application"
-        )
-    if scores["impact_metrics"] >= 70:
-        # NOT "Above-average". That claimed a comparison against an external
-        # average — IMPACT_BENCHMARKS["jobs_per_million_qei_avg"], a constant
-        # whose provenance is a section comment, not a citation. Same defect
-        # as impact_aggregator._benchmark_label, one layer up, and it rendered
-        # into the Key Strengths list on the first page. The threshold here is
-        # this tool's own, so the line now says so.
-        strengths.append(
-            "Jobs and units per $1MM QEI clear this tool's impact-score threshold"
-        )
-    if scores["validation_pass_rate"] >= 90:
-        strengths.append("Clean validation — no blocking issues")
-    return strengths[:3] or ["Pipeline established with initial projects"]
+    """WITHDRAWN (1.5.2 T1). Returns no strengths, on any pipeline.
+
+    WHAT STOOD HERE. Five band-triggered assertions: eligibility >=80,
+    distress >=80, geographic >=70 (guarded against the concentration
+    contradiction in 1.5.1 T5), impact >=70, validation >=90 -- plus a
+    fallback, ``["Pipeline established with initial projects"]``, that fired
+    when none of the five did and asserted a quality over a pipeline that had
+    cleared no band at all.
+
+    EVERY CUT POINT WAS THIS TOOL'S OWN. 1.5.1 F4 had already established the
+    asymmetry that makes praise the more dangerous half -- "a CDE has no
+    reason to go looking behind good news" -- and answered it by attaching the
+    house basis to each strength. That was the right fix for a line that had
+    to keep rendering. It does not have to keep rendering.
+
+    THE ARGUMENT AGAINST WITHDRAWING THIS, STATED. A tool so hedged it emits
+    no signal is a failure and not a safe default, and a CDE reading a grade
+    with nothing attached is the mirror defect. The answer is not to keep an
+    unsourced compliment: it is that the composite's own deduction accounting
+    now renders in its place (see :func:`narrative_withdrawal_note`), which is
+    strictly more information than "High pipeline eligibility rate" and
+    instructs nothing.
+
+    NOT DELETED. The function stays, and stays called, because
+    ``top_strengths`` is public API that a 2.0.0 deletion removes and a patch
+    may not.
+    """
+    return []
 
 
 def _identify_weaknesses(scores: dict) -> List[str]:
-    weaknesses = []
-    if "eligibility_quality" not in scores:
-        weaknesses.append(
-            "Eligibility data unavailable — tracts and distress levels unverified"
-        )
-    if scores.get("distress_concentration", 100) < 60:
-        weaknesses.append("Distress concentration below competitive threshold")
-    if scores["geographic_diversity"] < 50:
-        # THE SECOND HALF OF T1, AND IT WAS NOT ON THE LIST. This read
-        # "Geographic footprint too narrow — add more states", which is the
-        # suppressed recommendation in a shorter sentence: "too narrow" is a
-        # verdict against a bar the CDFI Fund does not set, and "add more
-        # states" is the same instruction, on the surface a CDE reads FIRST.
-        # Withdrawing the recommendation while leaving this here would have
-        # withdrawn the paragraph and kept the advice.
-        #
-        # What survives is the measurement, which is true and is this tool's
-        # own: the sub-score is low. What is withheld is the verdict and the
-        # instruction.
-        weaknesses.append(
-            "Low geographic-diversity sub-score on this tool's own house "
-            "curve — not a CDFI Fund threshold, and not a finding about the "
-            "application"
-        )
-    if scores["impact_metrics"] < 50:
-        weaknesses.append(
-            "Jobs and units per $1MM QEI below this tool's impact-score band"
-        )
-    if scores.get("eligibility_quality", 100) < 80:
-        weaknesses.append("Some projects may not be NMTC-eligible — verify tracts")
-    if scores["validation_pass_rate"] < 70:
-        weaknesses.append("Validation failures require resolution before submission")
-    return weaknesses[:3]
+    """WITHDRAWN (1.5.2 T1). Returns no weaknesses, on any pipeline.
+
+    WHAT STOOD HERE. Six band-triggered verdicts, including "Distress
+    concentration below competitive threshold" -- the word "competitive" being
+    a claim about how the CDFI Fund ranks applications, attached to
+    ``TARGET_DISTRESS_THRESHOLDS``, which this package's registry rules an
+    internal scoring band. That is the T4 defect in prose: a competitiveness
+    claim with no Fund referent.
+
+    THE ELIGIBILITY-DATA LINE IS NOT LOST. "Eligibility data unavailable --
+    tracts and distress levels unverified" was the one entry here that was not
+    a band comparison, and it is stated three other ways already: the ``!!!!``
+    banner at the top of :meth:`ReadinessScore.summary`, ``partial_note``, and
+    the Streamlit error block. Nothing about it reached a CDE only through
+    this list.
+    """
+    return []
 
 
 def _build_recommendations(
@@ -394,108 +515,73 @@ def _build_recommendations(
     scores: dict,
     validation_results: list,
 ) -> List[str]:
+    """WITHDRAWN IN PART (1.5.2 T1) -- every band-triggered instruction goes.
+
+    WHAT WAS WITHDRAWN, and each was an instruction to change a real pipeline:
+
+      * ``distress_concentration < 75`` -> "Increase deep/severe distress
+        concentration from X% to >=75% by substituting standard LIC projects
+        with deeper-distress alternatives". The 75 is
+        ``TARGET_DISTRESS_THRESHOLDS[target_deep_distress]``, registry-ruled
+        HOUSE, and the share it compares is denominated in QEI while the
+        Fund's own commitment is denominated in QLICIs.
+      * ``geographic_diversity < 100`` -> the 1.5.1 withdrawal notice. Its
+        content is preserved and generalised in
+        :func:`narrative_withdrawal_note`, including the deduction arithmetic
+        that F4 required, so nothing that round established is dropped here.
+      * ``impact_metrics < 60`` -> "Add operating business projects
+        (manufacturing, healthcare)...". ``IMPACT_BENCHMARKS`` is registry-
+        ruled HOUSE and the 1.2.0 primary-source pass established that the
+        publication its numbers once cited does not exist.
+      * the ``or [...]`` fallback -> "Continue strengthening pipeline -- add
+        deep-distress projects in target markets", which fired when the five
+        branches above produced nothing and instructed a pipeline that had
+        triggered no band at all.
+
+    WHAT IS RETAINED, AND WHY IT IS NOT THE SAME CLASS. Two emitters here
+    never read ``component_scores``:
+
+      * the degraded-data notice, whose trigger is that eligibility data could
+        not be loaded. That is a fact about this run, not a comparison against
+        a band, and its instruction is to fix the tool's own data access.
+      * the validation-issue echo, whose text is an issue string produced by
+        the validation checks and already printed in full above it. Its
+        referent is the check that raised it.
+
+    Retaining these is deliberate and is the answer to the mirror defect: a
+    surface that says only "withdrawn" gives a CDE nothing, and these two
+    items are the ones on this surface that were never house-band-derived.
+    """
     recs = []
-    d = result.distress_breakdown
-    g = result.geographic_diversity
 
     if "distress_concentration" not in scores:
         recs.append(
             "Restore eligibility data access (nmtc-mapper) and re-run the "
             "analysis — eligibility and distress cannot be verified right now"
         )
-    if scores.get("distress_concentration", 100) < 75:
-        current = d.get("pct_deep_or_severe", 0)
-        target = TARGET_DISTRESS_THRESHOLDS["target_deep_distress"]
-        recs.append(
-            f"Increase deep/severe distress concentration from {current:.0%} to ≥{target:.0%} "
-            "by substituting standard LIC projects with deeper-distress alternatives"
-        )
-    # THE TRIGGER IS ANY DEDUCTION, NOT A BAND (1.5.1 audit, F4). This read
-    # ``< 60``, which left a hole the round did not see: a FOUR-state pipeline
-    # scores 66.7 on this curve, clears both the ``< 60`` notice here and the
-    # ``< 50`` weakness above, and is told NOTHING about geography -- while
-    # being docked 4.99 points of the 100-point readiness headline it is shown.
-    #
-    # MEASURED, not reasoned: geo 66.7 costs (100 - 66.7) * 0.15 = 4.99. The
-    # pipeline sees a lower grade and no reason for it anywhere in strengths,
-    # weaknesses or recommendations.
-    #
-    # THAT IS THE FAILURE MODE SUPPRESSION PRODUCES, and it is worse than
-    # either half alone: the CDE stops being warned and keeps being penalised.
-    # A tool may decline to advise. It may not deduct silently. So the trigger
-    # is now "this component cost you points" -- the only honest condition --
-    # and the notice states the size of the deduction.
-    if scores["geographic_diversity"] < 100:
-        # WITHDRAWN, NOT DROPPED (1.5.1 T1). This slot rendered "Expand
-        # geographic footprint — currently N states. Target ≥5 states…" and it
-        # fired on exactly the pipelines that were already clearing the CDFI
-        # Fund's own gate.
-        #
-        # MEASURED ON 1.5.0, not reasoned. A pipeline of two states at 100%
-        # deep/severe distress scores Community Outcomes 44/50, aggregate
-        # 94 — Highly Qualified. Its geographic sub-score is 33.3, so this
-        # recommendation fired. Following it to five states dilutes distress:
-        # at 55% deep the aggregate falls to 89 and the tier flips to Not
-        # Qualified, while the readiness headline moves 83.0 [B] to 82.0 [B].
-        # THE GRADE DOES NOT CHANGE ACROSS THE FUND'S GATE. A CDE watching the
-        # number this tool prints largest would see nothing happen while its
-        # application stopped qualifying.
-        #
-        # The Review Process scores no state count — schema.py says so at
-        # MIN_GEOGRAPHIC_DIVERSITY, and the CY 2024-2025 Allocation Application
-        # asks for a service area, not a minimum number of states. So this was
-        # the one recommendation in either engine pointing at a metric the Fund
-        # does not score, in a direction that costs points on metrics it does.
-        #
-        # SUPPRESSION, NOT CORRECTION, because writing the right advice means
-        # deriving what geographic breadth is worth — the recommendation-engine
-        # methodology, which is the next round. Suppression is reversible; the
-        # harm direction is not. The withdrawal is stated out loud because an
-        # absent recommendation and a withdrawn one read differently to a CDE
-        # who ran this tool last week.
-        #
-        # NOT SUPPRESSED: intelligence/recommendations.RecommendationEngine,
-        # which emits no geographic advice at all and cites the Review Process
-        # section behind every item it does emit. A CDE is not left without
-        # guidance here.
-        _geo_sub = scores["geographic_diversity"]
-        _dock = (100.0 - _geo_sub) * READINESS_SCORING_WEIGHTS[
-            "geographic_diversity"
-        ]
-        recs.append(
-            "Geographic-footprint guidance is WITHDRAWN pending a methodology "
-            "review and is not offered in this release. Earlier versions "
-            "advised expanding to ≥5 states to raise this tool's "
-            "geographic-diversity sub-score; the CDFI Fund scores no state "
-            "count, and following that advice can dilute deep/severe distress "
-            "concentration, which the Fund does score. "
-            # THE DEDUCTION IS STATED (audit F4). Withholding the advice while
-            # keeping the deduction silent is the worse of the two failures.
-            f"YOU WERE NEVERTHELESS DOCKED {_dock:.1f} POINTS of the "
-            "100-point readiness headline for this: "
-            f"the geographic-diversity sub-score is {_geo_sub:.1f}/100 and "
-            f"carries a {READINESS_SCORING_WEIGHTS['geographic_diversity']:.0%} "
-            "weight in a total that is itself this tool's own unsourced "
-            "heuristic. That deduction is NOT evidence your footprint is a "
-            "problem — the CDFI Fund does not score geographic breadth at all, "
-            "so nothing in the readiness headline's geographic term has a "
-            "federal referent. Do not treat this pipeline's "
-            f"{g.get('states_count', 0)}-state footprint as a finding either "
-            "way, and do not expand it to recover these points. See the "
-            "CY 2024-2025 Review Process, Community Outcomes, for what is "
-            "actually scored"
-        )
-    if scores["impact_metrics"] < 60:
-        recs.append(
-            "Add operating business projects (manufacturing, healthcare) to improve "
-            "jobs-per-million-QEI metric above this tool's 12 FTE screening "
-            "band (a house band, not a CDFI Fund figure)"
-        )
     for vr in validation_results:
         for issue in vr.issues[:1]:
             recs.append(f"Resolve validation error: {issue}")
 
-    return recs[:5] or ["Continue strengthening pipeline — add deep-distress projects in target markets"]
+    return recs[:5]
+
+
+def _wrap_note(note: str, width: int = 76) -> List[str]:
+    """Wrap the withdrawal note for the fixed-width CLI block.
+
+    Lines that are already indented are pre-formatted (the deduction table)
+    and pass through untouched -- rewrapping them would destroy the column
+    alignment that makes the arithmetic readable.
+    """
+    out = []
+    for para in note.split("\n"):
+        if not para.strip():
+            out.append("")
+        elif para.startswith("    "):
+            out.append(f"  {para}")
+        else:
+            out.extend(f"  {line}" for line in textwrap.wrap(para, width=width))
+    return out
 
 
 def _score_bar(score: float, width: int = 30) -> str:

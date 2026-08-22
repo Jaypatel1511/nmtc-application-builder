@@ -212,16 +212,24 @@ def test_a_pipeline_docked_on_geography_is_told_that_it_was(label):
     sub = score.component_scores["geographic_diversity"]
     assert sub < 100, f"{label} is not docked; this case belongs elsewhere"
 
-    notice = [r for r in score.recommendations if "WITHDRAWN" in r]
-    assert len(notice) == 1, (
+    # RE-POINTED IN 1.5.2, PROPERTY UNCHANGED. Through 1.5.1 the notice was
+    # one entry in ``recommendations``. T1 withdrew that whole list, so the
+    # notice moved to ``narrative_note`` — but F4's rule ("a tool may decline
+    # to advise; it may not deduct silently") did not move, and it now binds
+    # on all six components rather than on geography alone. This test keeps
+    # asserting geography's share of it.
+    assert score.narrative_withdrawn, (
+        f"{label}: narrative_withdrawn is False. A consumer reading to_dict() "
+        "cannot tell a withdrawn narrative from an empty one."
+    )
+    text = score.narrative_note
+    assert "WITHDRAWN" in text, (
         f"{label}: geographic sub-score is {sub} — a deduction of "
         f"{(100 - sub) * READINESS_SCORING_WEIGHTS['geographic_diversity']:.2f} "
-        f"points — and {len(notice)} withdrawal notices were emitted.\n\n"
+        "points — and no withdrawal notice was emitted at all.\n\n"
         "A tool may decline to advise. It may not deduct silently.\n\n"
-        "Emitted recommendations:\n"
-        + "\n".join(f"  - {r}" for r in score.recommendations)
+        f"narrative_note:\n{text}"
     )
-    text = notice[0]
 
     expected_dock = (100.0 - sub) * READINESS_SCORING_WEIGHTS["geographic_diversity"]
     assert f"DOCKED {expected_dock:.1f} POINTS" in text, (
@@ -244,6 +252,13 @@ def test_a_pipeline_docked_on_geography_is_told_that_it_was(label):
                      "footprint as a finding either way"):
         assert required in text, f"{label}: notice omits {required!r}:\n{text}"
 
+    # 1.5.2: the deduction line must NAME the component, because the note now
+    # accounts for six of them and an unlabelled figure would be unreadable.
+    assert "Geographic Diversity" in text, (
+        f"{label}: the deduction table does not name the geographic "
+        f"component:\n{text}"
+    )
+
 
 def test_the_withdrawal_notice_names_what_was_withdrawn():
     """FIX 1. A withdrawn recommendation and an absent one read differently.
@@ -253,8 +268,15 @@ def test_the_withdrawal_notice_names_what_was_withdrawn():
     true if the notice says what the advice WAS.
     """
     score, _ = _readiness(_SHAPES["one_state"])
-    notice = next(r for r in score.recommendations if "WITHDRAWN" in r)
-    for required in ("Earlier versions", "≥5 states", "methodology review"):
+    notice = score.narrative_note
+    assert "WITHDRAWN" in notice, notice
+    # 1.5.2 widened this from the geographic advice to the whole narrative, so
+    # the notice must now name what ALL THREE lists used to say. ">=5 states"
+    # replaces "≥5 states": the note is rendered into a fixed-width CLI block
+    # and into markdown, and the 1.5.1 string was the only non-ASCII token in
+    # either.
+    for required in ("Earlier versions", ">=5 states",
+                     "strengths", "weaknesses", "recommendations"):
         assert required in notice, f"notice omits {required!r}:\n{notice}"
 
 
@@ -273,6 +295,14 @@ def test_the_diversity_strength_is_not_claimed_over_a_concentrated_pipeline():
 
     Dropping the ``not _concentrated`` guard turns this red. Before this module
     it turned nothing red.
+
+    VACUOUS SINCE 1.5.2 T1, AND SAID SO HERE RATHER THAN LEFT SILENT. T1
+    withdrew every strength, so ``top_strengths`` is empty on every pipeline
+    and this assertion can no longer fail by way of the guard it was written
+    for. It is retained because the band assertion above it still proves the
+    fixture reaches the contradiction window, which is what a 2.0.0
+    re-introduction would have to get past — but a green here is now evidence
+    of the withdrawal, NOT evidence that the T5 guard still works.
     """
     score, analysis = _readiness(_SHAPES["six_states_conc"])
     geo = analysis.pipeline_result.geographic_diversity
@@ -309,13 +339,26 @@ def test_the_contradiction_window_opens_at_five_states_not_six():
     assert state_term(4) < 70, state_term(4)
 
 
-def test_the_geographic_strength_carries_the_same_basis_as_the_weakness():
-    """F4's first half. One direction caveated, the other not.
+def test_the_geographic_strength_no_longer_exists_to_carry_a_basis():
+    """SUPERSEDED BY 1.5.2 T1, AND REWRITTEN RATHER THAN DELETED.
 
-    The weakness reads "this tool's own house curve — not a CDFI Fund
-    threshold". The strength read "Good geographic diversity across multiple
-    states", unqualified. Uncaveated praise is the more dangerous half: a CDE
-    has no reason to go looking behind good news.
+    WHAT THIS TEST USED TO ASSERT. F4's first half: the geographic WEAKNESS
+    carried "this tool's own house curve — not a CDFI Fund threshold" and the
+    STRENGTH did not, and uncaveated praise is the more dangerous half because
+    a CDE has no reason to go looking behind good news. 1.5.1 answered that by
+    attaching the same basis to both directions, and this test asserted the
+    strength string still carried it.
+
+    WHY IT COULD NOT SURVIVE UNCHANGED. T1 withdrew ``_identify_strengths``
+    entirely, so there is no strength string left to carry a basis. The old
+    assertion — "the diverse fixture emits no geographic strength, so this
+    gate is vacuous" — would now fire on the FIX rather than on a regression.
+
+    WHY IT IS NOT DELETED. Deleting it would remove the only assertion in the
+    suite that the diverse shipped fixture reaches this ground at all, and a
+    2.0.0 that re-introduced a strengths list would find nothing red here. The
+    property asserted is now the stronger one: on the fixture that used to
+    produce the uncaveated praise, NOTHING is asserted in either direction.
     """
     app = Application(cde=CDEProfile.sample(), requested_allocation=65_000_000)
     app.add_pipeline(Pipeline.sample(n=20))
@@ -323,19 +366,21 @@ def test_the_geographic_strength_carries_the_same_basis_as_the_weakness():
     score = compute_readiness_score(
         analysis.pipeline_result, analysis.validation_results
     )
-    strength = [s for s in score.top_strengths if "geographic" in s.lower()]
-    assert strength, (
-        "the diverse fixture emits no geographic strength, so this gate is "
-        f"vacuous. Strengths: {score.top_strengths}"
+
+    # The fixture must still reach the ground F4 was about, or this is vacuous
+    # for a second and different reason.
+    assert score.component_scores["geographic_diversity"] >= 70, (
+        "Pipeline.sample(n=20) no longer clears the old strength gate of 70, "
+        "so this test no longer stands where F4's defect stood."
     )
-    text = strength[0]
-    for required in ("this tool's own house curve",
-                     "not a CDFI Fund threshold",
-                     "not a finding about the application"):
-        assert required in text, (
-            f"the geographic STRENGTH omits {required!r} while the geographic "
-            f"WEAKNESS carries it. Strength text:\n  {text}"
-        )
+    assert score.top_strengths == [], (
+        "the readiness composite emitted a strength. T1 withdrew the strengths "
+        f"list; anything here is a re-introduction:\n  {score.top_strengths}"
+    )
+    assert score.top_weaknesses == [], (
+        "the readiness composite emitted a weakness. T1 withdrew the "
+        f"weaknesses list:\n  {score.top_weaknesses}"
+    )
 
 
 # ---------------------------------------------------------------------------

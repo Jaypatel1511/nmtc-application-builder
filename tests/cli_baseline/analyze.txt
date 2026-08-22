@@ -88,17 +88,58 @@ Component Scores:
   Validation Pass Rate            36.7/100
   Completeness                    80.0/100
 
-Top Strengths:
-  + High geographic-diversity sub-score on this tool's own house curve — not a CDFI Fund threshold, and not a finding about the application
+  READINESS NARRATIVE WITHDRAWN (1.5.2). This tool no longer emits strengths,
+  weaknesses or recommendations from the readiness composite, and none are
+  offered in this release.
 
-Areas for Improvement:
-  - Distress concentration below competitive threshold
-  - Jobs and units per $1MM QEI below this tool's impact-score band
-  - Some projects may not be NMTC-eligible — verify tracts
+  WHAT WAS WITHDRAWN. Earlier versions read this composite's sub-scores and
+  told a CDE to act on them: to increase deep/severe distress concentration to
+  a target share, to add operating-business projects to raise a jobs-per-$1MM-
+  QEI figure, and (withdrawn separately in 1.5.1) to expand its footprint to
+  >=5 states. They also asserted strengths and weaknesses -- that a share was
+  'above average', that a concentration was 'below competitive threshold'.
 
-Recommendations:
-  → Increase deep/severe distress concentration from 57% to ≥75% by substituting standard LIC projects with deeper-distress alternatives
-  → Add operating business projects (manufacturing, healthcare) to improve jobs-per-million-QEI metric above this tool's 12 FTE screening band (a house band, not a CDFI Fund figure)
+  WHY. EVERY ONE OF THOSE TRIGGERS WAS A BAND THIS TOOL SET FOR ITSELF. The
+  composite they weight is this tool's own unsourced house heuristic: the CDFI
+  Fund publishes no readiness score, no such weighting and no grade, so none
+  of the thresholds that fired those lines has a federal referent -- they are
+  recorded HOUSE in this package's own constant registry. Restructuring a real
+  pipeline is an expensive and sometimes irreversible act, and it was being
+  instructed by arithmetic with nothing behind it. The measured case is on the
+  record: following the withdrawn geographic advice moved a sample pipeline
+  from Highly Qualified to Not Qualified under the Fund's own gate while this
+  tool's grade did not change letter.
+
+  YOU WERE NEVERTHELESS DOCKED, AND HERE IS THE ARITHMETIC. A tool may decline
+  to advise. It may not deduct silently.
+
+      Eligibility Quality         68.0/100 at a 25% weight  ->  DOCKED 8.0 POINTS  [this tool's own eligibility curve]
+      Distress Concentration      58.2/100 at a 25% weight  ->  DOCKED 10.4 POINTS  [schema.TARGET_DISTRESS_THRESHOLDS (HOUSE)]
+      Impact Metrics              38.2/100 at a 20% weight  ->  DOCKED 12.4 POINTS  [schema.IMPACT_BENCHMARKS (HOUSE)]
+      Validation Pass Rate        36.7/100 at a 10% weight  ->  DOCKED 6.3 POINTS  [this tool's own pass-rate curve]
+      Completeness                80.0/100 at a  5% weight  ->  DOCKED 1.0 POINTS  [this tool's own completeness curve]
+
+      TOTAL DEDUCTION 38.1 POINTS of the 100-point readiness headline.
+
+  NONE OF THAT IS A FINDING ABOUT YOUR APPLICATION. The deduction is this
+  tool's own bookkeeping against its own bands. In particular the CDFI Fund
+  does not score geographic breadth at all, so nothing in the headline's
+  geographic term has a federal referent; do not treat this pipeline's
+  footprint as a finding either way, and do not expand it to recover those
+  points.
+
+  WHERE THE SOURCED GUIDANCE IS. `intelligence.RecommendationEngine` is
+  untouched. It never reads this composite -- it scores against the CY
+  2024-2025 NMTC Program Review Process and cites the section behind every
+  item it emits. Reach it with `Application.recommendations()` in Python, or
+  open the Win Alignment Scorer page in the Streamlit app.
+
+  IT IS NOT REACHED FROM HERE. Neither `nmtcapp analyze` nor the generated
+  application documents run that engine, so neither now carries improvement
+  guidance of any kind. That gap is stated rather than shipped quietly:
+  reaching the sourced guidance is a separate call you have to make yourself.
+
+Still emitted — NOT derived from the readiness composite:
   → Resolve validation error: Project PRJ-S012 (Detroit Auto Parts Manufacturer) is NOT NMTC-eligible — tract 26163515700 does not qualify as a LIC
 ============================================================
 ========================================================================
@@ -219,17 +260,58 @@ Component Scores:
   Validation Pass Rate            36.7/100
   Completeness                    80.0/100
 
-Top Strengths:
-  + High geographic-diversity sub-score on this tool's own house curve — not a CDFI Fund threshold, and not a finding about the application
+  READINESS NARRATIVE WITHDRAWN (1.5.2). This tool no longer emits strengths,
+  weaknesses or recommendations from the readiness composite, and none are
+  offered in this release.
 
-Areas for Improvement:
-  - Distress concentration below competitive threshold
-  - Jobs and units per $1MM QEI below this tool's impact-score band
-  - Some projects may not be NMTC-eligible — verify tracts
+  WHAT WAS WITHDRAWN. Earlier versions read this composite's sub-scores and
+  told a CDE to act on them: to increase deep/severe distress concentration to
+  a target share, to add operating-business projects to raise a jobs-per-$1MM-
+  QEI figure, and (withdrawn separately in 1.5.1) to expand its footprint to
+  >=5 states. They also asserted strengths and weaknesses -- that a share was
+  'above average', that a concentration was 'below competitive threshold'.
 
-Recommendations:
-  → Increase deep/severe distress concentration from 49% to ≥75% by substituting standard LIC projects with deeper-distress alternatives
-  → Add operating business projects (manufacturing, healthcare) to improve jobs-per-million-QEI metric above this tool's 12 FTE screening band (a house band, not a CDFI Fund figure)
+  WHY. EVERY ONE OF THOSE TRIGGERS WAS A BAND THIS TOOL SET FOR ITSELF. The
+  composite they weight is this tool's own unsourced house heuristic: the CDFI
+  Fund publishes no readiness score, no such weighting and no grade, so none
+  of the thresholds that fired those lines has a federal referent -- they are
+  recorded HOUSE in this package's own constant registry. Restructuring a real
+  pipeline is an expensive and sometimes irreversible act, and it was being
+  instructed by arithmetic with nothing behind it. The measured case is on the
+  record: following the withdrawn geographic advice moved a sample pipeline
+  from Highly Qualified to Not Qualified under the Fund's own gate while this
+  tool's grade did not change letter.
+
+  YOU WERE NEVERTHELESS DOCKED, AND HERE IS THE ARITHMETIC. A tool may decline
+  to advise. It may not deduct silently.
+
+      Eligibility Quality         60.0/100 at a 25% weight  ->  DOCKED 10.0 POINTS  [this tool's own eligibility curve]
+      Distress Concentration      49.2/100 at a 25% weight  ->  DOCKED 12.7 POINTS  [schema.TARGET_DISTRESS_THRESHOLDS (HOUSE)]
+      Impact Metrics              38.2/100 at a 20% weight  ->  DOCKED 12.4 POINTS  [schema.IMPACT_BENCHMARKS (HOUSE)]
+      Validation Pass Rate        36.7/100 at a 10% weight  ->  DOCKED 6.3 POINTS  [this tool's own pass-rate curve]
+      Completeness                80.0/100 at a  5% weight  ->  DOCKED 1.0 POINTS  [this tool's own completeness curve]
+
+      TOTAL DEDUCTION 42.4 POINTS of the 100-point readiness headline.
+
+  NONE OF THAT IS A FINDING ABOUT YOUR APPLICATION. The deduction is this
+  tool's own bookkeeping against its own bands. In particular the CDFI Fund
+  does not score geographic breadth at all, so nothing in the headline's
+  geographic term has a federal referent; do not treat this pipeline's
+  footprint as a finding either way, and do not expand it to recover those
+  points.
+
+  WHERE THE SOURCED GUIDANCE IS. `intelligence.RecommendationEngine` is
+  untouched. It never reads this composite -- it scores against the CY
+  2024-2025 NMTC Program Review Process and cites the section behind every
+  item it emits. Reach it with `Application.recommendations()` in Python, or
+  open the Win Alignment Scorer page in the Streamlit app.
+
+  IT IS NOT REACHED FROM HERE. Neither `nmtcapp analyze` nor the generated
+  application documents run that engine, so neither now carries improvement
+  guidance of any kind. That gap is stated rather than shipped quietly:
+  reaching the sourced guidance is a separate call you have to make yourself.
+
+Still emitted — NOT derived from the readiness composite:
   → Resolve validation error: Project PRJ-S012 (Detroit Auto Parts Manufacturer) is NOT NMTC-eligible — tract 26163515700 does not qualify as a LIC
 ============================================================
 ========================================================================
@@ -350,17 +432,56 @@ Component Scores:
   Validation Pass Rate           100.0/100
   Completeness                    80.0/100
 
-Top Strengths:
-  + High geographic-diversity sub-score on this tool's own house curve — not a CDFI Fund threshold, and not a finding about the application
-  + Clean validation — no blocking issues
+  READINESS NARRATIVE WITHDRAWN (1.5.2). This tool no longer emits strengths,
+  weaknesses or recommendations from the readiness composite, and none are
+  offered in this release.
 
-Areas for Improvement:
-  - Eligibility data unavailable — tracts and distress levels unverified
-  - Jobs and units per $1MM QEI below this tool's impact-score band
+  WHAT WAS WITHDRAWN. Earlier versions read this composite's sub-scores and
+  told a CDE to act on them: to increase deep/severe distress concentration to
+  a target share, to add operating-business projects to raise a jobs-per-$1MM-
+  QEI figure, and (withdrawn separately in 1.5.1) to expand its footprint to
+  >=5 states. They also asserted strengths and weaknesses -- that a share was
+  'above average', that a concentration was 'below competitive threshold'.
 
-Recommendations:
+  WHY. EVERY ONE OF THOSE TRIGGERS WAS A BAND THIS TOOL SET FOR ITSELF. The
+  composite they weight is this tool's own unsourced house heuristic: the CDFI
+  Fund publishes no readiness score, no such weighting and no grade, so none
+  of the thresholds that fired those lines has a federal referent -- they are
+  recorded HOUSE in this package's own constant registry. Restructuring a real
+  pipeline is an expensive and sometimes irreversible act, and it was being
+  instructed by arithmetic with nothing behind it. The measured case is on the
+  record: following the withdrawn geographic advice moved a sample pipeline
+  from Highly Qualified to Not Qualified under the Fund's own gate while this
+  tool's grade did not change letter.
+
+  YOU WERE NEVERTHELESS DOCKED, AND HERE IS THE ARITHMETIC. A tool may decline
+  to advise. It may not deduct silently.
+
+      Impact Metrics              38.2/100 at a 20% weight  ->  DOCKED 12.4 POINTS  [schema.IMPACT_BENCHMARKS (HOUSE)]
+      Completeness                80.0/100 at a  5% weight  ->  DOCKED 1.0 POINTS  [this tool's own completeness curve]
+
+      TOTAL DEDUCTION 13.4 POINTS of the 100-point readiness headline.
+
+  NONE OF THAT IS A FINDING ABOUT YOUR APPLICATION. The deduction is this
+  tool's own bookkeeping against its own bands. In particular the CDFI Fund
+  does not score geographic breadth at all, so nothing in the headline's
+  geographic term has a federal referent; do not treat this pipeline's
+  footprint as a finding either way, and do not expand it to recover those
+  points.
+
+  WHERE THE SOURCED GUIDANCE IS. `intelligence.RecommendationEngine` is
+  untouched. It never reads this composite -- it scores against the CY
+  2024-2025 NMTC Program Review Process and cites the section behind every
+  item it emits. Reach it with `Application.recommendations()` in Python, or
+  open the Win Alignment Scorer page in the Streamlit app.
+
+  IT IS NOT REACHED FROM HERE. Neither `nmtcapp analyze` nor the generated
+  application documents run that engine, so neither now carries improvement
+  guidance of any kind. That gap is stated rather than shipped quietly:
+  reaching the sourced guidance is a separate call you have to make yourself.
+
+Still emitted — NOT derived from the readiness composite:
   → Restore eligibility data access (nmtc-mapper) and re-run the analysis — eligibility and distress cannot be verified right now
-  → Add operating business projects (manufacturing, healthcare) to improve jobs-per-million-QEI metric above this tool's 12 FTE screening band (a house band, not a CDFI Fund figure)
 ============================================================
 ========================================================================
   DEMO MODE — FICTIONAL CDE. NOT YOUR DATA.
@@ -451,16 +572,53 @@ Component Scores:
   Validation Pass Rate           100.0/100
   Completeness                    80.0/100
 
-Top Strengths:
-  + High pipeline eligibility rate (≥80% score)
-  + Strong deep/severe distress concentration
-  + High geographic-diversity sub-score on this tool's own house curve — not a CDFI Fund threshold, and not a finding about the application
+  READINESS NARRATIVE WITHDRAWN (1.5.2). This tool no longer emits strengths,
+  weaknesses or recommendations from the readiness composite, and none are
+  offered in this release.
 
-Areas for Improvement:
-  - Jobs and units per $1MM QEI below this tool's impact-score band
+  WHAT WAS WITHDRAWN. Earlier versions read this composite's sub-scores and
+  told a CDE to act on them: to increase deep/severe distress concentration to
+  a target share, to add operating-business projects to raise a jobs-per-$1MM-
+  QEI figure, and (withdrawn separately in 1.5.1) to expand its footprint to
+  >=5 states. They also asserted strengths and weaknesses -- that a share was
+  'above average', that a concentration was 'below competitive threshold'.
 
-Recommendations:
-  → Add operating business projects (manufacturing, healthcare) to improve jobs-per-million-QEI metric above this tool's 12 FTE screening band (a house band, not a CDFI Fund figure)
+  WHY. EVERY ONE OF THOSE TRIGGERS WAS A BAND THIS TOOL SET FOR ITSELF. The
+  composite they weight is this tool's own unsourced house heuristic: the CDFI
+  Fund publishes no readiness score, no such weighting and no grade, so none
+  of the thresholds that fired those lines has a federal referent -- they are
+  recorded HOUSE in this package's own constant registry. Restructuring a real
+  pipeline is an expensive and sometimes irreversible act, and it was being
+  instructed by arithmetic with nothing behind it. The measured case is on the
+  record: following the withdrawn geographic advice moved a sample pipeline
+  from Highly Qualified to Not Qualified under the Fund's own gate while this
+  tool's grade did not change letter.
+
+  YOU WERE NEVERTHELESS DOCKED, AND HERE IS THE ARITHMETIC. A tool may decline
+  to advise. It may not deduct silently.
+
+      Impact Metrics              38.2/100 at a 20% weight  ->  DOCKED 12.4 POINTS  [schema.IMPACT_BENCHMARKS (HOUSE)]
+      Completeness                80.0/100 at a  5% weight  ->  DOCKED 1.0 POINTS  [this tool's own completeness curve]
+
+      TOTAL DEDUCTION 13.4 POINTS of the 100-point readiness headline.
+
+  NONE OF THAT IS A FINDING ABOUT YOUR APPLICATION. The deduction is this
+  tool's own bookkeeping against its own bands. In particular the CDFI Fund
+  does not score geographic breadth at all, so nothing in the headline's
+  geographic term has a federal referent; do not treat this pipeline's
+  footprint as a finding either way, and do not expand it to recover those
+  points.
+
+  WHERE THE SOURCED GUIDANCE IS. `intelligence.RecommendationEngine` is
+  untouched. It never reads this composite -- it scores against the CY
+  2024-2025 NMTC Program Review Process and cites the section behind every
+  item it emits. Reach it with `Application.recommendations()` in Python, or
+  open the Win Alignment Scorer page in the Streamlit app.
+
+  IT IS NOT REACHED FROM HERE. Neither `nmtcapp analyze` nor the generated
+  application documents run that engine, so neither now carries improvement
+  guidance of any kind. That gap is stated rather than shipped quietly:
+  reaching the sourced guidance is a separate call you have to make yourself.
 ============================================================
 ======================================================================
 @@ STATE: empty

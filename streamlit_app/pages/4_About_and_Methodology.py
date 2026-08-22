@@ -387,15 +387,36 @@ had no way to tell which figure this tool was using or why.
 
 **This tool scores against 50**, from the Review Process.
 
-**The reconciliation is NOT established here.** The reading this package has
-worked from is that the two figures differ because each application is scored by
-more than one reviewer, so a per-reviewer maximum aggregates to the section
-maximum. **That reading was not verified against the primary source in this
-release and is recorded as an open item, not as a fact about the CDFI Fund.**
-It is written down rather than left implicit because this package's own durable
-rule — **a summary document is not the instrument** — applies here and had not
-been applied. Treat the 25 as unexplained until it is ruled against the
-Application itself.
+**The reconciliation is now established, from the primary source.** The CY
+2024-2025 NMTC Program Review Process states on **PDF p.2**, verbatim:
+
+> "The CDFI Fund's Phase 1 review process, for all eligible Applicants, required
+> **two reviewers** to independently evaluate and score the Business Strategy and
+> Community Outcomes sections of each Application."
+
+Two reviewers score each of the two sections independently, so the Application's
+**per-reviewer** maximum of 25 aggregates to the **50** the Review Process
+describes. The same document's **p.3** confirms the denominator in the same
+breath as the gate: *"an aggregate score of at least 40 out of a possible total
+of **50 points** in each of the two scored Application sections; and (ii) an
+aggregate base score (excluding priority points) of at least 85 points."*
+
+**The arithmetic corroborates it independently.** At 25 points per section the
+aggregate base maximum would be 50, and a gate requiring "at least 85 points"
+would be unreachable. At 2 × 25 = 50 per section the maximum is 100 and the 85
+gate is coherent — as is that page's own worked example, where 40 + 38 = 78
+falls short of 85.
+
+**What is quoted and what is inferred, kept apart.** The two-reviewer fact and
+both point figures are quotations. That the 25 is *per reviewer* is the
+inference joining them, and it is the only reading on which both published
+numbers and the 85 gate are simultaneously true. The CDFI Fund does not print
+the reconciliation itself.
+
+*Retrieved and text-extracted locally with pypdf on 2026-08-21 — Review Process,
+7pp, 187,497 bytes, SHA-256 `ad0dc777eab0dc8cf437d970418bcdbea8403eb99b79dd1662f4ce94eab98749`;
+Allocation Application re-verified the same day against the SHA-256 already
+pinned in `renderers/_round_provenance`, byte count and hash both unchanged.*
 
 **No scoring changes from this disclosure**; the denominators are unchanged.
 """
