@@ -738,6 +738,45 @@ jobs:
           # A new gate that would have failed the release on a tree whose CI
           # was green is exactly what running this job locally is for.
           #
+          # 1.5.4 AUDIT CLOSE -- RE-DERIVED THE LONG WAY A FIFTH TIME, and the
+          # number does NOT move. The close adds five tests (three B2 share
+          # gates, two B4 reachability gates) and replaces B3's two
+          # parametrised cases with two plain ones. Built the sdist, unpacked
+          # it, installed the tarball plus [dev] into a clean venv, copied
+          # tests/, streamlit_app/, README.md and pyproject.toml out of it into
+          # a directory with NO nmtcapp/, and ran this job's exact invocation:
+          #
+          #     collected under -m "not wheel" 1,421
+          #     skipped in the sdist             -49
+          #     EXECUTED                       1,372
+          #     half                             686.0
+          #     rounded down                     680
+          #
+          # Suite fully green there: 1,372 passed, 49 skipped, 1 deselected.
+          # Identical on 3.9.25 and 3.12.13.
+          #
+          # SKIPS DID NOT MOVE EITHER, and that was checked rather than
+          # assumed: B3's two new gates carry the same isdir skipif the
+          # existing streamlit gates use, and MANIFEST.in SHIPS
+          # streamlit_app/, so it does not fire in the tarball.
+          #
+          # FLOOR SITS ON ITS LOWER BOUND, AND IT IS LEFT THERE. Ruled in the
+          # audit close, and recorded because the next round will meet it: the
+          # band today is [680, 710] and the lower bound rises to 690 at nine
+          # more collected tests. Deliberate headroom was considered and
+          # REJECTED. FLOOR's stated rule is half of what the sdist runs,
+          # rounded down to ten; an offset would make it a number that rule
+          # does not produce, and the freshness gate asserts it sits in a band
+          # computed FROM that rule -- so headroom means either the gate
+          # accepts a number the rule cannot yield, or the band is widened to
+          # admit it, and widening that band to admit an unmeasured number is
+          # exactly the 440 -> 470 -> 530 -> 560 history. The rounding-down to
+          # ten IS the headroom, it is DERIVED rather than chosen, and it
+          # varies 0-10 by construction. A round that adds nine tests and goes
+          # red here has been told, in a checkout, before anything is tagged,
+          # to do the one thing that keeps this number honest: rebuild the
+          # sdist and count.
+          #
           # THE ROUND ADDS SIX TEST MODULES (T1/T4 surfaces, T2's red proof,
           # T3's registry gate, T5's band-semantics gate, T6's phrase-integrity
           # gate and T7's literal gate), so CLAIMED_NEW_TEST_MODULES moves
