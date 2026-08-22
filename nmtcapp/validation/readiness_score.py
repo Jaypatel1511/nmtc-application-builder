@@ -503,11 +503,33 @@ def narrative_withdrawal_note(component_scores: dict) -> str:
             subtotal += dock
             label = key.replace("_", " ").title()
             house, _cls, fund = _COMPONENT_BASIS[key]
+            # THE ROW HEAD IS EXACTLY 78 COLUMNS, AND THE BASIS TAG RIDES
+            # BEHIND IT (1.5.3 follow-up). The label field is 24 (longest
+            # label is 22) and the deduction is 4.1f rather than .1f, which
+            # both pins the head at a constant width and finally ALIGNS the
+            # DOCKED column -- a two-digit deduction used to shove the row one
+            # character wider than a one-digit one.
+            #
+            # 78 is the note's column (NOTE_PROSE_WIDTH + the CLI indent), so
+            # the head alone fits every surface. What does NOT fit is the
+            # `[{house}]` tag, and :func:`wrap_note` moves it to a BASIS
+            # continuation on the surfaces that cannot reflow -- see there for
+            # why the split is a rendering concern and not done here.
+            #
+            # THE TRAILING "  [tag]" IS A CONTRACT with ``wrap_note``, which
+            # finds the tag by that marker.
+            # tests/test_streamlit_frame_geometry.py asserts every row still
+            # carries one, so changing this format fails a gate rather than
+            # silently un-splitting the tag.
             out.append(
-                f"    {label:<26} {score:5.1f}/100 at a {weight:>3.0%} weight  ->  "
-                f"DOCKED {dock:.1f} POINTS  [{house}]"
+                f"    {label:<24} {score:5.1f}/100 at a {weight:>3.0%} weight  ->  "
+                f"DOCKED {dock:4.1f} POINTS  [{house}]"
             )
-            wrapped = textwrap.wrap(fund, width=64)
+            # break_on_hyphens=False: nothing may break inside
+            # "jobs-per-$1MM-QEI". No FUND note wraps differently for it today
+            # -- verified -- so this pins current behaviour rather than
+            # changing it.
+            wrapped = textwrap.wrap(fund, width=64, break_on_hyphens=False)
             out += [f"        FUND: {wrapped[0]}"]
             out += [f"              {line}" for line in wrapped[1:]]
         return out, subtotal
@@ -824,12 +846,92 @@ def wrap_note(
         if not para.strip():
             out.append("")
         elif para.startswith("    "):
-            out.append(f"{indent}{para}")
-        else:
             out.extend(
-                f"{indent}{line}" for line in textwrap.wrap(para, width=width)
+                f"{indent}{line}" for line in _lay_out_deduction_row(para, width)
+            )
+        else:
+            # break_on_hyphens=False: "jobs-per-$1MM-QEI" is a unit token and
+            # must not be split across a line. break_long_words=False: a token
+            # longer than the column OVERFLOWS rather than being cut in half.
+            # Both are the same rule -- this function may move text, never
+            # corrupt it -- and an overflow is caught loudly by
+            # tests/test_streamlit_frame_geometry.py instead of shipping a
+            # mangled identifier.
+            out.extend(
+                f"{indent}{line}"
+                for line in textwrap.wrap(
+                    para, width=width,
+                    break_on_hyphens=False, break_long_words=False,
+                )
             )
     return out
+
+
+#: The column the FUND: continuations already sit at. The BASIS: continuation
+#: joins them rather than inventing a second continuation style.
+_CONTINUATION_INDENT = " " * 8
+
+
+def _split_basis_tag(row: str):
+    """Split ``... DOCKED n POINTS  [tag]`` into ``(head, tag)``.
+
+    Returns ``(row, None)`` when the row carries no trailing tag, so a caller
+    that cannot split simply leaves the line alone.
+    """
+    if not row.endswith("]"):
+        return row, None
+    marker = row.rfind("  [")
+    if marker == -1:
+        return row, None
+    return row[:marker], row[marker + 3:-1]
+
+
+def _lay_out_deduction_row(row: str, width: int):
+    """Move an over-wide row's basis tag onto a BASIS: continuation.
+
+    WHY THE ROWS NEEDED THIS AND THE 1.5.3 PROMPT THOUGHT THEY DID NOT.
+    ``wrap_note`` passes four-space-indented lines through untouched, because
+    rewrapping the deduction table destroys the column alignment that makes
+    the arithmetic readable. That exemption is right and is kept -- but it was
+    ALSO covering rows that did not fit, and the gate ratcheted their width
+    instead of bounding it, which certified the very lines that clip.
+
+    OBSERVED, NOT DERIVED, in Chrome against the app itself:
+
+        1512 px window, root -> sidebar nav   block 1052 px   125 cols   fits
+        1512 px window, DIRECT LINK to page   block  704 px    83 cols   CLIPS
+        1180 px window                        block  720 px    85 cols   CLIPS
+
+    The narrow case is not an unusual laptop: ``layout="wide"`` is set by the
+    entrypoint script, so ANY direct link or bookmark to the Pipeline Analyzer
+    renders in the centred 704 px column. At 85 columns the reader keeps::
+
+        Impact Metrics    38.2/100 at a 20% weight  ->  DOCKED 12.4 POINTS  [sc
+
+    and loses ``hema.IMPACT_BENCHMARKS (HOUSE)]`` -- THE DEDUCTION SURVIVES AND
+    THE TAG SAYING IT IS THIS TOOL'S OWN BAND DOES NOT. That is the one token
+    on the line that must not be the one that falls off.
+
+    WHY HERE AND NOT AT SOURCE. Same reason as the prose: markdown reflows and
+    renders the note whole, so physical line breaks are a property of a
+    FIXED-WIDTH rendering, not of the note. Splitting at source would put the
+    break into the markdown document too and re-joining it is what produced
+    "jobs-per-$1MM- QEI". The tag is moved, never re-wrapped, so no token is
+    ever broken.
+
+    WHY A CONTINUATION AND NOT A RE-LAYOUT. The rows already have one -- the
+    FUND: lines under each row, at ``_CONTINUATION_INDENT``. BASIS: joins that
+    existing pattern at the same indent, so the table gains a line and keeps
+    its shape.
+    """
+    if len(row) <= width:
+        return [row]
+    head, tag = _split_basis_tag(row)
+    if tag is None:
+        # Nothing this function knows how to move. Returned unchanged so the
+        # width gate reports it rather than this function hiding it.
+        return [row]
+    return [head, f"{_CONTINUATION_INDENT}BASIS: {tag}"]
 
 
 def _wrap_note(note: str, width: int = NOTE_PROSE_WIDTH) -> List[str]:

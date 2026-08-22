@@ -576,11 +576,18 @@ def test_no_component_is_docked_silently(label, score):
             f"{label}: {pretty} scored {value} and cost "
             f"{dock:.1f} points, and the note never names it:\n{note}"
         )
-        assert f"DOCKED {dock:.1f} POINTS" in note, (
+        # WHITESPACE-NORMALISED (1.5.3 follow-up). The deduction column is
+        # padded to a fixed width so the row head is a constant 78 columns,
+        # which renders "DOCKED  5.0 POINTS" for a one-digit deduction. The
+        # claim being asserted is that the note STATES the deduction, not how
+        # many spaces precede it, so the comparison collapses runs of
+        # whitespace on both sides. The number and the words are still
+        # required, still adjacent, still in order.
+        assert f"DOCKED {dock:.1f} POINTS" in " ".join(note.split()), (
             f"{label}: the note does not state {pretty}'s deduction of "
             f"{dock:.1f} points:\n{note}"
         )
-    assert f"TOTAL DEDUCTION {total:.1f} POINTS" in note, (
+    assert f"TOTAL DEDUCTION {total:.1f} POINTS" in " ".join(note.split()), (
         f"{label}: the note does not state the total deduction of "
         f"{total:.1f} points:\n{note}"
     )

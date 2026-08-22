@@ -102,32 +102,40 @@ SUFFICIENT bound, not a necessary one -- a line of 100 characters would also
 have been visible in that browser. This gate prefers the shipped column to a
 measured one precisely because the measured one is not portable.
 
-WHAT THIS GATE DOES NOT COVER, AND THE OPEN FINDING IT CARRIES
-=============================================================
+THE ROWS ARE IN THE BUDGET TOO, AND THE RATCHET THAT EXEMPTED THEM IS GONE
+=========================================================================
 
-THE PRE-FORMATTED DEDUCTION ROWS ARE NOT WRAPPED, BY DESIGN AND STILL TODAY.
-``wrap_note`` passes any four-space-indented line through untouched because
-rewrapping it would destroy the column alignment that makes the arithmetic
-readable. That exemption is correct and is kept.
+The first 1.5.3 commit wrapped the prose and left the pre-formatted deduction
+rows on a RATCHET at 124 columns -- "they may not get wider". THAT WAS A BOUND
+ABOVE THE BUDGET, so this module certified the exact lines that clip.
 
-BUT THE ROWS ARE WIDER THAN THIS COLUMN AND THE 1.5.3 PROMPT BELIEVED THEY WERE
-NOT. Measured, not assumed -- on the live deployment the widest pre-formatted
-line is 117 characters, and on an all-six-docked pipeline it reaches 124::
+Retired after OBSERVING the app in Chrome rather than deriving it:
 
-    Distress Concentration  61.0/100 at a 25% weight -> DOCKED 9.8 POINTS
-    [schema.TARGET_DISTRESS_THRESHOLDS (HOUSE)]                    <- 124 cols
+    1512 px window, root -> sidebar nav   block 1052 px   125 cols   fits
+    1512 px window, DIRECT LINK to page   block  704 px    83 cols   CLIPS
+    1180 px window                        block  720 px    85 cols   CLIPS
 
-At the 1512 px window measured above, 125 columns are visible and those rows
-FIT. At a 1280 px laptop the same block shows roughly 97 columns and the tail
-of that row -- the literal string ``(HOUSE)``, which is what marks the row as
-this tool's own bookkeeping -- IS THE PART THAT FALLS OFF.
+``layout="wide"`` is set by the ENTRYPOINT script, so a direct link or bookmark
+straight to the Pipeline Analyzer renders in the centred 704 px column. The
+narrow case is not an unusual laptop -- it is what a shared link does. At 85
+columns the reader kept ``DOCKED 12.4 POINTS  [sc`` and lost
+``hema.IMPACT_BENCHMARKS (HOUSE)]``: the deduction survives, the tag saying it
+is this tool's own band does not. That is the worst token on the line to lose.
 
-THAT IS A REAL DEFECT AND IT IS NOT FIXED HERE. Fixing it means re-laying-out
-the deduction table, which is more than the rewrap 1.5.3 scoped, so it is
-RECORDED rather than shipped quietly, and
-``test_the_preformatted_rows_do_not_widen_beyond_their_recorded_maximum``
-ratchets it: the rows may not get wider than they are today without this gate
-failing and this paragraph being re-read.
+``wrap_note`` now moves the tag to a ``BASIS:`` continuation at the indent the
+``FUND:`` lines already use -- an existing pattern applied, not a table
+redesigned -- and the row head is a constant 78 columns. EVERY rendered line is
+now held to NOTE_COLUMN. There is no exemption left in this file.
+
+WHAT THIS GATE STILL DOES NOT COVER
+===================================
+
+  - MARKDOWN'S COPY OF THE TABLE. ``_withdrawal_markdown`` passes the rows
+    through as an indented code block, which does not reflow either. Markdown
+    is ruled frameless by ``test_render_frame_geometry`` and is not measured
+    here, so the long-row form still exists in a generated .md. Recorded.
+  - THE RENDERED WIDTH ITSELF, per the scope limit above.
+  - WHETHER THE DEPLOYED APP SHOWS THE FIX. Nothing here reads production.
 """
 from __future__ import annotations
 
@@ -151,11 +159,17 @@ STREAMLIT_DIR = REPO_ROOT / "streamlit_app"
 # re-derives both halves so this constant cannot drift from the code.
 NOTE_COLUMN = 78
 
-# The widest pre-formatted deduction row an all-six-docked pipeline produces,
-# MEASURED (see ``_worst_case_note``) and ratcheted. This is a RECORD OF AN
-# OPEN DEFECT, not a bound anyone is happy with -- read the docstring's last
-# section before raising it.
-RECORDED_PREFORMATTED_MAXIMUM = 124
+# THE RATCHET THAT USED TO LIVE HERE IS RETIRED (1.5.3 follow-up).
+#
+# It recorded the widest pre-formatted deduction row -- 124 columns -- and
+# asserted only that the rows did not get WIDER. That is a bound ABOVE the
+# 78-column budget the same gate enforces on prose, which meant this module
+# CERTIFIED THE EXACT LINES THAT CLIP: at the 83 columns a direct link to the
+# page actually renders, a 117-column row loses its basis tag and the ratchet
+# stayed green.
+#
+# There is now ONE bound for every rendered line, prose and pre-formatted
+# alike, and it is NOTE_COLUMN. Nothing in this file is exempt from it.
 
 
 def _worst_case_scores() -> dict:
@@ -391,34 +405,89 @@ def test_the_note_still_fits_the_column_on_a_pipeline_with_nothing_docked():
     )
 
 
-def test_the_preformatted_rows_do_not_widen_beyond_their_recorded_maximum():
-    """The declared exemption, ratcheted rather than left open.
+def test_no_preformatted_deduction_row_exceeds_the_note_column_either():
+    """The rows are held to the SAME bound as the prose. No exemption.
 
-    The deduction rows are pre-formatted and ``_wrap_note`` passes them
-    through untouched on purpose -- rewrapping them destroys the column
-    alignment that makes the arithmetic readable.
+    WHAT CHANGED AND WHY THE OLD SHAPE WAS WRONG. Through the first 1.5.3
+    commit this assertion was a RATCHET at 124 columns -- "the rows may not get
+    wider than they are today". A ratchet above the budget is not a bound: it
+    certified lines that clip, in the module whose entire subject is lines that
+    clip.
 
-    THEY ARE ALSO WIDER THAN THE COLUMN, which the 1.5.3 prompt did not know:
-    up to 124 characters against 78. They survive a 1512 px window (125
-    columns visible, measured) and they DO NOT survive a 1280 px one, where
-    the ``(HOUSE)`` tag that marks a row as this tool's own bookkeeping is the
-    part that falls off the edge.
+    OBSERVED IN CHROME against the app, which is what retired it:
 
-    That is recorded as an open finding, not fixed here. What this asserts is
-    that it cannot get WORSE without someone reading the paragraph above.
+        1512 px window, root -> sidebar nav   block 1052 px   125 cols   fits
+        1512 px window, DIRECT LINK to page   block  704 px    83 cols   CLIPS
+        1180 px window                        block  720 px    85 cols   CLIPS
+
+    ``layout="wide"`` is set by the entrypoint script, so any direct link or
+    bookmark to the Pipeline Analyzer renders in the centred 704 px column.
+    That is not an unusual viewport; it is the default for a shared link. At 85
+    columns the reader kept ``DOCKED 12.4 POINTS  [sc`` and lost
+    ``hema.IMPACT_BENCHMARKS (HOUSE)]``.
+
+    ``wrap_note`` now moves the basis tag onto a BASIS: continuation at the
+    same indent the FUND: lines already use, so every line fits 78.
     """
-    _, preformatted = _split(_rendered_streamlit_note())
-    assert preformatted, (
-        "no pre-formatted deduction row rendered, so this ratchet measured "
-        "nothing. The fixture stopped docking components."
+    lines = [
+        (i, line)
+        for i, line in enumerate(_rendered_streamlit_note().split("\n"))
+        if line.strip()
+    ]
+    assert lines, "the note rendered nothing; this gate measured nothing."
+    over = [(i, len(l), l[:64]) for i, l in lines if len(l) > NOTE_COLUMN]
+    assert not over, (
+        f"{len(over)} rendered line(s) exceed the {NOTE_COLUMN}-column budget. "
+        "st.code never wraps, and a direct link to this page renders in an "
+        "83-column block, so anything past the bound is invisible without a "
+        "sideways scroll -- and on a deduction row the part that falls off is "
+        "the tag naming the band as this tool's own.\n"
+        + "\n".join(f"  line {i}: {n} cols  {t!r}..." for i, n, t in over)
     )
-    widest = max(len(line) for _, line in preformatted)
-    assert widest <= RECORDED_PREFORMATTED_MAXIMUM, (
-        f"a pre-formatted deduction row widened to {widest} columns, past the "
-        f"{RECORDED_PREFORMATTED_MAXIMUM} recorded at 1.5.3. These rows are "
-        "already clipped on a 1280 px viewport; widening them clips more. "
-        "Re-lay-out the row rather than raising this number."
+
+
+def test_every_deduction_row_still_carries_an_extractable_basis_tag():
+    """The contract ``wrap_note`` relies on to move the tag at all.
+
+    ``_lay_out_deduction_row`` finds the basis tag by its trailing ``  [tag]``
+    marker and leaves the line ALONE when there is none. That is the right
+    failure mode -- it never corrupts a row it does not understand -- but it
+    means a change to the row format in ``narrative_withdrawal_note`` would
+    silently stop the split and put the rows back over the budget.
+
+    The width gate above would catch that. This one says WHY, at the line that
+    broke, rather than leaving a reader to rediscover the coupling.
+    """
+    from nmtcapp.validation.readiness_score import _split_basis_tag
+
+    rows = [
+        line
+        for line in _worst_case_note().split("\n")
+        if line.startswith("    ") and "DOCKED" in line
+    ]
+    assert len(rows) == 6, (
+        f"expected six deduction rows on an all-six-docked pipeline, got "
+        f"{len(rows)}; this gate is not measuring the table it thinks it is."
     )
+    missing = [r for r in rows if _split_basis_tag(r)[1] is None]
+    assert not missing, (
+        "a deduction row no longer ends in the '  [tag]' marker wrap_note "
+        "splits on, so its basis tag can no longer be moved to a "
+        "continuation.\n" + "\n".join(f"  {r[:80]!r}" for r in missing)
+    )
+    # And the tag must survive the move intact -- moving is allowed, breaking
+    # a token is not. This is the "jobs-per-$1MM- QEI" rule applied to the tag.
+    for row in rows:
+        _, tag = _split_basis_tag(row)
+        laid_out = _lay_out_row(row)
+        assert any(tag in line for line in laid_out), (
+            f"the basis tag {tag!r} did not survive layout intact"
+        )
+
+
+def _lay_out_row(row: str) -> list:
+    from nmtcapp.validation.readiness_score import _lay_out_deduction_row
+    return _lay_out_deduction_row(row, NOTE_COLUMN)
 
 
 def test_the_column_is_derived_from_the_shipped_wrap_and_not_typed_here():
@@ -441,7 +510,7 @@ def test_the_column_is_derived_from_the_shipped_wrap_and_not_typed_here():
 
     # Derivation 2: the FUND continuation lines inside the deduction rows.
     src = inspect.getsource(narrative_withdrawal_note)
-    assert "textwrap.wrap(fund, width=64)" in src, (
+    assert "textwrap.wrap(fund, width=64" in src, (
         "the FUND note wrap width moved. NOTE_COLUMN is derived from it "
         "(64 + a 14-space continuation indent = 78) and must be re-derived."
     )

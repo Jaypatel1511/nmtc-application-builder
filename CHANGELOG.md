@@ -60,15 +60,16 @@ Streamlit page now calls. One copy of the rule, not three.
 
 **RENDERED BEFORE/AFTER, ALL THREE SURFACES** (all-six-docked pipeline):
 
-| surface | before max | after max | lines > 125 cols |
+| surface | before max | after max | over the observed 83-col budget |
 |---|---|---|---|
-| Streamlit `st.code` | **715** | **124** | 7 → **0** |
-| `nmtcapp analyze` | 126 | 126 | 1 → 1 (**byte-identical**) |
-| markdown | 717 | 717 | unchanged (**byte-identical**) |
+| Streamlit `st.code` | **715** | **78** | 16 → **0** |
+| `nmtcapp analyze` | 126 | **80** | 15 → **0** (80 = 78 + the CLI's 2-space indent) |
+| markdown | 717 | 717 | not measured — markdown reflows; its indented code block is recorded as an open gap |
 
-**ONE SURFACE CHANGED, BECAUSE ONE SURFACE WAS BROKEN.** Neither
-`tests/cli_baseline/analyze.txt` nor `tests/rendered_baseline/markdown.txt`
-moves in this release — verified by regenerating both, not by reading the code.
+**Both fixed-width surfaces are now inside the budget**, and the markdown
+document is unchanged apart from two padding lines. `analyze.txt` moves (+48 /
+−30): the rows gain their `BASIS:` continuation and the `jobs-per-$1MM-` break
+is gone. Verified by regenerating every baseline, not by reading the code.
 
 ### T2 — the frame gate named three surfaces; there are four
 
@@ -105,15 +106,49 @@ assumed:** `st.code` appears **exactly once** repo-wide. `st.text`, `st.json`,
 `st.dataframe` calls are reflowing widgets. The gate recomputes that list from
 the AST on every run, so the next `st.code` cannot be invisible the way this one was.
 
-**OPEN FINDING, RECORDED NOT FIXED — the prompt for this release believed the
-deduction rows already wrapped. They do not.** Measured: the widest
-pre-formatted row is **117 columns** on the live deployment and **124** on an
-all-six-docked pipeline. At 1512 px (125 visible) they fit; **at a 1280 px
-laptop, roughly 97 columns, the part that falls off the edge is the literal
-`(HOUSE)` tag** that marks the row as this tool's own bookkeeping. Fixing it
-means re-laying-out the deduction table, which is more than a rewrap, so it is
-**ratcheted rather than shipped quietly**: the rows may not widen past 124
-without the gate failing.
+**THE ROWS ARE IN THE BUDGET TOO, AND THE RATCHET THAT EXEMPTED THEM IS GONE.**
+The first cut of this release wrapped the prose and left the pre-formatted
+deduction rows on a **ratchet at 124 columns** — "they may not get wider".
+**That is a bound above the budget, so the gate certified the exact lines that
+clip**, in the module whose whole subject is lines that clip.
+
+Retired after **observing the running app in Chrome** rather than deriving it —
+which was this release's own stated CANNOT-ESTABLISH:
+
+| route / window | block | columns | clipped |
+|---|---|---|---|
+| 1512 px, root → sidebar nav | 1052 px | 125 | 0 |
+| **1512 px, direct link to the page** | **704 px** | **83** | **2 rows** |
+| **1180 px window** | **720 px** | **85** | **2 rows** |
+
+`layout="wide"` is set by the **entrypoint** script, so a direct link or
+bookmark straight to the Pipeline Analyzer renders in the centred 704 px
+column. **The narrow case is not an unusual laptop — it is what a shared link
+does.** At 85 columns the reader kept
+
+```
+Impact Metrics            38.2/100 at a 20% weight  ->  DOCKED 12.4 POINTS  [sc
+```
+
+and lost `hema.IMPACT_BENCHMARKS (HOUSE)]`. **The deduction survives; the tag
+saying it is this tool's own band does not** — the worst token on the line to
+lose.
+
+**Fixed as a continuation, not a re-layout.** The rows already had one: the
+`FUND:` lines. `wrap_note` now moves the basis tag to a `BASIS:` continuation
+at the same indent, so the table gains a line and keeps its shape. The tag is
+**moved, never re-wrapped**, so no token is broken. The row head is a constant
+**78 columns** — the label field is 24 (longest label 22) and the deduction is
+`4.1f`, which also **aligns the DOCKED column** for the first time; a two-digit
+deduction used to shove the row a character wider than a one-digit one.
+
+**Every rendered line is now held to one bound. There is no exemption left.**
+Proved RED at the old value: with the rows passed through as before, all six
+fail at 113–123 columns — every one of which the 124-ratchet called green.
+
+**Also fixed, same rule:** `wrap_note` wraps with `break_on_hyphens=False` and
+`break_long_words=False`, so `jobs-per-$1MM-QEI` is no longer split across
+lines. That break was in the shipped 1.5.2 CLI baseline; it is gone.
 
 ### T3 — a lapsed deprecation the app could not have survived
 
@@ -158,14 +193,15 @@ value.**
 
 | figure | 1.5.2 | 1.5.3 | how |
 |---|---|---|---|
-| collected tests | 1,351 | **1,362** | `pytest --collect-only -q` |
+| collected tests | 1,351 | **1,363** | `pytest --collect-only -q` |
 | new test modules since v1.4.0 | 11 | **12** | tree walk vs. tag |
-| swept constants | 227 | **228** | census (`NOTE_PROSE_WIDTH` is the +1) |
-| `release.yml` `FLOOR` | 650 | **650 (unmoved)** | `((1362−45)//2)//10*10 = 650` |
-| `tests/cli_baseline/analyze.txt` | — | **unchanged** | regenerated |
-| `tests/rendered_baseline/*` | — | **unchanged** | regenerated, all four |
+| swept constants | 227 | **229** | census (`NOTE_PROSE_WIDTH`, `_CONTINUATION_INDENT`) |
+| `release.yml` `FLOOR` | 650 | **650 (unmoved)** | `((1363−45)//2)//10*10 = 650` |
+| `tests/cli_baseline/analyze.txt` | — | **+48 / −30** | regenerated |
+| `tests/rendered_baseline/markdown.txt` | — | **2 lines** | regenerated |
+| `rendered_baseline/{pdf,word,excel}` | — | **unchanged** | regenerated |
 
-`FLOOR` does not move: 1,362 collected keeps it inside its derived band. The
+`FLOOR` does not move: 1,363 collected keeps it inside its derived band. The
 published test count is corrected in `README.md`, `CONTRIBUTING.md` and
 `streamlit_app/app.py` — the three files that agreed with each other while the
 tree had moved, which is the 1.5.1 defect this table exists to prevent.
@@ -3966,15 +4002,17 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 228 constants are swept
+colour". The rendered-string sweep demands **19**, and 229 constants are swept
 where 49 were. *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
 round label, its status, the re-check list and the pinned-document facts; 1.5.2
 adds `readiness_score._COMPONENT_BASIS`, the withdrawal note's per-component
 basis labels, pinned on `markdown` and `cli_summary`. The 1.5.2 AUDIT ROUND
 adds two more, both in `readiness_score` and both created by F1's second axis:
 `_FUND_SCORED` and `_HOUSE_ONLY`, the two classes the deduction table is now
-partitioned by. 1.5.3 adds one: `readiness_score.NOTE_PROSE_WIDTH`, the single
-column every fixed-width rendering of the withdrawal note is laid out to.)*
+partitioned by. 1.5.3 adds two, both in `readiness_score`:
+`NOTE_PROSE_WIDTH`, the single column every fixed-width rendering of the
+withdrawal note is laid out to, and `_CONTINUATION_INDENT`, the column the
+FUND: and BASIS: continuations share.)*
 
 > **Remeasured in 1.3.0, and again in FIX-2, and again in 1.4.0.** This
 > sentence read **160** when 1.2.2 shipped, **183** at `ff49064` and **203**
