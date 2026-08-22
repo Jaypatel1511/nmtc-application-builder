@@ -31,13 +31,13 @@ Great Lakes Regional Capital CDE, LLC respectfully requests $70.0MM in New Marke
 
 *ROWS THAT ARE HOUSE BOOKKEEPING END TO END -- the Fund scores no corresponding quantity:*
 
-    Geographic Diversity        89.4/100 at a 15% weight  ->  DOCKED 1.6 POINTS  [schema.MIN_GEOGRAPHIC_DIVERSITY (HOUSE)]
+    Geographic Diversity      89.4/100 at a 15% weight  ->  DOCKED  1.6 POINTS  [schema.MIN_GEOGRAPHIC_DIVERSITY (HOUSE)]
         FUND: THE CDFI FUND DOES NOT SCORE GEOGRAPHIC BREADTH AT ALL. No state
               count is scored anywhere in the CY 2024-2025 Review Process, so
               these points exist only inside this tool. Measured: taking a
               sample pipeline from 3 states to 6 returned exactly the 10.0
               itemised here and moved the Fund base score by zero.
-    Impact Metrics              32.6/100 at a 20% weight  ->  DOCKED 13.5 POINTS  [schema.IMPACT_BENCHMARKS (HOUSE)]
+    Impact Metrics            32.6/100 at a 20% weight  ->  DOCKED 13.5 POINTS  [schema.IMPACT_BENCHMARKS (HOUSE)]
         FUND: The Fund scores whether outcomes are QUANTIFIED and THIRD-PARTY
               VALIDATED. It publishes no jobs-per-$1MM-QEI band, so no Fund
               quantity corresponds to the rate docking you here.

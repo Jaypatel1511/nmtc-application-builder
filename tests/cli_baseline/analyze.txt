@@ -94,10 +94,11 @@ Component Scores:
 
   WHAT WAS WITHDRAWN. Earlier versions read this composite's sub-scores and
   told a CDE to act on them: to increase deep/severe distress concentration to
-  a target share, to add operating-business projects to raise a jobs-per-$1MM-
-  QEI figure, and (withdrawn separately in 1.5.1) to expand its footprint to
-  >=5 states. They also asserted strengths and weaknesses -- that a share was
-  'above average', that a concentration was 'below competitive threshold'.
+  a target share, to add operating-business projects to raise a
+  jobs-per-$1MM-QEI figure, and (withdrawn separately in 1.5.1) to expand its
+  footprint to >=5 states. They also asserted strengths and weaknesses -- that
+  a share was 'above average', that a concentration was 'below competitive
+  threshold'.
 
   WHY. EVERY ONE OF THOSE TRIGGERS WAS A BAND THIS TOOL SET FOR ITSELF. The
   composite they weight is this tool's own unsourced house heuristic: the CDFI
@@ -116,12 +117,14 @@ Component Scores:
   ROWS WHOSE UNDERLYING QUANTITY THE CDFI FUND ALSO SCORES -- on its own
   basis, not this one:
 
-      Eligibility Quality         68.0/100 at a 25% weight  ->  DOCKED 8.0 POINTS  [this tool's own eligibility curve]
+      Eligibility Quality       68.0/100 at a 25% weight  ->  DOCKED  8.0 POINTS
+          BASIS: this tool's own eligibility curve
           FUND: the eligible share reaches the Fund framework only as Pipeline
                 Credibility's eligibility penalty, and LIC status itself is a
                 STATUTORY GATE rather than a scored band. The 0-100 curve
                 docking you here is this tool's.
-      Distress Concentration      58.2/100 at a 25% weight  ->  DOCKED 10.4 POINTS  [schema.TARGET_DISTRESS_THRESHOLDS (HOUSE)]
+      Distress Concentration    58.2/100 at a 25% weight  ->  DOCKED 10.4 POINTS
+          BASIS: schema.TARGET_DISTRESS_THRESHOLDS (HOUSE)
           FUND: THE FUND SCORES DISTRESS, ON A DIFFERENT BASIS. Higher Distress
                 Targeting and Deep Distress Commitment are scored against shares
                 of QLICI dollars; this sub-score divides a share of QEI by that
@@ -134,14 +137,17 @@ Component Scores:
   ROWS THAT ARE HOUSE BOOKKEEPING END TO END -- the Fund scores no
   corresponding quantity:
 
-      Impact Metrics              38.2/100 at a 20% weight  ->  DOCKED 12.4 POINTS  [schema.IMPACT_BENCHMARKS (HOUSE)]
+      Impact Metrics            38.2/100 at a 20% weight  ->  DOCKED 12.4 POINTS
+          BASIS: schema.IMPACT_BENCHMARKS (HOUSE)
           FUND: The Fund scores whether outcomes are QUANTIFIED and THIRD-PARTY
                 VALIDATED. It publishes no jobs-per-$1MM-QEI band, so no Fund
                 quantity corresponds to the rate docking you here.
-      Validation Pass Rate        36.7/100 at a 10% weight  ->  DOCKED 6.3 POINTS  [this tool's own pass-rate curve]
+      Validation Pass Rate      36.7/100 at a 10% weight  ->  DOCKED  6.3 POINTS
+          BASIS: this tool's own pass-rate curve
           FUND: An internal check of this tool's own input rules. It has no Fund
                 analogue and is not part of any application.
-      Completeness                80.0/100 at a  5% weight  ->  DOCKED 1.0 POINTS  [this tool's own completeness curve]
+      Completeness              80.0/100 at a  5% weight  ->  DOCKED  1.0 POINTS
+          BASIS: this tool's own completeness curve
           FUND: An internal check that this tool's own fields are populated. It
                 has no Fund analogue and is not part of any application.
 
@@ -304,10 +310,11 @@ Component Scores:
 
   WHAT WAS WITHDRAWN. Earlier versions read this composite's sub-scores and
   told a CDE to act on them: to increase deep/severe distress concentration to
-  a target share, to add operating-business projects to raise a jobs-per-$1MM-
-  QEI figure, and (withdrawn separately in 1.5.1) to expand its footprint to
-  >=5 states. They also asserted strengths and weaknesses -- that a share was
-  'above average', that a concentration was 'below competitive threshold'.
+  a target share, to add operating-business projects to raise a
+  jobs-per-$1MM-QEI figure, and (withdrawn separately in 1.5.1) to expand its
+  footprint to >=5 states. They also asserted strengths and weaknesses -- that
+  a share was 'above average', that a concentration was 'below competitive
+  threshold'.
 
   WHY. EVERY ONE OF THOSE TRIGGERS WAS A BAND THIS TOOL SET FOR ITSELF. The
   composite they weight is this tool's own unsourced house heuristic: the CDFI
@@ -326,12 +333,14 @@ Component Scores:
   ROWS WHOSE UNDERLYING QUANTITY THE CDFI FUND ALSO SCORES -- on its own
   basis, not this one:
 
-      Eligibility Quality         60.0/100 at a 25% weight  ->  DOCKED 10.0 POINTS  [this tool's own eligibility curve]
+      Eligibility Quality       60.0/100 at a 25% weight  ->  DOCKED 10.0 POINTS
+          BASIS: this tool's own eligibility curve
           FUND: the eligible share reaches the Fund framework only as Pipeline
                 Credibility's eligibility penalty, and LIC status itself is a
                 STATUTORY GATE rather than a scored band. The 0-100 curve
                 docking you here is this tool's.
-      Distress Concentration      49.2/100 at a 25% weight  ->  DOCKED 12.7 POINTS  [schema.TARGET_DISTRESS_THRESHOLDS (HOUSE)]
+      Distress Concentration    49.2/100 at a 25% weight  ->  DOCKED 12.7 POINTS
+          BASIS: schema.TARGET_DISTRESS_THRESHOLDS (HOUSE)
           FUND: THE FUND SCORES DISTRESS, ON A DIFFERENT BASIS. Higher Distress
                 Targeting and Deep Distress Commitment are scored against shares
                 of QLICI dollars; this sub-score divides a share of QEI by that
@@ -344,14 +353,17 @@ Component Scores:
   ROWS THAT ARE HOUSE BOOKKEEPING END TO END -- the Fund scores no
   corresponding quantity:
 
-      Impact Metrics              38.2/100 at a 20% weight  ->  DOCKED 12.4 POINTS  [schema.IMPACT_BENCHMARKS (HOUSE)]
+      Impact Metrics            38.2/100 at a 20% weight  ->  DOCKED 12.4 POINTS
+          BASIS: schema.IMPACT_BENCHMARKS (HOUSE)
           FUND: The Fund scores whether outcomes are QUANTIFIED and THIRD-PARTY
                 VALIDATED. It publishes no jobs-per-$1MM-QEI band, so no Fund
                 quantity corresponds to the rate docking you here.
-      Validation Pass Rate        36.7/100 at a 10% weight  ->  DOCKED 6.3 POINTS  [this tool's own pass-rate curve]
+      Validation Pass Rate      36.7/100 at a 10% weight  ->  DOCKED  6.3 POINTS
+          BASIS: this tool's own pass-rate curve
           FUND: An internal check of this tool's own input rules. It has no Fund
                 analogue and is not part of any application.
-      Completeness                80.0/100 at a  5% weight  ->  DOCKED 1.0 POINTS  [this tool's own completeness curve]
+      Completeness              80.0/100 at a  5% weight  ->  DOCKED  1.0 POINTS
+          BASIS: this tool's own completeness curve
           FUND: An internal check that this tool's own fields are populated. It
                 has no Fund analogue and is not part of any application.
 
@@ -514,10 +526,11 @@ Component Scores:
 
   WHAT WAS WITHDRAWN. Earlier versions read this composite's sub-scores and
   told a CDE to act on them: to increase deep/severe distress concentration to
-  a target share, to add operating-business projects to raise a jobs-per-$1MM-
-  QEI figure, and (withdrawn separately in 1.5.1) to expand its footprint to
-  >=5 states. They also asserted strengths and weaknesses -- that a share was
-  'above average', that a concentration was 'below competitive threshold'.
+  a target share, to add operating-business projects to raise a
+  jobs-per-$1MM-QEI figure, and (withdrawn separately in 1.5.1) to expand its
+  footprint to >=5 states. They also asserted strengths and weaknesses -- that
+  a share was 'above average', that a concentration was 'below competitive
+  threshold'.
 
   WHY. EVERY ONE OF THOSE TRIGGERS WAS A BAND THIS TOOL SET FOR ITSELF. The
   composite they weight is this tool's own unsourced house heuristic: the CDFI
@@ -536,11 +549,13 @@ Component Scores:
   ROWS THAT ARE HOUSE BOOKKEEPING END TO END -- the Fund scores no
   corresponding quantity:
 
-      Impact Metrics              38.2/100 at a 20% weight  ->  DOCKED 12.4 POINTS  [schema.IMPACT_BENCHMARKS (HOUSE)]
+      Impact Metrics            38.2/100 at a 20% weight  ->  DOCKED 12.4 POINTS
+          BASIS: schema.IMPACT_BENCHMARKS (HOUSE)
           FUND: The Fund scores whether outcomes are QUANTIFIED and THIRD-PARTY
                 VALIDATED. It publishes no jobs-per-$1MM-QEI band, so no Fund
                 quantity corresponds to the rate docking you here.
-      Completeness                80.0/100 at a  5% weight  ->  DOCKED 1.0 POINTS  [this tool's own completeness curve]
+      Completeness              80.0/100 at a  5% weight  ->  DOCKED  1.0 POINTS
+          BASIS: this tool's own completeness curve
           FUND: An internal check that this tool's own fields are populated. It
                 has no Fund analogue and is not part of any application.
 
@@ -674,10 +689,11 @@ Component Scores:
 
   WHAT WAS WITHDRAWN. Earlier versions read this composite's sub-scores and
   told a CDE to act on them: to increase deep/severe distress concentration to
-  a target share, to add operating-business projects to raise a jobs-per-$1MM-
-  QEI figure, and (withdrawn separately in 1.5.1) to expand its footprint to
-  >=5 states. They also asserted strengths and weaknesses -- that a share was
-  'above average', that a concentration was 'below competitive threshold'.
+  a target share, to add operating-business projects to raise a
+  jobs-per-$1MM-QEI figure, and (withdrawn separately in 1.5.1) to expand its
+  footprint to >=5 states. They also asserted strengths and weaknesses -- that
+  a share was 'above average', that a concentration was 'below competitive
+  threshold'.
 
   WHY. EVERY ONE OF THOSE TRIGGERS WAS A BAND THIS TOOL SET FOR ITSELF. The
   composite they weight is this tool's own unsourced house heuristic: the CDFI
@@ -696,11 +712,13 @@ Component Scores:
   ROWS THAT ARE HOUSE BOOKKEEPING END TO END -- the Fund scores no
   corresponding quantity:
 
-      Impact Metrics              38.2/100 at a 20% weight  ->  DOCKED 12.4 POINTS  [schema.IMPACT_BENCHMARKS (HOUSE)]
+      Impact Metrics            38.2/100 at a 20% weight  ->  DOCKED 12.4 POINTS
+          BASIS: schema.IMPACT_BENCHMARKS (HOUSE)
           FUND: The Fund scores whether outcomes are QUANTIFIED and THIRD-PARTY
                 VALIDATED. It publishes no jobs-per-$1MM-QEI band, so no Fund
                 quantity corresponds to the rate docking you here.
-      Completeness                80.0/100 at a  5% weight  ->  DOCKED 1.0 POINTS  [this tool's own completeness curve]
+      Completeness              80.0/100 at a  5% weight  ->  DOCKED  1.0 POINTS
+          BASIS: this tool's own completeness curve
           FUND: An internal check that this tool's own fields are populated. It
                 has no Fund analogue and is not part of any application.
 

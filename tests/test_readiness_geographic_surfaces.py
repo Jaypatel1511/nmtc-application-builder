@@ -232,7 +232,10 @@ def test_a_pipeline_docked_on_geography_is_told_that_it_was(label):
     )
 
     expected_dock = (100.0 - sub) * READINESS_SCORING_WEIGHTS["geographic_diversity"]
-    assert f"DOCKED {expected_dock:.1f} POINTS" in text, (
+    # Whitespace-normalised: the deduction column is padded to a fixed width
+    # (1.5.3), so a one-digit deduction renders "DOCKED  5.0 POINTS". What is
+    # asserted is that the deduction is STATED, not its column padding.
+    assert f"DOCKED {expected_dock:.1f} POINTS" in " ".join(text.split()), (
         f"{label}: the notice does not state the deduction it should "
         f"({expected_dock:.1f} points). Text:\n{text}"
     )
