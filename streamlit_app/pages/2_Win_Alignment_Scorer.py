@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from nmtcapp.core.pipeline import Pipeline
+from nmtcapp.renderers._round_provenance import round_provenance_paragraphs
 from nmtcapp.data.benchmark_thresholds import (
     HIGHLY_QUALIFIED_AGGREGATE_MIN, HIGHLY_QUALIFIED_SECTION_MIN,
     HOUSE_TOP_TIER_AGGREGATE_MIN, HOUSE_TOP_TIER_SECTION_MIN,
@@ -42,6 +43,19 @@ st.markdown(
 st.markdown("---")
 
 render_methodology_warning()
+
+# WHICH ROUND, ON THE PAGE THAT SCORES AGAINST IT (1.5.4 T1). This page names
+# CY 2024-2025 four times -- in its title docstring, in the sentence under the
+# heading, in the sidebar's Highly Qualified citation and in the sub-score
+# disclosure -- and said nothing about that round being closed and awarded on
+# 23 Dec 2025, or about CY 2026 being announced on 12 Aug 2026 at $5 billion
+# and not open. Markdown, Word, Excel and PDF have all carried this note since
+# 1.5.0; the gate that put it there enumerates the four Application.generate()
+# formats, and a Streamlit page is not one of them.
+#
+# READ, NOT RETYPED. A fifth hand-typed copy of the round caveat is the exact
+# shape _round_provenance was created to remove.
+st.info(round_provenance_paragraphs()[0])
 st.markdown("---")
 
 # ---------------------------------------------------------------------------

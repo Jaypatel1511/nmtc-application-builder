@@ -583,6 +583,17 @@ def narrative_withdrawal_note(component_scores: dict) -> str:
         # a reader who wanted a lever read off the largest number and got
         # geography. Two blocks and two subtotals mean the largest number now
         # arrives inside a subtotal that says whether it is a lever at all.
+        #
+        # AND WHEN ONLY ONE BLOCK RENDERS, THE PARTITION IS NOT AN ARTIFACT OF
+        # THE NOTE -- IT IS A FACT ABOUT THIS RUN (1.5.4 T6b). Through 1.5.3
+        # the closing sentence read "THE BLOCKS ABOVE ARE NOT THE SAME CURRENCY
+        # AND MUST NOT BE TRADED OFF AGAINST EACH OTHER" whether one block
+        # rendered or two, and the SUBTOTAL restated the TOTAL verbatim two
+        # lines above it. On the DEFAULT SAMPLE PIPELINE -- the first artifact
+        # any CDE sees -- exactly one block renders, so both were false of the
+        # document they appeared in: a disclosure sentence that is not true of
+        # its own artifact, on the most-read of the six.
+        both_blocks = bool(scored_rows) and bool(house_rows)
         lines += [""]
         if scored_rows:
             lines += [
@@ -591,12 +602,19 @@ def narrative_withdrawal_note(component_scores: dict) -> str:
                 "",
                 *scored_rows,
                 "",
+            ]
+            if both_blocks:
                 # SHORT ON PURPOSE. A line indented four spaces is
                 # pre-formatted to _wrap_note and ships unwrapped; the
                 # qualification lives in the block heading above, which wraps.
-                f"    SUBTOTAL FOR THIS BLOCK: {scored_total:.1f} POINTS.",
-                "",
-            ]
+                #
+                # ONLY WHEN THERE IS A SECOND BLOCK TO COMPARE IT WITH. A
+                # subtotal over the only block is the total, spelled
+                # differently, two lines from the total.
+                lines += [
+                    f"    SUBTOTAL FOR THIS BLOCK: {scored_total:.1f} POINTS.",
+                    "",
+                ]
         if house_rows:
             lines += [
                 "ROWS THAT ARE HOUSE BOOKKEEPING END TO END -- the Fund "
@@ -604,28 +622,65 @@ def narrative_withdrawal_note(component_scores: dict) -> str:
                 "",
                 *house_rows,
                 "",
-                f"    SUBTOTAL FOR THIS BLOCK: {house_total:.1f} POINTS.",
-                "",
             ]
+            if both_blocks:
+                lines += [
+                    f"    SUBTOTAL FOR THIS BLOCK: {house_total:.1f} POINTS.",
+                    "",
+                ]
         lines += [
             f"    TOTAL DEDUCTION {total:.1f} POINTS of the 100-point "
             f"readiness headline.",
             "",
-            # NOT INDENTED: four leading spaces mark a line pre-formatted to
-            # _wrap_note, which then ships it as one unwrapped 600-character
-            # line. This paragraph is prose and must wrap like prose.
-            "THE BLOCKS ABOVE ARE NOT THE SAME CURRENCY AND MUST NOT BE "
-            "TRADED OFF AGAINST EACH OTHER. A point recovered on a house "
-            "bookkeeping row changes this tool's headline and nothing else. "
-            "Worse, the two blocks can move in OPPOSITE directions: a "
-            "measured sample pipeline that added a state and diluted its "
-            "severe-distress share gained 2.1 readiness points here while "
-            "its aggregate base score under this package's model of the "
-            "Review Process FELL by a point, 78 to 77. THIS TABLE CANNOT TELL "
-            "YOU WHICH TRADE IS WORTH MAKING, AND IT IS NOT TRYING TO -- it "
-            "is an account of what this tool did to its own number, not a "
-            "list of things to fix.",
         ]
+        # NOT INDENTED: four leading spaces mark a line pre-formatted to
+        # _wrap_note, which then ships it as one unwrapped 600-character
+        # line. This paragraph is prose and must wrap like prose.
+        if both_blocks:
+            lines += [
+                "THE BLOCKS ABOVE ARE NOT THE SAME CURRENCY AND MUST NOT BE "
+                "TRADED OFF AGAINST EACH OTHER. A point recovered on a house "
+                "bookkeeping row changes this tool's headline and nothing "
+                "else. Worse, the two blocks can move in OPPOSITE directions: "
+                "a measured sample pipeline that added a state and diluted "
+                "its severe-distress share gained 2.1 readiness points here "
+                "while its aggregate base score under this package's model of "
+                "the Review Process FELL by a point, 78 to 77. THIS TABLE "
+                "CANNOT TELL YOU WHICH TRADE IS WORTH MAKING, AND IT IS NOT "
+                "TRYING TO -- it is an account of what this tool did to its "
+                "own number, not a list of things to fix.",
+            ]
+        elif house_rows:
+            # WHAT SURVIVES WITH ONE HOUSE BLOCK, and it is the half that
+            # matters most: every point in the table above is this tool's own
+            # bookkeeping, so recovering any of them buys nothing anywhere
+            # else. What does NOT survive is the comparison between blocks and
+            # the measured opposite-directions case, because there is no
+            # second block on this run to compare with or move against.
+            lines += [
+                "EVERY ROW ABOVE IS HOUSE BOOKKEEPING ON THIS RUN, AND ONLY "
+                "ONE BLOCK RENDERS. A point recovered on any of them changes "
+                "this tool's headline and nothing else -- the CDFI Fund "
+                "scores no corresponding quantity for any row in the table. "
+                "Nothing docked here on a quantity the Fund also scores, "
+                "which is why the second block is absent rather than empty. "
+                "THIS TABLE IS AN ACCOUNT OF WHAT THIS TOOL DID TO ITS OWN "
+                "NUMBER, NOT A LIST OF THINGS TO FIX.",
+            ]
+        else:
+            # The mirror case: only Fund-corresponding rows docked.
+            lines += [
+                "EVERY ROW ABOVE IS A QUANTITY THE CDFI FUND ALSO SCORES -- "
+                "ON ITS OWN BASIS, NOT THIS ONE -- AND ONLY ONE BLOCK "
+                "RENDERS. A point recovered here changes this tool's headline "
+                "and nothing else directly; what the Fund does with the "
+                "underlying quantity is scored elsewhere, on a different "
+                "denominator, and this table does not model that. Nothing "
+                "docked on a house-only row, which is why the second block is "
+                "absent rather than empty. THIS TABLE IS AN ACCOUNT OF WHAT "
+                "THIS TOOL DID TO ITS OWN NUMBER, NOT A LIST OF THINGS TO "
+                "FIX.",
+            ]
     else:
         lines += ["", "    No component was docked on this run."]
     lines += [

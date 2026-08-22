@@ -716,7 +716,46 @@ jobs:
           # the tarball. This derivation installs all five before counting,
           # which is what release.yml's own job does.
           #
-          FLOOR=650
+          # 1.5.4 -- RE-DERIVED THE LONG WAY A FOURTH TIME, and the number
+          # moves. Built the sdist, unpacked it, installed the tarball plus
+          # [dev] into a clean venv, copied tests/, streamlit_app/, README.md
+          # and pyproject.toml out of it into a directory with NO nmtcapp/, and
+          # ran this job's exact invocation from there:
+          #
+          #     collected under -m "not wheel" 1,416
+          #     skipped in the sdist             -49
+          #     EXECUTED                       1,367
+          #     half                             683.5
+          #     rounded down                     680
+          #
+          # Suite fully green there: 1,367 passed, 49 skipped, 1 deselected.
+          #
+          # THAT RUN IS ALSO WHAT FOUND A DEFECT IN THIS ROUND'S OWN NEW GATE.
+          # tests/test_cde_scoring_inputs.py resolved win_probability.py from
+          # the repo root -- green in a checkout, FileNotFoundError here,
+          # because this job deliberately runs with no source tree in the
+          # working directory. It resolves through the INSTALLED package now.
+          # A new gate that would have failed the release on a tree whose CI
+          # was green is exactly what running this job locally is for.
+          #
+          # THE ROUND ADDS SIX TEST MODULES (T1/T4 surfaces, T2's red proof,
+          # T3's registry gate, T5's band-semantics gate, T6's phrase-integrity
+          # gate and T7's literal gate), so CLAIMED_NEW_TEST_MODULES moves
+          # 12 -> 18.
+          #
+          # SKIPS: 49, MEASURED, against MAX_SDIST_SKIPS = 45. This release
+          # adds none -- it REMOVED one, a gate that skipped rather than
+          # asserting its own precondition. Every skip here carries an explicit
+          # written reason and every one is environmental ("this is an unpacked
+          # sdist, not a checkout"): 8 test_documented_keys (docs/ and
+          # examples/ pruned), 7 test_pinned_constants (no nmtcapp/ source), 4
+          # test_no_committed_generated_artifacts (no git checkout), 3
+          # test_readiness_geographic_surfaces, and the rest one or two apiece.
+          # The count measures the ENVIRONMENT as much as the tarball -- a venv
+          # missing one optional renderer skips a whole module on importorskip
+          # -- which is why the ceiling only ever widens the FLOOR band
+          # downward and never tightens anything. Recorded, not raised.
+          FLOOR=680
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()

@@ -52,6 +52,7 @@ from nmtcapp.data.benchmark_thresholds import (
     UNRELATED_ENTITIES_MAX,
 )
 from nmtcapp.data.historical_awards import get_overall_acceptance_rate
+from nmtcapp.intelligence.cde_inputs import unsupplied_inputs
 
 if TYPE_CHECKING:
     from nmtcapp.intelligence.pipeline_analyzer import PipelineAnalysisResult
@@ -128,6 +129,21 @@ class WinProbabilityScore:
     partial: bool = False
     partial_note: str = ""
     eligibility_data_error: str = ""
+    # WHICH SUB-SCORES ARE BUILT OUT OF DEFAULTS (1.5.4 T2). Sub-score key ->
+    # the CDE-declared inputs it reads that this run did not receive. Empty for
+    # a CDE that supplied everything, which is the shipped sample.
+    #
+    # THIS FIELD MOVES NO SCORE. Every sub-score above is computed exactly as
+    # it was in 1.5.3, from exactly the same defaults. What this records is
+    # whether the number DESCRIBES anything, so that a renderer can tell an
+    # absent input from a declared zero -- which, until 1.5.4, nothing
+    # downstream of this model could do. ``lic_board_representation_pct``
+    # absent and ``lic_board_representation_pct: 0.0`` produced the identical
+    # 0/10, and the recommendation engine instructed on both.
+    #
+    # See nmtcapp/intelligence/cde_inputs for the registry and for why an input
+    # with a measured pipeline substitute never appears here.
+    unsupplied_inputs: dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         # Populate backward-compat fields from new structure
@@ -304,6 +320,11 @@ class WinProbabilityModel:
         """
         attrs = cde_attributes or {}
         degraded = getattr(pipeline_result, "eligibility_data_status", "ok") != "ok"
+        # Recorded BEFORE anything is scored, from the dict this model actually
+        # received. Deriving it afterwards from the sub-scores would be the
+        # guess this field exists to remove: a 0 tells you nothing about
+        # whether an input arrived.
+        missing_inputs = unsupplied_inputs(attrs)
 
         # --- Section 1: Business Strategy (0–50) ---
         pf = self._score_product_flexibility(attrs, pipeline_result)
@@ -415,6 +436,7 @@ class WinProbabilityModel:
             eligibility_data_error=(
                 getattr(pipeline_result, "eligibility_data_error", None) or ""
             ) if degraded else "",
+            unsupplied_inputs=missing_inputs,
         )
 
     # ------------------------------------------------------------------

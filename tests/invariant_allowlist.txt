@@ -321,5 +321,29 @@ TOOL | 1.5.2 T1 withdrawal note — one paragraph of it. INVARIANT BY DESIGN AND
 TOOL | 1.5.2 T1 withdrawal note — one paragraph of it. INVARIANT BY DESIGN AND THAT IS THE POINT: it is a statement about THIS TOOL and its own bands, not a finding about any CDE, so it must read identically for every pipeline. Varying it would mean the withdrawal was conditional on the input. Only the deduction TABLE varies, and it is derived line by line from component_scores: the heading over the deduction table. F4's rule — a tool may decline to advise, it may not deduct silently — now binds on all six components | *YOU WERE NEVERTHELESS DOCKED, AND HERE IS THE ARITHMETIC. A tool may decline to advise. It may not deduct silently.*
 DERIVED | 1.5.2 T1. The deduction table's total. The FIGURE varies with the pipeline and is masked to N; what is invariant is the sentence around it, which is the same accounting statement for every CDE | TOTAL DEDUCTION N POINTS of the N-point readiness headline.
 LABEL | 1.5.2 audit F1. Block heading in the withdrawal note's deduction table, separating the rows whose underlying quantity reaches no scored criterion in this package's model of the Review Process from those that do. Invariant BY DESIGN: which block a component belongs to is a property of the component, not of the pipeline, so the heading must read identically for every CDE. The numbers under it vary and are masked | *ROWS THAT ARE HOUSE BOOKKEEPING END TO END -- the Fund scores no corresponding quantity:*
-UNSOURCED | 1.5.2 audit F1. Asserts a NEGATIVE somebody had to go and measure, and the measurement is in this tree rather than in a document: 3 states -> 6 states with distress unchanged returned exactly the 10.0 the geographic row itemises while the aggregate base score under WinProbabilityModel did not move, and 2 states @100% severe -> 3 states @80% severe gained 2.1 readiness points while that same aggregate base score fell 78 -> 77. Invariant by design and necessarily so: it is a statement about what this TABLE can and cannot tell a reader, which is the same for every CDE. Making it vary with the pipeline would turn a disclaimer into the priority list it exists to refuse | *THE BLOCKS ABOVE ARE NOT THE SAME CURRENCY AND MUST NOT BE TRADED OFF AGAINST EACH OTHER. A point recovered on a house bookkeeping row changes this tool's headline and nothing else. Worse, the two blocks can move in OPPOSITE directions: a measured sample pipeline that added a state and diluted its severe-distress share gained N readiness points here while its aggregate base score under this package's model of the Review Process FELL by a point, N to N. THIS TABLE CANNOT TELL YOU WHICH TRADE IS WORTH MAKING, AND IT IS NOT TRYING TO -- it is an account of what this tool did to its own number, not a list of things to fix.*
-LABEL | 1.5.2 audit F1. Both of the deduction table's per-block subtotal lines, which render identically apart from the figure. The POINTS FIGURE VARIES and is masked to N; the label does not, because WHICH block a subtotal belongs to is stated by the block heading above it rather than by this line. Deliberately short: a line indented four spaces is pre-formatted to _wrap_note and ships unwrapped, so the qualification lives in the heading, which wraps | SUBTOTAL FOR THIS BLOCK: N POINTS.
+# THREE DEDUCTION-TABLE LINES LEFT THIS LIST IN 1.5.4 (T6b), AND NOT BECAUSE
+# THEY STOPPED RENDERING. They stopped being INVARIANT, which is a different
+# and better thing.
+#
+# Through 1.5.3 the closing sentence 'THE BLOCKS ABOVE ARE NOT THE SAME
+# CURRENCY AND MUST NOT BE TRADED OFF AGAINST EACH OTHER' rendered on every
+# scenario whether one deduction block rendered or two, and 'SUBTOTAL FOR
+# THIS BLOCK: N POINTS.' rendered beside a TOTAL that restated it verbatim.
+# On the DEFAULT SAMPLE PIPELINE -- the first artifact any CDE sees -- exactly
+# one block renders, so both sentences were false of the document they
+# appeared in. Its own allowlist row said 'Invariant by design and necessarily
+# so'; that was true as a description of the code and is what made the defect
+# invisible here.
+#
+# Both are now conditional on both blocks being present, and a third line -- a
+# single-block replacement naming which class the one block is -- renders in
+# their place. All three now vary with the pipeline, so none of them is an
+# invariant line and none belongs in a list of invariant lines. The
+# two-block text is UNCHANGED in the source; what changed is when it renders.
+#
+# WHAT COVERS THE GROUND THEY GIVE UP:
+# tests/test_readiness_note_phrase_integrity.py asserts, on both a one-block
+# and a two-block pipeline, which sentence renders and which does not, that
+# the single-block replacement keeps the claim that survives with one block,
+# and that the subtotal does not restate the total.
+

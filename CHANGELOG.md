@@ -5,6 +5,298 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.4] — 2026-08-22
+
+**PATCH. No public names change, no score moves, no new methodology.** Every
+task below either adds a disclosure or replaces an instruction with one. Verified
+by A/B: sample and neutral CDE profiles × 5- and 20-project pipelines, every
+sub-score, both aggregates, the tier, the readiness composite, its grade and all
+six component scores are **byte-identical to 1.5.3**.
+
+### T0 — where the Win Alignment Scorer's `CDEProfile` comes from
+
+Reported first because it decides how live T2's defect is. **Neither of the two
+answers the round expected.** The page has no profile input of its own: it calls
+`get_or_create_app()` (`streamlit_app/utils.py:87`), which builds either
+`CDEProfile.sample()` (demo) or a **neutral profile with `extra={}`**
+(`utils.py:115`) optionally merged with a `cde_extra` dict parsed from a
+**"CDE Profile" sheet in an uploaded `.xlsx`** on page 1.
+
+**So a user can supply their own scoring profile, and T2's defect was live in
+front of users.** It is in fact wider than a bad sheet: a user who uploads a
+**CSV** — the path the page's own sidebar tells them to take — has no CDE Profile
+sheet at all, so `extra` is empty and **all seventeen** scoring inputs fall to
+defaults. Page 1 already disclosed this correctly; page 2's recommendations did
+not.
+
+### T1 — the recommendations surface cited a closed round 13 times and never said so
+
+`RecommendationSet.summary()` renders `CY 2024-2025` **13 times** on one run.
+Measured across the same corpus: `CY 2026` **0**, `not open` **0**, `superseded`
+**0**, `no longer` **0**, `governing` **0**, `most recent published` **0**.
+
+The round closed 29 Jan 2025 and was awarded 23 Dec 2025 at $10 billion; CY 2026
+was announced 12 Aug 2026 at $5 billion and is **not open**.
+`renderers/_round_provenance` has carried all of that since 1.5.0 and markdown,
+Word, Excel and PDF all render it. **No new prose was written**:
+`round_provenance_paragraphs()[0]` is now rendered in `summary()`'s header and on
+the Streamlit scorer.
+
+**Widening the gate found a second instance immediately, for the third time
+running** (F2 for disclosures, 1.5.3 for frame geometry). The gate's surface list
+is `test_round_provenance._ALL_FORMATS` — the four `generate()` formats — so no
+Streamlit page could ever appear in it. `4_About_and_Methodology.py` cites the
+round **15 times**, links the Review Process PDF in the present tense, and
+rendered **no provenance at all**. Both pages now render it, and
+`tests/test_recommendation_surface_disclosures.py` gates every Streamlit page
+that names the round.
+
+**The first draft of that gate passed on page 4.** It looked for the string
+`round_provenance`, and the page *mentions* the module in prose at line 451 while
+rendering none of it — a gate satisfied by a comment. It now looks for the
+function.
+
+### T2 — an unsupplied input is not a zero, and the tool may not instruct on one
+
+`WinProbabilityModel` reads every CDE-level input with a default, so a CDE that
+**never supplied** a field and one that **supplied 0.0** were indistinguishable
+to everything downstream. A CDE whose *required* `governance` block declares
+`board_members: 9, community_representatives: 4` — **44%** — was told:
+
+```
+Finding:  Community Accountability is 0/10. The CDFI Fund values LIC resident
+          representation on the board AND documented community engagement history.
+Action:   Increase LIC resident or community representative board seats to at
+          least 33% of total board members.
+```
+
+**44%, told to reach 33%, in an action field, over a score that measured
+nothing.** Re-derived and reproduced verbatim. A sweep for
+`not supplied|unscored|omitted|not provided|no data|unavailable` across the whole
+rendered corpus returned **nothing**: the text never distinguished *not supplied*
+from *scored zero*.
+
+**Two rules, and neither is sufficient alone.** (1) An unsupplied input must not
+render as `0/10`. (2) The tool may not *instruct* on an unsupplied input — it may
+**disclose**: the field was not supplied, the Fund does score the criterion, and
+here is where to supply it. That disclosure has a basis (the Fund's own scoring),
+so it survives the adopted principle, and it is more useful than either the false
+instruction or silence.
+
+`WinProbabilityScore` gains one additive field, `unsupplied_inputs`. **It moves
+no score** — every sub-score is computed from exactly the same defaults; what is
+recorded is whether the number *describes* anything.
+
+**On a neutral profile, 7 of 9 sub-scores read at least one input that was never
+supplied.** Five could not be scored at all.
+
+**A SECOND `lic_board_representation_pct`, found while fixing the first.**
+`pipeline_pct_identified` is absent-defaulted to **0.65** — not zero, and not
+measured. On an empty profile that default produced 10/15 and the engine rendered
+*"A few projects lack documented sizing or LOIs"* as a **finding about the CDE's
+pipeline**, when nothing about the CDE's pipeline had been read.
+`has_quantified_outcomes` defaults to **True**, a favourable assumption that was
+nowhere stated.
+
+**And the same defect one level up.** The gating item's action read *"Focus
+immediately on the lowest-scoring Business Strategy sub-criteria"* and named
+three — which are lowest *because nothing was supplied*. That is an instruction to
+restructure a CDE around blanks in its own profile. It is now conditional, and the
+assessment states how much of the aggregate was not measured.
+
+**RED PROOF:** `tests/test_recommendation_inputs_not_supplied.py`, 13 tests, **12
+failed / 1 passed** against 1.5.3. The one that passed is the over-correction
+guard — a fully-supplied CDE must still be scored — and it held before and after.
+
+### T3 — the scaffold offered neither what the model reads nor nothing it doesn't
+
+`nmtc init` → fill in → run yielded `extra == {}`, because the scaffold's entire
+scoring block was **commented out**. That is what made T2 reachable through the
+public API.
+
+**Uncommenting it is not the fix.** The input list existed **three times**,
+hand-maintained, in three files that could not see each other — the model's reads,
+the scaffold's comments, and `1_Pipeline_Analyzer._CDE_DEFAULTS_DISCLOSURE` — and
+measured, they disagreed **in both directions**:
+
+- the scaffold offered `has_favorable_fee_structure` and
+  `has_prior_reporting_issues`, which are **Phase-2 flags and score nothing**,
+  under a heading reading *"Win Alignment scoring inputs"*;
+- **none** of the three offered `pct_persistent_poverty`, `pct_us_territories` or
+  `non_metro_commitment_pct`, all of which the model reads.
+
+**THE ENUMERATION** — 17 scored inputs and 3 read-but-unscored, now in one
+registry (`nmtcapp/intelligence/cde_inputs.py`) that
+`tests/test_cde_scoring_inputs.py` re-derives from `win_probability.py`'s own
+source:
+
+| sub-score | inputs | measured substitute when absent |
+|---|---|---|
+| Product Flexibility | `products_below_market_pct`, `products_flexible_indicia_count` | first only (`pct_below_market_rate`) |
+| Pipeline Credibility | `pipeline_pct_identified` | none — **defaults to 0.65** |
+| Track Record Strength | `prior_award_count`, `years_in_operation`, `has_own_capital_at_risk` | none |
+| Track Record Alignment | `track_record_pipeline_alignment_pct`, `track_record_deployment_pct` | none |
+| Special Targeting | `pct_persistent_poverty`, `pct_us_territories` | both |
+| Outcomes Quality | `has_quantified_outcomes`, `has_third_party_validation` | none — first **defaults to True** |
+| Community Accountability | `lic_board_representation_pct`, `has_community_engagement_track_record` | none |
+| DBC Track Record | `dbc_focus_years`, `dbc_dollar_volume_pct` | none |
+| Unrelated Entities | `unrelated_entities_pct` | yes (`pct_unrelated_entity`) |
+| *(not scored)* | `non_metro_commitment_pct`, `has_favorable_fee_structure`, `has_prior_reporting_issues` | — |
+
+**Every commented field had a reader.** What was missing was the reverse: three
+fields the model reads and no file offered.
+
+**AND A BLANK IS NOT AN ANSWER.** Uncommenting the block with its old `0.0` /
+`false` placeholders **would have moved scores** — `pipeline_pct_identified` from
+0.65 to 0.0, `has_quantified_outcomes` from True to False — so an untouched
+scaffold would have scored *worse than no scaffold at all*, and this is a patch.
+The keys are offered **blank**, and `CDEProfile.from_yaml` now drops blanks out of
+`extra` — the rule it already applied to its own required fields twenty lines
+above, and the rule `_scoring_attrs_only` has always applied to the workbook path.
+`false`, `0` and `0.0` survive: a CDE that answered No has answered.
+
+### T4 — eligibility precedes ranking
+
+An all-ineligible pipeline emitted **13 items** (the round's planning note said
+five — re-derived and corrected) and **not one** said the pipeline was ineligible.
+The items advised on rank *within the Highly Qualified pool*.
+
+**RULING: the fact goes above the items; the items still render.** Suppressing
+them was considered and rejected — most are about the CDE (track record, board
+composition, DBC focus) and stay true whatever the tracts say, and withdrawing
+them leaves a CDE with a failed gate and no guidance at all: the
+"overstating uncertainty" direction of error `_round_provenance` names, where a
+correct fact leads somewhere worse than the error it replaced. What ranking advice
+may not do is arrive **first**, or alone. The gate item is built before everything
+else and the sort is stable; the assessment names it too.
+
+**MEASURED ON THE `ineligible` BUCKET, NOT ON `eligibility_pct`.** That number
+counts `is_nmtc_eligible is True`, so it is 0.0 both for a pipeline the Fund's data
+disqualifies **and for one nobody could check** — a gate built on it would report
+unknown as ineligible, which is a fabricated negative. Two gates assert it does
+not.
+
+### T5 — a constant whose name is false. Recorded and gated; NOT renamed.
+
+`TARGET_DISTRESS_THRESHOLDS['min_deep_distress']` and `['target_deep_distress']`
+are both measured on **`pct_deep_or_severe`** — the two tiers collapsed. The Fund
+scores them as two sub-scores with distinct bars (`SEVERE_DISTRESS_MIN_PCT` 0.85,
+`DEEP_DISTRESS_MIN_PCT` 0.20) and `win_probability` keeps them separate.
+
+**THE CONTRADICTION, REPRODUCED.** On an all-severe / no-deep pipeline the
+readiness table reports `distress_concentration 100.0/100, not docked` while the
+engine reports `Deep Distress Commitment is 0/10`.
+
+**AND THE ROUND'S PLANNING VIEW OF IT IS REFUTED.** That view was: *"a sentence
+about different currencies does not resolve it, because this is not a trade-off —
+it is a direct factual conflict about the same quantity."* The first half is
+right and the second is not. Those are **different quantities that share a word**:
+the share of QEI in deep-**or**-severe tracts, and the share in deep tracts alone.
+Both statements are true simultaneously and there is nothing to reconcile. What is
+false is the **constant's name**, which tells every future reader the band measures
+deep distress — the "files agree with each other but not with the truth" class.
+Naming the quantity is therefore the whole fix, and it fits in a patch.
+
+Renaming does **not**: the dict is exported as `nmtcapp.data.TARGET_DISTRESS_THRESHOLDS`,
+four modules read its keys and a test asserts one by name. **Queued for 2.0.0**
+beside `overall_score` / `grade` / `GRADE_THRESHOLDS`. The deferral is safe because
+`tests/test_distress_band_semantics.py` holds `pct_deep_or_severe` fixed while
+moving `pct_deep` underneath it: **proved by mutating `_distress_score` to read
+`pct_deep` — 5 of 7 fail.**
+
+### T6 — the two 1.5.3 leftovers
+
+**(a) A figure broken across a line still passed.** The two 1.5.3 gates match
+against `" ".join(note.split())`, and bare `str.split()` collapses **newlines**.
+**Proved by execution:** with `DOCKED 12.4` ending one line and `POINTS`
+beginning the next, `test_no_component_is_docked_silently` and
+`test_a_pipeline_docked_on_geography_is_told_that_it_was` stay **green — 33
+passed** — and the column-budget gate passes too, both fragments being short. The
+new assertions run **per line**, collapsing spaces and tabs *within* a line and
+never across one, and they run on `wrap_note`'s output as well as on the logical
+note — that being the surface where a break would actually be introduced. **The
+whitespace tolerance is kept and asserted directly**, because `{dock:4.1f}`
+genuinely renders `DOCKED  5.0 POINTS`.
+
+**(b) A disclosure sentence that was not true of its own artifact.** On the
+**default sample pipeline** — the first thing any CDE sees — exactly **one**
+deduction block renders, and the note still said *"THE BLOCKS ABOVE ARE NOT THE
+SAME CURRENCY AND MUST NOT BE TRADED OFF AGAINST EACH OTHER"*, with
+`TOTAL DEDUCTION 13.4 POINTS` restating `SUBTOTAL FOR THIS BLOCK: 13.4` verbatim
+two lines above. Both are now conditional on both blocks being present. The
+single-block replacement keeps the claim that survives — a house point changes
+this tool's headline and nothing else — and drops the comparison and the measured
+opposite-directions case, which have no second block to be about. The two-block
+text is **unchanged** and still renders when two blocks do.
+
+**Three deduction-table lines left `tests/invariant_allowlist.txt`, and not
+because they stopped rendering — they stopped being INVARIANT**, which is better.
+They now vary with the pipeline.
+
+### T7 — two typed literals beside the constants they should read
+
+Both are the class `recommendations.py:43-63` forbids: *a display literal beside a
+comparison that reads the constant.*
+
+| | before | after |
+|---|---|---|
+| `recommendations.py:959` | `"Reaching 98% eligibility significantly improves…"` beside an action interpolating `_ELIGIBLE_STRONG_TEXT` | interpolated, and the band is now labelled a house winner-pattern heuristic in the estimate too |
+| `recommendations.py:1026` | `f"Not Qualified ({agg}/100) — …"` | `f"Not Qualified ({agg}/{_AGGREGATE_MAX}) — …"`, matching all three sibling branches |
+
+**Neither was a wrong number** — `strong` is 0.98 and the section maxima sum to
+100. **That is why they needed fixing**: instance 25 was four percentiles that had
+agreed by luck and the whole suite stayed green. So the gates **move the
+constants** and assert the rendered sentence follows, rather than asserting
+today's value. Proved by reverting each: 3 of 7 fail.
+
+### Baselines regenerated, and the diff reviewed
+
+`tests/rendered_baseline/markdown.txt` (+30/−8) and `tests/cli_baseline/analyze.txt`
+(+14/−22), **both entirely T6b** — the subtotal line and the closing sentence.
+Word, Excel and PDF regenerated byte-identical. No routing baselines were touched.
+
+### Found by running the release job, not by reading
+
+`tests/test_cde_scoring_inputs.py` resolved `win_probability.py` from the repo
+root. That is green in a checkout and **red in the sdist** with
+`FileNotFoundError`, because release.yml deliberately runs from a directory with
+no `nmtcapp/` in it — a new gate that would have failed the release on a tree
+whose CI was green. It resolves through the **installed** package now, the way
+`conftest.templates_dir` resolves the scaffold. Re-run clean.
+
+**And a skip that was a gate not asking.** The unverified-eligibility test skipped
+when "this fixture did not produce an unverified pipeline" — and it did skip, in
+that same sdist run, because `Application.analyze()` re-enriches the pipeline and
+the mapper answers. It now builds the undetermined state where the gate reads it
+and **asserts its own precondition** instead of skipping on it. **This release adds
+no skip.**
+
+### Out of scope, recorded
+
+- **Routing the engine into the CLI and the renderers.** 1.6.0; this round is its
+  prerequisite. `analyze()` and `ApplicationAnalysis` are untouched.
+- **The wrap layer.** `RecommendationSet.summary()` never wraps: re-derived on a
+  neutral profile against **this tree**, **49 of 87 rendered lines exceed 78
+  columns, max 659**, inside a 70-column rule. (Against 1.5.3 the same corpus gave
+  36 of 84, max 802; the round's note said 183 of 446, which is a third corpus.
+  The property is the same in all three and the *ratio* is now worse, because
+  T1's round note and T2's disclosures are both long prose.) It escapes today only
+  because the Streamlit page injects the fields into reflowing HTML rather than
+  calling `summary()`. **`readiness_score.wrap_note` already exists and is
+  public** — this is a call-site change, not a new mechanism. 1.6.0, with the
+  routing.
+- **`benchmark_comparison` is a dead parameter** of `recommend()` — accepted,
+  never read. Removing it is a signature change.
+- **The distress contradiction itself** is now *named* rather than *removed*: two
+  surfaces still report different distress figures, and until the 2.0.0 rename the
+  disambiguation lives in the constant's comment and this entry.
+- **`MAX_SDIST_SKIPS`** — the sdist run measured **50** skips against a ceiling of
+  45. Every one carries an explicit written reason and every one is environmental
+  ("this is an unpacked sdist, not a checkout"); the count measures the environment
+  as much as the tarball, and this release adds none. Recorded, not raised.
+
+---
+
 ## [1.5.3] — 2026-08-22
 
 **PATCH. No public name changes, no score moves, no new disclosure content.**
@@ -656,7 +948,7 @@ lookup → `_enrich_via_api` → `"ok"` — is exercised by no test. Instrumente
 components off the result, in `test_qlici_not_supplied` (four),
 `test_no_fabricated_output` and `test_truncated_lists`.
 
-> **32 insertions, 8 deletions** in `tests/rendered_baseline/`, measured
+> **30 insertions, 8 deletions** in `tests/rendered_baseline/`, measured
 > `fde3eca`..`HEAD`, in `markdown.txt` only. *(18/8 through the T1 withdrawal;
 > the 1.5.2 audit round's F1 adds the other 14 — the deduction table's two
 > block headings, its per-row Fund axis, its two subtotals, and the closing
@@ -2897,7 +3189,7 @@ and the value-only projection that hid B-3's number formats.
 > source for what the Applicant is asked to COMMIT TO, because the thing the
 > Applicant fills in is the Application.**
 
-**107 mentions across 103 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
+**111 mentions across 107 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
 `README.md`. *(75 across 71 when 1.3.0 shipped; 77 across 73 at 1.5.0, which
 added one in `renderers/_round_provenance`'s re-check list. 1.5.1's first round
 added ten more across ten lines — the T1 withdrawal string and its two
@@ -4002,7 +4294,7 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 229 constants are swept
+colour". The rendered-string sweep demands **19**, and 235 constants are swept
 where 49 were. *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
 round label, its status, the re-check list and the pinned-document facts; 1.5.2
 adds `readiness_score._COMPONENT_BASIS`, the withdrawal note's per-component

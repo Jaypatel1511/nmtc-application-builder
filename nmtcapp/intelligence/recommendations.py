@@ -33,6 +33,9 @@ from nmtcapp.data.benchmark_thresholds import (
     WINNER_PATTERN_THRESHOLDS,
 )
 
+from nmtcapp.intelligence.cde_inputs import SUBSCORE_LABELS
+from nmtcapp.renderers._round_provenance import round_provenance_paragraphs
+
 if TYPE_CHECKING:
     from nmtcapp.intelligence.benchmarks import BenchmarkComparison
     from nmtcapp.intelligence.pipeline_analyzer import PipelineAnalysisResult
@@ -88,6 +91,110 @@ _ELIGIBLE_COMPETITIVE_TEXT = f"{_ELIGIBLE_COMPETITIVE_PCT:.0%}"
 _ELIGIBLE_STRONG_TEXT = f"{_ELIGIBLE_STRONG_PCT:.0%}"
 
 
+#: WHAT THE FUND SCORES BEHIND EACH SUB-SCORE, AND WHERE THE CDE SUPPLIES IT.
+#:
+#: The disclosure that replaces an instruction (1.5.4 T2) is not silence and is
+#: not a shorter instruction. It states three things, and it needs all three or
+#: it is worse than what it replaced:
+#:
+#:   1. the input was NOT SUPPLIED -- so the CDE can tell a blank from a zero;
+#:   2. the CDFI Fund nevertheless scores the underlying criterion, and here is
+#:      the criterion -- so the CDE does not conclude the field is optional;
+#:   3. where to put the value -- so the disclosure is actionable.
+#:
+#: (2) is what gives the disclosure a basis. It is a statement about the Fund's
+#: own published criterion, not about this CDE's position, so it survives the
+#: principle that removed the instruction: the tool may say what the Fund
+#: scores; it may not tell a CDE to change something it never measured.
+#:
+#: The ``fund`` sentences below are LIFTED from the items they replace rather
+#: than rewritten, so the sourcing work done in 1.2.2 (D1, D2, D3, D5) is not
+#: quietly discarded on the path a CDE with an empty profile actually takes --
+#: which is the only path the shipped scaffold produced.
+_NOT_SUPPLIED_BASIS = {
+    "product_flexibility": (
+        "business_strategy", "high",
+        "Question 15 of the CY 2024-2025 NMTC Allocation Application "
+        "(pp. 20-21) asks the Applicant to check ONE option committing that "
+        "100% of its QLICIs will be provided as equity; equity-equivalent "
+        "financing; debt at least 50% below market; or debt satisfying at "
+        "least "
+        f"{HOUSE_PRODUCT_FLEXIBILITY_MIN_INDICIA} indicia of flexible or "
+        "non-traditional terms. This tool's sub-score is not that test.",
+        f"{_SOURCE_DOC}, Section II.A.1; CY 2024-2025 NMTC Allocation "
+        "Application, Question 15 (pp. 20-21). Sub-score is this tool's own.",
+    ),
+    "pipeline_credibility": (
+        "business_strategy", "high",
+        "The CDFI Fund reviews whether the proposed pipeline is credible — "
+        "identified projects, documented sizing and timing, and a deployment "
+        "timeline it can believe.",
+        f"{_SOURCE_DOC}, Section II.A — Business Strategy, Business Plan/Pipeline",
+    ),
+    "track_record_strength": (
+        "business_strategy", "high",
+        "The CDFI Fund looks for a 5-year direct financing record, and cites "
+        "own capital committed alongside QEIs as a differentiator.",
+        f"{_SOURCE_DOC}, Section II.A — Business Strategy, Track Record",
+    ),
+    "track_record_alignment": (
+        "business_strategy", "high",
+        "The CDFI Fund (Review Process p.7, Part II.A.4) looks for "
+        f"{_ALIGNMENT_PCT_TEXT}+ of proposed NMTC investments to be supported "
+        "by a track record of similar business and activity types, and for "
+        "the most recent 5-year direct financing track record to be "
+        f"{_FUND_TRACK_TO_PROJECTION_TEXT}+ of projected NMTC deployment in "
+        "Exhibit A.",
+        f"{_SOURCE_DOC}, Section II.A — Business Strategy, Track Record",
+    ),
+    "special_targeting": (
+        "community_outcomes", "medium",
+        "This is a HOUSE criterion. The CDFI Fund publishes no 'Special "
+        "Targeting' criterion and no bonus points for it.",
+        "HOUSE criterion — no CDFI Fund source.",
+    ),
+    "community_outcomes_quality": (
+        "community_outcomes", "high",
+        "The CDFI Fund scores whether community outcome projections are "
+        "quantified (jobs, units, square footage) and supported by a "
+        "documented third-party methodology.",
+        f"{_SOURCE_DOC}, Section II.C.2 — Community Outcomes, Quality of "
+        "Community Outcomes",
+    ),
+    "community_accountability": (
+        "community_outcomes", "high",
+        "The CDFI Fund values LIC resident representation on the governing "
+        "board AND a documented community engagement history.",
+        f"{_SOURCE_DOC}, Section II.C.3 — Community Outcomes, Community "
+        "Accountability",
+    ),
+    "dbc_track_record": (
+        "priority_points", "medium",
+        f"Full credit under this tool requires {DBC_PRIORITY_YEARS_MIN}+ years "
+        f"of DBC focus AND {_DBC_VOLUME_PCT_TEXT}+ of direct financing volume "
+        "to Disadvantaged Businesses or Communities.",
+        f"{_SOURCE_DOC}, Section III — Priority Points, DBC Track Record",
+    ),
+    "unrelated_entities": (
+        "priority_points", "medium",
+        "Question 23 of the CY 2024-2025 NMTC Allocation Application (p.34) is "
+        "a Yes/No commitment to use \"substantially all\" of the proceeds of "
+        "the CDE's QEIs for QLICIs in businesses in which unrelated persons "
+        "hold the majority equity interest; answering Yes is awarded five "
+        "additional points.",
+        f"{_SOURCE_DOC}, p.7 Part II.B.2; CY 2024-2025 NMTC Allocation "
+        "Application, Question 23 and sub-section E (p.34).",
+    ),
+}
+
+#: Where a CDE puts the values. Named once; both sentences below read it.
+_WHERE_TO_SUPPLY = (
+    "the \"OPTIONAL — Win Alignment scoring inputs\" block of "
+    "nmtcapp/templates/cde_profile_template.yaml (read into CDEProfile.extra), "
+    "or the CDE Profile sheet of an uploaded workbook"
+)
+
+
 @dataclass
 class Recommendation:
     """A single actionable recommendation for improving NMTC application competitiveness.
@@ -136,10 +243,31 @@ class RecommendationSet:
         self.strategic_changes = [r for r in self.recommendations if r.priority in ("critical", "high")]
 
     def summary(self) -> str:
+        """The recommendations, as text, headed by which round they score.
+
+        THE ROUND NOTE IS READ, NOT RETYPED (1.5.4 T1). This surface cited the
+        CY 2024-2025 Review Process thirteen times on a single run and said
+        nothing about that round being closed and awarded, or about CY 2026
+        being announced and not open. Markdown, Word, Excel and PDF have all
+        carried ``_round_provenance`` since 1.5.0; this surface did not,
+        because ``tests/test_round_provenance._ALL_FORMATS`` enumerates the
+        four ``Application.generate()`` formats and a surface that is not one
+        of them cannot appear in that list.
+
+        Only the FIRST paragraph renders here. The other three are the
+        re-check list, the AMIS certification deadline and the prior-Allocatee
+        Subsidiary obligation -- all of which belong on a filing artifact and
+        none of which is what a reader of a recommendation list needs in order
+        to read the citations under the items correctly. The full note is on
+        every generated document.
+        """
         lines = [
             "=" * 70,
             "  RECOMMENDATIONS",
             f"  {self.overall_assessment}",
+            "=" * 70,
+            "",
+            f"  {round_provenance_paragraphs()[0]}",
             "=" * 70,
         ]
         priority_order = [("critical", "[!]"), ("high", "[H]"), ("medium", "[M]")]
@@ -198,7 +326,12 @@ class RecommendationEngine:
         Returns:
             :class:`RecommendationSet` with all recommendations sorted by priority.
         """
-        recs: List[Recommendation] = []
+        # ELIGIBILITY PRECEDES RANKING (1.5.4 T4), so it is built first and the
+        # sort below is stable. Everything after this is advice about POSITION:
+        # where an application ranks against the Review Process criteria and,
+        # if it clears the gate, within the Highly Qualified pool. None of it
+        # reaches a project whose tract is not a Low-Income Community.
+        recs: List[Recommendation] = list(self._eligibility_gate_recs(pipeline_result))
 
         if win_score is not None:
             recs.extend(self._business_strategy_recs(win_score))
@@ -209,11 +342,170 @@ class RecommendationEngine:
             # Fall back to pipeline-only recommendations when no score available
             recs.extend(self._pipeline_fallback_recs(pipeline_result))
 
+        # STABLE, WHICH IS THE WHOLE POINT. ``list.sort`` preserves the order of
+        # equal keys, so the statutory gate stays ahead of the other criticals
+        # rather than landing wherever the sort happened to put it.
         priority_rank = {"critical": 0, "high": 1, "medium": 2}
         recs.sort(key=lambda r: priority_rank.get(r.priority, 3))
 
-        assessment = self._overall_assessment(win_score)
+        assessment = self._overall_assessment(win_score, pipeline_result)
         return RecommendationSet(recommendations=recs, overall_assessment=assessment)
+
+    # ------------------------------------------------------------------
+    # Unsupplied inputs — disclose, never instruct (1.5.4 T2)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _unsupplied(win_score: "WinProbabilityScore", subscore: str) -> tuple:
+        """The CDE-declared inputs this sub-score needs and did not get."""
+        return tuple(getattr(win_score, "unsupplied_inputs", {}).get(subscore, ()))
+
+    def _not_supplied_rec(
+        self, win_score: "WinProbabilityScore", subscore: str
+    ) -> Recommendation:
+        """A disclosure, in place of the instruction that used to render here.
+
+        WHAT THIS REPLACES, MEASURED. On a CDE whose ``extra`` is empty -- which
+        is what the shipped scaffold and the Streamlit upload path both
+        produce -- ``community_accountability`` scored 0/10 out of
+        ``attrs.get("lic_board_representation_pct", 0.0)`` and this engine
+        emitted::
+
+            Finding:  Community Accountability is 0/10. ...
+            Action:   Increase LIC resident or community representative board
+                      seats to at least 33% of total board members.
+
+        to a CDE whose REQUIRED ``governance`` block declared 4 of 9 community
+        representatives. 44%, told to reach 33%, in an action field.
+
+        NO SCORE IS PRINTED HERE, and that is the first of the two rules. The
+        model still computes one and ``WinProbabilityScore`` still carries it --
+        1.5.4 moves no score -- but a fraction is how a reader is told a thing
+        was measured, and part of this one is a ``.get`` default.
+
+        THE PRIORITY IS INHERITED FROM THE ITEM THIS REPLACES, not raised. A
+        disclosure that a field is blank is not more urgent than the sourced
+        finding it stands in for, and inflating it would push real critical
+        items down the page.
+        """
+        keys = self._unsupplied(win_score, subscore)
+        category, priority, fund, citation = _NOT_SUPPLIED_BASIS[subscore]
+        label = SUBSCORE_LABELS[subscore]
+        key_list = ", ".join(f"`{k}`" for k in keys)
+        plural = "these inputs were" if len(keys) > 1 else "this input was"
+        return Recommendation(
+            category=category,
+            priority=priority,
+            finding=(
+                f"{label} — NOT SCORED. This tool cannot score it because "
+                f"{plural} not supplied: {key_list}. No sub-score is stated "
+                "here: an input that was not supplied is not a zero, and the "
+                "figure the model computes from its absent-value defaults "
+                f"would describe nothing. {fund}"
+            ),
+            action=(
+                f"Supply {key_list} in {_WHERE_TO_SUPPLY}, then re-score. "
+                "Until then this tool states nothing about "
+                f"{label} and instructs nothing about it — it has not measured "
+                "it, and advice built on a default is advice about the default."
+            ),
+            expected_impact=(
+                f"Makes {label} scorable. Nothing about the application's "
+                "position changes; what changes is that this tool stops "
+                "reporting an absent field as a zero."
+            ),
+            quantified_improvement=(
+                f"Not quantifiable until {len(keys)} input(s) named above are "
+                "supplied. The CDFI Fund does score the criterion above; this "
+                "tool does not score it for this CDE."
+            ),
+            citation=citation,
+        )
+
+    # ------------------------------------------------------------------
+    # Eligibility gate (1.5.4 T4) — statutory, and it precedes everything
+    # ------------------------------------------------------------------
+
+    def _eligibility_gate_recs(
+        self, result: "PipelineAnalysisResult"
+    ) -> List[Recommendation]:
+        """Say that the pipeline fails the LIC gate, before advising on rank.
+
+        THE DEFECT. An all-ineligible pipeline emitted thirteen items and not
+        one of them mentioned that the pipeline was ineligible. The items
+        advised on improving rank within the Highly Qualified pool.
+
+        LIC status is not a scored band. It is a statutory precondition, and no
+        movement in any scored sub-criterion reaches a project whose tract does
+        not qualify.
+
+        MEASURED ON THE ``ineligible`` BUCKET, NOT ON ``eligibility_pct``, and
+        the difference is a fabricated negative. ``eligibility_pct`` counts
+        ``is_nmtc_eligible is True`` and therefore reads an UNVERIFIED project
+        exactly like a DISQUALIFIED one -- it is 0.0 both for a pipeline the
+        Fund's data says does not qualify and for one nobody could check.
+        ``distress_breakdown['dollars_by_distress']['ineligible']`` holds only
+        QEI whose tract was determined not to qualify; unverified QEI lands in
+        ``unknown``. Unknown is not ineligible, and this gate never says it is.
+        """
+        if getattr(result, "eligibility_data_status", "ok") != "ok":
+            return []
+        breakdown = result.distress_breakdown or {}
+        buckets = breakdown.get("dollars_by_distress") or {}
+        counts = breakdown.get("project_count_by_distress") or {}
+        ineligible_qei = buckets.get("ineligible", 0) or 0
+        total_qei = result.total_qei_request or 0
+        if ineligible_qei <= 0 or total_qei <= 0:
+            return []
+
+        share = ineligible_qei / total_qei
+        n_ineligible = counts.get("ineligible", 0)
+        n_total = result.total_projects
+        unknown_qei = buckets.get("unknown", 0) or 0
+        unknown_note = (
+            f" A further {unknown_qei / total_qei:.0%} of QEI is in tracts this "
+            "tool could not determine; that is reported as undetermined and is "
+            "NOT counted as ineligible."
+            if unknown_qei > 0 else ""
+        )
+        return [Recommendation(
+            category="pipeline",
+            priority="critical",
+            finding=(
+                f"{share:.0%} of pipeline QEI ({n_ineligible} of {n_total} "
+                "projects) is in a census tract that is not a Low-Income "
+                "Community. This is a statutory gate, not a scored band: "
+                "IRC §45D(d) requires each QLICI to be made in a qualified "
+                "active low-income community business located in a Low-Income "
+                "Community, and Treas. Reg. §1.45D-1(c)(5)(i) requires "
+                "substantially all — at least 85 percent — of QEI proceeds to "
+                "be invested in QLICIs. QEI attributed to a tract that does "
+                "not qualify cannot count toward that test." + unknown_note
+            ),
+            action=(
+                "Re-check each flagged project's tract against the CDFI Fund's "
+                "NMTC Mapping Tool and replace, relocate or drop any project "
+                "whose tract does not qualify. Do this before acting on the "
+                "items below: those concern where an application RANKS against "
+                "the Review Process criteria, and ranking does not reach QEI "
+                "that cannot be deployed."
+            ),
+            expected_impact=(
+                "Restores the affected QEI to deployable status. This is a "
+                "precondition for the scored criteria below, not an addition "
+                "to them."
+            ),
+            quantified_improvement=(
+                "Not a point movement. Eligibility is statutory and this tool "
+                "assigns it no score; the items below are scored and this one "
+                "is not."
+            ),
+            citation=(
+                "IRC §45D(d); Treas. Reg. §1.45D-1(c)(5)(i). NOT a "
+                f"{_SOURCE_DOC} scoring criterion — a statutory precondition "
+                "to being scored at all."
+            ),
+        )]
 
     # ------------------------------------------------------------------
     # Business Strategy recommendations
@@ -225,9 +517,18 @@ class RecommendationEngine:
         recs = []
         bs = win_score.business_strategy
 
+        # THE GUARD IS THE SAME SHAPE EVERYWHERE BELOW (1.5.4 T2), and it comes
+        # BEFORE the band test on purpose. The band test reads a number built
+        # partly out of ``.get`` defaults, so gating the disclosure on it would
+        # be circular: a CDE that supplied nothing could be scored above the
+        # threshold by the defaults alone and then told nothing at all.
+        # ``has_quantified_outcomes`` defaults to True, which is exactly that
+        # case waiting to happen.
         # Product Flexibility (10 pts)
         pf = bs.get("product_flexibility", 0)
-        if pf < 8:
+        if self._unsupplied(win_score, "product_flexibility"):
+            recs.append(self._not_supplied_rec(win_score, "product_flexibility"))
+        elif pf < 8:
             recs.append(Recommendation(
                 category="business_strategy",
                 priority="high",
@@ -310,8 +611,18 @@ class RecommendationEngine:
             ))
 
         # Pipeline Credibility (15 pts)
+        #
+        # THE SECOND ``lic_board_representation_pct``, FOUND WHILE FIXING THE
+        # FIRST. ``pipeline_pct_identified`` is absent-defaulted to 0.65
+        # (win_probability.py:442) -- not zero, and not measured: an invented
+        # moderate position. On an empty profile that default produced 10/15
+        # and this engine rendered "A few projects lack documented sizing or
+        # LOIs" as a FINDING about the CDE's pipeline, when nothing about the
+        # CDE's pipeline had been read.
         pc = bs.get("pipeline_credibility", 0)
-        if pc < 10:
+        if self._unsupplied(win_score, "pipeline_credibility"):
+            recs.append(self._not_supplied_rec(win_score, "pipeline_credibility"))
+        elif pc < 10:
             recs.append(Recommendation(
                 category="business_strategy",
                 priority="high",
@@ -344,7 +655,9 @@ class RecommendationEngine:
 
         # Track Record Strength (15 pts)
         trs = bs.get("track_record_strength", 0)
-        if trs < 9:
+        if self._unsupplied(win_score, "track_record_strength"):
+            recs.append(self._not_supplied_rec(win_score, "track_record_strength"))
+        elif trs < 9:
             recs.append(Recommendation(
                 category="business_strategy",
                 priority="high",
@@ -366,7 +679,9 @@ class RecommendationEngine:
 
         # Track Record Alignment (10 pts)
         tra = bs.get("track_record_alignment", 0)
-        if tra < 8:
+        if self._unsupplied(win_score, "track_record_alignment"):
+            recs.append(self._not_supplied_rec(win_score, "track_record_alignment"))
+        elif tra < 8:
             recs.append(Recommendation(
                 category="business_strategy",
                 priority="high",
@@ -566,7 +881,9 @@ class RecommendationEngine:
         # Special Targeting (5 pts) — derived from tract flags; skip when the
         # tract data behind those flags is unverified (hdt/ddc unassessable)
         st = co.get("special_targeting", 0)
-        if hdt is not None and ddc is not None and st < 3:
+        if self._unsupplied(win_score, "special_targeting"):
+            recs.append(self._not_supplied_rec(win_score, "special_targeting"))
+        elif hdt is not None and ddc is not None and st < 3:
             recs.append(Recommendation(
                 category="community_outcomes",
                 priority="medium",
@@ -671,7 +988,9 @@ class RecommendationEngine:
 
         # Community Outcomes Quality (10 pts)
         coq = co.get("community_outcomes_quality", 0)
-        if coq < 8:
+        if self._unsupplied(win_score, "community_outcomes_quality"):
+            recs.append(self._not_supplied_rec(win_score, "community_outcomes_quality"))
+        elif coq < 8:
             recs.append(Recommendation(
                 category="community_outcomes",
                 priority="high",
@@ -693,7 +1012,9 @@ class RecommendationEngine:
 
         # Community Accountability (10 pts)
         ca = co.get("community_accountability", 0)
-        if ca < 8:
+        if self._unsupplied(win_score, "community_accountability"):
+            recs.append(self._not_supplied_rec(win_score, "community_accountability"))
+        elif ca < 8:
             recs.append(Recommendation(
                 category="community_outcomes",
                 priority="high",
@@ -725,7 +1046,9 @@ class RecommendationEngine:
         pp = win_score.priority_points
 
         dbc = pp.get("dbc_track_record", 0)
-        if dbc < 4:
+        if self._unsupplied(win_score, "dbc_track_record"):
+            recs.append(self._not_supplied_rec(win_score, "dbc_track_record"))
+        elif dbc < 4:
             recs.append(Recommendation(
                 category="priority_points",
                 priority="medium",
@@ -745,7 +1068,9 @@ class RecommendationEngine:
             ))
 
         ue = pp.get("unrelated_entities", 0)
-        if ue < 4:
+        if self._unsupplied(win_score, "unrelated_entities"):
+            recs.append(self._not_supplied_rec(win_score, "unrelated_entities"))
+        elif ue < 4:
             recs.append(Recommendation(
                 category="priority_points",
                 priority="medium",
@@ -810,8 +1135,38 @@ class RecommendationEngine:
     # Gating recommendations (most important if not Highly Qualified)
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _gating_unscored_clause(win_score: "WinProbabilityScore") -> str:
+        """T2, ONE LEVEL UP. The gating items instructed on defaults too.
+
+        A section total is a SUM of sub-scores, so a section total containing
+        unscored sub-scores is not a measurement either -- and the action field
+        below said "focus immediately on the lowest-scoring Business Strategy
+        sub-criteria", naming three of them. On an empty profile the
+        lowest-scoring sub-criteria are lowest BECAUSE nothing was supplied,
+        which makes that sentence an instruction to restructure a CDE around
+        blanks in its own profile.
+
+        The gap arithmetic is left exactly as it is: it is a true statement
+        about what this tool computed, and it is the thing the gate turns on.
+        What is added is that part of the figure it is computed from was never
+        supplied.
+        """
+        missing = getattr(win_score, "unsupplied_inputs", None) or {}
+        if not missing:
+            return ""
+        labels = ", ".join(SUBSCORE_LABELS.get(k, k) for k in sorted(missing))
+        return (
+            f" NOTE: {len(missing)} sub-score(s) — {labels} — could not be "
+            "scored because this CDE supplied none of the inputs they read, so "
+            "this section total includes absent-value defaults. Supply those "
+            "inputs and re-score before treating the gap above as a gap in the "
+            "application rather than a gap in the profile."
+        )
+
     def _gating_recs(self, win_score: "WinProbabilityScore") -> List[Recommendation]:
         recs = []
+        unscored_clause = self._gating_unscored_clause(win_score)
         if win_score.tier == "Not Qualified":
             bs = win_score.business_strategy.get("section_total", 0)
             co = win_score.community_outcomes.get("section_total", 0)
@@ -825,12 +1180,23 @@ class RecommendationEngine:
                         f"Business Strategy section score ({bs}/{BUSINESS_STRATEGY_MAX}) is below "
                         f"the {HIGHLY_QUALIFIED_SECTION_MIN}-point "
                         "minimum required to reach the Highly Qualified pool. "
-                        "Applications that miss either section minimum do not advance to Phase 2."
+                        "Applications that miss either section minimum do not "
+                        "advance to Phase 2." + unscored_clause
                     ),
                     action=(
-                        "Focus immediately on the lowest-scoring Business Strategy sub-criteria: "
-                        "Product Flexibility, Pipeline Credibility, and Track Record. "
-                        f"You need at least {HIGHLY_QUALIFIED_SECTION_MIN} points in this section to be considered."
+                        (
+                            "Supply the missing Business Strategy inputs named "
+                            "above and re-score. Which sub-criterion is "
+                            "genuinely lowest cannot be read off a section "
+                            "total built partly from absent-value defaults, so "
+                            "this tool does not name one."
+                            if unscored_clause else
+                            "Focus immediately on the lowest-scoring Business "
+                            "Strategy sub-criteria: Product Flexibility, "
+                            "Pipeline Credibility, and Track Record."
+                        )
+                        + f" You need at least {HIGHLY_QUALIFIED_SECTION_MIN} "
+                        "points in this section to be considered."
                     ),
                     expected_impact="Meet the section minimum gating threshold; allow Phase 2 consideration.",
                     quantified_improvement=(
@@ -851,6 +1217,7 @@ class RecommendationEngine:
                         f"Community Outcomes section score ({co}/{COMMUNITY_OUTCOMES_MAX}) is below "
                         f"the {HIGHLY_QUALIFIED_SECTION_MIN}-point "
                         "minimum required to reach the Highly Qualified pool."
+                        + unscored_clause
                     ),
                     action=(
                         f"Prioritize Higher Distress Targeting ({HIGHER_DISTRESS_MAX} pts max) and "
@@ -877,7 +1244,8 @@ class RecommendationEngine:
                     finding=(
                         f"Both sections meet the {HIGHLY_QUALIFIED_SECTION_MIN}-point minimum but "
                         f"aggregate score ({agg}/{_AGGREGATE_MAX}) is below "
-                        f"{HIGHLY_QUALIFIED_AGGREGATE_MIN} — the Highly Qualified threshold."
+                        f"{HIGHLY_QUALIFIED_AGGREGATE_MIN} — the Highly "
+                        "Qualified threshold." + unscored_clause
                     ),
                     action=(
                         "Focus on the sub-criteria with the most remaining points in both sections. "
@@ -956,21 +1324,102 @@ class RecommendationEngine:
                     f"Target ≥{_ELIGIBLE_STRONG_TEXT}."
                 ),
                 expected_impact="Ensure QEI is deployable; improve Pipeline Credibility score.",
-                quantified_improvement="Reaching 98% eligibility significantly improves Pipeline Credibility.",
+                # INTERPOLATED, NOT TYPED (1.5.4 T7). This read "Reaching 98%
+                # eligibility ..." with a hand-typed 98 sitting beside an
+                # ``action`` two lines above that interpolates
+                # _ELIGIBLE_STRONG_TEXT from the same constant. Move
+                # WINNER_PATTERN_THRESHOLDS["min_eligible_pct"]["strong"] and
+                # the two sentences of ONE recommendation disagree with each
+                # other. The 98 was CORRECT — which is the whole hazard: the
+                # 1.5.1 audit's instance 25 was four percentiles that had
+                # agreed by luck and the suite stayed green.
+                #
+                # The band is also relabelled here, not just derived. It is
+                # this package's own winner-pattern band, disclosed as such in
+                # the finding above and now in the estimate too, so the
+                # estimate cannot be read alone as a Fund target.
+                quantified_improvement=(
+                    f"Reaching {_ELIGIBLE_STRONG_TEXT} eligibility "
+                    "significantly improves Pipeline Credibility. That band is "
+                    "this tool's own winner-pattern heuristic, not a CDFI Fund "
+                    "threshold."
+                ),
                 citation=f"{_SOURCE_DOC}, Section II.A — Business Strategy, Pipeline",
             ))
 
         return recs
 
     # ------------------------------------------------------------------
+    # Assessment qualifiers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _eligibility_gate_note(result: Optional["PipelineAnalysisResult"]) -> str:
+        """One sentence, on the same measurement the gate item uses."""
+        if result is None:
+            return ""
+        if getattr(result, "eligibility_data_status", "ok") != "ok":
+            return ""
+        breakdown = result.distress_breakdown or {}
+        buckets = breakdown.get("dollars_by_distress") or {}
+        ineligible_qei = buckets.get("ineligible", 0) or 0
+        total_qei = result.total_qei_request or 0
+        if ineligible_qei <= 0 or total_qei <= 0:
+            return ""
+        return (
+            f" ELIGIBILITY FIRST: {ineligible_qei / total_qei:.0%} of pipeline "
+            "QEI is in tracts that are not a Low-Income Community, which is a "
+            "statutory gate under IRC §45D(d) and not one of the things the "
+            "score above ranks. The tier is a ranking; it does not answer that."
+        )
+
+    @staticmethod
+    def _unscored_note(win_score: Optional["WinProbabilityScore"]) -> str:
+        """One sentence, naming how much of the aggregate was not measured."""
+        missing = getattr(win_score, "unsupplied_inputs", None) or {}
+        if not missing:
+            return ""
+        labels = ", ".join(
+            SUBSCORE_LABELS.get(k, k) for k in sorted(missing)
+        )
+        return (
+            f" NOT ALL OF THIS WAS SCORED: {len(missing)} sub-score(s) — "
+            f"{labels} — read CDE-declared inputs this run did not receive, so "
+            "the figures above include absent-value defaults. The aggregate is "
+            "a sum of what was computed, not a measurement of what was "
+            "supplied."
+        )
+
+    # ------------------------------------------------------------------
     # Overall assessment
     # ------------------------------------------------------------------
 
-    def _overall_assessment(self, win_score: Optional["WinProbabilityScore"]) -> str:
+    def _overall_assessment(
+        self,
+        win_score: Optional["WinProbabilityScore"],
+        pipeline_result: Optional["PipelineAnalysisResult"] = None,
+    ) -> str:
+        """The one-line verdict, with what qualifies it attached to it.
+
+        TWO QUALIFIERS ARE APPENDED, AND BOTH ARE ABOUT THE VERDICT ITSELF
+        rather than about the pipeline:
+
+          * the statutory eligibility gate (1.5.4 T4). A tier is a RANKING, and
+            a ranking stated over a pipeline that fails the LIC gate reads as
+            though the gate were one of the things being ranked on.
+          * the count of sub-scores this tool could not score (1.5.4 T2). The
+            aggregate is a sum, so a sum containing five ``.get`` defaults is
+            not a measurement of the application either -- and the tier is read
+            off that aggregate. No number changes; what changes is that the
+            number no longer arrives unqualified.
+        """
+        gate = self._eligibility_gate_note(pipeline_result)
+        unscored = self._unscored_note(win_score)
         if win_score is None:
             return (
                 "Analysis complete. Review recommendations below to improve "
-                "alignment with the CDFI Fund's CY 2024-2025 Review Process criteria."
+                "alignment with the CDFI Fund's CY 2024-2025 Review Process "
+                "criteria." + gate
             )
         # Partial guard, mirroring win_probability._build_peer_comparison.
         # Without it a degraded run fell through to the "Not Qualified" branch
@@ -983,7 +1432,7 @@ class RecommendationEngine:
                 f"{getattr(win_score, 'partial_note', '')}. "
                 "No qualification verdict can be given from a partial score. "
                 "Restore nmtc-mapper data access and re-run before drawing any "
-                "conclusion about competitiveness."
+                "conclusion about competitiveness." + gate + unscored
             )
 
         tier = win_score.tier
@@ -1003,14 +1452,16 @@ class RecommendationEngine:
                 "(\"Top Tier\" is this tool's own label: the CDFI Fund publishes "
                 "no tier above Highly Qualified, and the cut points behind it "
                 "are an unsourced house heuristic, not a CDFI Fund threshold.) "
-                "Focus on Phase 2 preparation (Management Capacity, Capitalization Strategy)."
+                "Focus on Phase 2 preparation (Management Capacity, "
+                "Capitalization Strategy)." + gate + unscored
             )
         if tier == "Highly Qualified":
             return (
                 f"Highly Qualified ({agg}/{_AGGREGATE_MAX}). Business Strategy: {bs}/{BUSINESS_STRATEGY_MAX}, "
                 f"Community Outcomes: {co}/{COMMUNITY_OUTCOMES_MAX}. Both sections meet the "
                 f"{HIGHLY_QUALIFIED_SECTION_MIN}-point gating minimum. "
-                "Priority changes below can improve ranking within the Highly Qualified pool."
+                "Priority changes below can improve ranking within the Highly "
+                "Qualified pool." + gate + unscored
             )
         # Not Qualified
         gaps = []
@@ -1023,6 +1474,7 @@ class RecommendationEngine:
                 f"aggregate {agg}/{_AGGREGATE_MAX} < {HIGHLY_QUALIFIED_AGGREGATE_MIN}")
         gap_str = "; ".join(gaps) if gaps else f"aggregate {agg}/{_AGGREGATE_MAX}"
         return (
-            f"Not Qualified ({agg}/100) — {gap_str}. "
+            f"Not Qualified ({agg}/{_AGGREGATE_MAX}) — {gap_str}. "
             "Address Critical recommendations first to meet gating thresholds."
+            + gate + unscored
         )
