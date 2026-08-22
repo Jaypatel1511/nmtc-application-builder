@@ -111,6 +111,36 @@ _ELIGIBLE_STRONG_TEXT = f"{_ELIGIBLE_STRONG_PCT:.0%}"
 #: than rewritten, so the sourcing work done in 1.2.2 (D1, D2, D3, D5) is not
 #: quietly discarded on the path a CDE with an empty profile actually takes --
 #: which is the only path the shipped scaffold produced.
+#: EVERY KEY HERE IS REACHABLE, AND TWO WERE NOT (1.5.4 audit close, B4).
+#: ``special_targeting`` and ``unrelated_entities`` carried entries that
+#: ``unsupplied_inputs`` can never ask for. Proved by exhausting all 2^17 =
+#: 131,072 presence combinations of the seventeen scoring inputs: the emitted
+#: set is the same seven sub-scores every time, and neither of those two is
+#: among them.
+#:
+#: THE CAUSE IS THE REGISTRY'S OWN RULE, WORKING CORRECTLY. ``unsupplied_inputs``
+#: skips any input with a ``measured_substitute``; ``special_targeting``'s only
+#: two inputs (``pct_persistent_poverty``, ``pct_us_territories``) both have
+#: one, and ``unrelated_entities``' single input does too.
+#:
+#: RULED: DELETED, not made reachable. The alternative was widening
+#: ``unsupplied_inputs`` to report them, and that would REVERSE a correct
+#: ruling -- both sub-scores ARE scored, from a QEI-weighted measurement of
+#: this CDE's own pipeline, so printing "NOT SCORED" over them would be a new
+#: false statement in the opposite direction. That is the error
+#: ``test_a_cde_that_supplies_everything_is_still_given_scores`` exists to
+#: catch, and shipping it here to justify a dictionary entry would be the tail
+#: wagging the tool.
+#:
+#: A ``fund_attribution_allowlist.txt`` row went with the ``unrelated_entities``
+#: entry -- an allowlist adjudicating a Fund attribution in text that can never
+#: render, which is the "registry entry that adjudicates nothing while
+#: appearing to" shape a session correctly refused to create at 1.5.2. Removed
+#: with the entry it ruled.
+#:
+#: ``tests/test_cde_scoring_inputs.py`` now DERIVES the reachable set from
+#: ``CDE_SCORING_INPUTS`` and asserts these keys are exactly it, in both
+#: directions, so a third unreachable entry fails instead of accumulating.
 _NOT_SUPPLIED_BASIS = {
     "product_flexibility": (
         "business_strategy", "high",
@@ -147,12 +177,6 @@ _NOT_SUPPLIED_BASIS = {
         "Exhibit A.",
         f"{_SOURCE_DOC}, Section II.A — Business Strategy, Track Record",
     ),
-    "special_targeting": (
-        "community_outcomes", "medium",
-        "This is a HOUSE criterion. The CDFI Fund publishes no 'Special "
-        "Targeting' criterion and no bonus points for it.",
-        "HOUSE criterion — no CDFI Fund source.",
-    ),
     "community_outcomes_quality": (
         "community_outcomes", "high",
         "The CDFI Fund scores whether community outcome projections are "
@@ -175,17 +199,45 @@ _NOT_SUPPLIED_BASIS = {
         "to Disadvantaged Businesses or Communities.",
         f"{_SOURCE_DOC}, Section III — Priority Points, DBC Track Record",
     ),
-    "unrelated_entities": (
-        "priority_points", "medium",
-        "Question 23 of the CY 2024-2025 NMTC Allocation Application (p.34) is "
-        "a Yes/No commitment to use \"substantially all\" of the proceeds of "
-        "the CDE's QEIs for QLICIs in businesses in which unrelated persons "
-        "hold the majority equity interest; answering Yes is awarded five "
-        "additional points.",
-        f"{_SOURCE_DOC}, p.7 Part II.B.2; CY 2024-2025 NMTC Allocation "
-        "Application, Question 23 and sub-section E (p.34).",
-    ),
 }
+
+#: THE SHARE FLOOR (1.5.4 audit close, B2). A non-zero share may never render
+#: as ``0%``, and a partial share may never render as ``100%``.
+#:
+#: THE DEFECT. T4 introduced three ``:.0%`` renders and gave none of them a
+#: floor. Measured on ONE $50,000 ineligible project in a 20-project,
+#: $114,050,000 pipeline -- a share of 0.0438% -- all three printed::
+#:
+#:     0% of pipeline QEI (1 of 20 projects) is in a census tract that is
+#:     not a Low-Income Community. This is a statutory gate...
+#:
+#: On the assessment surface, which carried no project count at all, that
+#: sentence read simply "0% of pipeline QEI is in tracts that are not a
+#: Low-Income Community" -- an unqualified, false statement, in the release
+#: whose entire purpose is removing false statements from this engine.
+#:
+#: THE MIRROR IS REAL TOO, and the audit that found the first end did not name
+#: it. ``f"{0.996:.0%}"`` is ``"100%"``: a pipeline with one small ELIGIBLE
+#: project among nineteen ineligible ones would state that 100% of its QEI is
+#: in a tract that does not qualify, which is false in the direction that tells
+#: a CDE its whole pipeline is dead. Same rounding, opposite end, so it is
+#: closed here rather than left for the round that trips over it.
+#:
+#: THE THRESHOLD IS DERIVED FROM THE RENDER, NOT TYPED. Testing ``share <
+#: 0.005`` would hard-code one format spec's rounding behaviour in a second
+#: place -- two copies of one fact, joined by nothing, which is the shape this
+#: package has recorded most often. This formats the number and asks what came
+#: out, so it stays correct if the spec ever changes.
+def _share_text(numerator: float, denominator: float) -> str:
+    """A share of ``numerator`` in ``denominator``, floored at both ends."""
+    share = numerator / denominator
+    rendered = f"{share:.0%}"
+    if rendered == "0%" and share > 0:
+        return "<1%"
+    if rendered == "100%" and share < 1:
+        return ">99%"
+    return rendered
+
 
 #: Where a CDE puts the values. Named once; both sentences below read it.
 _WHERE_TO_SUPPLY = (
@@ -458,12 +510,17 @@ class RecommendationEngine:
         if ineligible_qei <= 0 or total_qei <= 0:
             return []
 
-        share = ineligible_qei / total_qei
         n_ineligible = counts.get("ineligible", 0)
         n_total = result.total_projects
         unknown_qei = buckets.get("unknown", 0) or 0
+        n_unknown = counts.get("unknown", 0)
+        # THE COUNT TRAVELS WITH THE SHARE, on every surface that states one
+        # (1.5.4 audit close, B2 rule 2). A share alone cannot distinguish TINY
+        # from NONE, and this sentence is read by a CDE deciding whether its
+        # pipeline has an undetermined-tract problem at all.
         unknown_note = (
-            f" A further {unknown_qei / total_qei:.0%} of QEI is in tracts this "
+            f" A further {_share_text(unknown_qei, total_qei)} of QEI "
+            f"({n_unknown} of {n_total} projects) is in tracts this "
             "tool could not determine; that is reported as undetermined and is "
             "NOT counted as ineligible."
             if unknown_qei > 0 else ""
@@ -472,7 +529,8 @@ class RecommendationEngine:
             category="pipeline",
             priority="critical",
             finding=(
-                f"{share:.0%} of pipeline QEI ({n_ineligible} of {n_total} "
+                f"{_share_text(ineligible_qei, total_qei)} of pipeline QEI "
+                f"({n_ineligible} of {n_total} "
                 "projects) is in a census tract that is not a Low-Income "
                 "Community. This is a statutory gate, not a scored band: "
                 "IRC §45D(d) requires each QLICI to be made in a qualified "
@@ -880,10 +938,16 @@ class RecommendationEngine:
 
         # Special Targeting (5 pts) — derived from tract flags; skip when the
         # tract data behind those flags is unverified (hdt/ddc unassessable)
+        #
+        # NO ``_unsupplied`` GUARD HERE, AND THAT IS DELIBERATE (1.5.4 audit
+        # close, B4). Every other sub-score below carries one; these two do
+        # not, because both of this sub-score's inputs -- ``pct_persistent_
+        # poverty`` and ``pct_us_territories`` -- have a measured substitute,
+        # so ``unsupplied_inputs`` can never name it and the guard could never
+        # be true. It was measured unreachable across all 2^17 presence
+        # combinations before it was removed.
         st = co.get("special_targeting", 0)
-        if self._unsupplied(win_score, "special_targeting"):
-            recs.append(self._not_supplied_rec(win_score, "special_targeting"))
-        elif hdt is not None and ddc is not None and st < 3:
+        if hdt is not None and ddc is not None and st < 3:
             recs.append(Recommendation(
                 category="community_outcomes",
                 priority="medium",
@@ -1067,10 +1131,11 @@ class RecommendationEngine:
                 citation=f"{_SOURCE_DOC}, Section III — Priority Points, DBC Track Record",
             ))
 
+        # NO ``_unsupplied`` GUARD, for the same measured reason as Special
+        # Targeting above: ``unrelated_entities_pct`` has a measured
+        # substitute, so this sub-score is never unscored.
         ue = pp.get("unrelated_entities", 0)
-        if self._unsupplied(win_score, "unrelated_entities"):
-            recs.append(self._not_supplied_rec(win_score, "unrelated_entities"))
-        elif ue < 4:
+        if ue < 4:
             recs.append(Recommendation(
                 category="priority_points",
                 priority="medium",
@@ -1362,13 +1427,22 @@ class RecommendationEngine:
             return ""
         breakdown = result.distress_breakdown or {}
         buckets = breakdown.get("dollars_by_distress") or {}
+        counts = breakdown.get("project_count_by_distress") or {}
         ineligible_qei = buckets.get("ineligible", 0) or 0
         total_qei = result.total_qei_request or 0
         if ineligible_qei <= 0 or total_qei <= 0:
             return ""
+        # THE COUNT IS HERE BECAUSE THIS IS THE SENTENCE A CDE READS FIRST
+        # (1.5.4 audit close, B2 rule 2). The gate ITEM has carried "(1 of 20
+        # projects)" since T4; this sentence carried a bare percentage, so on
+        # the one surface most likely to be read alone the share had nothing to
+        # qualify it. It is a DISCLOSURE of what was measured, not an
+        # instruction, so it sits inside the principle T2 adopted.
         return (
-            f" ELIGIBILITY FIRST: {ineligible_qei / total_qei:.0%} of pipeline "
-            "QEI is in tracts that are not a Low-Income Community, which is a "
+            f" ELIGIBILITY FIRST: {_share_text(ineligible_qei, total_qei)} of "
+            f"pipeline QEI ({counts.get('ineligible', 0)} of "
+            f"{result.total_projects} projects) is in tracts that are not a "
+            "Low-Income Community, which is a "
             "statutory gate under IRC §45D(d) and not one of the things the "
             "score above ranks. The tier is a ranking; it does not answer that."
         )

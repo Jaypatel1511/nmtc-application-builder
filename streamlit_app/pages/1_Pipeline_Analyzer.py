@@ -25,6 +25,7 @@ from nmtcapp.core.upload_handler import load_uploaded_pipeline
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from nmtcapp.core.sample_identity import SampleDataError
 from nmtcapp.renderers._disclosure import join_truncated
+from nmtcapp.renderers._round_provenance import round_provenance_paragraphs
 from nmtcapp.tables.distress_table import LIC_ROW_LABEL, NATIVE_AREA_ROW_LABEL
 from nmtcapp.data.schema import GRADE_THRESHOLDS, TARGET_DISTRESS_THRESHOLDS
 from nmtcapp.data.historical_awards import (
@@ -86,6 +87,22 @@ st.markdown(
     "Run a comprehensive intelligence analysis on your NMTC project pipeline — "
     "distress concentration, geographic diversity, sector mix, and impact projections."
 )
+st.markdown("---")
+
+# WHICH ROUND, ON THE THIRD PAGE THAT CITES ONE (1.5.4 audit close, B3). Pages
+# 2 and 4 got this note in T1; this page did not, because the gate enumerated
+# a HAND-MAINTAINED two-entry list and this page was not on it. Deriving the
+# list from the pages directory found this instance on the first run.
+#
+# WHY grep DID NOT FIND IT EITHER, which is the part worth recording. This
+# page's citation lives inside a markdown string split across two source lines
+# by implicit concatenation, so the characters "CY 2024-2025" never appear
+# contiguously anywhere in the file. A source-level search cannot see this
+# citation at all; the gate now parses the page and asks the AST, which joins
+# the parts the way the reader's screen does.
+#
+# READ, NOT RETYPED, for the same reason as pages 2 and 4.
+st.info(round_provenance_paragraphs()[0])
 st.markdown("---")
 
 # ---------------------------------------------------------------------------

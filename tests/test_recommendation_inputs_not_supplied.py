@@ -88,9 +88,36 @@ def _recommendations(cde=None, pipeline=None):
 
 
 def _item(recs, needle):
-    hits = [r for r in recs.recommendations if needle in r.finding]
+    """The item ABOUT ``needle``, not merely one that mentions it.
+
+    THE DEFECT THIS SIGNATURE FIXES (1.5.4 audit close, B1). This read
+    ``needle in r.finding`` and returned ``hits[0]``, and the test below was
+    DEAD FROM BIRTH because the same commit that added it added
+    ``RecommendationEngine._gating_unscored_clause``. That clause appends
+    EVERY ``SUBSCORE_LABELS`` value into the gating item's ``finding``, and the
+    gating item is ``critical`` and sorts first -- so for all seven labels it
+    names, the substring search matched ``[0, 1, <the real item>]`` and
+    ``hits[0]`` returned the GATING item, whose text contains neither ``0/10``
+    nor the board instruction. Measured: the exact shipped instruction was
+    re-inserted into the Community Accountability disclosure and this module
+    stayed green, 13 passed.
+
+    ``startswith`` is what distinguishes the two: the disclosure item's finding
+    OPENS with its label (``f"{label} — NOT SCORED. ..."``,
+    recommendations.py:399), while the gating item only mentions the label
+    mid-sentence inside the NOTE clause. Verified against every one of the nine
+    ``SUBSCORE_LABELS`` values on the shipped tree: ``in`` resolves seven of
+    them to the gating item, ``startswith`` resolves all nine to the item that
+    is actually about them.
+
+    NARROWING A MATCH CANNOT SILENTLY DISARM THIS. The ``assert hits`` below
+    fires when nothing matches, so a finding that stops leading with its label
+    fails loudly here rather than passing vacuously -- which is the direction
+    of error a tighter needle would otherwise risk.
+    """
+    hits = [r for r in recs.recommendations if r.finding.startswith(needle)]
     assert hits, (
-        f"no recommendation whose finding mentions {needle!r}; findings were:\n"
+        f"no recommendation whose finding BEGINS with {needle!r}; findings were:\n"
         + "\n".join(f"  - {r.finding[:90]}" for r in recs.recommendations)
     )
     return hits[0]
@@ -119,6 +146,15 @@ def test_a_board_at_44_percent_is_not_told_to_reach_33_percent():
     item = _item(recs, "Community Accountability")
     text = _text(item)
 
+    # SELECTED ITEM FIRST, THEN THE WHOLE SURFACE. The corpus assertions below
+    # are what make this gate independent of _item's needle altogether: B1 was
+    # not a wrong assertion, it was an assertion pointed at the wrong item, and
+    # a gate that can be disarmed by a change in item ORDER is the shape this
+    # module exists to close. Measured on the shipped tree: neither string
+    # appears anywhere in the rendered corpus, so neither assertion is
+    # vacuous.
+    corpus = " ".join(_text(r) for r in recs.recommendations)
+
     assert "0/10" not in text, (
         "Community Accountability renders as 0/10 for a CDE that supplied no "
         "lic_board_representation_pct and no "
@@ -129,6 +165,17 @@ def test_a_board_at_44_percent_is_not_told_to_reach_33_percent():
         "the action instructs a CDE whose own required governance block "
         "declares 4 of 9 community representatives (44%) to raise its board to "
         f"33%. The tool may not instruct on an input it was never given.\n\n{text}"
+    )
+    assert "33% of total board members" not in corpus, (
+        "the false board instruction is absent from the Community "
+        "Accountability item but present SOMEWHERE ELSE on the recommendations "
+        "surface. A CDE reads the surface, not the item this test selected."
+        f"\n\n{corpus}"
+    )
+    assert not re.search(r"\b\d+/10\b", corpus), (
+        "a x/10 sub-score renders somewhere on the surface for a CDE that "
+        "supplied none of its inputs. Selecting a different item is not a fix; "
+        f"the number is still on the page.\n\n{corpus}"
     )
 
 
