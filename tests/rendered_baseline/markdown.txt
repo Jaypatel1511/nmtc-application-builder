@@ -21,14 +21,38 @@ Great Lakes Regional Capital CDE, LLC respectfully requests $70.0MM in New Marke
 
 *READINESS SCORE: An UNSOURCED HOUSE HEURISTIC of this tool (eligibility 25%, distress concentration 25%, geographic diversity 15%, impact metrics 20%, validation 10%, completeness 5%). The weights are this tool's own judgement; they are not calibrated against award data, the CDFI Fund publishes no such weighting, and the score does not predict an award outcome.*
 
-**Key Strengths** (this tool's own assessment against its own thresholds — not a CDFI Fund evaluation)**:**
-- High pipeline eligibility rate (≥80% score)
-- Strong deep/severe distress concentration
-- High geographic-diversity sub-score on this tool's own house curve — not a CDFI Fund threshold, and not a finding about the application
+*READINESS NARRATIVE WITHDRAWN (1.5.2). This tool no longer emits strengths, weaknesses or recommendations from the readiness composite, and none are offered in this release.*
 
-**Recommended Improvements Before Submission:**
-- Geographic-footprint guidance is WITHDRAWN pending a methodology review and is not offered in this release. Earlier versions advised expanding to ≥5 states to raise this tool's geographic-diversity sub-score; the CDFI Fund scores no state count, and following that advice can dilute deep/severe distress concentration, which the Fund does score. YOU WERE NEVERTHELESS DOCKED 1.6 POINTS of the 100-point readiness headline for this: the geographic-diversity sub-score is 89.4/100 and carries a 15% weight in a total that is itself this tool's own unsourced heuristic. That deduction is NOT evidence your footprint is a problem — the CDFI Fund does not score geographic breadth at all, so nothing in the readiness headline's geographic term has a federal referent. Do not treat this pipeline's 4-state footprint as a finding either way, and do not expand it to recover these points. See the CY 2024-2025 Review Process, Community Outcomes, for what is actually scored
-- Add operating business projects (manufacturing, healthcare) to improve jobs-per-million-QEI metric above this tool's 12 FTE screening band (a house band, not a CDFI Fund figure)
+*WHAT WAS WITHDRAWN. Earlier versions read this composite's sub-scores and told a CDE to act on them: to increase deep/severe distress concentration to a target share, to add operating-business projects to raise a jobs-per-$1MM-QEI figure, and (withdrawn separately in 1.5.1) to expand its footprint to >=5 states. They also asserted strengths and weaknesses -- that a share was 'above average', that a concentration was 'below competitive threshold'.*
+
+*WHY. EVERY ONE OF THOSE TRIGGERS WAS A BAND THIS TOOL SET FOR ITSELF. The composite they weight is this tool's own unsourced house heuristic: the CDFI Fund publishes no readiness score, no such weighting and no grade, so none of the thresholds that fired those lines has a federal referent -- they are recorded HOUSE in this package's own constant registry. Restructuring a real pipeline is an expensive and sometimes irreversible act, and it was being instructed by arithmetic with nothing behind it. The measured case is on the record: following the withdrawn geographic advice moved a sample pipeline from Highly Qualified to Not Qualified under the Fund's own gate while this tool's grade did not change letter.*
+
+*YOU WERE NEVERTHELESS DOCKED, AND HERE IS THE ARITHMETIC. A tool may decline to advise. It may not deduct silently.*
+
+*ROWS THAT ARE HOUSE BOOKKEEPING END TO END -- the Fund scores no corresponding quantity:*
+
+    Geographic Diversity        89.4/100 at a 15% weight  ->  DOCKED 1.6 POINTS  [schema.MIN_GEOGRAPHIC_DIVERSITY (HOUSE)]
+        FUND: THE CDFI FUND DOES NOT SCORE GEOGRAPHIC BREADTH AT ALL. No state
+              count is scored anywhere in the CY 2024-2025 Review Process, so
+              these points exist only inside this tool. Measured: taking a
+              sample pipeline from 3 states to 6 returned exactly the 10.0
+              itemised here and moved the Fund base score by zero.
+    Impact Metrics              32.6/100 at a 20% weight  ->  DOCKED 13.5 POINTS  [schema.IMPACT_BENCHMARKS (HOUSE)]
+        FUND: The Fund scores whether outcomes are QUANTIFIED and THIRD-PARTY
+              VALIDATED. It publishes no jobs-per-$1MM-QEI band, so no Fund
+              quantity corresponds to the rate docking you here.
+
+    SUBTOTAL FOR THIS BLOCK: 15.1 POINTS.
+
+    TOTAL DEDUCTION 15.1 POINTS of the 100-point readiness headline.
+
+*THE BLOCKS ABOVE ARE NOT THE SAME CURRENCY AND MUST NOT BE TRADED OFF AGAINST EACH OTHER. A point recovered on a house bookkeeping row changes this tool's headline and nothing else. Worse, the two blocks can move in OPPOSITE directions: a measured sample pipeline that added a state and diluted its severe-distress share gained 2.1 readiness points here while its aggregate base score under this package's model of the Review Process FELL by a point, 78 to 77. THIS TABLE CANNOT TELL YOU WHICH TRADE IS WORTH MAKING, AND IT IS NOT TRYING TO -- it is an account of what this tool did to its own number, not a list of things to fix.*
+
+*NONE OF THAT IS A FINDING ABOUT YOUR APPLICATION. The deduction is this tool's own bookkeeping against its own bands. In particular the CDFI Fund does not score geographic breadth at all, so nothing in the headline's geographic term has a federal referent; do not treat this pipeline's footprint as a finding either way, and do not expand it to recover those points.*
+
+*WHERE THE SOURCED GUIDANCE IS. `intelligence.RecommendationEngine` is untouched. It never reads this composite -- it scores against the CY 2024-2025 NMTC Program Review Process and cites the section behind every item it emits. Reach it with `Application.recommendations()` in Python, or open the Win Alignment Scorer page in the Streamlit app.*
+
+*IT IS NOT REACHED FROM HERE. Neither `nmtcapp analyze` nor the generated application documents run that engine, so neither now carries improvement guidance of any kind. That gap is stated rather than shipped quietly: reaching the sourced guidance is a separate call you have to make yourself.*
 
 ---
 

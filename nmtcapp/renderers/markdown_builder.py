@@ -183,11 +183,19 @@ class MarkdownApplicationBuilder:
             # readiness_weights_note() in the methodology block — 88% of the
             # document. The methodology copy stays; this is an addition.
             f"*{readiness_weights_note()}*\n\n"
-            f"**Key Strengths** (this tool's own assessment against its own "
-            f"thresholds — not a CDFI Fund evaluation)**:**\n" +
-            "\n".join(f"- {s}" for s in score.top_strengths) +
-            f"\n\n**Recommended Improvements Before Submission:**\n" +
-            "\n".join(f"- {r}" for r in score.recommendations[:3])
+            # THE SECOND OF THE TWO NARRATIVE SURFACES (1.5.2 T1). This block
+            # rendered "Key Strengths" (all of score.top_strengths) and
+            # "Recommended Improvements Before Submission" (the first three
+            # recommendations) onto the FIRST PAGE OF A GENERATED APPLICATION
+            # DOCUMENT -- the surface with the longest reach, because a CDE
+            # forwards this file. Both lists were produced by house bands with
+            # no CDFI Fund referent; both are withdrawn.
+            #
+            # The note is read from validation.readiness_score, not restated
+            # here. Four near-identical copies of one disclosure is the shape
+            # that produced the 1.2.1 defect where a sentence was deleted from
+            # one file and stayed live in a second.
+            + _withdrawal_markdown(score)
         )
 
     def _toc(self) -> str:
@@ -284,3 +292,19 @@ def _df_to_md(df, max_rows: int = 50) -> str:
     if len(df) > max_rows:
         lines.append(f"\n_Showing {max_rows} of {len(df)} rows._")
     return "\n".join(lines) + "\n"
+
+
+def _withdrawal_markdown(score) -> str:
+    """Render :attr:`ReadinessScore.narrative_note` as markdown.
+
+    The deduction table arrives pre-aligned with a four-space indent, which is
+    already a markdown code block, so the columns survive the format change
+    without a second copy of the layout living here.
+    """
+    note = getattr(score, "narrative_note", "") or ""
+    if not note:
+        return ""
+    out = []
+    for para in note.split("\n"):
+        out.append(para if para.startswith("    ") or not para.strip() else f"*{para}*")
+    return "\n".join(out)

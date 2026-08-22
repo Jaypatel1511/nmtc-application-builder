@@ -120,16 +120,21 @@ _AUTHORITY = ("nmtcapp", "renderers", "_disclosure.py")
 #: Call sites that slice-and-join and are NOT this defect, each with the reason
 #: it was ruled rather than fixed. An exemption is a hole with a reason
 #: attached; this is where the reasons live, and adding one is a review event.
-_RULED_EXCEPTIONS = {
-    ("nmtcapp/renderers/markdown_builder.py", "recommendations"): (
-        "recommendations[:3] renders under the heading 'Recommended "
-        "Improvements Before Submission:', which states no count. A heading "
-        "that promises nothing cannot be contradicted by a short list. It IS "
-        "a silent truncation and is reported in 1.3.1's user-surface read; "
-        "saying 'top 3 of 7' would change a generated document and belongs in "
-        "a minor release."
-    ),
-}
+# EMPTY SINCE 1.5.2, AND THAT IS A RESULT RATHER THAN AN OVERSIGHT.
+#
+# The one ruling here was ``markdown_builder``'s ``recommendations[:3]``,
+# rendered under "Recommended Improvements Before Submission:" -- a heading
+# that stated no count, so a reader could not tell three items from seven. The
+# 1.3.1 user-surface read recorded it as a real silent truncation whose fix
+# ("top 3 of 7") would change a generated document and therefore belonged in a
+# minor release.
+#
+# 1.5.2 T1 removed the call site instead: the composite's recommendations are
+# withdrawn, so markdown joins no sliced list at all and there is nothing left
+# to truncate. The exception is retired because the ruling has no subject, NOT
+# because the defect was waived -- test_every_ruled_exception_still_exists is
+# what forced this edit, which is the gate working.
+_RULED_EXCEPTIONS = {}
 
 
 def _require_source_tree() -> None:

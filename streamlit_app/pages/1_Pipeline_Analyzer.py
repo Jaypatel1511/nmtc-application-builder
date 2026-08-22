@@ -25,8 +25,15 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from nmtcapp.core.sample_identity import SampleDataError
 from nmtcapp.renderers._disclosure import join_truncated
 from nmtcapp.tables.distress_table import LIC_ROW_LABEL, NATIVE_AREA_ROW_LABEL
-from nmtcapp.data.schema import TARGET_DISTRESS_THRESHOLDS
-from nmtcapp.data.historical_awards import WINNER_GEOGRAPHIC_PATTERNS
+from nmtcapp.data.schema import GRADE_THRESHOLDS, TARGET_DISTRESS_THRESHOLDS
+from nmtcapp.data.historical_awards import (
+    WINNER_GEOGRAPHIC_PATTERNS,
+    WINNER_IMPACT_BENCHMARKS,
+)
+from nmtcapp.renderers._methodology import (
+    readiness_inline_qualifier,
+    readiness_weights_note,
+)
 from nmtcapp.renderers._question_25 import Q25_QEI_BASIS_CLAUSE, q25_basis_note
 from nmtcapp.renderers._question_22 import (
     Q22_METRO_LABEL, Q22_NON_METRO_LABEL, Q22_NON_METRO_METRIC_LABEL,
@@ -311,7 +318,26 @@ with tabs[0]:
         f"{readiness:.1f} / 100",
         f"Grade {grade}",
     )
+    # THE DISCLOSURE THE LARGEST NUMBER ON THIS PAGE DID NOT CARRY (1.5.2
+    # audit F2). Through 1.5.2 this page rendered the readiness composite
+    # three ways -- the metric above, the "Overall readiness grade" fallback
+    # below, and the six-component bar chart -- and carried NO readiness
+    # disclosure of any kind. An AST scan of every rendered string on the page
+    # found four readiness claims and zero disclosures.
+    #
+    # It was never exempt. tests/test_pinned_constants's proximity gate
+    # iterated DOCUMENT_SURFACES plus three text surfaces and Streamlit was
+    # not in the dict, so no gate could see the page. The gate now renders
+    # this page's strings as a surface of its own; adding a fourth claim here
+    # without a disclosure beside it goes red.
+    #
+    # The wording is not retyped. Both strings come from renderers/_methodology
+    # -- the same functions the gate derives its anchors and its distance limit
+    # from -- so rewording the disclosure moves this caption with it.
+    c3.caption(readiness_inline_qualifier())
     c4.metric("NMTC-eligible", "Unverified" if _degraded else fmt_pct(eligible_pct))
+
+    st.caption(readiness_weights_note())
 
     st.markdown("---")
 
@@ -337,6 +363,7 @@ with tabs[0]:
     # --- H: Readiness score breakdown ---
     st.markdown("---")
     st.markdown("**Readiness score breakdown**")
+    st.caption(readiness_inline_qualifier())
     breakdown = rs.component_scores if hasattr(rs, "component_scores") else {}
     if breakdown:
         breakdown_df = pd.DataFrame(
@@ -346,12 +373,30 @@ with tabs[0]:
             ]
         )
 
+        # THREE HAND-TYPED NUMBERS, TWO OF THEM TWINS OF A LIVE CONSTANT
+        # (1.5.2 T4). This ladder read ``50 / 70 / 85``. The 70 and the 85 are
+        # GRADE_THRESHOLDS["B"] and ["A"] re-typed, and the 50 was an ORPHAN --
+        # it is not a grade cut at all (C is 55, D is 40), so the colour
+        # boundary a CDE saw on this chart matched no band this package
+        # defines anywhere.
+        #
+        # tests/pinned_constants.txt's WAIVE row for GRADE_THRESHOLDS has
+        # documented these twins since 1.5.1 and closed with "no gate reads
+        # either". One does now: tests/test_grade_threshold_twins.py.
+        #
+        # The ladder is now one statement. Deleting GRADE_THRESHOLDS cannot
+        # leave this chart drawing bands that no longer exist, and re-basing
+        # the grades moves the colours with them.
+        _A = GRADE_THRESHOLDS["A"]
+        _B = GRADE_THRESHOLDS["B"]
+        _C = GRADE_THRESHOLDS["C"]
+
         def _score_color(score: float) -> str:
-            if score < 50:
+            if score < _C:
                 return DANGER
-            if score < 70:
+            if score < _B:
                 return ACCENT
-            if score < 85:
+            if score < _A:
                 return MID_BLUE
             return SUCCESS
 
@@ -359,10 +404,23 @@ with tabs[0]:
 
         fig, ax = plt.subplots(figsize=(8, max(3, len(breakdown_df) * 0.55)))
         bars = ax.barh(breakdown_df["Dimension"], breakdown_df["Score"], color=bar_colors, height=0.6)
-        # Vertical reference line at 70 (competitive threshold)
-        ax.axvline(x=70, color=NEUTRAL, linestyle="--", linewidth=1.2, alpha=0.8)
-        ax.text(70.5, ax.get_ylim()[1] * 0.98, "Competitive (70)", color=NEUTRAL,
-                fontsize=8, va="top", ha="left")
+        # "COMPETITIVE" WAS A CLAIM ABOUT THE FUND WITH NO FUND REFERENT
+        # (1.5.2 T4). This line was drawn at a hardcoded 70 and labelled
+        # "Competitive (70)" — the same defect shape as the false attribution
+        # T2 removed from schema.py, except rendered to a CDE instead of
+        # hidden in a comment. The CDFI Fund publishes no readiness score and
+        # no grade, so it publishes no competitiveness bar on this axis;
+        # nothing about 70 makes an application competitive, and a dashed
+        # reference line beside a chart of six sub-scores is exactly where a
+        # reader takes a word like that literally.
+        #
+        # What survives is the true statement: 70 is where THIS TOOL's grade B
+        # begins. Interpolated, so the line and the label cannot drift from
+        # the constant or from each other.
+        ax.axvline(x=_B, color=NEUTRAL, linestyle="--", linewidth=1.2, alpha=0.8)
+        ax.text(_B + 0.5, ax.get_ylim()[1] * 0.98,
+                f"This tool's grade-B cut ({_B:.0f})\nnot a CDFI Fund threshold",
+                color=NEUTRAL, fontsize=8, va="top", ha="left")
         for bar, score in zip(bars, breakdown_df["Score"]):
             ax.text(score + 1, bar.get_y() + bar.get_height() / 2, f"{score:.1f}",
                     va="center", ha="left", fontsize=9, color=TEXT_DARK)
@@ -373,6 +431,22 @@ with tabs[0]:
         plt.close(fig)
     else:
         st.markdown(f"**Overall readiness grade:** `{grade}` ({readiness:.1f}/100)")
+        st.caption(readiness_inline_qualifier())
+
+    # "A TOOL MAY DECLINE TO ADVISE. IT MAY NOT DEDUCT SILENTLY" -- SHIPPED AS
+    # AN EXECUTED REFUSAL CLAIM IN 1.5.2 (tests/test_docs_refusal_claims.py)
+    # WHILE THIS PAGE DID EXACTLY THAT (1.5.2 audit F2). T1 took the CLI from a
+    # one-component notice to a six-component deduction table and took the
+    # generated markdown with it. This page went from nothing to nothing: it
+    # rendered six sub-scores as a bar chart, docked the headline by all six,
+    # and stated neither the withdrawal nor the arithmetic.
+    #
+    # The note is READ, not re-rendered. narrative_withdrawal_note() is the one
+    # statement of the withdrawal and every other surface prints the same
+    # object, so this page cannot drift from them.
+    if getattr(rs, "narrative_withdrawn", False) and getattr(rs, "narrative_note", ""):
+        st.markdown("**Readiness narrative — withdrawn, and the arithmetic**")
+        st.code(rs.narrative_note, language=None)
 
 # =============================================================================
 # TAB 1 — Distress
@@ -868,42 +942,93 @@ with tabs[4]:
     left, right = st.columns([1, 1])
 
     with left:
-        # --- F: Jobs/$1MM QEI vs. winner benchmarks ---
-        WIN_P25   = 6.0
-        WIN_MED   = 10.0
-        WIN_P75   = 18.0
-        WIN_TOP10 = 28.0
+        # --- F: Jobs/$1MM QEI vs. this tool's winner figures ---
+        #
+        # FOUR MORE HAND-TYPED TWINS, AND TWO MORE COMPETITIVENESS CLAIMS
+        # (1.5.2 T4, found by the gate written for the readiness chart above
+        # rather than known in advance). These four literals were exact copies
+        # of WINNER_IMPACT_BENCHMARKS's p25/p50/p75/top-decile keys, retyped
+        # into a chart on the same page — the same L-3 duplication as the
+        # GRADE_THRESHOLDS ladder, and the shape that let maps._MED_PRIORITY
+        # drift out of agreement with schema.
+        #
+        # AND THE CONSTANT THEY COPY IS RULED UNSOURCED. tests/
+        # scoring_attribution.txt marks all seven WINNER_IMPACT_BENCHMARKS
+        # keys HOUSE, and historical_awards.py's own header states that the
+        # "Source: CDFI Fund Annual Reports" comment above the dict cites a
+        # publication that DOES NOT EXIST and that "Every value under them is
+        # unsourced". That header exempted them as "NOT SHIP-BLOCKING" on the
+        # narrow ground that "none of these constants reaches a rendered
+        # application", verified by grepping the four GENERATED DOCUMENTS for
+        # "winner" and "p75".
+        #
+        # THE EXEMPTION NEVER COVERED THIS SCREEN. The same header lists "the
+        # Streamlit pages" among the consumers. This chart prints all four
+        # values under the labels "Winner p25 / Winner median / Winner p75 /
+        # Winner top 10%" — a claim about a POPULATION OF PAST ALLOCATEES,
+        # with no such population behind it — and then drew a shaded
+        # "Competitive zone" across them and stamped "✓ Competitive range" on
+        # the CDE's own bar. That is 1.3.0 B1 exactly: "A CDE reads a figure
+        # off a screen and types it into a form exactly the way it reads one
+        # off a workbook; producing no file is not the same as reaching no
+        # filing."
+        #
+        # WHAT CHANGES HERE IS THE LABELLING AND THE DUPLICATION, NOT THE
+        # NUMBERS. Re-deriving what a winner percentile actually is would be
+        # methodology and needs a source this package does not have; that is
+        # recorded, not attempted. The values now come from the constant, and
+        # the chart says whose figures they are.
+        _WIB = WINNER_IMPACT_BENCHMARKS
+        WIN_P25   = _WIB["p25_jobs_per_mm_qei"]
+        WIN_MED   = _WIB["p50_jobs_per_mm_qei"]
+        WIN_P75   = _WIB["p75_jobs_per_mm_qei"]
+        WIN_TOP10 = _WIB["top_decile_jobs_per_mm_qei"]
 
-        bench_lbls = ["Your pipeline", "Winner p25", "Winner median", "Winner p75", "Winner top 10%"]
+        bench_lbls = ["Your pipeline", "p25", "median", "p75", "top decile"]
         bench_vals = [jpm, WIN_P25, WIN_MED, WIN_P75, WIN_TOP10]
         # ACCENT for "Your pipeline", graduated blues for winners
         winner_blues = bar_gradient(4, lo=LIGHT_BLUE, hi=NAVY)
         jpm_colors = [ACCENT] + winner_blues
 
         fig_jpm, ax_jpm = plt.subplots(figsize=(7, 3.5))
-        # Competitive zone band (between p25 and top 10%)
+        # The band states its own extent instead of pronouncing on it.
         ax_jpm.axhspan(WIN_P25, WIN_TOP10, alpha=0.07, color=SUCCESS, zorder=0)
-        ax_jpm.text(4.42, (WIN_P25 + WIN_TOP10) / 2, "Competitive\nzone",
+        ax_jpm.text(4.42, (WIN_P25 + WIN_TOP10) / 2, "p25 to\ntop decile",
                     color=SUCCESS, fontsize=8, ha="right", va="center", style="italic")
         _jpm_bars = ax_jpm.bar(bench_lbls, bench_vals, color=jpm_colors, width=0.6)
         for bar, val in zip(_jpm_bars, bench_vals):
             ax_jpm.text(bar.get_x() + bar.get_width() / 2, val + 0.3,
                         f"{val:.1f}", ha="center", va="bottom", fontsize=9)
-        # Competitive range annotation on "Your pipeline" bar
+        # A POSITION, NOT A VERDICT. This stamped "✓ Competitive range" in
+        # white bold across the CDE's own bar — a tick mark and the word
+        # "competitive", over a band whose endpoints are unsourced.
         if WIN_P25 <= jpm <= WIN_TOP10:
             ax_jpm.text(
                 _jpm_bars[0].get_x() + _jpm_bars[0].get_width() / 2,
                 _jpm_bars[0].get_height() / 2,
-                "✓ Competitive\nrange",
+                "within\nthe band",
                 ha="center", va="center", fontsize=8,
                 color="white", fontweight="bold",
             )
         ax_jpm.tick_params(axis="x", rotation=15)
-        style_matplotlib_axes(ax_jpm, title="Jobs/$1MM QEI vs. winner benchmarks",
-                               ylabel="Jobs / $1MM QEI")
+        style_matplotlib_axes(
+            ax_jpm,
+            title="Jobs/$1MM QEI vs. this tool's own winner figures",
+            ylabel="Jobs / $1MM QEI",
+        )
         fig_jpm.tight_layout()
         st.pyplot(fig_jpm, use_container_width=True)
         plt.close(fig_jpm)
+        st.caption(
+            "The p25 / median / p75 / top-decile lines are "
+            "`WINNER_IMPACT_BENCHMARKS`, **this tool's own unsourced figures** "
+            "— this package's constant registry rules all seven of its keys "
+            "HOUSE, and the \"CDFI Fund Annual Reports\" series the dict once "
+            "cited does not exist. The CDFI Fund publishes no jobs-per-QEI "
+            "figure in any denominator and no distribution, so these are not "
+            "percentiles of any measured population of past Allocatees and "
+            "your position against them is not evidence about your application."
+        )
 
     with right:
         st.markdown("**Impact summary**")

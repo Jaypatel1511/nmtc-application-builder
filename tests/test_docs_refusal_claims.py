@@ -139,6 +139,23 @@ _RULED_CLAIMS = {
         "docs/index.md, the 60-second quickstart caveat. Same claim as the box "
         "above and proven by the same executed test."
     ),
+    "may decline to advise": (
+        "docs/workflow/pipeline-analysis.md, the 1.5.2 T1 withdrawal note. The "
+        "sentence is 'A tool may decline to advise; it may not deduct "
+        "silently' -- the 1.5.1 audit's F4 rule, restated where the "
+        "withdrawal is documented. IT IS A DECLINE-TO-ADVISE CLAIM AND BOTH "
+        "HALVES ARE EXECUTED. First half: "
+        "test_readiness_narrative_withdrawn.test_the_composite_emits_no_"
+        "narrative asserts top_strengths == [] and top_weaknesses == [] and "
+        "no withdrawn instruction across seven fixtures spanning both the "
+        "degraded four-component path and the full six. Second half -- the "
+        "one that makes this more than a refusal -- "
+        "test_no_component_is_docked_silently re-derives every docked "
+        "component's deduction from READINESS_SCORING_WEIGHTS and asserts the "
+        "note names the component, states 'DOCKED N.N POINTS' for it, and "
+        "carries the total. So the package declines to advise AND does not "
+        "deduct silently, which is the whole of what the sentence claims."
+    ),
 }
 
 

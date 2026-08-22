@@ -129,7 +129,42 @@ VALID_PROJECT_TYPES: List[str] = ["real_estate", "operating_business", "mixed_us
 
 # ---------------------------------------------------------------------------
 # Readiness scoring weights — must sum to 1.0
-# Weights reflect relative importance in CDFI Fund published scoring rubric.
+#
+# HOUSE. THE IDENTICAL DEFECT 1.2.0 REMOVED FROM MIN_GEOGRAPHIC_DIVERSITY, ONE
+# DICT AWAY, STILL STANDING (1.5.2 T2). This comment read:
+#
+#     "Weights reflect relative importance in CDFI Fund published scoring
+#      rubric."
+#
+# THAT IS FALSE, and this package's own registry already says so. The row for
+# this constant in tests/pinned_constants.txt rules it an "unsourced house
+# heuristic" and states that "the CDFI Fund publishes no such weighting";
+# renderers/_methodology.readiness_weights_note() renders the same negative to
+# a CDE on four surfaces; and the Streamlit About page's Limitation 7 says the
+# Fund publishes no such score, no such weighting and no grade. THERE IS NO
+# CDFI FUND PUBLISHED SCORING RUBRIC BEHIND THESE SIX NUMBERS. There is no
+# published rubric of any kind that weights an application this way. The CY
+# 2024-2025 Review Process scores two sections at 50 points each; it does not
+# score eligibility rate, distress concentration, geographic diversity, impact
+# metrics, validation pass rate or completeness, and it assigns none of them a
+# weight.
+#
+# WHY IT MATTERED THOUGH IT RENDERS NOWHERE. A comment is not a surface, and no
+# CDE ever read this line. It is worse than a rendered defect for a different
+# reason: it is a claim a future round re-cites having assumed somebody checked
+# it. That is precisely the hazard the IMPACT_BENCHMARKS block below was
+# written to prevent, and it is what happened to MIN_GEOGRAPHIC_DIVERSITY --
+# nine releases of "CDFI Fund historically prefers >=3 states" sitting above a
+# constant that is the denominator of a scored component.
+#
+# THE MACHINERY DID NOT CATCH IT, AND NOW IT DOES. tests/
+# test_fund_attribution_source.py scans string literals through the AST, so a
+# comment is not a node and can never match; and its _BAR detector requires a
+# figure, which this sentence does not contain. Two independent reasons it was
+# invisible. tests/test_fund_attribution_source.py::
+# test_no_house_constant_is_attributed_to_the_fund_in_its_own_comment closes
+# the class by reading the registry: a constant ruled HOUSE may not carry an
+# undisclaimed Fund attribution in the comment block that defines it.
 # ---------------------------------------------------------------------------
 READINESS_SCORING_WEIGHTS = {
     "eligibility_quality":   0.25,  # % of pipeline in LIC tracts
@@ -203,7 +238,31 @@ REQUIRED_PROJECT_FIELDS: List[str] = [
     "expected_jobs_created",
 ]
 
-# CDFI Fund NMTC program hard constraints
+# NMTC program constraints — TWO STATUTORY, FOUR HOUSE. NOT a CDFI Fund dict.
+#
+# THE SECOND INSTANCE OF T2'S CLASS, FOUND BY THE SWEEP RATHER THAN KNOWN
+# (1.5.2). This comment read "CDFI Fund NMTC program hard constraints", and
+# that header is false about every key under it, in two different directions:
+#
+#   credit_rate, compliance_period_years   STATUTE, NOT THE AGENCY. Both are
+#       IRC §45D(a)(2) -- 5% for each of the first three credit allowance
+#       dates and 6% for each of the remaining four, over a 7-year compliance
+#       period. The CDFI Fund administers the allocation; it does not set the
+#       credit rate, and Congress did. The registry rows for both cite the
+#       statute, not the Fund.
+#
+#   standard_credit_price, cde_fee_rate_typical   HOUSE MARKET ASSUMPTIONS,
+#       and the registry rules them in the Fund's own negative: "The CDFI Fund
+#       sets no credit price" and "The CDFI Fund sets no fee rate". Both
+#       render into the generated documents, where the line beside them
+#       already reads "market assumption, not a CDFI Fund parameter" -- so the
+#       rendered surface was right and the source comment above it was wrong.
+#
+#   leverage_ratio_typical, min_qei_per_project   house values, waived in the
+#       registry as consumed by nothing.
+#
+# "Hard constraints" was the second false word: four of the six are typical
+# market figures this model assumes, and nothing constrains them.
 NMTC_PROGRAM_CONSTRAINTS = {
     "min_qei_per_project":       1_000_000,   # $1MM floor
     "credit_rate":               0.39,        # 39% of QEI over 7 years
