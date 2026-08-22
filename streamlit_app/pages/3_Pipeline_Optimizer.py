@@ -216,7 +216,7 @@ if dim_improvements:
             }
         )
     dim_df = pd.DataFrame(dim_rows)[["Dimension", "Change"]]
-    st.dataframe(dim_df, use_container_width=True, hide_index=True)
+    st.dataframe(dim_df, width="stretch", hide_index=True)
 
     # Show CDFI Fund section scores before optimization (when win scorer has been run)
     win_score_session = st.session_state.get("win_score")
@@ -262,7 +262,7 @@ if dim_improvements:
         margin=dict(l=10, r=50, t=50, b=10),
         showlegend=False,
     )
-    st.plotly_chart(fig_dims, use_container_width=True, config=PLOTLY_CONFIG)
+    st.plotly_chart(fig_dims, width="stretch", config=PLOTLY_CONFIG)
 
 st.markdown("---")
 
@@ -285,7 +285,7 @@ if selected:
         for p in selected
     ]
     proj_df = pd.DataFrame(proj_data)
-    st.dataframe(proj_df, use_container_width=True, hide_index=True)
+    st.dataframe(proj_df, width="stretch", hide_index=True)
 else:
     st.warning("No projects selected.")
 
@@ -338,7 +338,7 @@ if selected:
                 xref="paper", yref="paper",
             )],
         )
-        st.plotly_chart(fig_pie, use_container_width=True, config=PLOTLY_CONFIG)
+        st.plotly_chart(fig_pie, width="stretch", config=PLOTLY_CONFIG)
 
     with right:
         st.markdown("**State distribution**")
@@ -348,7 +348,7 @@ if selected:
         state_df = pd.DataFrame(
             [{"State": k, "Projects": v} for k, v in sorted(state_counts.items())]
         )
-        st.dataframe(state_df, use_container_width=True, hide_index=True)
+        st.dataframe(state_df, width="stretch", hide_index=True)
 
         st.markdown(f"**Unique states:** {len(state_counts)}")
         st.markdown(f"**Total selected QEI:** {fmt_millions(total_qei_selected)}")

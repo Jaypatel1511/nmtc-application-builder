@@ -321,7 +321,7 @@ for round_name, data in NMTC_AWARD_ROUNDS.items():
         "Announced": data["announcement_year"],
     })
 
-st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
 st.markdown(f"> **Trend note:** {APPLICATION_VOLUME_TRENDS['trend_note']}")
 
 st.markdown("---")

@@ -5,6 +5,188 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.3] — 2026-08-22
+
+**PATCH. No public name changes, no score moves, no new disclosure content.**
+T1 changes where one string is laid out, T3 is an API migration with identical
+rendering, and T2/T4 are gates and derived figures. `overall_score`, `grade`,
+every component weight and every rendered number are byte-for-byte what 1.5.2
+shipped.
+
+### T1 — the 1.5.2 disclosure was live and cut off at the right edge
+
+1.5.2's F2 put an honest two-currency deduction table on the Pipeline Analyzer,
+the surface that had rendered the readiness composite four ways with no
+disclosure at all. **It shipped clipped.** `st.code` emits `<pre>` with
+`white-space: pre`, which **never wraps at any viewport**, and the note's prose
+paragraphs were single lines of up to **715 characters**.
+
+**MEASURED IN THE BROWSER against the deployed app**, not inferred from a
+screenshot — Chrome at a 1512 px window, 2026-08-22:
+
+| | |
+|---|---|
+| font | "Source Code Pro", monospace 14px |
+| character advance | 8.4 px |
+| block client width | 1052 px → **125 columns visible** |
+| block scroll width | 6038 px → **5.7× wider than its own box** |
+| longest line | **715 characters** |
+| prose lines over the visible column | **7 of 9** |
+
+The clauses falling off the edge were the load-bearing ones: *what was
+withdrawn*, *why*, and the *no-trade-off rule*.
+
+**THE FIX IS AT THE CALL SITE, NOT AT SOURCE, AND THE FIRST ATTEMPT WAS
+REVERTED.** Pre-wrapping the note inside `narrative_withdrawal_note` is the
+obvious move and it is wrong, because it makes the *wrapped* form canonical and
+every surface that does not want it then has to undo it. Two things broke, both
+found by execution:
+
+- **Markdown cannot undo it losslessly.** `textwrap` breaks on hyphens, so
+  `jobs-per-$1MM-QEI` splits across two lines and re-joining on spaces yields
+  `jobs-per-$1MM- QEI` — a space inserted into a unit token, in a document a
+  CDE files.
+- **Carrying the breaks into markdown instead breaks a gate.**
+  `test_attributed_claims` treats a clause as a wrap only when the same
+  sentence appears unbroken somewhere in the corpus — "one clause seen through
+  two geometries" — and markdown *was* that unbroken geometry. Wrapping it too
+  left three fragments with no whole parent and the gate reported them as
+  uncited attributions inheriting a ruling by substring.
+
+So the note stays **logical paragraphs**, and layout became a rendering concern
+with **one shared implementation**: `_wrap_note` is promoted to public
+`readiness_score.wrap_note`, which `nmtcapp analyze` already used and which the
+Streamlit page now calls. One copy of the rule, not three.
+
+**RENDERED BEFORE/AFTER, ALL THREE SURFACES** (all-six-docked pipeline):
+
+| surface | before max | after max | lines > 125 cols |
+|---|---|---|---|
+| Streamlit `st.code` | **715** | **124** | 7 → **0** |
+| `nmtcapp analyze` | 126 | 126 | 1 → 1 (**byte-identical**) |
+| markdown | 717 | 717 | unchanged (**byte-identical**) |
+
+**ONE SURFACE CHANGED, BECAUSE ONE SURFACE WAS BROKEN.** Neither
+`tests/cli_baseline/analyze.txt` nor `tests/rendered_baseline/markdown.txt`
+moves in this release — verified by regenerating both, not by reading the code.
+
+### T2 — the frame gate named three surfaces; there are four
+
+`tests/test_render_frame_geometry.py` already carries the right rule — *no
+rendered text may fall outside the frame that is supposed to hold it* — and
+rules PDF, Word and Markdown explicitly. `streamlit_app/` produces no filed
+artifact, so it sat outside the sweep: **the surface exists, the gate's surface
+list does not include it** — the same shape as 1.5.2's F2 one release earlier.
+
+**NEW: `tests/test_streamlit_frame_geometry.py`.** A sibling rather than a
+section, because the existing module opens with `pytest.importorskip("reportlab")`
+and a Streamlit assertion parked there **skips silently** wherever reportlab is
+absent.
+
+**PROVED RED TWICE**, both against the code that actually shipped:
+
+1. measuring the unwrapped note — **10 prose lines over the column, longest 715**;
+2. restoring 1.5.2's `st.code(rs.narrative_note, language=None)` — fails naming
+   the file and line.
+
+**SCOPE LIMIT, DECLARED.** This gate **counts characters; it does not measure
+rendered width.** A PDF frame is a measured box; a browser container's width
+depends on viewport, sidebar, zoom and resolved font, none of which exist in a
+test process. 125 columns is a measurement of one window on one machine, and
+hard-coding it would be an approximation dressed as a bound — which is how the
+proximity gate spent a release satisfiable from 69 characters away. The bound is
+**78 columns**, derived twice from shipped code (`NOTE_PROSE_WIDTH` 76 + the
+CLI's 2-space indent; `textwrap.wrap(fund, width=64)` under a 14-space indent),
+and both derivations are re-checked by the gate so the constant cannot drift.
+
+**THE OTHER THREE PAGES WERE SWEPT, and the negative is recorded rather than
+assumed:** `st.code` appears **exactly once** repo-wide. `st.text`, `st.json`,
+`st.table`, `st.latex` and `st.help` appear **zero** times; the five
+`st.dataframe` calls are reflowing widgets. The gate recomputes that list from
+the AST on every run, so the next `st.code` cannot be invisible the way this one was.
+
+**OPEN FINDING, RECORDED NOT FIXED — the prompt for this release believed the
+deduction rows already wrapped. They do not.** Measured: the widest
+pre-formatted row is **117 columns** on the live deployment and **124** on an
+all-six-docked pipeline. At 1512 px (125 visible) they fit; **at a 1280 px
+laptop, roughly 97 columns, the part that falls off the edge is the literal
+`(HOUSE)` tag** that marks the row as this tool's own bookkeeping. Fixing it
+means re-laying-out the deduction table, which is more than a rewrap, so it is
+**ratcheted rather than shipped quietly**: the rows may not widen past 124
+without the gate failing.
+
+### T3 — a lapsed deprecation the app could not have survived
+
+`use_container_width` was announced for removal **after 2025-12-31 — eight
+months ago.** It still works only because Streamlit has not pulled the shim, and
+`streamlit_app/requirements.txt` pins Streamlit by a **floor**, so Cloud
+resolves the version: it served **1.62.0** from a commit that did not move.
+**The app can break with no commit from this repository.**
+
+**COUNTED, NOT READ OFF A DEPLOY LOG: 19 call sites, not ~30.** `plotly_chart`
+7, `pyplot` 5, `dataframe` 5, `download_button` 1, `button` 1 — 18 `True` → 
+`width="stretch"`, 1 `False` → `width="content"`. One was a multi-line call with
+no `st.` on the same line, which a line-oriented sweep misses.
+
+**VERIFIED AGAINST 1.62.0 ITSELF**, installed for the purpose rather than
+against whatever a local venv resolves: all five widgets accept `width=`.
+
+**NEW GATE 5** in `tests/test_streamlit_deployment_pin.py` — the module whose
+subject is exactly this skew. Proved RED by re-injecting one call site. Its
+scope limit is stated: it reads keyword *names* from the AST, and there is no
+machine-readable list of Streamlit deprecations, so it covers the one kwarg
+actually past its removal date rather than claiming to cover deprecation
+generally.
+
+**THE FLOOR RULING (requested; no change made).** The asymmetry — this package
+pinned by equality, Streamlit by a floor — is **not deliberate. It is
+unexamined.** The 1.5.0 S6 ruling recorded in that file reasons entirely about
+the *first-party* pin, and its argument does not transfer: the equality pin
+exists because source and library deploy from different places and must
+provably match, which is a first-party problem. **But the exposure is real and
+one layer out**, and it is what T3 just paid for. Pinning Streamlit by equality
+is *not* the fix — it converts a silent break into a hard resolution failure on
+every yank and adds a bump to every release. The defensible options are an
+upper bound (`>=1.28.0,<2`) or leaving the floor and gating the APIs. **1.5.3
+does the latter and rules the choice open for 1.6.0**, because changing a
+resolution constraint is not a patch-level act.
+
+### T4 — every moved figure re-derived by execution
+
+Rebuilt and re-measured; **not one number here was typed from the previous
+value.**
+
+| figure | 1.5.2 | 1.5.3 | how |
+|---|---|---|---|
+| collected tests | 1,351 | **1,362** | `pytest --collect-only -q` |
+| new test modules since v1.4.0 | 11 | **12** | tree walk vs. tag |
+| swept constants | 227 | **228** | census (`NOTE_PROSE_WIDTH` is the +1) |
+| `release.yml` `FLOOR` | 650 | **650 (unmoved)** | `((1362−45)//2)//10*10 = 650` |
+| `tests/cli_baseline/analyze.txt` | — | **unchanged** | regenerated |
+| `tests/rendered_baseline/*` | — | **unchanged** | regenerated, all four |
+
+`FLOOR` does not move: 1,362 collected keeps it inside its derived band. The
+published test count is corrected in `README.md`, `CONTRIBUTING.md` and
+`streamlit_app/app.py` — the three files that agreed with each other while the
+tree had moved, which is the 1.5.1 defect this table exists to prevent.
+
+**`MAX_SDIST_SKIPS` is left alone.** It is 45, it bounds MODULES while being
+derived from TESTS, and a skip count of 49 on 3.14 sails past it firing nothing.
+That is a **1.6.0 ruling** and is not touched here.
+
+### Out of scope — recorded, not attempted
+
+- **Routing `RecommendationEngine` into the CLI and renderers.** The two engines
+  are **disjoint**: `cli.py` never imports it and no renderer does. That is the
+  usefulness regression 1.5.2 knowingly shipped, and it remains open for 1.6.0.
+- Re-laying-out the deduction rows (T2's open finding above) · the
+  readiness-to-file checklist methodology · the 2.0.0 deletion of
+  `overall_score` / `grade` / `GRADE_THRESHOLDS` · per-QLICI evidence ·
+  `MAX_SDIST_SKIPS` · the 3.14 annotation-text assertion ·
+  `test_wheel_completeness` · F4-E′.
+
+---
+
 ## [1.5.2] — 2026-08-21
 
 ### AUDIT ROUND — 2026-08-22
@@ -3784,14 +3966,15 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 227 constants are swept
+colour". The rendered-string sweep demands **19**, and 228 constants are swept
 where 49 were. *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
 round label, its status, the re-check list and the pinned-document facts; 1.5.2
 adds `readiness_score._COMPONENT_BASIS`, the withdrawal note's per-component
 basis labels, pinned on `markdown` and `cli_summary`. The 1.5.2 AUDIT ROUND
 adds two more, both in `readiness_score` and both created by F1's second axis:
 `_FUND_SCORED` and `_HOUSE_ONLY`, the two classes the deduction table is now
-partitioned by.)*
+partitioned by. 1.5.3 adds one: `readiness_score.NOTE_PROSE_WIDTH`, the single
+column every fixed-width rendering of the withdrawal note is laid out to.)*
 
 > **Remeasured in 1.3.0, and again in FIX-2, and again in 1.4.0.** This
 > sentence read **160** when 1.2.2 shipped, **183** at `ff49064` and **203**

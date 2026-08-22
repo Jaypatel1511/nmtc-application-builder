@@ -65,6 +65,18 @@ _VERSION_RE = re.compile(r"(?<![\w.])(1\.\d+\.\d+)(?![\w.])")
 _NOT_OUR_RELEASES = {
     "1.6.1":  "mkdocs, whose METADATA declares markdown>=3.3.6",
     "1.36.0": "streamlit floor",
+    "1.28.0": (
+        "the Streamlit FLOOR in streamlit_app/requirements.txt, named by "
+        "1.5.3 T3's ruling on why that floor is the exposure the equality pin "
+        "beside it is not"
+    ),
+    "1.62.0": (
+        "the Streamlit that Streamlit Cloud actually RESOLVED from the "
+        "unpinned floor on 2026-08-22, and the version 1.5.3 T3 verified the "
+        "`width=` migration against. The version is named because the claim "
+        "is about that library at that version -- `use_container_width` was "
+        "announced for removal after 2025-12-31 and still worked there"
+    ),
     "1.61.1": (
         "the INSTALLED Streamlit whose st.metric delta behaviour was executed "
         "for 1.5.1 T4 — _determine_delta_color_and_direction returns GREEN/UP "

@@ -292,7 +292,7 @@ with left:
             ),
         ],
     )
-    st.plotly_chart(fig_bars, use_container_width=True, config=PLOTLY_CONFIG)
+    st.plotly_chart(fig_bars, width="stretch", config=PLOTLY_CONFIG)
 
 with right:
     st.subheader("Aggregate gauge")
@@ -341,7 +341,7 @@ with right:
         paper_bgcolor=PANEL_BG,
         font=dict(family="Inter, -apple-system, sans-serif", color=TEXT_DARK),
     )
-    st.plotly_chart(fig_gauge, use_container_width=True, config=PLOTLY_CONFIG)
+    st.plotly_chart(fig_gauge, width="stretch", config=PLOTLY_CONFIG)
 
     # Section minimums status
     st.markdown("**Section minimum status**")

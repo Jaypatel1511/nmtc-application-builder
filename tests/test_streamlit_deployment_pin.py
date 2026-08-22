@@ -51,6 +51,18 @@ THE TWO GATES
      docstring said 1.2.1; the tag matrix above says otherwise and the tag
      matrix is derived.
 
+  5. test_no_page_passes_a_removed_streamlit_keyword walks the same AST for
+     keyword arguments Streamlit has announced for removal. ADDED 1.5.3 (T3).
+
+     It belongs in THIS module rather than with the page linters because its
+     failure mode is the one this file is about: `requirements.txt` pins this
+     package by EQUALITY and Streamlit by a FLOOR, so Streamlit Cloud resolves
+     the Streamlit version at deploy time. `use_container_width` was announced
+     for removal after 2025-12-31 and 19 call sites were still passing it while
+     Cloud served 1.62.0 --- an app that breaks on a Cloud-side upgrade with no
+     commit from this repository. Gate 1 controls one half of that skew; this
+     gate is the only thing watching the other half.
+
 HOW THE TWO COMPOSE. Gate 2 resolves against whatever `nmtcapp` is importable,
 which under CI is this tree installed by `pip install ".[dev]"`. That is a
 statement about the PINNED version only because gate 1 forces the pin to equal
@@ -91,6 +103,7 @@ WHAT THESE GATES CANNOT SEE
 import ast
 import importlib
 import os
+import pathlib
 import re
 
 import pytest
@@ -299,4 +312,100 @@ def test_each_page_has_its_imports_covered_by_the_walk(page):
     assert expected in reached, (
         f"{expected} contributes no nmtcapp imports to the walk. Either the "
         "page moved, or the sweep no longer reaches pages/."
+    )
+
+
+# ---------------------------------------------------------------------------
+# GATE 5 — no page may pass a Streamlit keyword that Streamlit has removed
+# ---------------------------------------------------------------------------
+
+def _streamlit_python_files():
+    """Every .py under streamlit_app/, walked the same way gate 3 walks it.
+
+    Returns ``pathlib.Path`` objects. The __pycache__ prune matches the walk
+    above so the two gates cannot disagree about what "the Streamlit app" is.
+    """
+    out = []
+    for dirpath, dirnames, filenames in os.walk(_STREAMLIT_APP):
+        dirnames[:] = [d for d in dirnames if d != "__pycache__"]
+        for filename in sorted(filenames):
+            if filename.endswith(".py"):
+                out.append(pathlib.Path(dirpath) / filename)
+    return out
+
+# The kwargs Streamlit has announced for removal, mapped to what replaces them.
+# ONE ENTRY TODAY. This is deliberately not a general "deprecation scanner":
+# there is no machine-readable list of Streamlit deprecations to check against,
+# so a gate claiming to cover all of them would be asserting something it
+# cannot see. It covers the one that is actually past its removal date.
+REMOVED_STREAMLIT_KWARGS = {
+    # Streamlit's own message, emitted on every render in the deploy log:
+    #   `use_container_width` will be removed after 2025-12-31.
+    #   For use_container_width=True,  use width='stretch'.
+    #   For use_container_width=False, use width='content'.
+    "use_container_width": "width='stretch' (True) / width='content' (False)",
+}
+
+
+def test_no_page_passes_a_removed_streamlit_keyword():
+    """A kwarg past its removal date may not survive in a deployed page.
+
+    WHY THIS IS A DEPLOYMENT GATE AND NOT A LINT (1.5.3 T3)
+
+    ``streamlit_app/requirements.txt`` pins this package by EQUALITY and
+    Streamlit by a FLOOR (``streamlit>=1.28.0``). Streamlit Cloud resolves that
+    floor at deploy time and at every rebuild, and on 2026-08-22 it resolved
+    1.62.0 -- a version this repository never named, from a commit that did not
+    move.
+
+    So the failure mode here is not "a developer typo". It is: THE APP BREAKS
+    WITH NO COMMIT FROM THIS REPOSITORY, the moment Cloud resolves a Streamlit
+    that has actually dropped the keyword. The removal date passed on
+    2025-12-31 and the call sites kept working only because Streamlit has not
+    yet pulled the shim. That is a countdown, not a stable state.
+
+    19 call sites were migrated at 1.5.3 (7 ``plotly_chart``, 5 ``pyplot``,
+    5 ``dataframe``, 1 ``download_button``, 1 ``button``). Verified against
+    streamlit 1.62.0 itself rather than against whatever a local venv resolves:
+    all five accept ``width=``.
+
+    SCOPE LIMIT, STATED: this gate reads keyword NAMES out of the AST. It does
+    not know whether the value passed is one Streamlit accepts, and it cannot
+    see a deprecation Streamlit has announced but this dict does not list.
+    """
+    offenders = []
+    for page in _streamlit_python_files():
+        tree = ast.parse(page.read_text(encoding="utf-8"), filename=str(page))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            for kw in node.keywords:
+                if kw.arg in REMOVED_STREAMLIT_KWARGS:
+                    offenders.append(
+                        f"  {page.name}:{node.lineno} passes {kw.arg}= "
+                        f"-> use {REMOVED_STREAMLIT_KWARGS[kw.arg]}"
+                    )
+    assert not offenders, (
+        "a Streamlit page passes a keyword Streamlit has announced for "
+        "removal. requirements.txt pins streamlit by a FLOOR, so Cloud can "
+        "resolve a version that has dropped it without any commit here.\n"
+        + "\n".join(offenders)
+    )
+
+
+def test_the_removed_keyword_walk_actually_reads_the_pages():
+    """A pass above must mean 'read them and found none', not 'read nothing'."""
+    pages = list(_streamlit_python_files())
+    assert len(pages) >= 5, (
+        f"the walk found only {len(pages)} Streamlit source files; gate 5 "
+        "would pass while inspecting almost nothing."
+    )
+    total_calls = sum(
+        sum(isinstance(n, ast.Call) for n in ast.walk(
+            ast.parse(p.read_text(encoding="utf-8"), filename=str(p))))
+        for p in pages
+    )
+    assert total_calls > 200, (
+        f"only {total_calls} calls parsed out of the Streamlit app; the AST "
+        "walk is not seeing the pages it claims to cover."
     )
