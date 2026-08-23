@@ -935,6 +935,38 @@ jobs:
           # which the tarball ships -- so all sixteen new cases EXECUTE in the
           # sdist. The ceiling has NOT been raised to absorb a new skip. The
           # resulting band is [770, 803].
+          #
+          # 1.5.5 B7b -- RE-DERIVED THE LONG WAY A FIFTH TIME, AND FLOOR DOES
+          # NOT MOVE. B7b adds one test module (five parametrised cases), so
+          # the collected count rises and the band's UPPER bound moves with it;
+          # the floor itself is unchanged. Same procedure as above, on 3.12,
+          # against 21d31e1:
+          #
+          #     collected under -m "not wheel" 1,611
+          #     skipped in the sdist             -57
+          #     EXECUTED                       1,554
+          #     half                             777.0
+          #     rounded down                     770
+          #
+          # The tarball ran CLEAN: 1,554 passed, 57 skipped, 1 deselected, zero
+          # failures. The resulting band is [770, 805], width 35.
+          #
+          # MAX_SDIST_SKIPS DOES NOT MOVE AND WAS NOT TOUCHED. The same run
+          # skipped exactly 57 -- the value the constant already carries, and
+          # the same 57 the 1.5.4 derivation measured. ALL FIVE of B7b's cases
+          # EXECUTE in the sdist: the gate reads pyproject.toml, which the job
+          # copies out of the tarball, so it has nothing to skip on. THIS ROUND
+          # ADDS NO SKIP.
+          #
+          # STATED BECAUSE IT IS NOT VISIBLE FROM THE NUMBER ALONE: measured
+          # skips (57) now EQUAL the ceiling (57), so headroom is ZERO -- and
+          # it was already zero at the 1.5.4 derivation, which measured 57
+          # against the same 57. The prose two screens up still says "headroom
+          # is still two", which was true at 1.5.2 and is not true now. The
+          # next round that adds a single skipping case breaches the ceiling.
+          # NOT RAISED HERE, deliberately: raising it is the move this bound
+          # exists to make somebody defend, and B7b's scope is dependency
+          # bounds. Recorded for whoever opens this file next.
           FLOOR=770
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET

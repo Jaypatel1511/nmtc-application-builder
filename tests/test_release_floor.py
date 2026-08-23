@@ -442,7 +442,7 @@ def test_max_sdist_skips_is_bounded_from_ABOVE_as_well(collected_count):
 
 #: The number of test MODULES this release adds, as claimed in the comment
 #: above. Re-derived from the tree by the gate below rather than trusted.
-CLAIMED_NEW_TEST_MODULES = 23
+CLAIMED_NEW_TEST_MODULES = 24
 
 
 def test_the_module_count_in_this_comment_matches_the_tree():
