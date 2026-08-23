@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.5.5] — 2026-08-22
+## [1.5.5] — 2026-08-23
 
 **PATCH. No public names change, no score moves, no new methodology.** Verified
 by A/B against `81c03d5`: every sub-score of both scored sections, both
@@ -687,8 +687,10 @@ itself wrong, and that header is still wrong.** Recorded below.
   unlicensed. **This is the same shape as the unpinned Streamlit floor, one
   direction over** — a floor with no ceiling rather than a ceiling with no
   floor, and it fails on somebody else's release date rather than on ours.
-  Recorded only; capping it is a dependency decision, not a rendered-surface
-  fix, and this release does not touch `pyproject.toml` beyond the version.
+  Recorded only, and **still recorded only after B7 below**: B7 bounds the five
+  libraries that decide filed bytes, and `mkdocs` is deliberately not one of
+  them. Capping the docs toolchain needs its own decision about what upper
+  bound is safe, and it is not this round's.
 - Routing `RecommendationEngine` into the CLI and renderers, and the wrap layer
   (`RecommendationSet.summary()` still never wraps) — 1.6.0.
 - **N3** (registry gate blind to subscript reads) · **N7** (a wholly unverified
@@ -700,6 +702,146 @@ itself wrong, and that header is still wrong.** Recorded below.
   scores and rounded once, so it can disagree with the difference of the two
   displayed figures by 0.1. Not wrong, but a reader who subtracts gets a
   different answer than the tool shows. Recorded only.
+
+### B7 — an unpinned test-only dependency turned `main` red with no commit
+
+**`main` went red on all four interpreters against a tree nobody had touched.**
+The same commit had been green on the pull request **eleven hours earlier**. One
+failure, identical on every leg and on a local macOS 3.14 run:
+
+```
+FAILED tests/test_rendered_output_baseline.py::
+    test_the_rendered_output_matches_the_reviewed_baseline[pdf]
+AssertionError: 4 rendered line(s) changed in the pdf output
+```
+
+**The entire diff was two leading spaces.** No number, word or sentence moved:
+
+```
+-Metric                          - **Award 1 (FY2019):** $45,000,000 — Fully…
++ Metric                         +  **Award 1 (FY2019):** $45,000,000 — Fully…
+```
+
+**THE MECHANISM, AND IT IS THE POINT OF THIS ENTRY.** `pyproject.toml` asked for
+`pypdf>=4.0`. **pypdf published 6.16.2 on 2026-08-23, inside that eleven-hour
+window**, and CI resolved a release that had not existed when the pull request
+passed. 6.16.2 rewrote the space/newline heuristic in
+`pypdf/_text_extraction/__init__.py` to take its scale factors from the combined
+text × CTM matrix rather than from the text matrix alone, so a gap that used to
+fall short of the space threshold now clears it. pypdf files it under **Bug
+Fixes**, and it is plausibly the *more* faithful reading of the page.
+
+**THE FILED DOCUMENT DID NOT CHANGE BY ONE BYTE.** `pypdf` is declared in the
+`dev` extra and **nowhere else** — verified, not assumed: not `pdf`, not
+`output`, not `word`, not `excel`, not `docs`, and not
+`streamlit_app/requirements.txt`. Nothing under `nmtcapp/` imports it. No CDE
+installs it. **What drifted was this repository's MEASUREMENT of a PDF that is
+byte-identical** — the gate moved, not the document.
+
+**`reportlab` WAS TESTED FIRST AND REFUTED.** The failure reproduces on
+reportlab **4.5.1 and 5.0.1 alike**, and disappears on either the moment pypdf
+steps back one patch release. The cause was found by bisecting the
+**environment** rather than the tree, because the tree had no commits to bisect.
+
+**THE FIX: `pypdf>=4.0,<6.16.2`. The baseline is deliberately NOT regenerated.**
+Adopting a new reading of the tool that *measures* filed documents is not a
+patch-scoped decision, and taking it under the pressure of a red `main` — at the
+tag of a release whose entire thesis is that rendered output is verified — is
+exactly backwards. It gets its own round, with a human reading the document.
+
+**THE BOUND IS `<6.16.2`, NOT `<6`, AND THE PLANNING RULING'S `<6` IS REFUTED BY
+MEASUREMENT.** The bisect was cheap, so it was run rather than skipped: every
+6.x release from **6.0.0 through 6.16.1 is GREEN** against the committed
+baseline; **only 6.16.2 is RED**. Binary-searched across the 42 published 6.x
+releases on 3.12, then alternated across the boundary twice to rule out a dirty
+environment — `6.16.1 passed / 6.16.2 FAILED / 6.16.1 passed / 6.16.2 FAILED`.
+**`<6` would have excluded sixteen minor series that are provably green,
+including the 6.15.0, 6.16.0 and 6.16.1 security releases** — a real cost paid
+for nothing. The ruling's thesis (pin below the release that moved the
+measurement; do not regenerate) is unchanged; only the number moves, and it
+moves to the number the evidence supports.
+
+### B7b — a gate, because this is the third of its class and the first to fire
+
+**Three unpinned dependencies have now been recorded as able to change this
+package's behaviour with no commit here: Streamlit, MkDocs, and pypdf. One has
+now fired.** A pin fixes today's instance; nothing stopped the next one, and the
+failure arrives looking like a defect in this package rather than a release
+somewhere else.
+
+**`tests/test_output_dependency_bounds.py`** fails when a dependency this
+package's **output or its measurement** depends on carries no upper bound.
+**Proved RED against `4c41615`** — all five legs, on the tree as it stood before
+the pin — and green after.
+
+**THE SCOPE, RULED ON AND DEFENDED.** The test is narrow and mechanical: *does
+this library decide the bytes of an artifact a CDE files, or the bytes this
+repository measures one by?* Five answer yes:
+
+| | |
+|---|---|
+| `reportlab` | renders the PDF — decides where a glyph lands |
+| `python-docx` | renders the Word document |
+| `openpyxl` | renders the Excel workbook **and** measures it back (the baseline's excel projection reads values *and* number formats through it) |
+| `matplotlib` | renders the readiness chart, whose bounding boxes `test_readiness_chart_geometry.py` measures |
+| `pypdf` | measures the PDF only — nothing under `nmtcapp/` imports it, and it is the one that fired |
+
+**A gate over every dependency would be noise, and noise is how a gate earns a
+blanket waiver inside a release.** Excluded deliberately and recorded in the
+module docstring: `plotly` (renders the Optimizer charts, but client-side in the
+Streamlit app — no filed document contains them and no gate can see them);
+`pandas`/`numpy`/`pyyaml` (they carry **values** into the document, but this
+package's own code decides its bytes — **the list's one genuine judgement call**,
+and the first place to look if a fourth instance arrives from an unexpected
+direction); `jupyter`/`markdown` (tooling); `pytest`/`pytest-cov` (bounding the
+thing that reports the failure is the wrong end).
+
+**`streamlit` AND `mkdocs` ARE NOT PINNED HERE, AND THAT IS RECORDED RATHER THAN
+OVERLOOKED.** Both are real, both are open against known-breaking majors, and
+the Streamlit floor is separately **already wrong** — it sits below
+`st.pyplot(..., width="stretch")`, which the app calls. They need their own
+decision about what upper bound is safe for a public app that redeploys on
+merge. **Not this round.**
+
+**THE BOUNDS ARE NOT ALL THE SAME SHAPE, AND THE ASYMMETRY IS THE ARGUMENT.**
+Stated plainly because it is easy to get wrong: **a major-version cap would not
+have prevented B7.** pypdf broke the suite going 6.16.1 → 6.16.2, a **patch**;
+`<7` would have resolved it and `main` would be red regardless. What separates
+the two cases is *which gate survives the drift*:
+
+- **A renderer drifting is CAUGHT.** reportlab laying a glyph out differently
+  changes the document, `test_rendered_output_baseline.py` goes red, and a human
+  is handed a diff **of the document** in the pull request. That is the system
+  working. A major cap is the right size there — it refuses the
+  announced-breaking boundary and still takes patch and minor fixes, security
+  ones included, with no release here.
+- **The measurer drifting is NOT caught — it corrupts the detector.** pypdf
+  reported four changed lines in a PDF that was byte-identical. No gate can see
+  that, because the gate is the thing that moved. So `pypdf` is bounded at the
+  exact bisected release and nothing looser.
+
+Bounds are set at the next major above what resolves today (reportlab 5.0.1,
+python-docx 1.2.0, openpyxl 3.1.5, matplotlib 3.11.1), so **nothing is
+downgraded and no working environment stops working**. `pypdf` resolves to
+6.16.1 under the new pin; the other four are untouched by it.
+
+**THE KNOWN COST, STATED RATHER THAN DISCOVERED LATER.** These caps reach users
+through `[pdf]`, `[word]`, `[excel]`, `[viz]`, `[output]` and `[docs]`, so a CDE
+cannot adopt the next major of a renderer without a release here. Accepted on
+the same ground as `streamlit_app/requirements.txt`'s equality pin: this is an
+end-user tool whose output goes into a federal filing, not a library other
+packages depend on — so the resolver-conflict cost that normally argues against
+capping is small, and the silent-drift cost is not.
+
+**The gate declares its scope limit**, as this package's gates now do: it checks
+that a bound **exists**, not that it is the right one (`pypdf<9999` would pass
+it), so the comment beside each bound is the whole of the argument. It reads the
+**declaration**, not the installed environment. And it asserts all five are
+actually declared, so deleting a line cannot be how it goes quiet.
+
+**No source file under `nmtcapp/` changes in B7 or B7b.** `git diff 4c41615 --
+nmtcapp/` is empty.
+
 
 ---
 
