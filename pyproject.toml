@@ -87,70 +87,23 @@ dependencies = [
 [project.scripts]
 nmtcapp = "nmtcapp.cli:main"
 
-# UPPER BOUNDS ON THE FIVE LIBRARIES THAT DECIDE FILED BYTES (1.5.5 B7b).
-#
-# reportlab, python-docx, openpyxl and matplotlib RENDER what a CDE files (or,
-# for openpyxl and matplotlib, are also what a gate reads the result back
-# with). pypdf MEASURES the filed PDF. All five are bounded, and
-# tests/test_output_dependency_bounds.py fails if any of them stops being.
-#
-# WHY AT ALL: an unbounded requirement means a release published by a third
-# party changes what this package prints -- or what its gates read off what it
-# prints -- with no commit here and no review by anyone. That already
-# happened, to pypdf, on 2026-08-23.
-#
-# WHY THE BOUNDS ARE NOT ALL THE SAME SHAPE. This is the part that is easy to
-# get wrong, so it is stated plainly: A MAJOR-VERSION CAP WOULD NOT HAVE
-# PREVENTED B7. pypdf broke the suite going 6.16.1 -> 6.16.2, a PATCH release;
-# "<7" would have resolved it and main would be red regardless. The asymmetry
-# is deliberate and rests on WHICH GATE SURVIVES THE DRIFT:
-#
-#   A RENDERER drifting is CAUGHT. reportlab laying a glyph out differently
-#   changes the document, tests/test_rendered_output_baseline.py goes red, and
-#   a human is handed a diff OF THE DOCUMENT in the pull request. That is the
-#   system working. A major cap is the right size there: it refuses the
-#   announced-breaking boundary and takes patch and minor fixes, security ones
-#   included, without a release here.
-#
-#   THE MEASURER drifting is NOT caught -- it corrupts the detector. pypdf
-#   reported four changed lines in a PDF that was byte-identical. No gate can
-#   see that, because the gate is the thing that moved. So pypdf is bounded at
-#   the exact bisected release and nothing looser.
-#
-# Bounds are set at the next major above what resolves today (reportlab 5.0.1,
-# python-docx 1.2.0, openpyxl 3.1.5, matplotlib 3.11.1), so NOTHING IS
-# DOWNGRADED by this change and no environment that worked stops working.
-#
-# THE KNOWN COST, STATED RATHER THAN DISCOVERED LATER: these caps reach USERS
-# through [pdf], [word], [excel], [viz], [output] and [docs], so a CDE cannot
-# adopt the next major of a renderer without a release here. That is accepted
-# on the same ground as streamlit_app/requirements.txt's equality pin -- this
-# is an end-user tool whose output goes into a federal filing, not a library
-# other packages depend on, so the resolver-conflict cost that normally argues
-# against capping is small and the silent-drift cost is not.
-#
-# NOT BOUNDED HERE, AND NOT AN OVERSIGHT: streamlit (>=1.28.0) and mkdocs
-# (>=1.5) are both open against known-breaking majors and are both RECORDED as
-# real. They need their own decision about what upper bound is safe -- the
-# streamlit floor is separately already wrong, sitting below
-# st.pyplot(..., width="stretch") -- and that decision is not this round's.
 [project.optional-dependencies]
 word = [
-    "python-docx>=1.1.0,<2",
+    "python-docx>=1.1.0",
 ]
 excel = [
-    "openpyxl>=3.0.9,<4",
+    "openpyxl>=3.0.9",
 ]
 pdf = [
-    "reportlab>=4.0.0,<6",
+    "reportlab>=4.0.0",
 ]
 viz = [
-    "matplotlib>=3.7,<4",
+    "matplotlib>=3.7",
 ]
 output = [
-    "python-docx>=1.1.0,<2",
-    "openpyxl>=3.0.9,<4",
-    "reportlab>=4.0.0,<6",
+    "python-docx>=1.1.0",
+    "openpyxl>=3.0.9",
+    "reportlab>=4.0.0",
 ]
 # THE DOCS TOOLCHAIN, PINNED. `pip install -e ".[docs]"` emitted
 #   WARNING: nmtc-application-builder 1.2.0 does not provide the extra 'docs'
@@ -173,19 +126,19 @@ output = [
 docs = [
     "mkdocs>=1.5",
     "mkdocs-material>=9.0",
-    "python-docx>=1.1.0,<2",
-    "openpyxl>=3.0.9,<4",
-    "reportlab>=4.0.0,<6",
-    "matplotlib>=3.7,<4",
+    "python-docx>=1.1.0",
+    "openpyxl>=3.0.9",
+    "reportlab>=4.0.0",
+    "matplotlib>=3.7",
 ]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "jupyter>=1.0",
-    "python-docx>=1.1.0,<2",
-    "openpyxl>=3.0.9,<4",
-    "reportlab>=4.0.0,<6",
-    "matplotlib>=3.7,<4",
+    "python-docx>=1.1.0",
+    "openpyxl>=3.0.9",
+    "reportlab>=4.0.0",
+    "matplotlib>=3.7",
     # PYPDF IS BOUNDED AT A PATCH RELEASE, NOT AT A MAJOR, AND THE NUMBER WAS
     # BISECTED RATHER THAN GUESSED (1.5.5 B7).
     #
@@ -233,13 +186,46 @@ dev = [
     # reportlab 4.5.1 AND on 5.0.1, and disappears on either the moment pypdf
     # steps back one patch.
     #
-    # pypdf IS TEST-ONLY. It is declared here in [dev] and NOWHERE ELSE -- not
-    # [pdf], not [output], not [docs], not streamlit_app/requirements.txt. No
-    # CDE installs it, and the PDF a CDE files did not change by one byte.
-    # What drifted was this repository's MEASUREMENT of it.
+    # WHY THIS IS THE ONLY NAME BOUNDED, AND WHY THE RENDERERS ARE NOT
+    # (1.5.5 B7c). An earlier pass of this round also capped reportlab,
+    # python-docx, openpyxl and matplotlib. Those caps were REMOVED, for two
+    # reasons that do not apply here:
+    #
+    #   BLAST RADIUS. pypdf is declared HERE AND NOWHERE ELSE -- not [pdf],
+    #   not [word], not [excel], not [viz], not [output], not [docs], not
+    #   streamlit_app/requirements.txt. This bound reaches NO USER and can
+    #   conflict with nothing a CDE installs. A cap in a shipped extra is a
+    #   different object: it can produce a RESOLUTION CONFLICT for a user who
+    #   already holds that renderer's next major, or for a downstream package
+    #   requiring it. "Nothing is downgraded today" is true, and the word
+    #   doing the work is today.
+    #
+    #   IT IS A USER-FACING DECISION, AND IT IS DEFERRED WHOLE. streamlit
+    #   (>=1.28.0) and mkdocs (>=1.5) were already held back because what
+    #   upper bound is safe needs its own ruling. The four renderers sit in
+    #   exactly that position, so they are decided WITH them -- six
+    #   dependencies, one round -- not half-answered inside a patch whose job
+    #   was unblocking a red main.
+    #
+    # THE ASYMMETRY THAT JUSTIFIES BOUNDING THE MEASURER ALONE, stated
+    # precisely because the loose version of it is FALSE. Where the renderer
+    # and the measurer are DIFFERENT libraries, a renderer that drifts is
+    # CAUGHT -- reportlab moves a glyph, test_rendered_output_baseline[pdf]
+    # goes red, and a human is handed a diff of the document -- while a
+    # measurer that drifts DISABLES that gate, which is precisely what pypdf
+    # did. The PDF is that case: reportlab renders it, pypdf reads it back.
+    #
+    # It does NOT hold for Word or Excel, and that is recorded rather than
+    # glossed: test_rendered_output_baseline reads the .docx back through
+    # python-docx and the .xlsx back through openpyxl -- THE SAME LIBRARIES
+    # THAT WROTE THEM. There the two roles collapse, and a drift that changes
+    # both the write and the read can cancel and stay green. That is a real
+    # gap, it is NOT closed by a version cap, and it is filed for the
+    # six-dependency round rather than answered here.
     #
     # tests/test_output_dependency_bounds.py is the gate. It asserts that a
-    # bound EXISTS; the value is this comment's job.
+    # bound EXISTS and that this name stays dev-only; the value is this
+    # comment's job.
     "pypdf>=4.0,<6.16.2",
     # Required by tests/test_streamlit_chart_smoke.py (plotly, via
     # streamlit_app/chart_style.py) and tests/test_streamlit_upload_profile.py

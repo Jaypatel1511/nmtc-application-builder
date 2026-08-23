@@ -687,10 +687,12 @@ itself wrong, and that header is still wrong.** Recorded below.
   unlicensed. **This is the same shape as the unpinned Streamlit floor, one
   direction over** — a floor with no ceiling rather than a ceiling with no
   floor, and it fails on somebody else's release date rather than on ours.
-  Recorded only, and **still recorded only after B7 below**: B7 bounds the five
-  libraries that decide filed bytes, and `mkdocs` is deliberately not one of
-  them. Capping the docs toolchain needs its own decision about what upper
-  bound is safe, and it is not this round's.
+  Recorded only, and **still recorded only after B7 below**: B7 bounds the one
+  library this package MEASURES its own filed output with, and `mkdocs` is
+  deliberately not it. Capping the docs toolchain needs its own decision about
+  what upper bound is safe — and after B7b's rescope that decision is now
+  explicitly **one round covering six dependencies**: `mkdocs`, `streamlit`,
+  and the four renderers whose caps B7b withdrew. It is not this round's.
 - Routing `RecommendationEngine` into the CLI and renderers, and the wrap layer
   (`RecommendationSet.summary()` still never wraps) — 1.6.0.
 - **N3** (registry gate blind to subscript reads) · **N7** (a wholly unverified
@@ -761,107 +763,143 @@ for nothing. The ruling's thesis (pin below the release that moved the
 measurement; do not regenerate) is unchanged; only the number moves, and it
 moves to the number the evidence supports.
 
-### B7b — a gate, because this is the third of its class and the first to fire
+### B7b — a gate over the MEASUREMENT layer (rescoped from five names to one)
 
-**Three unpinned dependencies have now been recorded as able to change this
-package's behaviour with no commit here: Streamlit, MkDocs, and pypdf. One has
-now fired.** A pin fixes today's instance; nothing stopped the next one, and the
-failure arrives looking like a defect in this package rather than a release
-somewhere else.
+**B7b originally bounded five libraries and capped four of them in shipped
+extras. THAT SCOPE WAS WITHDRAWN AND THE CAPS WERE REVERTED.** What ships is a
+gate over the measurement layer alone. The reasoning is recorded here rather
+than silently replaced, because the withdrawn version was defended in this file
+and a reader needs to know which argument survived.
 
-**`tests/test_output_dependency_bounds.py`** fails when a dependency this
-package's **output or its measurement** depends on carries no upper bound.
-**Proved RED against `4c41615`** — all five legs, on the tree as it stood before
-the pin — and green after.
+**WHAT THE FIRST PASS DID, AND WHY IT WAS TOO WIDE.** It forced upper bounds on
+`reportlab`, `python-docx`, `openpyxl` and `matplotlib` as well as `pypdf` —
+**15 requirement strings across `[pdf]`, `[word]`, `[excel]`, `[viz]`,
+`[output]` and `[docs]`**, against a defect whose entire footprint was one
+`[dev]`-only line. Three things were wrong with that:
 
-**THE SCOPE, RULED ON AND DEFENDED.** The test is narrow and mechanical: *does
-this library decide the bytes of an artifact a CDE files, or the bytes this
-repository measures one by?* Five answer yes:
+1. **THE ASYMMETRY ARGUES FOR THE OPPOSITE CONCLUSION.** *A renderer that
+   drifts is caught by the rendered-output baseline; a measurer that drifts
+   disables it.* reportlab moving a glyph turns
+   `test_rendered_output_baseline[pdf]` red and hands a human **a diff of the
+   document**. pypdf moving reported four changed lines in a **byte-identical**
+   PDF and nothing in the suite could see it, because the gate was the thing
+   that moved. **Only one of those two needs a bound to stay safe** — and the
+   first pass used this very asymmetry to bound both.
+2. **BLAST RADIUS.** `pypdf>=4.0,<6.16.2` is one declaration in `[dev]`,
+   verified to appear nowhere else — it **reaches no user**. A cap inside a
+   shipped extra is a different object: it can produce a **resolution conflict**
+   for a user who already holds that renderer's next major, or for a downstream
+   package requiring it. "Nothing is downgraded today" was true, and the word
+   doing the work was *today*.
+3. **CONSISTENCY WITH THE DEFERRAL ALREADY MADE.** `streamlit` and `mkdocs`
+   were held back because *what upper bound is safe* needs its own decision.
+   **The four renderers sit in exactly that position.** They are now decided
+   with them — **six dependencies, one round** — rather than half-answered
+   inside a patch whose job was unblocking a red `main`.
+
+**THE BISECT STANDS AND IS NOT CHANGED.** `pypdf>=4.0,<6.16.2` is the bound the
+evidence supports; `<6` would have excluded three security releases for nothing.
+
+> **THE ASYMMETRY IS NOT UNIVERSAL, AND THE EXCEPTION WAS FOUND WHILE
+> NARROWING.** It holds where the renderer and the measurer are **different
+> libraries**. For the PDF they are — reportlab writes it, pypdf reads it back.
+> **For Word and Excel they are the same library.**
+> `test_rendered_output_baseline._extract` reads the `.docx` back through
+> `python-docx` and the `.xlsx` back through `openpyxl`, **the very libraries
+> that wrote them**. There the two roles collapse, and a drift that changes both
+> the write and the read can cancel and leave the baseline **green over a
+> document that moved**. That gap is **not closed by a version cap** — the
+> remedy is an independent reader, not a pin — so it is filed for the
+> six-dependency round and named in the gate's own scope limit rather than
+> papered over. The first pass's five-name table asserted `openpyxl` "measures
+> it back" as a reason **to cap** it; capping it would not have closed this.
+
+**WHAT THE GATE NOW ASSERTS.** `tests/test_output_dependency_bounds.py`, **two
+cases, one name**:
 
 | | |
 |---|---|
-| `reportlab` | renders the PDF — decides where a glyph lands |
-| `python-docx` | renders the Word document |
-| `openpyxl` | renders the Excel workbook **and** measures it back (the baseline's excel projection reads values *and* number formats through it) |
-| `matplotlib` | renders the readiness chart, whose bounding boxes `test_readiness_chart_geometry.py` measures |
-| `pypdf` | measures the PDF only — nothing under `nmtcapp/` imports it, and it is the one that fired |
+| `pypdf` carries an upper bound | an open top end lets a third party disable the detector with no commit here — which is exactly what happened |
+| `pypdf` stays **dev-only** | the bound is defensible *because* it reaches no user; a second declaration in a shipped extra silently recreates the user-facing cap this round removed |
 
-**A gate over every dependency would be noise, and noise is how a gate earns a
-blanket waiver inside a release.** Excluded deliberately and recorded in the
-module docstring: `plotly` (renders the Optimizer charts, but client-side in the
-Streamlit app — no filed document contains them and no gate can see them);
-`pandas`/`numpy`/`pyyaml` (they carry **values** into the document, but this
-package's own code decides its bytes — **the list's one genuine judgement call**,
-and the first place to look if a fourth instance arrives from an unexpected
-direction); `jupyter`/`markdown` (tooling); `pytest`/`pytest-cov` (bounding the
-thing that reports the failure is the wrong end).
+**Both proved to bite, independently.** Against `4c41615` the bound case is
+**RED** (`pypdf>=4.0`, no upper bound) while the dev-only case passes. Adding
+`pypdf` to `[pdf]` turns the dev-only case **RED** on a tree where the bound is
+present. And **the gate does NOT fire on the four renderers**: on the shipped
+tree all four are unbounded — `reportlab>=4.0.0`, `python-docx>=1.1.0`,
+`openpyxl>=3.0.9`, `matplotlib>=3.7` — and the gate is **green**. The narrowing
+is asserted, not assumed.
 
-**`streamlit` AND `mkdocs` ARE NOT PINNED HERE, AND THAT IS RECORDED RATHER THAN
-OVERLOOKED.** Both are real, both are open against known-breaking majors, and
-the Streamlit floor is separately **already wrong** — it sits below
-`st.pyplot(..., width="stretch")`, which the app calls. They need their own
-decision about what upper bound is safe for a public app that redeploys on
-merge. **Not this round.**
+**DOES A GATE OVER ONE NAME EARN ITS PLACE?** Stated because the answer is not
+obviously yes, and this package has twice refused a gate that adjudicates a
+single line. **It earns it on the dev-only assertion**, which is not a
+restatement of the pin: it fails on a plausible future edit — adding `pypdf` to
+`[pdf]` because it *is* the PDF library — that **no other gate in the suite
+would catch**. The bound assertion earns it on B7's own history: a later "tidy
+up the pins" pass would reopen the hole with CI green until a third party
+published. **The module records the condition under which it stops earning its
+place:** if the six-dependency round rules no bound is warranted anywhere,
+**delete the file** rather than leave it asserting one line out of habit.
 
-**THE BOUNDS ARE NOT ALL THE SAME SHAPE, AND THE ASYMMETRY IS THE ARGUMENT.**
-Stated plainly because it is easy to get wrong: **a major-version cap would not
-have prevented B7.** pypdf broke the suite going 6.16.1 → 6.16.2, a **patch**;
-`<7` would have resolved it and `main` would be red regardless. What separates
-the two cases is *which gate survives the drift*:
+**`streamlit` AND `mkdocs` ARE STILL NOT PINNED**, and now neither are the four
+renderers. All six are recorded, not overlooked; the Streamlit floor is
+separately **already wrong** — it sits below `st.pyplot(..., width="stretch")`,
+which the app calls.
 
-- **A renderer drifting is CAUGHT.** reportlab laying a glyph out differently
-  changes the document, `test_rendered_output_baseline.py` goes red, and a human
-  is handed a diff **of the document** in the pull request. That is the system
-  working. A major cap is the right size there — it refuses the
-  announced-breaking boundary and still takes patch and minor fixes, security
-  ones included, with no release here.
-- **The measurer drifting is NOT caught — it corrupts the detector.** pypdf
-  reported four changed lines in a PDF that was byte-identical. No gate can see
-  that, because the gate is the thing that moved. So `pypdf` is bounded at the
-  exact bisected release and nothing looser.
-
-Bounds are set at the next major above what resolves today (reportlab 5.0.1,
-python-docx 1.2.0, openpyxl 3.1.5, matplotlib 3.11.1), so **nothing is
-downgraded and no working environment stops working**. `pypdf` resolves to
-6.16.1 under the new pin; the other four are untouched by it.
-
-**THE KNOWN COST, STATED RATHER THAN DISCOVERED LATER.** These caps reach users
-through `[pdf]`, `[word]`, `[excel]`, `[viz]`, `[output]` and `[docs]`, so a CDE
-cannot adopt the next major of a renderer without a release here. Accepted on
-the same ground as `streamlit_app/requirements.txt`'s equality pin: this is an
-end-user tool whose output goes into a federal filing, not a library other
-packages depend on — so the resolver-conflict cost that normally argues against
-capping is small, and the silent-drift cost is not.
-
-**The gate declares its scope limit**, as this package's gates now do: it checks
-that a bound **exists**, not that it is the right one (`pypdf<9999` would pass
-it), so the comment beside each bound is the whole of the argument. It reads the
-**declaration**, not the installed environment. And it asserts all five are
-actually declared, so deleting a line cannot be how it goes quiet.
+**THE RENDERER CAPS ARE REVERTED TO EXACTLY THEIR `4c41615` STRINGS**, verified
+by diff rather than by memory: `git diff 4c41615 -- pyproject.toml` changes
+**one requirement string**, `"pypdf>=4.0"` → `"pypdf>=4.0,<6.16.2"`. Everything
+else in that diff is the comment recording why.
 
 **No source file under `nmtcapp/` changes in B7 or B7b.** `git diff 4c41615 --
 nmtcapp/` is empty.
 
-**`FLOOR` RE-DERIVED THE LONG WAY A FIFTH TIME, AND IT DOES NOT MOVE.** Measured,
-not typed: pristine clone with no egg-info → `python -m build --sdist` → tarball
-plus `[dev]` into a clean venv → only `tests/`, `streamlit_app/`, `README.md` and
-`pyproject.toml` staged into a directory with **no `nmtcapp/`** → `import nmtcapp`
-confirmed to resolve to site-packages → the release job's exact invocation → the
-junit XML read with the job's own formula. **1,611 collected, 57 skipped, 1,554
-executed, half 777.0, rounded down 770.** Band `[770, 805]`, width 35, still
-sitting on its lower bound by design. The tarball ran clean.
+**`FLOOR` RE-DERIVED THE LONG WAY A SIXTH TIME, AND IT DOES NOT MOVE.**
+Measured, not typed: pristine clone with no egg-info → `python -m build --sdist`
+→ tarball plus `[dev]` into a clean venv → only `tests/`, `streamlit_app/`,
+`README.md` and `pyproject.toml` staged into a directory with **no `nmtcapp/`**
+→ `import nmtcapp` confirmed to resolve to site-packages → the release job's
+exact invocation → the junit XML read with the job's own formula. **1,608
+collected, 57 skipped, 1,551 executed, half 775.5, rounded down 770.** Band
+`[770, 804]`, width 34, inside the 40 the upper bound permits. The tarball ran
+**clean**: 1,551 passed, 57 skipped, 1 deselected, zero failures.
 
-**THIS ROUND ADDS NO SKIP.** All five of B7b's cases execute in the sdist — the
-gate reads `pyproject.toml`, which the job copies out of the tarball, so it has
-nothing to skip on. **`MAX_SDIST_SKIPS` was not touched.**
+**THE PUBLISHED TEST COUNT MOVES 1,612 → 1,609**, re-derived rather than
+adjusted: the rescope removes five parametrised cases and adds two. Updated in
+`README.md`, `CONTRIBUTING.md` and `streamlit_app/app.py`.
+`CLAIMED_NEW_TEST_MODULES` does **not** move — the round still adds exactly one
+test module.
 
-**Recorded, and not visible from the number alone: skip headroom is ZERO.**
-Measured skips (57) now equal the ceiling (`MAX_SDIST_SKIPS = 57`) — and they
-already did at the 1.5.4 derivation, which measured the same 57 against the same
-57. The release.yml prose still says "headroom is still two", which was true at
-1.5.2 and is not true now. **The next round that adds a single skipping case
-breaches the ceiling.** Not raised here — raising it is precisely the move that
-bound exists to make somebody defend, and it is not B7b's scope.
+**THIS ROUND ADDS NO SKIP.** Both of the gate's cases execute in the sdist —
+read off the junit report, not assumed — because the gate reads
+`pyproject.toml`, which the job copies out of the tarball. **`MAX_SDIST_SKIPS`
+was not touched.**
+
+### B7d — two defects in the skip mechanism, recorded and NOT fixed
+
+Both were found while re-deriving the counts. They are separate defects and are
+recorded separately.
+
+1. **SKIP HEADROOM IS ZERO, AND IT ALREADY WAS AT 1.5.4.** The sdist skips
+   **57** against `MAX_SDIST_SKIPS = 57`. The 1.5.4 derivation measured the
+   same 57 against the same 57, so the ceiling has been sitting exactly on the
+   thing it bounds for two releases. **The next round that adds a single
+   skipping case breaches it.** **Not raised here** — raising it is precisely
+   the move that bound exists to make somebody defend, and this round's scope
+   is *removing* dependency bounds, not buying room.
+2. **`release.yml`'s PROSE CLAIMED "headroom is still two", AND HAD BEEN FALSE
+   SINCE 1.5.4.** True when written at 1.5.2; read as present tense for three
+   releases. **Corrected in place** — the paragraph now says it was true *as of
+   1.5.2*, states that headroom is zero, and points at the current derivation.
+   A hand-typed claim about a **measured** quantity, gone stale, **inside the
+   file whose entire subject is hand-typed counts going stale**.
+
+**And the third, already recorded and still open: nothing machine-enforces the
+measured skip count against the constant.**
+`test_max_sdist_skips_is_measured_against_something` bounds the **constant**;
+nothing compares the **measurement** to it. The enforcement is **not added
+here** — it would fail on the very tree that adds it, since 57 == 57 leaves no
+room, and landing a gate that is red on arrival is not this round's job.
 
 
 ---
