@@ -38,11 +38,41 @@ asserts on measured bounding boxes rather than on strings.
     * anything on a chart other than the readiness breakdown -- the Win
       Alignment and Optimizer charts are Plotly, rendered client-side, and
       nothing here can see them;
-    * what a BROWSER does with the PNG Streamlit serves. Streamlit rescales
-      the figure to the container width. Rescaling is affine on the whole
-      image, so two boxes that do not intersect here do not begin to
-      intersect there -- but that is an argument, not a measurement, and it
-      is the one thing in this file that has not been executed;
+    * what a BROWSER does with the PNG Streamlit serves -- but the pipeline
+      that produces that PNG HAS now been measured, and this note used to
+      describe a pipeline that does not run. It said "Streamlit rescales the
+      figure to the container width", and Streamlit does no such thing.
+      ``streamlit/elements/pyplot.py`` sets
+      ``{"bbox_inches": "tight", "dpi": 200, "format": "png"}`` and calls
+      ``fig.savefig(image, **kwargs)``: a RE-RASTERISATION at twice this
+      gate's dpi with a recomputed canvas bbox. The browser then CSS-scales
+      the finished raster, which is a pure bitmap scale and cannot move one
+      glyph relative to another.
+
+      MEASURED IN THIS REPOSITORY, over the same SPREAD below, comparing the
+      annotation against every value label and every bar
+      (``_measured_clearances`` at the foot of this module re-derives both
+      lines on demand):
+
+          gate      (dpi 100, draw)              : 38 shapes, 0 collisions,
+                                                   min clearance 10.26 px
+          STREAMLIT (dpi 200, bbox_inches=tight) : 38 shapes, 0 collisions,
+                                                   min clearance 22.51 px
+
+      CLEARANCE GROWS. It does NOT grow by exactly two, and the difference is
+      not noise: the ratio is 2.195. Layout scales linearly with dpi, but TEXT
+      EXTENTS DO NOT -- font hinting makes a glyph box slightly sub-linear
+      (the annotation's own box scales 1.928 in height and 1.948 in width), so
+      the text shrinks a little relative to the layout and the gap between
+      them opens by more than the dpi factor. ``bbox_inches="tight"``
+      contributes nothing to this: it is a CROP, and the relative geometry is
+      identical with and without it, measured both ways.
+
+      SO THE CONCLUSION TRANSFERS, and it now transfers as a measurement
+      rather than as an argument: the tighter of the two pipelines is the one
+      this file tests. What is still NOT measured is the browser -- font
+      fallback if the served page substitutes a face, and CSS scaling that is
+      not uniform. Those are outside a PNG and outside CI;
     * text that is CLIPPED rather than overlapped, colour contrast,
       font fallback, or anything about the surrounding page;
     * component shapes outside SPREAD below. The sweep is dense around the
@@ -60,6 +90,7 @@ asserts on measured bounding boxes rather than on strings.
 """
 from __future__ import annotations
 
+import functools
 import os
 import sys
 from pathlib import Path
@@ -95,6 +126,34 @@ def _shape(**overrides) -> dict:
     return base
 
 
+#: How far BELOW the grade-B cut the dense sweep starts, in score points.
+#:
+#: THE SWEEP FOLLOWS THE THRESHOLD (1.5.5 audit B5). It was hardcoded to
+#: ``range(60, 101, 2)`` while the annotation's x position tracks
+#: ``GRADE_THRESHOLDS["B"]``, which is 70 today. Re-base B to 45 and the sweep
+#: would go on walking 60..100 -- above the annotation's whole neighbourhood --
+#: while every test in this file stayed green over a region where nothing can
+#: collide. A sweep that no longer sweeps the place the defect lives is the
+#: "green means nothing" shape this suite keeps finding.
+#:
+#: Ten below and up to the ceiling reproduces the original 60..100 exactly at
+#: B = 70, and moves with B. Asymmetric on purpose: a value label is drawn to
+#: the RIGHT of its bar and the annotation is anchored just right of the cut,
+#: so the collision region extends upward from B, not downward.
+_SWEEP_BELOW = 10
+_SWEEP_MAX = 100
+
+
+def _sweep(step: int) -> list:
+    """Scores from ``_B - _SWEEP_BELOW`` to 100, clamped to a real score."""
+    start = int(max(0, _B - _SWEEP_BELOW))
+    return list(range(start, _SWEEP_MAX + 1, step))
+
+
+_DENSE_SWEEP = _sweep(2)
+_COARSE_SWEEP = _sweep(5)
+
+
 #: Component shapes that walk every bar through the annotation's
 #: neighbourhood. The annotation is anchored just right of the grade-B cut,
 #: so a value label lands in its column when a component scores near it --
@@ -111,10 +170,10 @@ SPREAD = [
     ("two components", {"completeness": 80.0, "impact_metrics": 38.2}),
 ] + [
     (f"top component at {v:.1f}", _shape(completeness=float(v)))
-    for v in range(60, 101, 2)
+    for v in _DENSE_SWEEP
 ] + [
     (f"every component at {v:.1f}", _shape(**{k: float(v) for k in _COMPONENTS}))
-    for v in range(60, 101, 5)
+    for v in _COARSE_SWEEP
 ]
 
 
@@ -254,3 +313,330 @@ class TestBandLegend:
                 f"grade {key} cut {GRADE_THRESHOLDS[key]} is not in the legend — "
                 "the legend must be interpolated from GRADE_THRESHOLDS, not typed"
             )
+
+
+# ---------------------------------------------------------------------------
+# T6's THESIS, APPLIED TO THE THING THE READER ACTUALLY OPENS (1.5.5 audit B2)
+# ---------------------------------------------------------------------------
+#
+# THE DEFECT. Everything above measures ``readiness_chart.py``. A reader does
+# not open ``readiness_chart.py``; they open the Pipeline Analyzer page. Until
+# this gate, NOTHING TIED THE TWO TOGETHER. The 1.5.5 audit reverted
+# ``pages/1_Pipeline_Analyzer.py`` to the 1.5.4 inline chart -- annotation at
+# ``ax.get_ylim()[1] * 0.98``, no reserved headroom, no band legend -- left
+# ``readiness_chart.py`` untouched, and THE WHOLE SUITE STAYED GREEN. Every
+# measurement above went on passing, against a module the page no longer used.
+#
+# ``test_legacy_layout_is_not_reachable_from_the_page`` is the only existing
+# page-side check and it asserts that ONE SUBSTRING is absent. Absence of
+# "legacy_layout" says nothing about what the page draws; the 1.5.4 inline
+# chart contains no such string either.
+#
+# NOT A STRING SEARCH, DELIBERATELY. The last three attempts at a page gate in
+# this repository were satisfiable by a comment. This one is a DATA-FLOW
+# assertion on the parsed page:
+#
+#     the readiness breakdown data -- whatever is read out of
+#     ``.component_scores`` -- may reach ``build_readiness_breakdown_figure``
+#     and may be tested for emptiness, and may go NOWHERE ELSE.
+#
+# That is "constructs no other readiness chart inline" stated as a property
+# rather than as a blacklist of the shapes one mutation happened to use. The
+# 1.5.4 chart fails it at ``breakdown.items()``, before it ever reaches
+# ``plt.subplots``; so does any future inline chart, whatever it is built out
+# of, because a chart cannot be drawn from data it never touches.
+#
+# WHY NOT "the page must not call plt.subplots". Page 1 legitimately builds
+# four other matplotlib charts -- benchmark, states, sector, jobs per $1MM --
+# and none of them is a readiness chart. A rule that forbade figure creation
+# would be wrong four times over and would be deleted the first time somebody
+# added a fifth.
+#
+# THE OTHER PAGES ARE CHECKED THE SAME WAY, which is the half this repository
+# has learned to expect: every previous widening of a page gate immediately
+# found a second instance. This time it did NOT -- pages 2 and 4 draw no
+# charts at all, page 3 is Plotly, and page 1 is the only reader of
+# ``component_scores``. That is a measurement, not an assumption: the gate
+# walks every page and app.py, so a SECOND page that starts drawing readiness
+# data inline is caught on the day it appears rather than on the day somebody
+# widens a gate again.
+
+_READINESS_ATTR = "component_scores"
+_GATED_BUILDER = "build_readiness_breakdown_figure"
+
+
+def _streamlit_surfaces() -> list:
+    """Every Streamlit page and the app entry point, as (label, path)."""
+    app_dir = _REPO_ROOT / "streamlit_app"
+    paths = sorted((app_dir / "pages").glob("*.py")) + [app_dir / "app.py"]
+    return [(str(p.relative_to(_REPO_ROOT)), p) for p in paths if p.is_file()]
+
+
+def _readiness_bindings(tree) -> dict:
+    """``{variable: lineno}`` for every name bound from ``.component_scores``.
+
+    The RHS is walked whole rather than pattern-matched, because the live
+    binding is a conditional expression --
+    ``rs.component_scores if hasattr(rs, "component_scores") else {}`` -- and
+    a matcher that only understood a bare attribute would miss it and report
+    the page clean.
+
+    Example::
+
+        _readiness_bindings(ast.parse("b = rs.component_scores"))
+    """
+    import ast as _ast
+    bound = {}
+    for node in _ast.walk(tree):
+        if not (isinstance(node, _ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], _ast.Name)):
+            continue
+        if any(isinstance(sub, _ast.Attribute) and sub.attr == _READINESS_ATTR
+               for sub in _ast.walk(node.value)):
+            bound[node.targets[0].id] = node.lineno
+    return bound
+
+
+def _disallowed_uses(tree, variable: str) -> list:
+    """Uses of ``variable`` that are neither an emptiness test nor the builder.
+
+    Example::
+
+        _disallowed_uses(ast.parse("if b: pass"), "b")   # -> []
+    """
+    import ast as _ast
+
+    permitted = set()
+    for node in _ast.walk(tree):
+        # ``build_readiness_breakdown_figure(breakdown)`` -- positional or
+        # keyword, so the gate does not turn on the call style.
+        if isinstance(node, _ast.Call):
+            func = node.func
+            name = func.id if isinstance(func, _ast.Name) else getattr(func, "attr", None)
+            if name == _GATED_BUILDER:
+                for arg in list(node.args) + [kw.value for kw in node.keywords]:
+                    if isinstance(arg, _ast.Name) and arg.id == variable:
+                        permitted.add(id(arg))
+        # ``if breakdown:`` / ``while breakdown:`` -- an emptiness test reads
+        # the name without touching the data.
+        for test in ("test",):
+            candidate = getattr(node, test, None)
+            if isinstance(candidate, _ast.Name) and candidate.id == variable:
+                permitted.add(id(candidate))
+        if isinstance(node, _ast.BoolOp):
+            for value in node.values:
+                if isinstance(value, _ast.Name) and value.id == variable:
+                    permitted.add(id(value))
+        if isinstance(node, _ast.UnaryOp) and isinstance(node.op, _ast.Not) \
+                and isinstance(node.operand, _ast.Name) \
+                and node.operand.id == variable:
+            permitted.add(id(node.operand))
+
+    offenders = []
+    for node in _ast.walk(tree):
+        if not (isinstance(node, _ast.Name) and node.id == variable
+                and isinstance(node.ctx, _ast.Load)):
+            continue
+        if id(node) not in permitted:
+            offenders.append(node.lineno)
+    return offenders
+
+
+def test_the_page_gets_its_readiness_chart_from_the_gated_module():
+    """The surface the reader opens must use the module this file measures.
+
+    Everything above is a measurement of ``readiness_chart.py``. This is the
+    assertion that the page is still reading it.
+    """
+    import ast as _ast
+
+    users, missing_call = [], []
+    for label, path in _streamlit_surfaces():
+        tree = _ast.parse(path.read_text(), filename=str(path))
+        if not _readiness_bindings(tree):
+            continue
+        users.append(label)
+        calls = {
+            (n.func.id if isinstance(n.func, _ast.Name) else getattr(n.func, "attr", None))
+            for n in _ast.walk(tree) if isinstance(n, _ast.Call)
+        }
+        if _GATED_BUILDER not in calls:
+            missing_call.append(label)
+
+    assert users, (
+        f"no Streamlit surface reads .{_READINESS_ATTR} at all. Either the "
+        "readiness breakdown was removed from the app -- in which case this "
+        "gate and the geometry sweep above are both measuring a chart nobody "
+        "renders -- or the page walk is broken and this file is passing over "
+        "nothing."
+    )
+    assert not missing_call, (
+        f"these surfaces read .{_READINESS_ATTR} but never call "
+        f"{_GATED_BUILDER}(): {missing_call}.\n\n"
+        "Every geometry assertion in this file measures that function. A page "
+        "that draws the readiness breakdown any other way is unmeasured, and "
+        "the green above says nothing about what the reader sees."
+    )
+
+
+def test_no_streamlit_surface_builds_a_readiness_chart_inline():
+    """Readiness data may reach the gated builder and nothing else.
+
+    THE MUTATION THIS CATCHES is the audit's: revert the page to the 1.5.4
+    inline chart and leave ``readiness_chart.py`` alone. It fails here at
+    ``breakdown.items()`` -- the data being handled by the page at all -- so
+    the gate does not depend on recognising ``plt.subplots``, ``barh``,
+    ``axvline`` or any other shape the replacement happens to use.
+    """
+    import ast as _ast
+
+    offenders = []
+    for label, path in _streamlit_surfaces():
+        tree = _ast.parse(path.read_text(), filename=str(path))
+        for variable, lineno in _readiness_bindings(tree).items():
+            for use in _disallowed_uses(tree, variable):
+                offenders.append(
+                    f"{label}:{use}: {variable!r} (bound from "
+                    f".{_READINESS_ATTR} at line {lineno})"
+                )
+
+    assert not offenders, (
+        "a Streamlit page handles readiness breakdown data itself instead of "
+        f"passing it to {_GATED_BUILDER}():\n  " + "\n  ".join(offenders)
+        + "\n\nThe geometry of that chart is gated in readiness_chart.py and "
+          "measured by this file. A chart built in the page body cannot be "
+          "measured -- nothing can render a Streamlit page body and read back "
+          "a bounding box -- so drawing it there is drawing it ungated. Pass "
+          f"the data to {_GATED_BUILDER}() and extend that function instead."
+    )
+
+
+# ---------------------------------------------------------------------------
+# THE SCOPE NOTE'S OWN CLAIMS, AS ASSERTIONS (1.5.5 audit B5)
+# ---------------------------------------------------------------------------
+#
+# The header used to concede that the browser-rescale case was "an argument,
+# not a measurement". It also described the wrong pipeline: Streamlit does not
+# rescale the figure to the container, it RE-RASTERISES with
+# ``fig.savefig(image, bbox_inches="tight", dpi=200, format="png")``. Both are
+# fixed there. What follows keeps the correction honest -- the numbers in that
+# note are re-derived by code in this file rather than remembered, and the
+# claim that the served pipeline is the SLACKER of the two is asserted rather
+# than asserted-about.
+
+
+def _clearance(a, b) -> float:
+    """Smallest display-space gap between two boxes; negative when overlapping.
+
+    Example::
+
+        _clearance(box_a, box_b) > 0
+    """
+    return max(max(b.x0 - a.x1, a.x0 - b.x1), max(b.y0 - a.y1, a.y0 - b.y1))
+
+
+@functools.lru_cache(maxsize=None)
+def _measured_clearances(dpi: int, tight: bool) -> tuple:
+    """``(collisions, min_clearance)`` over the whole SPREAD at one dpi.
+
+    ``tight`` runs Streamlit's actual call first, so the measurement is taken
+    against a figure that has been through it rather than one that has not.
+
+    Example::
+
+        _measured_clearances(100, False)
+    """
+    import io
+
+    collisions, worst = 0, float("inf")
+    for _name, scores in SPREAD:
+        fig, _ax, parts = build_readiness_breakdown_figure(scores)
+        try:
+            if tight:
+                fig.savefig(io.BytesIO(), bbox_inches="tight", dpi=dpi,
+                            format="png")
+            fig.set_dpi(dpi)
+            fig.canvas.draw()
+            renderer = fig.canvas.get_renderer()
+            ann = parts["annotation"].get_window_extent(renderer)
+            others = (
+                [t.get_window_extent(renderer) for t in parts["value_labels"]]
+                + [p.get_window_extent(renderer) for p in parts["bars"].patches]
+            )
+            for box in others:
+                if _overlap(ann, box):
+                    collisions += 1
+                worst = min(worst, _clearance(ann, box))
+        finally:
+            plt.close(fig)
+    return collisions, worst
+
+
+def test_the_dense_sweep_still_brackets_the_grade_b_cut():
+    """Move ``GRADE_THRESHOLDS["B"]`` and the sweep must move with it.
+
+    THE RESIDUAL THIS CLOSES. The sweep was ``range(60, 101, 2)`` -- a literal
+    -- while the annotation is anchored at ``_B``. At B = 70 those coincide.
+    Re-base B and the old sweep would have gone on walking a region the
+    annotation had left, with every assertion in this file passing over a
+    neighbourhood where nothing can collide.
+
+    Bracketing is the property that matters: values on BOTH sides of the cut,
+    and a step fine enough that a value label lands in the annotation's column.
+    """
+    below = [v for v in _DENSE_SWEEP if v < _B]
+    above = [v for v in _DENSE_SWEEP if v > _B]
+    assert below and above, (
+        f"the dense sweep {_DENSE_SWEEP[:3]}..{_DENSE_SWEEP[-1]} does not "
+        f"bracket the grade-B cut ({_B}). The annotation is anchored there; a "
+        "sweep that does not cross it is not sweeping the collision region."
+    )
+    assert min(above) - _B <= 2 and _B - max(below) <= 2, (
+        f"the sweep steps over the grade-B cut ({_B}) with nothing within two "
+        f"points of it: nearest below {max(below)}, nearest above {min(above)}."
+    )
+
+
+def test_the_scope_notes_clearance_figures_are_reproducible():
+    """The two lines quoted in this module's scope limit, re-derived.
+
+    A gate's own scope note may not carry a number nobody in this repository
+    derived. These are that derivation, run.
+    """
+    gate_collisions, gate_clearance = _measured_clearances(100, tight=False)
+    assert gate_collisions == 0
+    assert gate_clearance == pytest.approx(10.26, abs=0.75), (
+        f"the gate pipeline's minimum clearance is now {gate_clearance:.2f} px, "
+        "not the 10.26 recorded in this module's scope limit. Re-measure and "
+        "update the note -- a scope limit quoting a stale number is the shape "
+        "this file exists to stop."
+    )
+
+
+def test_the_streamlit_pipeline_is_the_slacker_of_the_two():
+    """Streamlit's own savefig call, measured -- not reasoned about.
+
+    ``streamlit/elements/pyplot.py`` passes
+    ``{"bbox_inches": "tight", "dpi": 200, "format": "png"}``. This runs that
+    call and asserts what the old scope note could only argue: nothing that
+    clears here begins to collide there.
+
+    The ratio is NOT exactly two, and that is recorded rather than rounded
+    away. Layout scales linearly with dpi; text extents do not, because font
+    hinting makes a glyph box slightly sub-linear. The gap therefore opens by
+    somewhat MORE than the dpi factor -- which is the safe direction, and the
+    reason the assertion below is an inequality rather than an equality.
+    """
+    gate_collisions, gate_clearance = _measured_clearances(100, tight=False)
+    st_collisions, st_clearance = _measured_clearances(200, tight=True)
+
+    assert gate_collisions == 0 and st_collisions == 0, (
+        f"collisions: gate {gate_collisions}, streamlit {st_collisions}"
+    )
+    assert st_clearance > gate_clearance, (
+        f"the pipeline Streamlit actually runs (dpi 200, bbox_inches='tight') "
+        f"clears by {st_clearance:.2f} px against this gate's "
+        f"{gate_clearance:.2f} px. If that ever inverts, THIS FILE IS NO "
+        "LONGER TESTING THE TIGHTER CASE and its greens stop transferring to "
+        "what the reader sees."
+    )

@@ -279,9 +279,13 @@ def test_no_section_total_is_printed_over_the_other_sections_maximum():
     assert nothing on every run, forever, while looking like coverage. It
     also cost the sdist a fiftieth skip against a stated ceiling of 49.
 
-    So the SOURCE-LEVEL guard runs unconditionally and is what actually
-    holds the rule; the rendered-output check is layered on top and simply
-    has nothing to look at while the maxima agree.
+    THIS IS THE SOURCE-LEVEL HALF, AND IT IS A SUBSTRING CHECK. It holds one
+    shape — the 1.5.4 twin, verbatim. The RENDERED half is
+    ``test_the_rendered_assessment_never_prints_a_section_total_over_the_other_maximum``
+    below, which holds the PROPERTY and runs unconditionally. Until the 1.5.5
+    audit close, that half was guarded by
+    ``if BUSINESS_STRATEGY_MAX != COMMUNITY_OUTCOMES_MAX`` and therefore
+    asserted nothing on any run this package has ever had. See that test.
     """
     import inspect
     from nmtcapp.intelligence import win_probability
@@ -298,10 +302,96 @@ def test_no_section_total_is_printed_over_the_other_sections_maximum():
             "agreed only because both maxima are 50:\n" + line
         )
 
-    # --- additionally, when the maxima differ, the mismatch becomes visible
-    #     in the rendered text and is asserted there too.
-    if BUSINESS_STRATEGY_MAX != COMMUNITY_OUTCOMES_MAX:
-        for bs, co in [(43, 47), (47, 43)]:
-            text = _score(bs, co, "Highly Qualified").peer_comparison
-            assert f"{bs}/{COMMUNITY_OUTCOMES_MAX}" not in text
-            assert f"{co}/{BUSINESS_STRATEGY_MAX}" not in text
+    # The rendered half is no longer here. It was
+    #
+    #     if BUSINESS_STRATEGY_MAX != COMMUNITY_OUTCOMES_MAX:
+    #         ...
+    #
+    # and that condition is FALSE — today, and on every run this package has
+    # ever had, because both maxima are 50 and always have been. Three
+    # indented assertions that never executed. It is parametrised instead, in
+    # the test below.
+
+
+#: Maxima to re-base one section to, so the two stop agreeing and a
+#: mismatched denominator becomes VISIBLE in the rendered text.
+#:
+#: Both directions, because a gate that only ever raises one maximum tests
+#: one substitution. Values are deliberately not multiples of each other and
+#: not equal to any section total used below, so a forbidden string cannot
+#: coincide with a legitimate one by arithmetic accident.
+_REBASED_MAXIMA = [("COMMUNITY_OUTCOMES_MAX", 40), ("BUSINESS_STRATEGY_MAX", 63)]
+
+#: (bs, co, tier) triples where the branch prints BOTH section totals, so
+#: both directions of the swap are observable. ``bs != co`` in every one: at
+#: bs == co the correct string and the swapped string are the same characters
+#: and the gate could not tell them apart.
+_BOTH_SECTIONS_PRINTED = [
+    (43, 47, "Highly Qualified"),
+    (47, 43, "Highly Qualified"),
+    (35, 32, "Not Qualified"),
+    (32, 35, "Not Qualified"),
+]
+
+
+@pytest.mark.parametrize("attr, rebased", _REBASED_MAXIMA)
+@pytest.mark.parametrize("bs, co, tier", _BOTH_SECTIONS_PRINTED)
+def test_the_rendered_assessment_never_prints_a_section_total_over_the_other_maximum(
+    monkeypatch, attr, rebased, bs, co, tier
+):
+    """THE PROPERTY, NOT THE SUBSTRING (1.5.5 audit B3).
+
+    THE DEFECT THIS CLOSES. This assertion used to live inside
+    ``if BUSINESS_STRATEGY_MAX != COMMUNITY_OUTCOMES_MAX``. Both maxima are
+    50, so the condition has been false on every run since the package
+    existed, and the rendered half of the twin gate asserted NOTHING while
+    reading like coverage.
+
+    Measured, not argued. Print Community Outcomes over
+    ``BUSINESS_STRATEGY_MAX`` — the audit's mutation (b) — and the rendered
+    text is BYTE-IDENTICAL, sha256 unchanged across all three branches,
+    because the two denominators are the same number. The full suite ran
+    green: not this gate, not the attribution sweep, not the pinned
+    constants, not the threshold twins. 1,561 passed.
+
+    THE FIX IS TO STOP DEPENDING ON THE ACCIDENT. One maximum is re-based at
+    runtime so the two disagree, and the rendered text is then read for a
+    section total printed over the OTHER section's denominator. The check
+    runs on every run, in both directions, on four score shapes.
+
+    ``_build_peer_comparison`` reads both maxima as module globals inside its
+    body, so ``monkeypatch.setattr`` on the module reaches them. That is a
+    property of the code under test and is asserted below rather than
+    assumed: if the function is ever changed to close over the values at
+    import time, the re-base stops taking effect and this gate would go
+    quietly green again — so it checks that the denominator actually moved.
+    """
+    from nmtcapp.intelligence import win_probability
+
+    monkeypatch.setattr(win_probability, attr, rebased)
+    bs_max = win_probability.BUSINESS_STRATEGY_MAX
+    co_max = win_probability.COMMUNITY_OUTCOMES_MAX
+    assert bs_max != co_max, "the re-base did not take; the gate is vacuous"
+    assert bs != co, "at bs == co the swapped string is the correct one"
+
+    text = _score(bs, co, tier).peer_comparison
+
+    # PROOF OF LIFE. If the re-base did not reach the rendered text at all —
+    # a global captured at import, a cached string, a refactor to a constant
+    # — every "not in" below would pass over text that never moved.
+    assert f"{bs}/{bs_max}" in text and f"{co}/{co_max}" in text, (
+        f"re-basing {attr} to {rebased} did not reach the rendered "
+        f"assessment. Expected '{bs}/{bs_max}' and '{co}/{co_max}' in:\n{text}"
+    )
+
+    assert f"{bs}/{co_max}" not in text, (
+        f"Business Strategy's total is printed over Community Outcomes' "
+        f"maximum ('{bs}/{co_max}'). The two agree at 50 in the shipped "
+        f"configuration, so this renders identically today and is invisible "
+        f"without re-basing:\n{text}"
+    )
+    assert f"{co}/{bs_max}" not in text, (
+        f"Community Outcomes' total is printed over Business Strategy's "
+        f"maximum ('{co}/{bs_max}') — the audit's mutation (b), which is "
+        f"byte-identical in the shipped configuration:\n{text}"
+    )

@@ -659,3 +659,232 @@ def test_detector_A_is_inert_on_exactly_the_files_this_gate_says_it_is(docs_pres
         "number. Do not delete this assertion to make it pass: it exists "
         "because a silently-halved gate reads as a whole one."
     )
+
+
+# ---------------------------------------------------------------------------
+# THE SAME CLASS, ONE SHAPE WIDER: a stale DATAFRAME COLUMN in a notebook
+# (1.5.5 audit close)
+# ---------------------------------------------------------------------------
+#
+# WHAT THIS MODULE ALREADY SAID, AND WHERE IT FELL SHORT. The header above
+# states the case for scanning ``examples/`` in as many words: "A stale key in
+# a markdown fence is a wrong instruction. A stale key in a notebook is
+# EXECUTABLE CODE THAT RAISES." It was right, and it did not go far enough.
+# Detector A resolves ``<root>["literal"]``. It cannot see
+#
+#     cols = ["Project Name", "State", "Sector (NAICS)", ...]
+#     display(df_pipeline[cols].head(8))
+#
+# because the subscript's slice is a NAME, and the literals sit one binding
+# away in a list. That is not a hypothetical shape. It is
+# ``examples/02_full_application_walkthrough.ipynb`` cell 14, and it has been
+# raising ``KeyError: "['Sector (NAICS)'] not in index"`` since ad2c7ba
+# (2026-08-14) renamed the column to "Sector (as supplied)" -- because the tool
+# was inventing the NAICS code it filed. The rename was right. The notebook was
+# never updated, no gate looked, and the walkthrough has shipped broken through
+# four releases.
+#
+# FOUND BY EXECUTING THE NOTEBOOKS, which is what the 1.5.5 audit-close brief
+# asked for on a different question entirely (the CY2025 round literal). The
+# round fix touches cell 3; this defect is in cell 14 and is unrelated to it.
+# Both notebooks were executed before and after that fix and the error set is
+# identical, so this is pre-existing at c5f546b and is recorded as its own
+# finding rather than folded into the round work.
+#
+# WHY THE GATE IS NOT "EXECUTE THE NOTEBOOKS IN CI". That would catch this and
+# much more, and it is the wrong trade here: the walkthrough renders four
+# document formats and takes the better part of a minute, on four interpreters,
+# for a check whose failure mode is a renamed string. The invariant that
+# actually matters is narrower and is derivable on both sides with no
+# execution at all -- which is this module's whole method.
+#
+#   LEFT SIDE   Every string literal a notebook uses as a column selector ON A
+#               VARIABLE IT BOUND FROM A ``build_*`` CALL: directly
+#               (``df["X"]``), as a list (``df[["X","Y"]]``), or through a
+#               local list binding (``cols = [...]; df[cols]``). Both alias
+#               resolutions are the same idiom ``_alias_map`` uses for
+#               attributes, for the same stated reason: a derivation one
+#               binding defeats checks nothing. The variable map is built
+#               across the WHOLE notebook, because a notebook's cells share
+#               one namespace and the binding is routinely cells away from
+#               the use.
+#
+#   RIGHT SIDE  The columns THAT BUILDER produces, read off a LIVE DataFrame
+#               built from the packaged fixtures. Nothing is written down here.
+#
+# NOT A SHAPE HEURISTIC, and the first draft of this gate was one. It filtered
+# candidate literals to those containing a space or a parenthesis, on the
+# stated ground that every column has one -- and its own self-check
+# immediately falsified that: ``City``, ``State``, ``Sector``, ``Sectors``,
+# ``Notes``, ``OZ`` and ``HMR`` are all real columns. A filter that wrong
+# would have hidden a stale one-word column, which is the defect class the
+# gate exists for. Binding the subscript to the builder that produced it needs
+# no filter at all: a subscript on anything else is simply not a candidate,
+# and the comparison is against that builder's own column set rather than
+# against the union.
+#
+# FAILS CLOSED the same ways the rest of this module does: an empty builder
+# harvest errors, an empty selector harvest errors, and the scan runs only
+# under the ``docs_present`` checkout marker.
+
+
+def _live_table_columns() -> dict:
+    """``{builder_name: [columns]}`` for every table builder, from live frames.
+
+    Built from the packaged fixtures rather than from a recorded list, so a
+    renamed column moves the right side of this gate on its own.
+
+    Example::
+
+        _live_table_columns()["build_pipeline_table"]
+    """
+    import importlib
+    import pkgutil
+
+    import nmtcapp.tables as tables_pkg
+
+    cde = CDEProfile.sample()
+    pipeline = Pipeline.sample(n=20)
+    app = Application(cde=cde, requested_allocation=65_000_000)
+    app.add_pipeline(pipeline)
+    analysis = app.analyze()
+
+    # The builders take different shapes; try each in turn rather than
+    # hard-coding a signature per builder, which would go stale the way
+    # everything hand-typed in this repository has.
+    candidate_args = [(pipeline, cde), (cde,), (analysis,), (app,), (pipeline,), ()]
+
+    produced = {}
+    for module_info in pkgutil.iter_modules(tables_pkg.__path__):
+        module = importlib.import_module(f"nmtcapp.tables.{module_info.name}")
+        for name, fn in vars(module).items():
+            if not (name.startswith("build_") and callable(fn)):
+                continue
+            for args in candidate_args:
+                try:
+                    frame = fn(*args)
+                except Exception:
+                    continue
+                if hasattr(frame, "columns"):
+                    produced[name] = list(frame.columns)
+                break
+    return produced
+
+
+def _frame_variables(cells: list, builders: set) -> dict:
+    """``{local_name: builder_name}`` for ``df = build_x(...)`` across a notebook.
+
+    Whole-notebook, not per-cell: cells share one namespace and the binding is
+    routinely several cells above the use.
+
+    Example::
+
+        _frame_variables(nb["cells"], {"build_pipeline_table"})
+    """
+    bound = {}
+    for cell in cells:
+        if cell.get("cell_type") != "code":
+            continue
+        for node in ast.walk(ast.parse("".join(cell.get("source", [])))):
+            if not (isinstance(node, ast.Assign) and len(node.targets) == 1
+                    and isinstance(node.targets[0], ast.Name)
+                    and isinstance(node.value, ast.Call)):
+                continue
+            fn = node.value.func
+            name = fn.id if isinstance(fn, ast.Name) else getattr(fn, "attr", None)
+            if name in builders:
+                bound[node.targets[0].id] = name
+    return bound
+
+
+def _notebook_column_selectors() -> list:
+    """``(location, builder, literal)`` for every column selected on a frame.
+
+    Example::
+
+        _notebook_column_selectors()[:1]
+    """
+    builders = set(_live_table_columns())
+    found = []
+    for path in _notebook_files():
+        with open(path, encoding="utf-8") as fh:
+            cells = json.load(fh).get("cells", [])
+        frame_vars = _frame_variables(cells, builders)
+        label = os.path.basename(path)
+        for index, cell in enumerate(cells):
+            if cell.get("cell_type") != "code":
+                continue
+            tree = ast.parse("".join(cell.get("source", [])))
+
+            # ``name = ["A", "B"]`` -- the binding Detector A cannot follow.
+            list_alias = {}
+            for node in ast.walk(tree):
+                if not (isinstance(node, ast.Assign) and len(node.targets) == 1
+                        and isinstance(node.targets[0], ast.Name)
+                        and isinstance(node.value, (ast.List, ast.Tuple))):
+                    continue
+                literals = [e.value for e in node.value.elts
+                            if isinstance(e, ast.Constant)
+                            and isinstance(e.value, str)]
+                if literals:
+                    list_alias[node.targets[0].id] = literals
+
+            for node in ast.walk(tree):
+                if not (isinstance(node, ast.Subscript)
+                        and isinstance(node.value, ast.Name)
+                        and node.value.id in frame_vars):
+                    continue
+                slice_node = node.slice
+                if isinstance(slice_node, ast.Constant) and \
+                        isinstance(slice_node.value, str):
+                    picks = [slice_node.value]
+                elif isinstance(slice_node, ast.Name):
+                    picks = list_alias.get(slice_node.id, [])
+                elif isinstance(slice_node, (ast.List, ast.Tuple)):
+                    picks = [e.value for e in slice_node.elts
+                             if isinstance(e, ast.Constant)
+                             and isinstance(e.value, str)]
+                else:
+                    picks = []
+                for literal in picks:
+                    found.append(
+                        (f"{label} cell {index}", frame_vars[node.value.id], literal)
+                    )
+    return found
+
+
+def test_the_table_column_harvest_is_not_empty(docs_present):
+    """Fails closed: silence on either side must not read as cleanliness."""
+    produced = _live_table_columns()
+    assert produced, (
+        "no build_* function under nmtcapp/tables/ returned a DataFrame. The "
+        "right side of the column gate is empty and it would pass over nothing."
+    )
+    assert _notebook_column_selectors(), (
+        "no column selectors harvested from examples/*.ipynb at all. Either "
+        "the notebook walk, the frame-variable map or the subscript harvest "
+        "is broken, and the gate below would pass over nothing."
+    )
+
+
+def test_every_notebook_column_selector_exists_in_a_real_table(docs_present):
+    """A column an example notebook selects must be one that builder produces.
+
+    THE FAILURE THIS CATCHES is not a typo in a doc. It is a cell that raises
+    ``KeyError`` in the reader's own notebook, in the walkthrough ``README.md``
+    links as the front door.
+    """
+    produced = _live_table_columns()
+    stale = [
+        f"{where}: {builder}(...)[{literal!r}]"
+        for where, builder, literal in _notebook_column_selectors()
+        if literal not in produced[builder]
+    ]
+    assert not stale, (
+        "an example notebook selects a DataFrame column its builder does not "
+        "produce. The cell raises KeyError when a reader runs it:\n  "
+        + "\n  ".join(stale)
+        + "\n\nThe columns that DO exist are whatever the builder returns "
+          "today; if a column was deliberately renamed, the notebook is part "
+          "of the rename."
+    )
