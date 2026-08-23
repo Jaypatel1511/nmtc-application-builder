@@ -991,7 +991,54 @@ jobs:
           # skipping); nothing compares the MEASUREMENT above to it. That gate
           # is not added here because it would be RED ON ARRIVAL -- 57 against
           # 57 leaves no room -- and landing a red gate is not this round's job.
-          FLOOR=770
+          # 1.5.6 -- RE-DERIVED THE LONG WAY A SEVENTH TIME, AND FLOOR MOVES
+          # 770 -> 780. test_release_floor_is_derived_from_the_current_suite
+          # went red on FLOOR=770 before this file was opened, for the seventh
+          # consecutive cycle: 770 sat exactly on its band's lower bound (the
+          # 1.5.5 close said so in as many words), so 1.5.6's NINE new cases
+          # -- two parametrised gates, four cases each, plus one structural
+          # AST gate -- pushed the bound past it. THE GATE ANNOUNCED IT; this
+          # number was not noticed by hand.
+          #
+          # Derived from a REAL SDIST BUILD with this job's exact invocation,
+          # on 3.12.13: pristine clone with no egg-info, `python -m build
+          # --sdist`, the tarball installed with [dev] into a fresh venv, ONLY
+          # tests/, streamlit_app/, README.md and pyproject.toml copied out of
+          # it into a directory with NO nmtcapp/, `import nmtcapp` confirmed to
+          # resolve to site-packages, and the breakdown read off the junit
+          # report rather than off the terminal:
+          #
+          #     collected under -m "not wheel" 1,617
+          #     skipped in the sdist             -57
+          #     EXECUTED                       1,560
+          #     half                             780.0
+          #     rounded down                     780
+          #
+          # The tarball ran CLEAN on that build: 1,560 passed, 57 skipped, 1
+          # deselected, zero failures. The resulting band is [780, 808].
+          #
+          # MAX_SDIST_SKIPS DOES NOT MOVE, AND THAT IS THE MEASUREMENT TOO:
+          # the same run skipped exactly 57, the value the constant already
+          # carries and the same 57 the 1.5.4 and 1.5.5 derivations measured.
+          # 1.5.6 ADDS NO SKIPPING CASE, and it was designed not to -- all
+          # five backends the new canvas sweep parametrises over (agg, svg,
+          # pdf, ps, template) ship INSIDE matplotlib and need no optional
+          # dependency, so none of the nine new cases can skip. A backend
+          # needing pycairo or Tornado would have been the easy choice and was
+          # rejected for exactly this reason.
+          #
+          # HEADROOM IS STILL ZERO, AND STILL NOT BOUGHT. Measured skips (57)
+          # EQUAL the ceiling (57), as they did at 1.5.4 and 1.5.5. The next
+          # round that adds a single skipping case breaches it. NOT RAISED
+          # HERE: raising it is the move this bound exists to make somebody
+          # defend, and this round is a one-defect hotfix.
+          #
+          # AND STILL OPEN, RECORDED A FOURTH TIME: NOTHING MACHINE-ENFORCES
+          # THE MEASURED SKIP COUNT AGAINST THIS CONSTANT. test_small_claims
+          # bounds the CONSTANT; nothing compares the MEASUREMENT above to it.
+          # Still not added here, and for the same reason as at 1.5.5 -- 57
+          # against 57 leaves no room, so the gate would be RED ON ARRIVAL.
+          FLOOR=780
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()

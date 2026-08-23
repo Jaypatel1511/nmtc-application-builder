@@ -24,7 +24,7 @@ publishing to `gh-pages` is still a manual `python -m mkdocs gh-deploy`.
 ## Running Tests
 
 ```bash
-PYTHONPATH=. pytest tests/ -v          # all 1,609 tests
+PYTHONPATH=. pytest tests/ -v          # all 1,618 tests
 PYTHONPATH=. pytest tests/core/ -v    # specific module
 PYTHONPATH=. pytest tests/ -q --tb=short  # quick summary
 ```

@@ -80,9 +80,32 @@ def _fit_annotation_headroom(fig, ax, annotation, top_bar_top: float) -> None:
     """
     target = top_bar_top + ANNOTATION_HEADROOM
     for _ in range(8):
-        fig.canvas.draw()
-        renderer = fig.canvas.get_renderer()
-        box = annotation.get_window_extent(renderer)
+        # NOT ``fig.canvas.draw()`` + ``fig.canvas.get_renderer()`` (1.5.6 T1).
+        # That pair took the public app down: ``get_renderer`` is NOT part of
+        # matplotlib's public ``FigureCanvasBase`` API -- it is supplied by
+        # PARTICULAR BACKENDS -- and the runtime handed this figure a canvas
+        # that does not supply it, so line 84 raised AttributeError and the
+        # whole readiness section stopped rendering.
+        #
+        # BOTH LINES HAD TO GO, AND THE FIRST ONE IS THE EASY ONE TO MISS.
+        # ``FigureCanvasBase.draw()`` is a NO-OP. On a canvas without
+        # ``get_renderer`` it therefore succeeds SILENTLY while drawing
+        # nothing, so replacing only the renderer lookup would leave the loop
+        # measuring text that had never been laid out. ``draw_without_
+        # rendering()`` is the documented way to run the draw pass that
+        # settles text extents without rasterising, and it works on every
+        # canvas matplotlib ships because it goes through matplotlib's own
+        # backend-agnostic ``_get_renderer`` helper.
+        #
+        # ``get_window_extent()`` then needs NO renderer argument: matplotlib
+        # caches one on the artist during the draw, and its docstring says so
+        # -- "it is only necessary to pass this argument when calling
+        # get_window_extent before the first draw". MEASURED, not assumed:
+        # on Agg the boxes this returns are BIT-IDENTICAL to the ones the old
+        # explicit-renderer form returned, which is why no rendered baseline
+        # moves and the gate's 10.26 px clearance is unchanged.
+        fig.draw_without_rendering()
+        box = annotation.get_window_extent()
         corners = ax.transData.inverted().transform(
             [(box.x0, box.y0), (box.x1, box.y1)])
         ann_bottom = min(corners[0][1], corners[1][1])

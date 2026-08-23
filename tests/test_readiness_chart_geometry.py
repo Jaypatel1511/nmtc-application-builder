@@ -28,6 +28,13 @@ asserts on measured bounding boxes rather than on strings.
   figure with matplotlib's Agg backend and measures the bounding boxes
   matplotlib itself reports, in display coordinates, after a draw.
 
+  AND UNTIL 1.5.6 "with matplotlib's Agg backend" WAS THE WHOLE PROBLEM.
+  Pinning Agg pinned the one canvas on which the 1.5.6 crash is invisible,
+  and this file was green while the live page raised AttributeError. The
+  canvas sweep at the FOOT of this module is the correction, and it carries
+  its own scope limit -- READ THAT ONE TOO: it substitutes canvases into the
+  builder, it does not reproduce Streamlit Cloud, and nothing in CI can.
+
   IT THEREFORE OBSERVES:
     * whether the threshold annotation's box intersects any value label's
       box, or any bar's box, at the tested component shapes;
@@ -90,6 +97,7 @@ asserts on measured bounding boxes rather than on strings.
 """
 from __future__ import annotations
 
+import contextlib
 import functools
 import os
 import sys
@@ -178,10 +186,9 @@ SPREAD = [
 
 
 def _boxes(fig, parts):
-    fig.canvas.draw()
-    renderer = fig.canvas.get_renderer()
-    ann = parts["annotation"].get_window_extent(renderer)
-    labels = [t.get_window_extent(renderer) for t in parts["value_labels"]]
+    fig.draw_without_rendering()
+    ann = parts["annotation"].get_window_extent()
+    labels = [t.get_window_extent() for t in parts["value_labels"]]
     return ann, labels
 
 
@@ -214,13 +221,12 @@ def test_annotation_never_overlaps_a_bar(name, scores):
     """A bar drawn through the disclaimer destroys it just as thoroughly."""
     fig, ax, parts = build_readiness_breakdown_figure(scores)
     try:
-        fig.canvas.draw()
-        renderer = fig.canvas.get_renderer()
-        ann = parts["annotation"].get_window_extent(renderer)
+        fig.draw_without_rendering()
+        ann = parts["annotation"].get_window_extent()
         hits = [
             f"bar {i} ({p.get_width():.1f})"
             for i, p in enumerate(parts["bars"].patches)
-            if _overlap(ann, p.get_window_extent(renderer))
+            if _overlap(ann, p.get_window_extent())
         ]
         assert not hits, f"[{name}] bars drawn through the annotation: {hits}"
     finally:
@@ -293,10 +299,9 @@ class TestBandLegend:
         fig, ax, parts = build_readiness_breakdown_figure(
             _shape(completeness=80.0, impact_metrics=38.2))
         try:
-            fig.canvas.draw()
-            renderer = fig.canvas.get_renderer()
-            legend_bb = ax.get_legend().get_window_extent(renderer)
-            axes_bb = ax.get_window_extent(renderer)
+            fig.draw_without_rendering()
+            legend_bb = ax.get_legend().get_window_extent()
+            axes_bb = ax.get_window_extent()
             assert not _overlap(legend_bb, axes_bb), (
                 "the band legend overlaps the plotting area"
             )
@@ -556,12 +561,11 @@ def _measured_clearances(dpi: int, tight: bool) -> tuple:
                 fig.savefig(io.BytesIO(), bbox_inches="tight", dpi=dpi,
                             format="png")
             fig.set_dpi(dpi)
-            fig.canvas.draw()
-            renderer = fig.canvas.get_renderer()
-            ann = parts["annotation"].get_window_extent(renderer)
+            fig.draw_without_rendering()
+            ann = parts["annotation"].get_window_extent()
             others = (
-                [t.get_window_extent(renderer) for t in parts["value_labels"]]
-                + [p.get_window_extent(renderer) for p in parts["bars"].patches]
+                [t.get_window_extent() for t in parts["value_labels"]]
+                + [p.get_window_extent() for p in parts["bars"].patches]
             )
             for box in others:
                 if _overlap(ann, box):
@@ -639,4 +643,209 @@ def test_the_streamlit_pipeline_is_the_slacker_of_the_two():
         f"{gate_clearance:.2f} px. If that ever inverts, THIS FILE IS NO "
         "LONGER TESTING THE TIGHTER CASE and its greens stop transferring to "
         "what the reader sees."
+    )
+
+
+# ---------------------------------------------------------------------------
+# THE GATE MUST MEASURE THE CANVAS THE APP USES (1.5.6 T2)
+# ---------------------------------------------------------------------------
+#
+# THE DEFECT. ``nmtc-application-builder.streamlit.app/Pipeline_Analyzer``
+# raised ``AttributeError`` at ``readiness_chart.py`` line 84 --
+# ``fig.canvas.get_renderer()`` -- and the entire readiness section stopped
+# rendering. Everything above it was fine. THIS FILE WAS GREEN THROUGHOUT.
+#
+# It was green because of its own second line of setup:
+#
+#     matplotlib.use("Agg")
+#
+# ``get_renderer`` is NOT part of matplotlib's public ``FigureCanvasBase``
+# API. It is supplied by PARTICULAR BACKENDS. ``FigureCanvasAgg`` has it;
+# ``FigureCanvasBase``, ``FigureCanvasSVG``, ``FigureCanvasPdf``,
+# ``FigureCanvasPS`` and ``FigureCanvasTemplate`` do NOT -- measured in this
+# repository by ``test_the_builder_runs_on_a_canvas_without_get_renderer``
+# below, not read off a changelog. By pinning Agg at import, this gate pinned
+# THE ONE CANVAS ON WHICH THE DEFECT IS INVISIBLE, and then measured 38 shapes
+# on it very carefully.
+#
+# THAT IS THIS CYCLE'S RECURRING SHAPE, for the eighth time across 1.5.4 and
+# 1.5.5: THE GATE AND THE SURFACE WERE LOOKING AT DIFFERENT OBJECTS. 1.5.5's
+# version was a page gate measuring a module the page had stopped importing.
+# This one is a canvas gate measuring a canvas the runtime does not
+# necessarily hand over. The correction is the same in both cases -- make the
+# gate exercise the path the surface takes instead of a path the test chose.
+#
+# AND THE GATE ITSELF COMMITTED THE ERROR IT FAILED TO CATCH. Six call sites
+# in this file asked the canvas for a renderer exactly the way line 84 did.
+# They are all now the renderer-free form below, so the gate measures through
+# the same public API the module uses. THE NUMBERS DID NOT MOVE: measured both
+# ways on Agg, the boxes are BIT-IDENTICAL, which is why
+# ``test_the_scope_notes_clearance_figures_are_reproducible`` still asserts
+# the same 10.26 px it did at 1.5.5.
+#
+#   ⚠️  WHAT THIS SECTION STILL CANNOT OBSERVE -- READ BEFORE TRUSTING IT  ⚠️
+#
+#   IT DOES NOT RUN STREAMLIT CLOUD, AND IT CANNOT. There is no Streamlit
+#   Cloud in CI, and this repository has no way to put one there. What
+#   follows SUBSTITUTES canvases into the builder; it does not REPRODUCE the
+#   runtime that supplied the failing one.
+#
+#   SO THE HONEST STATEMENT OF WHAT IS GATED IS THIS: the builder no longer
+#   DEPENDS on backend-private API, and that independence is now measured
+#   across every canvas matplotlib ships. WHY Cloud supplied a canvas without
+#   ``get_renderer`` IS NOT ESTABLISHED -- the 1.5.6 round could not reproduce
+#   it on Python 3.12 with matplotlib 3.11.1 and streamlit 1.62.0 outside
+#   Cloud, under Agg, under the real ScriptRunner, or in a worker thread. The
+#   fix removes the ASSUMPTION rather than the unknown, which is why these
+#   tests assert "does not raise on any canvas" and NOT "Cloud is fixed".
+#   Nothing in CI can assert the second one.
+#
+#   ALSO NOT OBSERVED HERE: the ``template`` backend has no real font
+#   metrics, so it is exercised for the RAISE and deliberately excluded from
+#   the geometry assertion -- a degenerate text box cannot overlap anything
+#   and a green from it would mean nothing.
+
+#: Backends whose canvas class does NOT provide ``get_renderer``.
+#:
+#: All five ship inside matplotlib itself and need no optional dependency, so
+#: NONE OF THESE PARAMETRISATIONS CAN SKIP. That is deliberate: the sdist skip
+#: ceiling has zero headroom (57 measured against MAX_SDIST_SKIPS = 57), and a
+#: gate that quietly skips is the failure mode this suite keeps finding
+#: anyway. A backend that needed pycairo or Tornado would have been the easy
+#: choice and is not used for exactly that reason.
+_RENDERERLESS_BACKENDS = ("svg", "pdf", "ps", "template")
+
+#: Backends whose renderer reports REAL text extents, so a clearance measured
+#: on them means something. ``template`` is excluded -- see the scope note.
+_METRIC_BACKENDS = ("agg", "svg", "pdf", "ps")
+
+#: A small, fixed set of shapes for the canvas sweep. Not the whole SPREAD:
+#: the 38-shape sweep exists to walk bars through the annotation's column at
+#: ONE canvas, and repeating all of it at five canvases would buy coverage of
+#: a variable that is not the one under test here. These three are the
+#: observed collision, the boundary case and the degenerate single bar.
+_CANVAS_SHAPES = (
+    ("1.5.4 shipped sample", _shape(completeness=80.0, impact_metrics=38.2)),
+    ("all components at the grade-B cut", _shape(**{k: float(_B) for k in _COMPONENTS})),
+    ("single component", {"completeness": 80.0}),
+)
+
+
+@contextlib.contextmanager
+def _using_backend(name):
+    """Run the body with pyplot on *name*, restoring the previous backend.
+
+    ``force=True`` closes every open figure on the way in and on the way out,
+    which is what keeps a figure built under one canvas from being measured
+    under another.
+
+    Example::
+
+        with _using_backend("svg"):
+            ...
+    """
+    previous = matplotlib.get_backend()
+    matplotlib.use(name, force=True)
+    try:
+        yield
+    finally:
+        matplotlib.use(previous, force=True)
+
+
+@pytest.mark.parametrize("backend", _RENDERERLESS_BACKENDS)
+def test_the_builder_runs_on_a_canvas_without_get_renderer(backend):
+    """THE 1.5.6 DEFECT, AS AN ASSERTION.
+
+    ``build_readiness_breakdown_figure`` must not require its canvas to
+    provide ``get_renderer``. Against 111541f every parametrisation of this
+    test fails with::
+
+        AttributeError: 'FigureCanvasSVG' object has no attribute 'get_renderer'
+
+    which is the same sentence the live app raised, with a different class
+    name in front of it.
+    """
+    with _using_backend(backend):
+        canvas_cls = None
+        for name, scores in _CANVAS_SHAPES:
+            fig, ax, parts = build_readiness_breakdown_figure(scores)
+            try:
+                canvas_cls = type(fig.canvas)
+                # The premise, asserted rather than assumed: this really is a
+                # canvas with no ``get_renderer``. If matplotlib ever grows
+                # one on these classes the test would otherwise go quietly
+                # vacuous -- passing because the defect cannot occur here,
+                # while reporting that it cannot occur anywhere.
+                assert not hasattr(canvas_cls, "get_renderer"), (
+                    f"{canvas_cls.__name__} now provides get_renderer, so "
+                    f"backend {backend!r} no longer exercises the defect. "
+                    "Find a canvas that still does, or this parametrisation "
+                    "is measuring nothing."
+                )
+            finally:
+                plt.close(fig)
+        assert canvas_cls is not None
+
+
+@pytest.mark.parametrize("backend", _METRIC_BACKENDS)
+def test_reserved_headroom_holds_on_every_canvas_with_real_text_metrics(backend):
+    """The measurement loop must still SOLVE, not merely not-crash.
+
+    Removing the backend assumption would be worth little if the annotation
+    then landed on a bar. The loop's whole justification is that the
+    annotation's height in data units depends on the y-limit being chosen, so
+    it is solved by measuring rather than assumed -- and that has to remain
+    true on a canvas whose default dpi is 72 rather than Agg's 100.
+    """
+    with _using_backend(backend):
+        for name, scores in _CANVAS_SHAPES:
+            fig, ax, parts = build_readiness_breakdown_figure(scores)
+            try:
+                fig.draw_without_rendering()
+                ann = parts["annotation"].get_window_extent()
+                hits = [
+                    f"value label {t.get_text()!r}"
+                    for t in parts["value_labels"]
+                    if _overlap(ann, t.get_window_extent())
+                ] + [
+                    f"bar {i} ({p.get_width():.1f})"
+                    for i, p in enumerate(parts["bars"].patches)
+                    if _overlap(ann, p.get_window_extent())
+                ]
+                assert not hits, (
+                    f"[{backend} / {name}] the disclaimer is overprinted on a "
+                    f"canvas this gate did not choose: {hits}"
+                )
+            finally:
+                plt.close(fig)
+
+
+def test_the_module_never_asks_the_canvas_for_a_renderer():
+    """The assumption, forbidden structurally so it cannot come back.
+
+    NOT A STRING SEARCH FOR THE WORD. This walks the parsed module and looks
+    for an ATTRIBUTE ACCESS named ``get_renderer`` on anything, which is the
+    operation that was unsafe -- so it catches ``fig.canvas.get_renderer()``,
+    ``self.canvas.get_renderer``, and a rename of the local variable, none of
+    which a grep for the call site would survive.
+
+    ``Figure.draw_without_rendering()`` is the supported way to get the same
+    thing: it calls matplotlib's own backend-agnostic ``_get_renderer``
+    helper and works on every canvas measured above.
+    """
+    import ast as _ast
+
+    module = _REPO_ROOT / "streamlit_app" / "readiness_chart.py"
+    tree = _ast.parse(module.read_text(), filename=str(module))
+    offenders = [
+        node.lineno for node in _ast.walk(tree)
+        if isinstance(node, _ast.Attribute) and node.attr == "get_renderer"
+    ]
+    assert not offenders, (
+        f"{module.name} asks a canvas for a renderer at line(s) {offenders}. "
+        "get_renderer is not part of matplotlib's public FigureCanvasBase "
+        "API -- it is supplied by particular backends, and the live app "
+        "raised AttributeError on a canvas that does not supply it. Call "
+        "fig.draw_without_rendering() and then artist.get_window_extent() "
+        "with no renderer argument."
     )
