@@ -277,7 +277,22 @@ MARKER_EXPR = "not wheel"
 #: run this round regardless, so no unmeasured number is being accommodated.
 #: Band width is 30, inside the 40 that
 #: test_max_sdist_skips_is_bounded_from_ABOVE_as_well enforces.
-MAX_SDIST_SKIPS = 49
+#: 1.5.5 AUDIT CLOSE: 49 -> 57, MEASURED. The close adds four gates that read
+#: trees MANIFEST.in prunes -- examples/, docs/, scripts/ -- so each skips in
+#: the tarball, and the sdist skip count went 49 -> 57. Every one is the
+#: environment class already enumerated above, not a new one:
+#:
+#:     4  test_examples_execute       runs the three example notebooks
+#:     2  test_documented_keys        the notebook column-selector gate
+#:     1  test_application_round      the widened CY2025 sweep
+#:     1  test_application_round      the N2 Excel scope assertion (reads
+#:                                    nmtcapp/ source)
+#:
+#: Derived twice from real sdist builds, not extrapolated: 1,590 collected,
+#: 57 skipped, 1,533 executed, and the tarball green. Band [760, 795], width
+#: 35, inside the 40 the bound below permits -- so raising it has not made
+#: FLOOR meaningfully harder to falsify.
+MAX_SDIST_SKIPS = 57
 
 _FLOOR_RE = re.compile(r"^\s*FLOOR=(\d+)\s*$", re.MULTILINE)
 _COLLECTED_RE = re.compile(r"(\d+)(?:/\d+)? tests? collected")
@@ -427,7 +442,7 @@ def test_max_sdist_skips_is_bounded_from_ABOVE_as_well(collected_count):
 
 #: The number of test MODULES this release adds, as claimed in the comment
 #: above. Re-derived from the tree by the gate below rather than trusted.
-CLAIMED_NEW_TEST_MODULES = 22
+CLAIMED_NEW_TEST_MODULES = 23
 
 
 def test_the_module_count_in_this_comment_matches_the_tree():

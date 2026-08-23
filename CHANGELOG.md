@@ -310,8 +310,226 @@ runs unconditionally and is what actually holds the rule. Raising a ceiling to
 admit a number nobody re-measured is the 40 → 20 → 24 → 28 → 40 history that
 bound exists to stop.
 
+### Audit close — B1–B5, N2, and three defects the audit did not reach
+
+A read-only hostile audit of this release returned **SHIP-AFTER-FIX**. It
+confirmed the release good and found that **one defect this release is named
+for was still shipping in the project's own documented examples**, and that
+**two gates could not see the defects they are named for**. All five blockers
+are closed below. The library is **byte-identical** to the pre-close tree —
+`git diff` over `nmtcapp/` is empty — so nothing here can move a score, and the
+A/B was re-run anyway: round set vs unset, and the Streamlit upload path before
+vs after, both identical across every sub-score, both aggregates, the tier, the
+readiness composite and all six components.
+
+**B1 — `CY2025` was still live in both example notebooks.** `examples/01_quickstart`
+and `examples/02_full_application_walkthrough` both still built the Application
+with `application_round="CY2025"`, and 02 goes on to call `generate()`.
+`README.md` links both as the front door. The sweep that removed the literal
+walked `nmtcapp/` and `streamlit_app/` and nothing else. **The argument is
+omitted rather than replaced** — the release's own ruling is that swapping a
+false claim for an unverified one is not a fix, and omitting it makes the
+front-door example *demonstrate* the disclosure the release added. It also
+matches what `README.md` and every page under `docs/` already do. Executed
+after the change, the generated document now reads:
+
+> `Application Round: not specified — CDE to state`
+> `Riverbend Community Capital CDE, LLC respectfully requests $65.0MM in New`
+> `Markets Tax Credit allocation. Our 20-project pipeline spans 19 states...`
+> `Riverbend Community Capital CDE, LLC targets an NMTC allocation award.`
+> `Application round: not specified — CDE to state.`
+
+The narrative clause **disappears** rather than degrading, which is what T1 said
+it would do. The sweep now also covers `examples/`, `docs/`, `scripts/` and
+`README.md`, **AST-parsed rather than grepped**: notebook code cells are parsed
+the way a module is, so a comment recording the defect survives and a live
+literal does not. All nine code cells across the three notebooks parse cleanly.
+Docs and README are swept at their **fenced code blocks only** — two docs pages
+explain the defect by naming the round, and a sweep that reddened on those would
+forbid documenting the bug it prevents. Proved RED against `c5f546b`: both
+notebooks named, both cell numbers. The whole-tree round-token sweep was
+re-verified rather than inherited and is otherwise clean; `CY2026_ANNOUNCEMENT_URL`
+is a constant NAME and `CY 2022` a docstring reference, neither a round
+assertion, and neither was in the audit's taxonomy.
+
+**B1+ — and executing the notebooks found three more, in all three of them.**
+None is related to the round; none was visible to any gate here.
+
+  1. `02` cell 14 raised `KeyError: "['Sector (NAICS)'] not in index"`. The
+     column became "Sector (as supplied)" in `ad2c7ba` (2026-08-14) because the
+     tool was inventing the NAICS code it filed. The rename was right; the
+     notebook was not part of it. **Broken for four releases.**
+  2. `03` cell 1 raised `ImportError` on `TOP_TIER_AGGREGATE_MIN` /
+     `TOP_TIER_SECTION_MIN`, renamed to `HOUSE_*` in 1.2.2 so the name would
+     carry the provenance. That rename's own note says a rename "breaks every
+     consumer at import time, which is the only way to guarantee no
+     interpolated surface kept the old wording" — and nothing was watching this
+     consumer.
+  3. `03` cells 5 and 12 raised `TypeError` on `None`. **This is this release's
+     own disclosure mechanism crashing the documented example:** when the
+     eligibility dataset does not load the distress sub-scores are WITHDRAWN
+     rather than defaulted, and the section maximum shrinks 50 → 25. The
+     notebook formatted them with `f"{v:5.1f}"` and subtracted them, and printed
+     "/ 50" for a section whose maximum was 25. It now renders `n/a` and reads
+     the denominator off the score, as `WinProbabilityScore.summary()` does.
+
+`tests/test_documented_keys.py` was widened for (1): its Detector A resolves
+`root["literal"]` and could not see `cols = [...]` then `df[cols]`. Subscripts
+are now bound to the `build_*` call that produced the frame, so a stale column
+is compared against **that builder's** own live column set. Not a shape
+heuristic — the first draft was, filtering to literals containing a space, and
+its own self-check falsified it immediately (`City`, `State`, `Sector`, `Notes`,
+`OZ`, `HMR` are all real columns). `tests/test_examples_execute.py` is new and
+**runs all three notebooks**, which is the only mechanism that catches (3): the
+keys all exist, the types are right wherever the dataset loads, and the defect
+is a *value*. It costs 8.5 s.
+
+**B2 — the geometry gate protected a module the page need not use.** Reverting
+`pages/1_Pipeline_Analyzer.py` to the 1.5.4 inline chart and leaving
+`readiness_chart.py` untouched left **the entire suite green** — re-measured
+here, 1,561 passed, nothing detected it. The only page-side check asserted that
+one substring was absent, and the 1.5.4 chart contains no such string either.
+The new gate is a **data-flow assertion on the parsed page**: whatever is read
+out of `.component_scores` may reach `build_readiness_breakdown_figure`, may be
+tested for emptiness, and may go nowhere else. The audit's mutation fails it at
+`breakdown.items()` — before it ever reaches `plt.subplots` — so the gate does
+not depend on recognising the shape of the replacement. Not a string search:
+the last three attempts at a page gate here were satisfiable by a comment.
+**The other pages were checked the same way and this time there was no second
+instance** — pages 2 and 4 draw no charts, page 3 is Plotly, page 1 is the only
+reader of `component_scores` — and that is now measured on every run rather
+than asserted once.
+
+**B3 — the twin gate's rendered half was dead.** It was guarded by
+`if BUSINESS_STRATEGY_MAX != COMMUNITY_OUTCOMES_MAX`, false today and on every
+run this package has ever had, so three indented assertions never executed. The
+audit's mutation (b) — printing Community Outcomes over `BUSINESS_STRATEGY_MAX`
+— is **byte-identical**, confirmed by sha256 across all three branches, and the
+full suite ran green on it. The maxima are now **re-based at runtime** so the
+two disagree and the mismatch becomes visible, in both directions, over four
+score shapes: eight parametrisations, all eight RED under mutation (b). It
+carries a proof-of-life assertion, because a re-base that stopped reaching the
+rendered text would turn every "not in" green again.
+
+**B4 — the Streamlit app overwrote a user's own stated round.**
+`application_round=SAMPLE_APPLICATION_ROUND` sat outside the `if effective_demo`
+branch, so a real upload had "CY 2026" asserted onto every generated document —
+the exact trade `core/application_round` rules out. **Two decisions.** (1) The
+default is gated on `effective_demo`; the demo is a fictional worked example and
+may state its own round. (2) A round the CDE supplies in the CDE Profile sheet
+is **honoured**, not disclosed-as-unread. It is *not* deliberately an identity
+field: `_IDENTITY_KEYS` says its members "describe WHO the CDE is", and a round
+is what the CDE is filing *into*. The strip is right for the destination it
+guards — `cde.extra` is a scoring bag — and the defect was that nothing then
+routed the value to the `Application`. `test_application_round`'s own header
+already states the intended contract. Blank and whitespace cells reach the
+disclosure, not a guess. Six tests, proved RED against `c5f546b`.
+
+**B5 — the geometry gate's scope limit described a pipeline that does not run.**
+It said Streamlit "rescales the figure to the container width". It does not:
+`streamlit/elements/pyplot.py` sets `{"bbox_inches": "tight", "dpi": 200,
+"format": "png"}` and calls `fig.savefig`. Re-derived here over the same spread:
+
+```
+gate      (dpi 100, draw)              : 38 shapes, 0 collisions, min clearance 10.26 px
+STREAMLIT (dpi 200, bbox_inches=tight) : 38 shapes, 0 collisions, min clearance 22.51 px
+```
+
+**The audit's "exactly 2×" is refuted.** The ratio is **2.195**, and the
+difference is not noise: layout scales linearly with dpi but text extents do
+not, because font hinting makes a glyph box sub-linear — the annotation's own
+box scales 1.928 in height and 1.948 in width — so the gap opens by more than
+the dpi factor. `bbox_inches="tight"` contributes nothing; it is a crop, and the
+relative geometry is identical with and without it, measured both ways. The
+conclusion transfers, and now transfers as a measurement. Both lines are
+re-derived by code in the module rather than remembered, and the claim that the
+served pipeline is the slacker of the two is an assertion. **The residual is
+closed too:** the dense sweep was hardcoded to `range(60, 101, 2)` while the
+annotation tracks `GRADE_THRESHOLDS["B"]`; it is derived from the threshold now,
+reproduces 60..100 exactly at B = 70, and a new test asserts the sweep still
+brackets the cut. At B = 45 the old literal does not bracket and the derived one
+does.
+
+**N2 — done, and the audit's premise for it is refuted.** The waiver for
+`ROUND_UNSPECIFIED_STANDALONE` claimed "the same cover" as
+`ROUND_UNSPECIFIED_VALUE`. It did not have it: `_VALUE` is asserted against
+rendered Markdown and the CLI summary, and `_STANDALONE` had no rendered
+assertion at all. But the audit's stated ground — that *nothing renders Excel,
+Word or PDF without a round anywhere in the suite* — is **false**.
+`test_invariant_output.py` builds `Application(cde, requested)` with no round
+and renders all four formats across four disjoint scenarios, and
+`invariant_allowlist.txt` line 105 classifies the resulting sub-header, so a
+dead-entry check did give indirect cover. Both Excel sites are now asserted
+directly, the waiver text is corrected to say what actually covers what, and the
+scope claim ("Excel and nowhere else") is itself asserted.
+
+**`FLOOR` and the skip ceiling — re-derived the long way, twice.** Built the
+sdist from a pristine clone with no egg-info, installed the tarball with
+`[dev]` into a clean 3.12.13 venv, copied only `tests/`, `streamlit_app/`,
+`README.md` and `pyproject.toml` out of it into a directory with **no
+`nmtcapp/`**, confirmed `import nmtcapp` resolved to site-packages, and read
+the junit report with the release job's own formula:
+
+```
+collected under -m "not wheel" 1,590
+skipped in the sdist             -57
+EXECUTED                       1,533
+half                             766.5
+rounded down                     760
+```
+
+`FLOOR` 750 → **760**; the gate went red on 750 before the file was opened, the
+fifth consecutive round caught by a check rather than by somebody re-reading
+the comment. **The tarball ran clean on that build: 1,533 passed, 57 skipped,
+zero failures.** `MAX_SDIST_SKIPS` 49 → **57**, and it is the measurement that
+moved it: all eight new skips are gates reading `examples/`, `docs/` or
+`scripts/`, every one of which MANIFEST.in prunes. Band [760, 795], 35 wide,
+inside the 40 the upper bound permits. **The skip increase was raised for a
+decision before the ceiling was touched, not after.**
+
+**Building the sdist found a defect in this round's own new module**, which is
+why the derivation is done by hand. `test_examples_execute` parametrised over
+`os.listdir(examples/)` and therefore collected three cases in a checkout and
+none in the tarball — an environment-dependent collection count, which
+`test_test_count_claims` cannot live with, because there is then no single
+number to publish. Named tuple now; each case skips in the tarball instead of
+vanishing from it. Invisible from a checkout.
+
+**The enforcement gap, recorded and not fixed here (as instructed).**
+`MAX_SDIST_SKIPS` bounds the *constant* from both sides —
+`test_max_sdist_skips_is_bounded_from_ABOVE_as_well` caps the band it opens —
+but **nothing compares the MEASURED skip count against it.** The release job
+prints the skip breakdown and never asserts on the total, and the constant's
+only consumer is the FLOOR band. So a future round can drift past 57 with every
+gate green, exactly as this one drifted past 49 and was caught only because
+somebody built the tarball. The fix is a `-gt MAX_SDIST_SKIPS` assertion in the
+job's junit step, which needs the constant readable from the workflow; that is
+a change to the release pipeline and is left for its own review.
+
 ### Recorded, not fixed
 
+- **The CDE Profile sheet's "Requested Allocation ($M)" is discarded the same
+  way the round was.** It is parsed to `requested_allocation_millions`,
+  stripped by `_scoring_attrs_only` as an identity key, and
+  `get_or_create_app` then hard-codes `requested_allocation=65_000_000` for
+  uploads as well as for the demo. **Same defect class as B4**, one field over:
+  the template asks a CDE for a fact about its own filing and renders its own
+  number instead. Not fixed here because it moves a money figure on every
+  rendered surface, which is a behavioural change deserving its own review
+  rather than a ride on a round fix.
+- **`streamlit_app/pages/1_Pipeline_Analyzer.py` imports `GRADE_THRESHOLDS`
+  and never uses it.** The only remaining occurrence is inside a comment; the
+  live uses left with the chart when it moved to `readiness_chart.py`.
+  Harmless, and recorded because an unused import of a constant this package
+  gates twins on is the sort of thing a later reader takes for a live
+  dependency.
+- **A notebook-execution gate is now the only thing standing between the
+  reader and the `examples/` defect class**, and its cost is 8.5 s. Three of
+  the three defects found there this round were invisible to every static
+  gate in the suite, and one of them — the withdrawn-sub-score `TypeError` —
+  is invisible to any static gate that could be written, because the keys all
+  exist and the failure is a value. Stated so the next person to weigh
+  deleting it for speed knows what it is holding.
 - **MkDocs 2.0 — checked, and the answer is the bad one.** `[docs]` declares
   `mkdocs>=1.5` and `mkdocs-material>=9.0`, both **with no upper bound**. So the
   docs build is *fully* exposed: the next `pip install .[docs]` after MkDocs 2.0

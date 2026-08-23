@@ -858,7 +858,54 @@ jobs:
           # holds the rule. The sdist is back to 49 and the stated ceiling is
           # true again. Raising a ceiling to admit a number nobody re-measured
           # is the 40 -> 20 -> 24 -> 28 -> 40 history this file exists to stop.
-          FLOOR=750
+          # RE-DERIVED IN THE 1.5.5 AUDIT CLOSE, AND THE GATE ANNOUNCED IT A
+          # FIFTH TIME. test_release_floor_is_derived_from_the_current_suite
+          # went red on FLOOR=750 before this file was opened. The close adds
+          # one test module (tests/test_examples_execute.py, which RUNS the
+          # three example notebooks) and tests across five existing ones.
+          #
+          # Derived from a REAL SDIST BUILD with this job's exact invocation:
+          # pristine clone with no egg-info, `python -m build --sdist`, the
+          # tarball installed with [dev] into a fresh 3.12.13 venv, ONLY
+          # tests/, streamlit_app/, README.md and pyproject.toml copied out of
+          # it into a directory with NO nmtcapp/, `import nmtcapp` confirmed to
+          # resolve to site-packages, and the breakdown read off the junit
+          # report rather than off the terminal:
+          #
+          #     collected under -m "not wheel" 1,590
+          #     skipped in the sdist             -57
+          #     EXECUTED                       1,533
+          #     half                             766.5
+          #     rounded down                     760
+          #
+          # The tarball ran CLEAN on that build: 1,533 passed, 57 skipped, 1
+          # deselected, zero failures.
+          #
+          # MAX_SDIST_SKIPS GOES 49 -> 57, AND IT IS THE MEASUREMENT THAT MOVED
+          # IT, NOT THE FLOOR. All eight new skips are one class -- gates that
+          # read examples/, docs/ or scripts/, every one of which MANIFEST.in
+          # prunes: four in test_examples_execute, two in test_documented_keys
+          # (the notebook column gate), one in test_application_round (the
+          # widened CY2025 sweep) and one more in test_application_round (the
+          # N2 scope assertion, which walks nmtcapp/ source). The note above
+          # said "The NEXT gate that reads docs/ or nmtcapp/ will overtake it,
+          # and the correct response then is another sdist build, not another
+          # increment." Four such gates arrived at once; the build was done,
+          # twice, and this is what it measured. The resulting band is
+          # [760, 795] -- 35 wide, inside the 40 that
+          # test_max_sdist_skips_is_bounded_from_ABOVE_as_well permits, so the
+          # ceiling has NOT been widened to the point of disarming FLOOR.
+          #
+          # AND BUILDING THE SDIST FOUND A DEFECT IN THE NEW MODULE, which is
+          # again the reason this is done by hand. test_examples_execute
+          # parametrised over `os.listdir(examples/)`, so it collected three
+          # cases in a checkout and none in the tarball -- an
+          # ENVIRONMENT-DEPENDENT COLLECTION COUNT, which
+          # tests/test_test_count_claims.py cannot live with, because there is
+          # then no single number to publish. It is parametrised over a named
+          # tuple now and each case skips in the tarball instead of vanishing
+          # from it. Invisible from a checkout.
+          FLOOR=760
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()

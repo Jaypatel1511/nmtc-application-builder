@@ -14,7 +14,10 @@ import streamlit as st
 from nmtcapp.core.application import Application
 from nmtcapp.core.cde import CDEProfile
 from nmtcapp.core.pipeline import Pipeline
-from nmtcapp.core.application_round import round_label  # noqa: F401  (re-exported)
+from nmtcapp.core.application_round import (  # noqa: F401  (round_label re-exported)
+    is_round_specified,
+    round_label,
+)
 from nmtcapp.renderers._round_provenance import UPCOMING_ROUND
 
 #: The round the FICTIONAL sample CDE is filing into.
@@ -118,6 +121,30 @@ _IDENTITY_KEYS = frozenset({
 })
 
 
+def _supplied_round(cde_extra: dict | None) -> str | None:
+    """The round off an uploaded CDE Profile sheet, or None if it was blank.
+
+    WHY THIS EXISTS SEPARATELY FROM ``_scoring_attrs_only`` (1.5.5 audit B4).
+    ``application_round`` is correctly stripped from the dict that merges into
+    ``cde.extra`` — that dict is a SCORING-ATTRIBUTE bag and a round is not a
+    scoring attribute; it moves no score. The defect was that stripping it
+    from the wrong destination was mistaken for discarding it, so a round the
+    CDE typed into the template's own "Application Round" cell was replaced by
+    the tool's assertion. It has a right destination: ``Application``.
+
+    A blank or whitespace cell is NOT an answer. ``is_round_specified`` is the
+    same predicate the renderers use, so an untouched cell reaches the same
+    disclosure as an omitted argument rather than rendering an empty round.
+
+    Example::
+
+        _supplied_round({"application_round": "CY 2027"})   # -> 'CY 2027'
+        _supplied_round({"application_round": "  "})        # -> None
+    """
+    value = (cde_extra or {}).get("application_round")
+    return value.strip() if is_round_specified(value) else None
+
+
 def _scoring_attrs_only(cde_extra: dict, is_demo: bool) -> dict:
     """Strip identity keys and blanks from a parsed CDE Profile sheet.
 
@@ -163,6 +190,8 @@ def get_or_create_app(
             so the Win Alignment Scorer automatically picks them up.
     """
     creating_new = "app" not in st.session_state or pipeline is not None
+    # Read before _scoring_attrs_only() below rebinds cde_extra without it.
+    supplied_round = _supplied_round(cde_extra)
     if creating_new:
         effective_demo = is_demo if is_demo is not None else pipeline is None
         if effective_demo:
@@ -201,8 +230,17 @@ def get_or_create_app(
             cde_extra = _scoring_attrs_only(cde_extra, effective_demo)
             cde.extra = {**cde.extra, **cde_extra}
         p = pipeline if pipeline is not None else Pipeline.sample(n=20)
+        # THE ROUND IS GATED ON effective_demo (1.5.5 audit B4). This line
+        # applied SAMPLE_APPLICATION_ROUND unconditionally, so a real upload
+        # got "CY 2026" asserted onto every generated document. That is the
+        # trade core/application_round rules out in as many words: it swaps a
+        # false claim for an unverified one. The demo is a fictional worked
+        # example and may state its own round; an upload's round is the
+        # uploader's fact, honoured when supplied and DISCLOSED when not.
         app = Application(cde=cde, requested_allocation=65_000_000,
-                          application_round=SAMPLE_APPLICATION_ROUND)
+                          application_round=(
+                              SAMPLE_APPLICATION_ROUND if effective_demo
+                              else supplied_round))
         app.add_pipeline(p)
         st.session_state["app"] = app
         st.session_state["is_demo_data"] = effective_demo
@@ -214,6 +252,13 @@ def get_or_create_app(
         }
         if "is_demo_data" not in st.session_state:
             st.session_state["is_demo_data"] = True
+        # A CDE that uploads its pipeline first and its CDE Profile second
+        # arrives here. The round on that second sheet is the same fact off
+        # the same cell and is honoured the same way -- except on the demo,
+        # whose round is the fixture's own and is not user-overridable
+        # through this side door.
+        if supplied_round and not st.session_state.get("is_demo_data", True):
+            st.session_state["app"].application_round = supplied_round
     elif "is_demo_data" not in st.session_state:
         st.session_state["is_demo_data"] = True
     return st.session_state["app"]
