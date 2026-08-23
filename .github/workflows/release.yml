@@ -707,7 +707,19 @@ jobs:
           # CLAIMED_NEW_TEST_MODULES does not move either.
           #
           # MAX_SDIST_SKIPS STAYS 45, AND THE 43 IS RE-MEASURED RATHER THAN
-          # INHERITED -- headroom is still two, for the third release running.
+          # INHERITED -- headroom was two AS OF 1.5.2, which is when this
+          # paragraph was written.
+          #
+          #   ⚠️  CORRECTED IN 1.5.5 B7c -- THIS SENTENCE WENT STALE AND WAS
+          #   READ AS PRESENT TENSE FOR THREE RELEASES. It originally said
+          #   "headroom is still two, for the third release running". That has
+          #   been FALSE since 1.5.4: the ceiling is now 57 and the measured
+          #   sdist skip count is also 57, so HEADROOM IS ZERO. See the 1.5.5
+          #   derivation at the bottom of this block. A hand-typed claim about
+          #   a MEASURED quantity, gone stale, inside the file whose entire
+          #   subject is hand-typed counts going stale -- recorded as its own
+          #   defect rather than quietly overwritten.
+          #
           # The 1.5.2 audit reported 29 skips here and could not reconcile it;
           # the difference is environmental and is the same trap this figure
           # has always carried. A venv missing matplotlib, reportlab,
@@ -936,37 +948,49 @@ jobs:
           # sdist. The ceiling has NOT been raised to absorb a new skip. The
           # resulting band is [770, 803].
           #
-          # 1.5.5 B7b -- RE-DERIVED THE LONG WAY A FIFTH TIME, AND FLOOR DOES
-          # NOT MOVE. B7b adds one test module (five parametrised cases), so
-          # the collected count rises and the band's UPPER bound moves with it;
-          # the floor itself is unchanged. Same procedure as above, on 3.12,
-          # against 21d31e1:
+          # 1.5.5 B7b -- RE-DERIVED THE LONG WAY A SIXTH TIME, AND FLOOR DOES
+          # NOT MOVE. B7b's SCOPE WAS NARROWED after the first derivation: the
+          # gate went from five parametrised cases to two, and the upper bounds
+          # it had forced onto reportlab, python-docx, openpyxl and matplotlib
+          # were REVERTED (they reached users through [pdf]/[word]/[excel]/
+          # [viz]/[output]/[docs]; pypdf's does not, being [dev]-only). So the
+          # collected count FALLS by three and the band's upper bound moves
+          # with it; the floor itself is unchanged. Re-derived rather than
+          # adjusted, same procedure as above, on 3.12.13:
           #
-          #     collected under -m "not wheel" 1,611
+          #     collected under -m "not wheel" 1,608
           #     skipped in the sdist             -57
-          #     EXECUTED                       1,554
-          #     half                             777.0
+          #     EXECUTED                       1,551
+          #     half                             775.5
           #     rounded down                     770
           #
-          # The tarball ran CLEAN: 1,554 passed, 57 skipped, 1 deselected, zero
-          # failures. The resulting band is [770, 805], width 35.
+          # The tarball ran CLEAN: 1,551 passed, 57 skipped, 1 deselected, zero
+          # failures. The resulting band is [770, 804], width 34.
           #
           # MAX_SDIST_SKIPS DOES NOT MOVE AND WAS NOT TOUCHED. The same run
           # skipped exactly 57 -- the value the constant already carries, and
-          # the same 57 the 1.5.4 derivation measured. ALL FIVE of B7b's cases
-          # EXECUTE in the sdist: the gate reads pyproject.toml, which the job
-          # copies out of the tarball, so it has nothing to skip on. THIS ROUND
-          # ADDS NO SKIP.
+          # the same 57 the 1.5.4 derivation measured. BOTH of the gate's cases
+          # EXECUTE in the sdist -- read off the junit report, not assumed: the
+          # gate reads pyproject.toml, which the job copies out of the tarball,
+          # so it has nothing to skip on. THIS ROUND ADDS NO SKIP.
           #
           # STATED BECAUSE IT IS NOT VISIBLE FROM THE NUMBER ALONE: measured
           # skips (57) now EQUAL the ceiling (57), so headroom is ZERO -- and
           # it was already zero at the 1.5.4 derivation, which measured 57
-          # against the same 57. The prose two screens up still says "headroom
-          # is still two", which was true at 1.5.2 and is not true now. The
-          # next round that adds a single skipping case breaches the ceiling.
-          # NOT RAISED HERE, deliberately: raising it is the move this bound
-          # exists to make somebody defend, and B7b's scope is dependency
-          # bounds. Recorded for whoever opens this file next.
+          # against the same 57. The stale "headroom is still two" prose two
+          # screens up HAS NOW BEEN CORRECTED IN PLACE rather than left to be
+          # re-read as present tense a fourth time. The next round that adds a
+          # single skipping case breaches the ceiling. NOT RAISED HERE,
+          # deliberately: raising it is the move this bound exists to make
+          # somebody defend, and this round's scope is REMOVING dependency
+          # bounds, not buying room. Recorded for whoever opens this file next.
+          #
+          # AND STILL OPEN, RECORDED A THIRD TIME: NOTHING MACHINE-ENFORCES THE
+          # MEASURED SKIP COUNT AGAINST THIS CONSTANT. test_small_claims bounds
+          # the CONSTANT (by the number of modules structurally capable of
+          # skipping); nothing compares the MEASUREMENT above to it. That gate
+          # is not added here because it would be RED ON ARRIVAL -- 57 against
+          # 57 leaves no room -- and landing a red gate is not this round's job.
           FLOOR=770
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
