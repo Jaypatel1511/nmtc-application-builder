@@ -244,3 +244,116 @@ def test_a_later_cde_upload_cannot_put_a_round_on_the_demo():
     get_or_create_app()  # demo
     app = get_or_create_app(cde_extra={"application_round": "CY 2027"})
     assert app.application_round == SAMPLE_APPLICATION_ROUND
+
+
+# ---------------------------------------------------------------------------
+# THE ALLOCATION A CDE REQUESTS IS THE CDE'S FACT — AT THE STREAMLIT BOUNDARY
+# TOO (1.5.5 audit B6)
+# ---------------------------------------------------------------------------
+#
+# THE DEFECT, WHICH B4 ABOVE RECORDED AND DEFERRED IN AS MANY WORDS: "the same
+# sheet's 'Requested Allocation ($M)' is discarded by the identical mechanism
+# -- parsed to ``requested_allocation_millions``, stripped by
+# ``_scoring_attrs_only``, and then ``get_or_create_app`` hard-codes
+# ``requested_allocation=65_000_000`` for uploads as well as for the demo."
+#
+# WHY IT IS "HONOUR" AND NOT "DISCLOSE", ON THE SAME REASONING AS THE ROUND:
+# the blank template's CDE Profile sheet ASKS for it, in column 10 of the
+# header row, labelled "Requested Allocation ($M)". A tool that asks a CDE for
+# a money figure about its own application and then asserts a different one is
+# doing the thing this release exists to stop. The strip is still right --
+# ``cde.extra`` is a scoring-attribute bag -- and the defect was, again, that
+# nothing routed the value to its real destination, ``Application``.
+#
+# THE UNITS ARE THE TRAP AND THE TEMPLATE SETTLES THEM. The label says ($M),
+# the shipped sample workbook states ``65`` in that cell, and the Pipeline
+# sheet's "QEI ($M)" / "Total Cost ($M)" columns use the identical convention
+# and are already multiplied by 1_000_000 by ``_XLSX_MILLIONS_COLS``. So the
+# cell is MILLIONS and a stated 42 is $42,000,000. A user who instead types
+# 65000000 into a ($M) cell has made a unit error worth $65 trillion; that is
+# DISCLOSED, never coerced to 65, because guessing which unit they meant is
+# the substitution this release refuses.
+
+from nmtcapp.renderers._cell_format import NOT_SUPPLIED_INPUT  # noqa: E402
+from utils import fmt_millions, requested_allocation_label  # noqa: E402
+
+
+def test_an_upload_that_states_its_allocation_has_it_honoured():
+    """The B6 route. RED against e4c6586, which answers 65_000_000."""
+    app = get_or_create_app(
+        pipeline=_uploaded_pipeline(),
+        is_demo=False,
+        cde_extra={"requested_allocation_millions": "42", "dbc_focus_years": 4},
+    )
+    assert app.requested_allocation == 42_000_000, (
+        f"the CDE Profile sheet said 42 in a cell labelled 'Requested "
+        f"Allocation ($M)' and the tool asserted "
+        f"${app.requested_allocation:,.0f} instead. A money figure about the "
+        "user's own application that the user did not state is the defect "
+        "class this release exists to remove."
+    )
+    # ...and it still must not reach the scoring bag.
+    assert "requested_allocation_millions" not in app.cde.extra
+    assert app.cde.extra["dbc_focus_years"] == 4
+
+
+def test_the_stated_allocation_renders_as_the_amount_the_cde_stated():
+    """THE UNITS GATE. ($M) is millions: a stated 42 renders as $42.0M."""
+    app = get_or_create_app(
+        pipeline=_uploaded_pipeline(),
+        is_demo=False,
+        cde_extra={"requested_allocation_millions": 42},
+    )
+    assert fmt_millions(app.requested_allocation) == "$42.0M"
+    assert requested_allocation_label(app.requested_allocation) == "$42.0M"
+
+
+def test_an_upload_that_states_no_allocation_is_not_given_one():
+    """No CDE Profile sheet at all -- the commonest upload. Disclose, never assert."""
+    app = get_or_create_app(pipeline=_uploaded_pipeline(), is_demo=False)
+    assert requested_allocation_label(app.requested_allocation) == NOT_SUPPLIED_INPUT, (
+        "an upload that never stated an allocation had one rendered for it. "
+        "Application requires a positive number, so the Streamlit layer still "
+        "holds a placeholder -- but a placeholder that reaches a surface is a "
+        "claim, and this is the surface."
+    )
+    assert "$" not in requested_allocation_label(app.requested_allocation)
+
+
+@pytest.mark.parametrize(
+    "cell",
+    ["", "   ", None, 0, "0", -5, "-5", "sixty-five", "65000000", 5001, float("nan")],
+)
+def test_an_unusable_allocation_cell_discloses_rather_than_coercing(cell):
+    """Blank, zero, negative, non-numeric, and out-of-range all disclose.
+
+    ``65000000`` is the unit trap: read as millions it is $65 trillion, and
+    "they obviously meant 65" is a guess. 5001 exceeds the entire $5 billion
+    single-round national allocation authority the package documents, so it
+    cannot be a request either.
+    """
+    app = get_or_create_app(
+        pipeline=_uploaded_pipeline(),
+        is_demo=False,
+        cde_extra={"requested_allocation_millions": cell},
+    )
+    assert requested_allocation_label(app.requested_allocation) == NOT_SUPPLIED_INPUT, (
+        f"the cell held {cell!r} and the tool rendered a figure anyway. A "
+        "wrong allocation is worse than a disclosed absent one."
+    )
+
+
+def test_the_demo_still_states_its_own_allocation():
+    """The fixture may state its own fact; only the DEFAULT was the defect."""
+    app = get_or_create_app()  # no pipeline -> demo
+    assert app.requested_allocation == 65_000_000
+    assert requested_allocation_label(app.requested_allocation) == "$65.0M"
+    assert st.session_state["is_demo_data"] is True
+
+
+def test_an_allocation_supplied_on_a_later_cde_upload_is_honoured_too():
+    """The re-supply branch reads the same fact off the same cell."""
+    get_or_create_app(pipeline=_uploaded_pipeline(), is_demo=False)
+    app = get_or_create_app(cde_extra={"requested_allocation_millions": "42"})
+    assert app.requested_allocation == 42_000_000
+    assert requested_allocation_label(app.requested_allocation) == "$42.0M"

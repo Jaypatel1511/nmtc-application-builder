@@ -506,17 +506,121 @@ somebody built the tarball. The fix is a `-gt MAX_SDIST_SKIPS` assertion in the
 job's junit step, which needs the constant readable from the workflow; that is
 a change to the release pipeline and is left for its own review.
 
+### B6 — the allocation the CDE states, and the tool replaces
+
+**The B4 diagnosis, applied verbatim to the key on the adjacent line of the
+same frozenset.** `_IDENTITY_KEYS` declares that its members "describe WHO the
+CDE is"; `requested_allocation_millions` does not. It is what the CDE is
+**asking for** — the same reasoning `_supplied_round` uses to justify honouring
+the round, one field over.
+
+**What a CDE saw.** They fill in the blank template's `Requested Allocation
+($M)` cell, upload it, and `get_or_create_app` discards it and asserts
+**$65,000,000** — rendered on page 1 as *"Requested allocation: $65.0M"* and
+handed to page 3's optimizer. A money figure about the user's own application
+that they never stated and could not correct.
+
+**The fix mirrors `_supplied_round` exactly.** `_supplied_allocation` reads the
+cell before `_scoring_attrs_only` strips it, and routes it to `Application`.
+The strip stays — `cde.extra` is a scoring-attribute bag and a request is not a
+scoring attribute. **The strip was never the defect; the missing route was.**
+The demo default is now gated on `effective_demo`, as the round already was.
+
+**THE UNITS, RULED FROM WHAT THE TEMPLATE ASKS RATHER THAN GUESSED.** Three
+independent readings of the shipped workbook agree that the cell is
+**millions**: the header label is `Requested Allocation ($M)`;
+`pipeline_sample.xlsx` states `65` in it; and the Pipeline sheet's `QEI ($M)`
+and `Total Cost ($M)` use the identical convention and are already multiplied
+by 1,000,000 in `_XLSX_MILLIONS_COLS`. So a stated `42` is $42,000,000.
+
+**Nothing is coerced or clamped.** Blank, whitespace, zero, negative,
+non-numeric, and anything above 5,000 ($M) all **disclose** instead. That
+ceiling is not an invented plausibility band: `data/historical_awards` records
+that *"CY 2026 is a $5 billion single round"*, and a single CDE cannot request
+more than the entire national round. It is what catches the unit trap — a user
+who types `65000000` into a `($M)` cell means $65MM and would otherwise be
+shown **$65 trillion**. "They obviously meant 65" is a guess about which unit
+they used, so it discloses. **A wrong allocation is worse than a disclosed
+absent one.**
+
+**When it is absent — and this is the common case, since a CSV upload and a
+pipeline-only workbook carry no CDE Profile sheet at all.**
+`Application.__init__` raises on `requested_allocation <= 0`; the library has
+no "unstated allocation" the way it has an unstated round, and giving it one
+means an `Optional[float]` through eight renderers, two sections and the
+validators — a library API change, and not this patch. So the Streamlit layer
+still hands it a number, and **what makes that number not a claim is that
+nothing renders it**: page 1 now shows `NOT_SUPPLIED_INPUT` — *"not supplied
+[CDE TO COMPLETE]"*, the library's own vocabulary for a required field the tool
+filled in anyway, written for the QLICI defect of the same shape. Page 1 is the
+**only** surface in the app that shows the figure; the Streamlit app has no
+document export, and the Word/PDF/Excel/Markdown builders are library and CLI
+surfaces reached with an allocation the caller passed in. The placeholder stays
+**65,000,000** deliberately, so an upload that states nothing computes exactly
+what it computed at `e4c6586`.
+
+**A moved upload score is not a patch-discipline violation, and is not
+suppressed.** "No score moves" was a claim about the **library given fixed
+inputs**, and `git diff e4c6586 -- nmtcapp/` is **empty** — this change is
+Streamlit-layer only. What it alters is *which input the Streamlit layer
+supplies for uploads*, so a displayed score for an upload that states its own
+allocation **can** move, because it was previously computed from a false one.
+Both claims hold. The demo path is unchanged.
+
+**Whether the allocation feeds a score at all — resolved by execution, and the
+obvious reading was wrong on both sides.** `WinProbabilityModel.score` and
+`HistoricalBenchmarks.compare` both *accept* `requested_allocation` and **never
+read it** — zero occurrences in either body after the docstring, the same
+accepted-for-call-site-symmetry shape `application_round` already documents. So
+the scorer page passing `app.requested_allocation` moves nothing, and 5MM /
+65MM / 200MM do produce byte-identical scores, benchmarks and recommendation
+sets — now **measured**, across all 23 score fields, not reported.
+**But `_IDENTITY_KEYS`' "none of them feeds a score" is still false**:
+`optimizer/objectives.score_pipeline_quality` reads the allocation for a
+size-fit band, so page 3's composite moves — 0.7512 at 5MM, 0.7587 at 55–65MM,
+0.7557 at 200MM. Recorded below.
+
+### B6a — what else in `_IDENTITY_KEYS` fails its own comment
+
+**Its comment makes a claim about every member, and nothing checks it.** Both
+of its claims were tested against all eleven.
+
+*"None of them feeds a score"* — **false as written, true if narrowed.** No
+member moves the win-probability score (measured: all eleven injected
+individually, all 23 fields identical). But `requested_allocation_millions`
+feeds the **optimizer's** scores, above. The comment says "a score", unqualified.
+
+*"These describe WHO the CDE is"* — **the two known failures are the only
+two.** `application_round` (B4) and `requested_allocation_millions` (B6) are
+what the CDE is filing *into* and asking *for*. The other nine — `cde_name`,
+`cde_id`, `ein`, `headquarters_state`, `certification_date`, `mission`,
+`website`, `organization_type`, `target_markets` — genuinely describe the
+organisation. **No third failure.**
+
+**And the origin of both, which is worth more than either.** The frozenset is
+an exact copy of the template's own section banner: row 2 of the CDE Profile
+sheet labels **columns 1–11 "Identity"**, and columns 10 and 11 are `Requested
+Allocation ($M)` and `Application Round`. `_IDENTITY_KEYS` did not invent the
+misclassification — **it faithfully mirrored a spreadsheet header that is
+itself wrong, and that header is still wrong.** Recorded below.
+
 ### Recorded, not fixed
 
-- **The CDE Profile sheet's "Requested Allocation ($M)" is discarded the same
-  way the round was.** It is parsed to `requested_allocation_millions`,
-  stripped by `_scoring_attrs_only` as an identity key, and
-  `get_or_create_app` then hard-codes `requested_allocation=65_000_000` for
-  uploads as well as for the demo. **Same defect class as B4**, one field over:
-  the template asks a CDE for a fact about its own filing and renders its own
-  number instead. Not fixed here because it moves a money figure on every
-  rendered surface, which is a behavioural change deserving its own review
-  rather than a ride on a round fix.
+- **FIXED IN B6 ABOVE** — the CDE Profile sheet's "Requested Allocation ($M)"
+  is no longer discarded. This entry previously deferred it.
+- **The template's own "Identity" banner spans columns 1–11**, filing
+  `Requested Allocation ($M)` and `Application Round` under it. That header is
+  the source of both B4 and B6, it is still wrong, and correcting it edits a
+  shipped `.xlsx` that `test_template_fields` pins — its own change.
+- **Page 3 scores an unstated allocation as though it were $65MM.**
+  `optimizer/objectives.score_pipeline_quality` reads the allocation for a
+  size-fit band, and unlike page 1 the optimizer surface has no disclosure for
+  an allocation the CDE never stated. Pre-existing and unchanged here; the fix
+  is a disclosure on page 3, which is its own change.
+- **Nothing gates `_IDENTITY_KEYS`' comment against its own membership.** Two
+  members have now failed it in consecutive fixes and were both found by
+  reading. A comment asserting a property of a set nobody checks is this
+  package's recurring shape.
 - **`streamlit_app/pages/1_Pipeline_Analyzer.py` imports `GRADE_THRESHOLDS`
   and never uses it.** The only remaining occurrence is inside a comment; the
   live uses left with the chart when it moved to `readiness_chart.py`.
