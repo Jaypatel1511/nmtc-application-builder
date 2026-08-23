@@ -80,7 +80,7 @@ def _app(pipeline=None, cde=None) -> Application:
     app = Application(
         cde=cde or CDEProfile.sample(),
         requested_allocation=65_000_000,
-        application_round="CY2025",
+        application_round="CY 2026",
     )
     app.add_pipeline(pipeline or Pipeline.sample(n=20))
     return app

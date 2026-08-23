@@ -287,7 +287,7 @@ class WinProbabilityModel:
         self,
         pipeline_result: "PipelineAnalysisResult",
         requested_allocation: float,
-        application_round: str = "CY2025",
+        application_round: Optional[str] = None,
         cde_attributes: Optional[dict] = None,
     ) -> WinProbabilityScore:
         """Compute a CDFI Fund framework score.
@@ -295,7 +295,10 @@ class WinProbabilityModel:
         Args:
             pipeline_result: Result from PipelineAnalyzer.
             requested_allocation: CDE's requested allocation in dollars.
-            application_round: Target application round label (informational).
+            application_round: Target application round label. INFORMATIONAL —
+                accepted for call-site symmetry with Application and never
+                read by this method. It reaches no threshold, no lookup and
+                no sub-score; see tests/test_application_round.py.
             cde_attributes: Optional dict of CDE-level scoring inputs. Keys:
                 ``products_below_market_pct`` (float 0–1),
                 ``products_flexible_indicia_count`` (int),
@@ -756,6 +759,30 @@ def _map_tier_legacy_from_score(score: float) -> str:
     return "weak"
 
 
+def _points(n: int) -> str:
+    """``"1 point"`` / ``"7 points"`` — singular is not a rounding detail."""
+    return f"{n} point" if abs(n) == 1 else f"{n} points"
+
+
+def _distance_from_minimum(section_total: int) -> str:
+    """Where a section sits relative to the Fund's published section minimum.
+
+    A section sitting exactly ON the minimum says so. "0 points above it" is
+    technically true and reads as a rounding artefact, which is how a reader
+    ends up unsure whether the section passed.
+
+    Example::
+
+        _distance_from_minimum(43)   # '3 points above it'
+    """
+    delta = section_total - HIGHLY_QUALIFIED_SECTION_MIN
+    if delta == 0:
+        return "exactly on it"
+    if delta > 0:
+        return f"{_points(delta)} above it"
+    return f"{_points(-delta)} below it"
+
+
 def _build_peer_comparison(score: "WinProbabilityScore") -> str:
     tier = score.tier
     agg = score.aggregate_base_score
@@ -802,27 +829,83 @@ def _build_peer_comparison(score: "WinProbabilityScore") -> str:
             "Panel decides, neither of which this tool models."
         )
     if tier == "Highly Qualified":
-        weak_section = "Business Strategy" if bs < co else "Community Outcomes"
+        # THE ASSESSMENT STOPPED INSTRUCTING (1.5.5 T4). This ended:
+        #
+        #     Focus improvement on {weak_section} ({min(bs, co)}/50).
+        #
+        # An instruction, to a CDE that is already Highly Qualified, about a
+        # section that already passes -- and with no arithmetic basis. The
+        # aggregate is a plain sum (43 + 47 = 90), so a point in Business
+        # Strategy is worth exactly a point in Community Outcomes. "Focus on
+        # the lower one" is a HOUSE PRIORITISATION RULE, and this package
+        # holds no data on which section's points are cheaper for a given CDE
+        # to earn. 1.5.2 withdrew the composite's instructions from the
+        # readiness score and the recommendation engine and did not reach
+        # here; three audits scoped the recommendations and none scoped this
+        # sentence.
+        #
+        # What replaces it is the fact underneath it: how far each section
+        # sits from the Fund's PUBLISHED section minimum. Fund-sourced,
+        # arithmetically checkable, and a disclosure rather than an
+        # instruction -- and it is the number a CDE needs to make the
+        # prioritisation call itself, which is whose call it is.
+        #
+        # The deleted line also carried a latent twin: {min(bs, co)} printed
+        # over a HARDCODED BUSINESS_STRATEGY_MAX, so a weaker Community
+        # Outcomes section was published over the wrong denominator. It
+        # agreed by luck because both maxima are 50. Both sections now print
+        # over their own maximum.
         return (
             f"Highly Qualified ({agg}/{BUSINESS_STRATEGY_MAX + COMMUNITY_OUTCOMES_MAX}). Both sections meet the "
-            f"{HIGHLY_QUALIFIED_SECTION_MIN}-point minimum. "
+            f"{HIGHLY_QUALIFIED_SECTION_MIN}-point minimum: Business Strategy "
+            f"{bs}/{BUSINESS_STRATEGY_MAX}, {_distance_from_minimum(bs)}; Community Outcomes "
+            f"{co}/{COMMUNITY_OUTCOMES_MAX}, {_distance_from_minimum(co)}. "
             f"Priority Points: {pp}/{PRIORITY_POINTS_MAX}. Phase 2 review of Management Capacity and "
-            f"Capitalization Strategy will determine final ranking. "
-            f"Focus improvement on {weak_section} ({min(bs, co)}/{BUSINESS_STRATEGY_MAX})."
+            f"Capitalization Strategy will determine final ranking."
         )
     # Not Qualified
+    #
+    # THE BRANCH A FAILING CDE READS, AND THE ONE NOBODY HAD LOOKED AT
+    # (1.5.5 T4). It ended:
+    #
+    #     Significant pipeline or CDE positioning changes are needed before
+    #     submission.
+    #
+    # Two defects in one sentence. "Significant" is an UNQUANTIFIED MAGNITUDE
+    # JUDGEMENT -- this model does not know how large a change any given gap
+    # requires, and cannot, because it does not model what a change costs.
+    # And "before submission" ADVISES AGAINST FILING, which is not the tool's
+    # call: a CDE may submit whatever it chooses and the Fund decides. The
+    # tool's standing extends to reporting a shortfall against a published
+    # threshold and no further.
+    #
+    # The exact shortfall was already being computed here and then buried
+    # under the imperative. It is now the whole of the sentence.
     below = []
     # Same rule as _classify_tier: the bar prints from the constant it gates on.
     if bs < HIGHLY_QUALIFIED_SECTION_MIN:
-        below.append(f"Business Strategy ({bs}/{BUSINESS_STRATEGY_MAX} < {HIGHLY_QUALIFIED_SECTION_MIN})")
+        below.append(
+            f"Business Strategy {bs}/{BUSINESS_STRATEGY_MAX}, "
+            f"{_points(HIGHLY_QUALIFIED_SECTION_MIN - bs)} below the "
+            f"{HIGHLY_QUALIFIED_SECTION_MIN}-point section minimum"
+        )
     if co < HIGHLY_QUALIFIED_SECTION_MIN:
-        below.append(f"Community Outcomes ({co}/{COMMUNITY_OUTCOMES_MAX} < {HIGHLY_QUALIFIED_SECTION_MIN})")
+        below.append(
+            f"Community Outcomes {co}/{COMMUNITY_OUTCOMES_MAX}, "
+            f"{_points(HIGHLY_QUALIFIED_SECTION_MIN - co)} below the "
+            f"{HIGHLY_QUALIFIED_SECTION_MIN}-point section minimum"
+        )
     if agg < HIGHLY_QUALIFIED_AGGREGATE_MIN:
-        below.append(f"Aggregate ({agg}/{BUSINESS_STRATEGY_MAX + COMMUNITY_OUTCOMES_MAX} < {HIGHLY_QUALIFIED_AGGREGATE_MIN})")
-    gap_str = "; ".join(below) if below else f"aggregate {agg}/{BUSINESS_STRATEGY_MAX + COMMUNITY_OUTCOMES_MAX}"
+        below.append(
+            f"aggregate {agg}/{BUSINESS_STRATEGY_MAX + COMMUNITY_OUTCOMES_MAX}, "
+            f"{_points(HIGHLY_QUALIFIED_AGGREGATE_MIN - agg)} below the "
+            f"{HIGHLY_QUALIFIED_AGGREGATE_MIN}-point aggregate minimum"
+        )
+    gap_str = "; ".join(below) if below else (
+        f"aggregate {agg}/{BUSINESS_STRATEGY_MAX + COMMUNITY_OUTCOMES_MAX}"
+    )
     return (
         f"Not Qualified ({agg}/{BUSINESS_STRATEGY_MAX + COMMUNITY_OUTCOMES_MAX}). Application does not meet the Highly Qualified "
-        f"gating thresholds — {gap_str}. Significant pipeline or CDE positioning "
-        "changes are needed before submission."
+        f"gating thresholds — {gap_str}."
     )
 

@@ -138,7 +138,7 @@ def _cde() -> CDEProfile:
 
 def _application(pipeline) -> Application:
     app = Application(cde=_cde(), requested_allocation=30_000_000.0,
-                      application_round="CY2025")
+                      application_round="CY 2026")
     app.add_pipeline(pipeline)
     return app
 

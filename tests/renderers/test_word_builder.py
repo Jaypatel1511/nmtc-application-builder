@@ -34,8 +34,14 @@ class TestWordBuilder:
         assert sample_application.cde.name in texts
 
     def test_cover_has_application_round(self, doc, sample_application):
+        # See tests/renderers/test_markdown_builder.test_cover_contains_round:
+        # the fixture takes the default, which no longer invents a round
+        # (1.5.5 T1). The cover must state the FIELD, which now means the
+        # unsupplied-round disclosure.
+        from nmtcapp.core.application_round import round_label
         texts = " ".join(p.text for p in doc.paragraphs)
-        assert sample_application.application_round in texts
+        assert sample_application.application_round is None
+        assert round_label(sample_application.application_round) in texts
 
     # ---- Executive summary ----
 

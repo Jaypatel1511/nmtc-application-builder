@@ -239,7 +239,7 @@ def _pipeline() -> Pipeline:
 
 
 REQUESTED_ALLOCATION = 70_000_000.0
-APPLICATION_ROUND = "CY2025"
+APPLICATION_ROUND = "CY 2026"
 
 
 # ---------------------------------------------------------------------------

@@ -5,6 +5,337 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.5] — 2026-08-22
+
+**PATCH. No public names change, no score moves, no new methodology.** Verified
+by A/B against `81c03d5`: every sub-score of both scored sections, both
+priority-point sub-scores, both aggregates, the tier, the readiness composite,
+its grade and all six component scores are **byte-identical**, with the
+application round both set and unset.
+
+**THE THESIS. 1.5.4 shipped with 1,422 tests collected and 1,421 green, through
+a hostile audit and an audit close. Then someone opened the running app and
+found five defects in twenty minutes.** Every one of them is a defect in what
+the tool **RENDERS**, and every one was invisible to a test that reads the
+**SOURCE**. The gates verify that a statement is *made*. Nothing verified what a
+person actually sees. T6 is this release's actual deliverable; T1–T5 are the
+five sites that proved it was needed.
+
+Every finding below was **reproduced against the running 1.5.4 app in a browser
+before it was fixed**, and each reproduction is stated with the fix.
+
+### T1 — `Application round: CY2025` named a round that has never existed
+
+**Reproduced.** `streamlit run streamlit_app/app.py` → Pipeline Analyzer → Run
+Analysis renders `Application round: CY2025`, directly below a provenance
+paragraph correctly saying CY 2024-2025. `Application.__init__` carried
+`application_round: str = "CY2025"` as a **default**, so it reached the
+generated documents too.
+
+**There is no CY2025 round.** The encoded instrument is the **CY 2024-2025**
+Application (opened 19 Nov 2024, closed 29 Jan 2025, awarded 23 Dec 2025 at
+$10 billion); the upcoming round is **CY 2026** (announced 12 Aug 2026 at
+$5 billion, not yet open). This package's own `data/historical_awards.
+NMTC_AWARD_ROUNDS` has no `CY2025` key.
+
+**THE PROMPT'S PREMISE WAS CHECKED BEFORE IT WAS IMPLEMENTED.** Read off the
+code rather than assumed: `sections/section_a_business` renders "targets a
+{round} award", the four renderers render "allocation for {round}", and
+`core/upload_handler` maps a user-supplied "Application Round" column onto it.
+It is unambiguously the round the CDE is **filing into** — the user's fact — so
+the ruling applies.
+
+**THE RULING: no default may invent it; the absence is disclosed.** Default
+becomes `None`; `core/application_round` renders three shapes — a labelled-field
+value (`not specified — CDE to state`), a standalone value (`Application round
+not specified`), and a narrative clause that **disappears** rather than
+degrading. A document generated without the field says so on its title page, in
+Section A, and in the Excel metadata strip, and names no round anywhere.
+
+**The two rejected alternatives.** *Requiring* it breaks `Application(cde,
+allocation)` — the two-argument form in this package's own class docstring, the
+README, `docs/reference/api.md` and dozens of tests — and a breaking API change
+is not a patch. *Defaulting to CY 2026* replaces a false claim with an
+**unverified** one about the reader's own submission: a CDE preparing CY 2027,
+or re-running a closed round, would be handed the wrong round silently. 1.5.2's
+precedent is that REMOVING a false claim ships as a patch; ADDING an assertion
+does not. **This release removes one and adds none.**
+
+**FULL CONSUMER LIST, all checked.** `core/application.py` (ctor default,
+`ApplicationAnalysis.application_round` type, `summary()`, `to_dict()`,
+`score_win_probability()`, `recommendations()`) · `intelligence/win_probability.
+score()` default · `renderers/pdf_builder` ×6 (two footers, details table, three
+executive summaries) · `renderers/word_builder` ×5 · `renderers/markdown_builder`
+×4 · `renderers/excel_builder` ×3 · `sections/section_a_business` ×1 ·
+`streamlit_app/pages/1_Pipeline_Analyzer` ×1 · **`streamlit_app/app.py` ×1 and
+`streamlit_app/utils.py` ×1 — the home page, which the brief did not list and
+which was found by reading the running app** · `core/upload_handler` (input
+mapping, unchanged) · baselines `tests/rendered_baseline/{markdown,word,excel,
+pdf}.txt` and `tests/cli_baseline/analyze.txt` · twelve test modules and
+`tests/conftest.py`.
+
+**WHY IT CANNOT MOVE A SCORE, and a false doc claim removed with it.**
+`WinProbabilityModel.score` accepts `application_round` and **never reads it** —
+the parameter appears nowhere in the method body. `docs/reference/api.md` said it
+was "used for display and acceptance rate lookup". **That was false**:
+`get_overall_acceptance_rate(rounds=4)` takes a COUNT of recent rounds, not a
+round label, and no lookup in this package is keyed on the field. Corrected.
+
+**Test fixtures were carrying the literal too** — twelve modules and
+`conftest.py` passed `application_round="CY2025"`, so the fixtures perpetuated
+the nonexistent round in the code a future reader copies. All now pass
+`"CY 2026"`. The entire rendered-baseline diff is that substitution and nothing
+else, which is the evidence that the round-supplied path is structurally
+unchanged.
+
+**Not done, deliberately: `nmtcapp analyze` still has no `--round` flag.** The
+CLI never had one — it silently asserted the false default — so removing the
+default costs a CLI user no capability they had. Adding the option is a new
+feature and belongs in 1.6.0.
+
+> **43 insertions, 43 deletions** in `tests/rendered_baseline/`, measured
+> `81c03d5`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+> *(Every changed line is the fixture's round label, `CY2025` → `CY 2026`, and
+> nothing else — which is the evidence that the round-SUPPLIED rendering path is
+> structurally unchanged. The unsupplied path is not in the baseline at all,
+> because every baseline fixture supplies a round; it is asserted instead by
+> `tests/test_application_round.py::TestRenderedSurfaces`, which renders a
+> document from an Application with no round.)*
+
+`tests/cli_baseline/analyze.txt` moves 4/4 — the `Round:` line in each of the
+five analyzer states, four of which render it.
+
+### T2 — a disclaimer destroyed by a data label
+
+**Reproduced in Chrome.** On the readiness bar chart the threshold annotation
+rendered as:
+
+```
+This tool's grade-B cut (70)
+not a CDF=80.0d threshold
+```
+
+The Completeness bar's value label was drawn on top of the annotation.
+`This tool's grade-B cut (70)` — **the claim** — survived.
+`not a CDFI Fund threshold` — **the disclaimer** — did not. Same asymmetry 1.5.3
+found when the deduction table was truncated: when rendering degrades, the
+qualifier is what degrades.
+
+**And it was data-dependent**, which is why 1,422 tests, a hostile audit and an
+audit close all missed it: the annotation sat at x = 70.5 at the top of the data
+area, and the collision happened only because that pipeline's Completeness
+component scored 80.0, putting its label at x = 81.
+
+**Fixed geometrically, not cosmetically.** The chart moved to
+`streamlit_app/readiness_chart.py` — it could not be gated on geometry inside a
+page body. The annotation is now anchored at the top of the axes and the axes
+top is **raised by measurement** until the annotation's rendered box clears the
+topmost bar (`_fit_annotation_headroom`). A fixed category-unit headroom was
+tried first and **failed under measurement**: the annotation's height in data
+units is a function of the y-limit being chosen. Value labels are drawn at bar
+centres, strictly below bar tops, so clearing the bars clears every label at
+every data value.
+
+**Measured, both layouts, over 38 component shapes:** 1.5.4's placement collides
+on **29 of 38**; the new placement on **0 of 38**.
+
+### T3 — the dollar signs were being eaten
+
+**Reproduced in Chrome, and the brief's mechanism corrected.** The round-
+provenance paragraph rendered on all three Streamlit pages as "awarded 23 Dec
+2025 with **10 billion** in allocation authority … the CDFI Fund has announced
+that CY 2026 will make **5 billion** available". Ten billion *what*. In a
+federal-allocation disclosure the unit is not decoration.
+
+**The brief guessed KaTeX. It is not KaTeX.** The live DOM contained **zero**
+`.katex` nodes. What the run became was a bare
+`<code class="language-math math-inline">` — micromark's inline-math node with
+no KaTeX pass applied, which is why the observer's "different typeface" was in
+fact **monospace**. The cause is confirmed as inline math, from the tokenizer
+shipped in the pinned Streamlit wheel (`micromark-extension-math`'s `mathText`
+construct, `singleDollarTextMath` defaulting to **true**): one `$` opens, the
+next matching `$` closes, both are consumed. The distinction does not change the
+fix but it does change what the gate may claim to model, so it is recorded
+rather than left as folklore.
+
+**Fixed at the Streamlit boundary, not in the note.** `round_provenance_note()`
+is ONE STRING READ EVERYWHERE — a `\$` baked into it would put a literal
+backslash into a generated Word document. `streamlit_app/utils.md()` escapes at
+each surface. The escape was **executed in a browser** against the pinned
+Streamlit before it was adopted: `\$` renders as `$` and produces no math node,
+on `st.markdown`, `st.info` and `st.caption` alike.
+
+**THE SWEEP FOUND SIX SURFACES CARRYING AN UNESCAPED `$`; TWO WERE ACTIVELY
+BROKEN.** The round-provenance note (three pages), and — **not in the brief, and
+found by sweeping the rendered DOM of every page** — the historical-rounds note
+on About & Methodology, which rendered "(142 allocatees of 216 applicants;
+10 billion awarded of 19.2 billion requested)". The other four carry a single
+`$` and were latent: harmless only until a second amount joins the same body.
+All six are escaped.
+
+### T4 — the engine nobody audited was still instructing
+
+**Reproduced verbatim.** The Win Alignment Scorer's assessment line ended
+"**Focus improvement on Business Strategy (43/50).**" — an instruction, to a CDE
+that is already Highly Qualified, about a section that already passes.
+
+**It had no arithmetic basis.** The aggregate is a plain sum (43 + 47 = 90), so a
+point in Business Strategy is worth exactly a point in Community Outcomes. "Focus
+on the lower one" is a house prioritisation rule and this package holds no data
+on which section's points are cheaper to earn. 1.5.2 withdrew the composite's
+instructions from `ReadinessScore` and the recommendation engine and did not
+reach here; three audits scoped the *recommendations* and none scoped the
+*assessment sentence*.
+
+**THE BRIEF SUSPECTED THIS WAS WIDER THAN THE ONE BRANCH IT SAW. IT WAS.** All
+four branches of `_build_peer_comparison` were swept:
+
+- **Highly Qualified** — imperative replaced by the fact underneath it: Business
+  Strategy sits **3 points above** the Fund's published 40-point section
+  minimum, Community Outcomes **7 above**. Fund-sourced, arithmetically
+  checkable, a disclosure. Both sections are named, because naming only one *is*
+  the prioritisation.
+- **Not Qualified — the branch a failing CDE reads, and the one nobody had
+  looked at.** It ended "Significant pipeline or CDE positioning changes are
+  needed before submission." Two defects in one sentence: *"Significant"* is an
+  unquantified magnitude judgement this model has no basis for, and *"before
+  submission"* advises against filing, which is not the tool's call — a CDE may
+  submit what it chooses and the Fund decides. Replaced by the exact point
+  shortfall to each missed threshold, which the branch was already computing and
+  then burying under the imperative.
+- **Top Tier** — already clean since 1.2.2 D4; now guarded against regression.
+- **Partial** — "Restore nmtc-mapper data access and re-score…" **survives
+  deliberately**, and a test asserts it does. It instructs about the tool's own
+  data integrity, for which the tool has first-hand evidence. The principle bars
+  instructions without a basis, not instructions.
+
+**A latent defect found while rewriting.** The deleted line read
+`{min(bs, co)}/{BUSINESS_STRATEGY_MAX}` — a hardcoded Business Strategy
+denominator applied to whichever section was lower, so a weaker Community
+Outcomes section printed over the wrong maximum. It never rendered wrongly
+because both maxima are 50; it agreed **by luck**, like the three copies of
+`Q25_QEI_BASIS_CLAUSE`. Gone with the line, with a source-level guard.
+
+### T5 — the chart encoded a house band in colour, with no legend
+
+**Reproduced.** Bars rendered green / blue / red by value with **no legend
+anywhere**. The "unsourced house heuristic" caption covers the numbers; it said
+nothing about the colour scheme — the one part of the chart a reader decodes
+fastest was the one part with no disclosure attached.
+
+**Ruling: label them, do not drop the colour.** The bands are not new
+information — they **are** `schema.GRADE_THRESHOLDS`, which the same page
+already prints in words as "Overall readiness grade". Dropping the colour would
+remove a legible encoding of something the tool asserts anyway; labelling
+discloses what was already being claimed silently. The legend is interpolated
+from the constant (so it cannot drift), is placed **outside** the data area (a
+legend inside would be one more artist competing with bars whose lengths are
+data), and is titled **"This tool's readiness grade bands — not CDFI Fund
+thresholds"**, because the Fund publishes no readiness score and therefore no
+grade bands on this axis.
+
+### T6 — the mechanism, and this release's actual deliverable
+
+Two gates whose subject is **rendered output** rather than source. Each **states
+its own scope limit in the file**, because an undeclared approximation is how the
+proximity gate spent a release satisfiable from 69 characters away and how the
+round-provenance gate spent three releases satisfiable by a comment.
+
+**`tests/test_readiness_chart_geometry.py` — chart geometry.** Renders the
+figure under Agg and asserts the annotation's bounding box intersects no value
+label and no bar, across 38 component shapes chosen to walk every bar through
+the annotation's neighbourhood. *Declares:* it does not run a browser; it does
+not observe the rescale Streamlit applies to the served PNG (argued affine, not
+measured — and said to be an argument); it sees only this one chart, and the
+Optimizer and Scorer charts are Plotly and invisible to it; the spread is a
+sample, not a proof over all inputs, which is why the fix it guards is
+structural. **Proof of life:** the 1.5.4 placement is kept reachable behind
+`legacy_layout=True` and `test_legacy_layout_collides` asserts it *still fails* —
+so a gate that goes blind goes red rather than quietly green.
+
+**`tests/test_streamlit_markdown_survival.py` — markdown survival.** Models
+micromark's `mathText` construct, transcribed from the tokenizer in the pinned
+Streamlit wheel, and asserts that the amounts, units and disclaimers each
+surface's source specifies still reach the reader. *Declares:* it does not run a
+browser, a JavaScript engine or Streamlit; it models inline math **only** —
+emphasis, code spans, links, tables and HTML are not modelled; it sees nothing
+geometric; it does not cover `st.metric`, `st.dataframe` or chart labels. **And
+it declares the direction of its own error:** if real micromark would create a
+span the model misses, the gate goes green on a broken page. So
+`test_no_unescaped_dollar_on_streamlit_prose_surfaces` asserts a **stricter,
+model-free** invariant alongside it — every currency `$` is backslash-escaped —
+and a false green now requires both to be wrong at once.
+`test_model_reproduces_the_1_5_4_defect` anchors the model to the string that
+actually failed in Chrome.
+
+**Both were proved RED against `81c03d5`** using the exact observed conditions:
+the geometry gate on 29 of 38 shapes, the markdown gate on 6 assertions across
+6 surfaces.
+
+### `FLOOR` — re-derived the long way, and it caught its own new skip
+
+`release.yml`'s `FLOOR` sat at **680**, exactly on its band's lower bound at
+1.5.4, and this round adds four test modules.
+`test_release_floor_is_derived_from_the_current_suite` went red before the
+workflow was opened — the **fourth** consecutive round caught by a check rather
+than by somebody re-reading the comment.
+
+**Re-derived from a real sdist build, not hand-typed.** Built the tarball,
+installed it with `[dev]` into a fresh 3.12.13 venv, copied only `tests/`,
+`streamlit_app/`, `README.md` and `pyproject.toml` out of the tarball into a
+directory with **no `nmtcapp/` in it**, confirmed `import nmtcapp` resolved to
+`site-packages`, ran the release job's exact invocation, and read the breakdown
+out of the junit XML with the job's own formula:
+
+```
+collected under -m "not wheel" 1,557
+skipped in the sdist             -49
+EXECUTED                       1,508
+half                             754
+rounded down                     750
+```
+
+**`FLOOR=750`.**
+
+**The derivation caught a defect the derivation itself had introduced.** The
+first pass measured **fifty** skips against `MAX_SDIST_SKIPS = 49` — a stated
+ceiling breached by exactly the change being measured. The fiftieth was a
+`pytest.skip` inside this release's own
+`test_no_section_total_is_printed_over_the_other_sections_maximum`, taken when
+the two section maxima are equal — which they are, and always have been, so the
+test would have skipped on every run it would ever have. **The skip was removed
+rather than the ceiling raised.** `MAX_SDIST_SKIPS` is out of scope this round
+and stays at 49; it is now true again, and the source-level half of that test
+runs unconditionally and is what actually holds the rule. Raising a ceiling to
+admit a number nobody re-measured is the 40 → 20 → 24 → 28 → 40 history that
+bound exists to stop.
+
+### Recorded, not fixed
+
+- **MkDocs 2.0 — checked, and the answer is the bad one.** `[docs]` declares
+  `mkdocs>=1.5` and `mkdocs-material>=9.0`, both **with no upper bound**. So the
+  docs build is *fully* exposed: the next `pip install .[docs]` after MkDocs 2.0
+  publishes resolves to it, and the build then warns that plugins are removed,
+  theme overrides break, there is no migration path, and 2.0 is currently
+  unlicensed. **This is the same shape as the unpinned Streamlit floor, one
+  direction over** — a floor with no ceiling rather than a ceiling with no
+  floor, and it fails on somebody else's release date rather than on ours.
+  Recorded only; capping it is a dependency decision, not a rendered-surface
+  fix, and this release does not touch `pyproject.toml` beyond the version.
+- Routing `RecommendationEngine` into the CLI and renderers, and the wrap layer
+  (`RecommendationSet.summary()` still never wraps) — 1.6.0.
+- **N3** (registry gate blind to subscript reads) · **N7** (a wholly unverified
+  pipeline gets no disclosure on the recommendations surface) · **N8** (the gate
+  item's prose says *"the items below"*).
+- A `--round` option for `nmtcapp analyze` — see T1.
+- **Pipeline Optimizer, read as a reader:** "Score before 75.9 / Score after
+  81.1 / **+5.3 pts**". 81.1 − 75.9 = 5.2. The delta is computed on unrounded
+  scores and rounded once, so it can disagree with the difference of the two
+  displayed figures by 0.1. Not wrong, but a reader who subtracts gets a
+  different answer than the tool shows. Recorded only.
+
+---
+
 ## [1.5.4] — 2026-08-22
 
 **PATCH. No public names change, no score moves, no new methodology.** Every
@@ -1128,7 +1459,7 @@ components off the result, in `test_qlici_not_supplied` (four),
 `test_no_fabricated_output` and `test_truncated_lists`.
 
 > **30 insertions, 8 deletions** in `tests/rendered_baseline/`, measured
-> `fde3eca`..`HEAD`, in `markdown.txt` only. *(18/8 through the T1 withdrawal;
+> `fde3eca`..`81c03d5`, in `markdown.txt` only. *(18/8 through the T1 withdrawal;
 > the 1.5.2 audit round's F1 adds the other 14 — the deduction table's two
 > block headings, its per-row Fund axis, its two subtotals, and the closing
 > paragraph that says the blocks are not the same currency.)*
@@ -4473,7 +4804,7 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 235 constants are swept
+colour". The rendered-string sweep demands **19**, and 237 constants are swept
 where 49 were. *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
 round label, its status, the re-check list and the pinned-document facts; 1.5.2
 adds `readiness_score._COMPONENT_BASIS`, the withdrawal note's per-component
@@ -4483,7 +4814,15 @@ adds two more, both in `readiness_score` and both created by F1's second axis:
 partitioned by. 1.5.3 adds two, both in `readiness_score`:
 `NOTE_PROSE_WIDTH`, the single column every fixed-width rendering of the
 withdrawal note is laid out to, and `_CONTINUATION_INDENT`, the column the
-FUND: and BASIS: continuations share.)*
+FUND: and BASIS: continuations share. 1.5.5 adds two, both in the new
+`core/application_round`: `ROUND_UNSPECIFIED_VALUE` and
+`ROUND_UNSPECIFIED_STANDALONE`, the two disclosures that render where the
+`"CY2025"` default used to name a round the Fund has never run. Both are
+WAIVED rather than pinned, because they render only when the CDE supplied no
+round and every fixture in this suite supplies one; the waiver names
+`tests/test_application_round.py::TestRenderedSurfaces`, which renders a
+document from an Application with no round and asserts both strings against
+it.)*
 
 > **Remeasured in 1.3.0, and again in FIX-2, and again in 1.4.0.** This
 > sentence read **160** when 1.2.2 shipped, **183** at `ff49064` and **203**

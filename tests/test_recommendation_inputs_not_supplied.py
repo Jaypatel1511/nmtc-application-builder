@@ -81,7 +81,7 @@ def _recommendations(cde=None, pipeline=None):
     app = Application(
         cde=cde or _neutral_cde(),
         requested_allocation=65_000_000,
-        application_round="CY2025",
+        application_round="CY 2026",
     )
     app.add_pipeline(pipeline or Pipeline.sample(n=20))
     return app.recommendations()

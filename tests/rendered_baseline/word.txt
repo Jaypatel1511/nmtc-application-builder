@@ -2,7 +2,7 @@ P|Normal|Great Lakes Regional Capital CDE, LLC
 P|Normal|Contact: Dana Okonkwo | dokonkwo@greatlakesregional.example.org | 216-555-0142
 P|Normal|CONFIDENTIAL — Prepared for CDFI Fund Review Only | Do Not Distribute Without CDE Authorization
 P|Heading 1|Executive Summary
-P|Normal|Great Lakes Regional Capital CDE, LLC requests $70.0 million in New Markets Tax Credit allocation for CY2025. Our 8-project pipeline spans 4 states, with 85% of QEI committed to deep and severely distressed census tracts.
+P|Normal|Great Lakes Regional Capital CDE, LLC requests $70.0 million in New Markets Tax Credit allocation for CY 2026. Our 8-project pipeline spans 4 states, with 85% of QEI committed to deep and severely distressed census tracts.
 P|Heading 2|Key Metrics
 P|Heading 2|Application Readiness Assessment
 P|Normal|READINESS SCORE: An UNSOURCED HOUSE HEURISTIC of this tool (eligibility 25%, distress concentration 25%, geographic diversity 15%, impact metrics 20%, validation 10%, completeness 5%). The weights are this tool's own judgement; they are not calibrated against award data, the CDFI Fund publishes no such weighting, and the score does not predict an award outcome.
@@ -17,7 +17,7 @@ P|Normal|Per the persistent-poverty flags supplied in this CDE's own pipeline su
 P|Normal|[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. CDFI Fund reviewers score on specificity, evidence, and alignment with community need. Length is governed by the limit printed on the published application form for this question, which this tool does not encode — check the form, not this draft.]
 P|Heading 2|Pipeline Overview
 P|Heading 2|QEI Deployment Strategy and Timeline
-P|Normal|Great Lakes Regional Capital CDE, LLC targets a CY2025 award.
+P|Normal|Great Lakes Regional Capital CDE, LLC targets a CY 2026 award.
 P|Normal|[CDE TO COMPLETE: State your deployment timeline and the diligence status of each project — when you expect to close the first tranche, how the rest are sequenced, and how far each project has actually progressed through your underwriting. This tool holds neither: your pipeline submission records project economics and locations, not diligence milestones or target closing dates. Do not assert that a project has cleared underwriting review unless it has.]
 P|Normal|QEI deployment strategy: 85% of QEI committed to deep/severe distress tracts. (This tool's own internal scoring band is ≥75%; it is not a CDFI Fund threshold.)
 P|Normal|[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. CDFI Fund reviewers score on specificity, evidence, and alignment with community need. Length is governed by the limit printed on the published application form for this question, which this tool does not encode — check the form, not this draft.]
@@ -114,7 +114,7 @@ IMPACT SCREENING BANDS: THIS TOOL'S OWN BANDS (5 / 12 / 20 FTE per $1MM QEI). Th
 READINESS SCORE: An UNSOURCED HOUSE HEURISTIC of this tool (eligibility 25%, distress concentration 25%, geographic diversity 15%, impact metrics 20%, validation 10%, completeness 5%). The weights are this tool's own judgement; they are not calibrated against award data, the CDFI Fund publishes no such weighting, and the score does not predict an award outcome.
 T0|R0|NEW MARKETS TAX CREDIT\nALLOCATION APPLICATION
 T1|R0|
-T2|R0|Application Round:|CY2025
+T2|R0|Application Round:|CY 2026
 T2|R1|Requested NMTC Allocation:|$70,000,000
 T2|R2|Preparation Date:|<RUNDATE>
 T2|R3|Readiness Assessment:|Grade B — 84.9/100 (this tool's own unsourced house heuristic, not a CDFI Fund evaluation)
@@ -222,8 +222,8 @@ T16|R1|2019|$45,000,000|Fully Deployed|||
 T16|R2|2021|$60,000,000|Fully Deployed|||
 T16|R3|2023|$55,000,000|Partially Deployed|||
 T16|R4|TOTALS|$160,000,000|2 rounds fully deployed|0 states||$160,000,000 total prior allocation
-FTR|  |  Great Lakes Regional Capital CDE, LLC — NMTC CY2025 Application  |  CONFIDENTIAL
-FTR|  |  Great Lakes Regional Capital CDE, LLC — NMTC CY2025 Application  |  CONFIDENTIAL
-FTR|  |  Great Lakes Regional Capital CDE, LLC — NMTC CY2025 Application  |  CONFIDENTIAL
-FTR|  |  Great Lakes Regional Capital CDE, LLC — NMTC CY2025 Application  |  CONFIDENTIAL
-FTR|  |  Great Lakes Regional Capital CDE, LLC — NMTC CY2025 Application  |  CONFIDENTIAL
+FTR|  |  Great Lakes Regional Capital CDE, LLC — NMTC CY 2026 Application  |  CONFIDENTIAL
+FTR|  |  Great Lakes Regional Capital CDE, LLC — NMTC CY 2026 Application  |  CONFIDENTIAL
+FTR|  |  Great Lakes Regional Capital CDE, LLC — NMTC CY 2026 Application  |  CONFIDENTIAL
+FTR|  |  Great Lakes Regional Capital CDE, LLC — NMTC CY 2026 Application  |  CONFIDENTIAL
+FTR|  |  Great Lakes Regional Capital CDE, LLC — NMTC CY 2026 Application  |  CONFIDENTIAL

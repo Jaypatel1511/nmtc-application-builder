@@ -39,7 +39,7 @@ from chart_style import (
 def sample_score():
     cde = CDEProfile.sample()
     pipeline = Pipeline.sample(n=20)
-    app = Application(cde=cde, requested_allocation=65_000_000, application_round="CY2025")
+    app = Application(cde=cde, requested_allocation=65_000_000, application_round="CY 2026")
     app.add_pipeline(pipeline)
     return app.score_win_probability()
 

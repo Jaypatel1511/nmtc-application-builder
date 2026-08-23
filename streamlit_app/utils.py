@@ -14,6 +14,23 @@ import streamlit as st
 from nmtcapp.core.application import Application
 from nmtcapp.core.cde import CDEProfile
 from nmtcapp.core.pipeline import Pipeline
+from nmtcapp.core.application_round import round_label  # noqa: F401  (re-exported)
+from nmtcapp.renderers._round_provenance import UPCOMING_ROUND
+
+#: The round the FICTIONAL sample CDE is filing into.
+#:
+#: A DEFAULT MAY NOT INVENT THE USER'S FACT; A FIXTURE MAY STATE ITS OWN
+#: (1.5.5 T1). ``Application`` no longer defaults the round, because the round
+#: a real CDE files into is that CDE's fact. The demo is not a real CDE — it
+#: is a complete worked example of a filled-in application, and a worked
+#: example with the field left blank teaches the wrong thing.
+#:
+#: Read from ``_round_provenance.UPCOMING_ROUND`` rather than typed, so this
+#: cannot become the next "CY2025": a literal here would drift the moment the
+#: Fund opens a round, and drift is how a demo ends up naming a round nobody
+#: ran. What it names today is CY 2026 — announced 12 Aug 2026, not yet open,
+#: and the round a CDE using this tool would in fact enter.
+SAMPLE_APPLICATION_ROUND = UPCOMING_ROUND
 
 # ---------------------------------------------------------------------------
 # Brand colours
@@ -45,6 +62,50 @@ TIER_COLORS = {
 # nothing else in the repo holds.
 # ---------------------------------------------------------------------------
 from nmtcapp.data.schema import VALID_SECTORS  # noqa: F401  (re-exported)
+
+
+# ---------------------------------------------------------------------------
+# THE DOLLAR SIGNS WERE BEING EATEN (1.5.5 T3)
+# ---------------------------------------------------------------------------
+def md(text: str) -> str:
+    """Make ``text`` safe to hand to a Streamlit markdown surface.
+
+    STREAMLIT'S MARKDOWN IS NOT COMMONMARK. It carries
+    ``micromark-extension-math`` with ``singleDollarTextMath`` left at its
+    default of TRUE, so ONE ``$`` opens an inline-math span and the next
+    matching ``$`` closes it. Both delimiters are consumed and the run
+    between them is re-typeset.
+
+    That is not hypothetical. Through 1.5.4 the round-provenance note --
+    which contains "$10 billion" and "$5 billion" in ONE paragraph -- rendered
+    on three pages as "awarded 23 Dec 2025 with 10 billion in allocation
+    authority ... CY 2026 will make 5 billion available". Ten billion WHAT.
+    In a federal-allocation disclosure the unit is not decoration, and the
+    package's own gates could not see it because they read the SOURCE string,
+    which was correct the whole time.
+
+    WHY THE ESCAPE LIVES HERE AND NOT IN THE NOTE. The note is ONE STRING
+    READ EVERYWHERE (``renderers/_round_provenance``) -- Word, PDF, Excel and
+    Markdown render the same object. A ``\\$`` baked into it would put a
+    literal backslash into a generated Word document. The mangling is
+    Streamlit's, so the repair belongs at Streamlit's boundary.
+
+    Escaping is safe even where it is not yet needed: a lone ``$`` is
+    currently harmless (micromark's unterminated-math branch emits no span),
+    but "currently" is doing load-bearing work in that sentence -- add a
+    second amount to the same body later and the first one silently loses its
+    unit. Verified in Chrome against the pinned Streamlit on 2026-08-22:
+    ``\\$`` renders as ``$`` and produces no math node, on ``st.markdown``,
+    ``st.info`` and ``st.caption`` alike.
+
+    Gated by ``tests/test_streamlit_markdown_survival.py``, which asserts the
+    RENDERED text rather than this source.
+
+    Example::
+
+        st.info(md(round_provenance_paragraphs()[0]))
+    """
+    return text.replace("$", r"\$")
 
 
 # Identity keys parsed off an uploaded "CDE Profile" sheet. These describe WHO
@@ -140,7 +201,8 @@ def get_or_create_app(
             cde_extra = _scoring_attrs_only(cde_extra, effective_demo)
             cde.extra = {**cde.extra, **cde_extra}
         p = pipeline if pipeline is not None else Pipeline.sample(n=20)
-        app = Application(cde=cde, requested_allocation=65_000_000, application_round="CY2025")
+        app = Application(cde=cde, requested_allocation=65_000_000,
+                          application_round=SAMPLE_APPLICATION_ROUND)
         app.add_pipeline(p)
         st.session_state["app"] = app
         st.session_state["is_demo_data"] = effective_demo

@@ -78,7 +78,7 @@ def scenario_b(tmp_path_factory):
     """Analyze scenario B and generate all four export formats once."""
     app = Application(
         cde=CDEProfile.sample(), requested_allocation=55_000_000,
-        application_round="CY2025",
+        application_round="CY 2026",
     )
     app.add_pipeline(_scenario_b_pipeline())
     with patch("nmtcmapper.NMTCMapper", return_value=_mock_mapper_scenario_b()):
@@ -227,7 +227,7 @@ def test_section_narratives_qualified_in_partial_mode(scenario_b):
 def test_section_narratives_degraded_mode_no_zero_pct_claims():
     app = Application(
         cde=CDEProfile.sample(), requested_allocation=55_000_000,
-        application_round="CY2025",
+        application_round="CY 2026",
     )
     app.add_pipeline(_scenario_b_pipeline())
     with patch("nmtcmapper.NMTCMapper",
@@ -248,7 +248,7 @@ def test_markdown_full_unavailable_disclosure(tmp_path):
     from nmtcapp.renderers.markdown_builder import MarkdownApplicationBuilder
     app = Application(
         cde=CDEProfile.sample(), requested_allocation=55_000_000,
-        application_round="CY2025",
+        application_round="CY 2026",
     )
     app.add_pipeline(_scenario_b_pipeline())
     with patch("nmtcmapper.NMTCMapper",
@@ -294,7 +294,7 @@ def test_readiness_partial_when_all_projects_unverified():
 
     app = Application(
         cde=CDEProfile.sample(), requested_allocation=55_000_000,
-        application_round="CY2025",
+        application_round="CY 2026",
     )
     app.add_pipeline(_scenario_b_pipeline())
     mapper = MagicMock()

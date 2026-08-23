@@ -26,6 +26,9 @@ from nmtcapp.tables.geographic_table import build_geographic_table
 from nmtcapp.tables.impact_table import build_impact_summary_table
 from nmtcapp.tables.pipeline_table import build_pipeline_summary_table
 from nmtcapp.tables.track_record_table import build_track_record_table
+from nmtcapp.core.application_round import (
+    allocation_round_clause, nmtc_round_phrase, round_label,
+)
 
 if TYPE_CHECKING:
     from nmtcapp.core.application import Application, ApplicationAnalysis
@@ -285,7 +288,8 @@ def _make_header_footer(app: "Application", styles):
         canvas.setFont("Helvetica", TYPOGRAPHY["size_footnote"])
         canvas.setFillColor(rl_hex("text_muted"))
         footer_text = (
-            f"{app.cde.name}  —  NMTC {app.application_round} Application  |  CONFIDENTIAL"
+            f"{app.cde.name}  —  {nmtc_round_phrase(app.application_round)} "
+            f"Application  |  CONFIDENTIAL"
         )
         canvas.drawCentredString(w / 2, FOOTER_TEXT_BASELINE_INCHES * inch, footer_text)
         canvas.drawRightString(w - margin, FOOTER_TEXT_BASELINE_INCHES * inch,
@@ -397,7 +401,8 @@ class PDFApplicationBuilder:
             canvas.setFont("Helvetica", TYPOGRAPHY["size_footnote"])
             canvas.setFillColor(rl_hex("text_muted"))
             footer = (
-                f"{self.application.cde.name}  —  NMTC {self.application.application_round}  |  CONFIDENTIAL"
+                f"{self.application.cde.name}  —  "
+                f"{nmtc_round_phrase(self.application.application_round)}  |  CONFIDENTIAL"
             )
             canvas.drawCentredString(w / 2, FOOTER_TEXT_BASELINE_INCHES * inch, footer)
             canvas.drawRightString(w - ls_margin, FOOTER_TEXT_BASELINE_INCHES * inch,
@@ -502,7 +507,7 @@ class PDFApplicationBuilder:
 
         # Details table
         details = [
-            ["Application Round:", app.application_round],
+            ["Application Round:", round_label(app.application_round)],
             ["Requested NMTC Allocation:", f"${app.requested_allocation:,.0f}"],
             ["Preparation Date:", date.today().strftime("%B %d, %Y")],
             # A Paragraph, NOT a bare string. A plain string in a ReportLab
@@ -584,7 +589,7 @@ class PDFApplicationBuilder:
             flowables.append(Spacer(1, 8))
             summary_text = (
                 f"{app.cde.name} respectfully requests ${app.requested_allocation/1e6:.1f} million in "
-                f"New Markets Tax Credit allocation for {app.application_round}. Our "
+                f"New Markets Tax Credit allocation{allocation_round_clause(app.application_round)}. Our "
                 f"{pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states. Census tract "
                 "eligibility and distress concentration are unverified — eligibility "
@@ -599,7 +604,7 @@ class PDFApplicationBuilder:
             flowables.append(Spacer(1, 8))
             summary_text = (
                 f"{app.cde.name} respectfully requests ${app.requested_allocation/1e6:.1f} million in "
-                f"New Markets Tax Credit allocation for {app.application_round}. Our "
+                f"New Markets Tax Credit allocation{allocation_round_clause(app.application_round)}. Our "
                 f"{pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states, with "
                 f"{d.get('pct_deep_or_severe', 0):.0%} of QEI "
@@ -610,7 +615,7 @@ class PDFApplicationBuilder:
         else:
             summary_text = (
                 f"{app.cde.name} respectfully requests ${app.requested_allocation/1e6:.1f} million in "
-                f"New Markets Tax Credit allocation for {app.application_round}. Our "
+                f"New Markets Tax Credit allocation{allocation_round_clause(app.application_round)}. Our "
                 f"{pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states, with "
                 f"{d.get('pct_deep_or_severe', 0):.0%} of QEI committed to deep and severely "

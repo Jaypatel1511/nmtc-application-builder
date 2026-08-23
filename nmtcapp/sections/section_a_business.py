@@ -9,6 +9,7 @@ from nmtcapp.renderers._disclosure import (
     is_partial_unverified, join_truncated, qualified_pct, unverified_qualifier,
 )
 from nmtcapp.sections.base import SectionGenerator, _cde_todo, _placeholder
+from nmtcapp.core.application_round import is_round_specified, round_label
 
 if TYPE_CHECKING:
     from nmtcapp.core.application import Application, ApplicationAnalysis
@@ -226,7 +227,20 @@ class SectionABusinessStrategy(SectionGenerator):
         # Neither renders conditionally, because there is no field to render
         # from. Both become the CDE's to state.
         deployment_strategy = (
-            f"{cde.name} targets a {application.application_round} award.\n\n"
+            (
+                f"{cde.name} targets a "
+                f"{round_label(application.application_round)} award.\n\n"
+                if is_round_specified(application.application_round)
+                # NO ROUND SUPPLIED (1.5.5 T1). This sentence used to read
+                # "targets a CY2025 award" for every CDE that never set the
+                # field -- naming a round the Fund has never run, inside
+                # Section A's deployment narrative, which is CDE-authored
+                # text a reviewer reads as the applicant's own statement.
+                # It now states the gap and hands it back, in the same voice
+                # as the _cde_todo immediately below it.
+                else f"{cde.name} targets an NMTC allocation award. "
+                     f"Application round: {round_label(None)}.\n\n"
+            )
             + _cde_todo(
                 "State your deployment timeline and the diligence status of "
                 "each project — when you expect to close the first tranche, "

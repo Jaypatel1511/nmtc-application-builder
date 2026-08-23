@@ -21,7 +21,7 @@ from nmtcapp.data.benchmark_thresholds import (
     TRACK_RECORD_TO_PROJECTION_MIN,
     TOTAL_APPLICANTS_CY2024_25, TOTAL_REQUEST_CY2024_25_B, TOTAL_AVAILABLE_CY2024_25_B,
 )
-from utils import apply_theme, metric_classification
+from utils import apply_theme, md, metric_classification
 
 apply_theme()
 st.title("📖 About & Methodology")
@@ -79,7 +79,7 @@ st.info(
 #
 # Both paragraphs render here, not just the first: this is the methodology
 # page, so the re-check list is exactly what its reader came for.
-for _para in round_provenance_paragraphs()[:2]:
+for _para in (md(p) for p in round_provenance_paragraphs()[:2]):
     st.warning(_para)
 
 st.markdown("---")
@@ -322,8 +322,8 @@ st.markdown(
     "Source: CDFI Fund NMTC Award Announcements (public disclosures). The "
     "CY 2024-2025 row is a **double round covering both years**, announced "
     "23 Dec 2025; its figures are from the CY 2024-2025 NMTC Program Award "
-    "Book (142 allocatees of 216 applicants; $10 billion awarded of "
-    "$19.2 billion requested), so its counts do not compare like-for-like "
+    "Book (142 allocatees of 216 applicants; \\$10 billion awarded of "
+    "\\$19.2 billion requested), so its counts do not compare like-for-like "
     "with the single rounds above it."
 )
 

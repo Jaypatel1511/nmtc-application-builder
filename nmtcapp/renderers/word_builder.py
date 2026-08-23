@@ -35,6 +35,9 @@ from nmtcapp.tables.investor_table import (
 )
 from nmtcapp.tables.pipeline_table import build_pipeline_table, build_pipeline_summary_table
 from nmtcapp.tables.track_record_table import build_track_record_table
+from nmtcapp.core.application_round import (
+    allocation_round_clause, nmtc_round_phrase, round_label,
+)
 
 if TYPE_CHECKING:
     from nmtcapp.core.application import Application, ApplicationAnalysis
@@ -173,7 +176,7 @@ class WordApplicationBuilder:
         details_tbl = doc.add_table(rows=4, cols=2)
         details_tbl.style = "Table Grid"
         details = [
-            ("Application Round:", app.application_round),
+            ("Application Round:", round_label(app.application_round)),
             ("Requested NMTC Allocation:", f"${app.requested_allocation:,.0f}"),
             ("Preparation Date:", date.today().strftime("%B %d, %Y")),
             ("Readiness Assessment:",
@@ -241,7 +244,7 @@ class WordApplicationBuilder:
             r.font.color.rgb = RGBColor(0xB0, 0x00, 0x00)
             summary_text = (
                 f"{app.cde.name} requests ${app.requested_allocation/1e6:.1f} million in "
-                f"New Markets Tax Credit allocation for {app.application_round}. "
+                f"New Markets Tax Credit allocation{allocation_round_clause(app.application_round)}. "
                 f"Our {pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states. Census "
                 "tract eligibility and distress concentration are unverified — "
@@ -255,7 +258,7 @@ class WordApplicationBuilder:
             r.font.color.rgb = RGBColor(0xB0, 0x00, 0x00)
             summary_text = (
                 f"{app.cde.name} requests ${app.requested_allocation/1e6:.1f} million in "
-                f"New Markets Tax Credit allocation for {app.application_round}. "
+                f"New Markets Tax Credit allocation{allocation_round_clause(app.application_round)}. "
                 f"Our {pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states, with "
                 f"{distress.get('pct_deep_or_severe', 0):.0%} of QEI "
@@ -266,7 +269,7 @@ class WordApplicationBuilder:
         else:
             summary_text = (
                 f"{app.cde.name} requests ${app.requested_allocation/1e6:.1f} million in "
-                f"New Markets Tax Credit allocation for {app.application_round}. "
+                f"New Markets Tax Credit allocation{allocation_round_clause(app.application_round)}. "
                 f"Our {pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states, with "
                 f"{distress.get('pct_deep_or_severe', 0):.0%} of QEI committed to deep and "
@@ -578,7 +581,8 @@ class WordApplicationBuilder:
             run._r.append(instrText)
             run._r.append(fldChar2)
             conf_run = p.add_run(
-                f"  |  {self.application.cde.name} — NMTC {self.application.application_round} "
+                f"  |  {self.application.cde.name} — "
+                f"{nmtc_round_phrase(self.application.application_round)} "
                 f"Application  |  CONFIDENTIAL"
             )
             conf_run.font.size = Pt(TYPOGRAPHY["size_footnote"])

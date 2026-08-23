@@ -63,6 +63,25 @@ from nmtcapp.data.schema import GRADE_THRESHOLDS
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _PAGE = os.path.join(_REPO_ROOT, "streamlit_app", "pages", "1_Pipeline_Analyzer.py")
 
+# THE READINESS CHART MOVED OUT OF THE PAGE (1.5.5 T2). It was twenty lines
+# inside the page body and could not be gated on GEOMETRY there -- nothing can
+# measure a bounding box inside a Streamlit script. It now lives in
+# streamlit_app/readiness_chart.py, and this gate follows it. The QUESTION is
+# unchanged: does the colour ladder read GRADE_THRESHOLDS, and does the
+# reference line say whose band it draws.
+_CHART = os.path.join(_REPO_ROOT, "streamlit_app", "readiness_chart.py")
+
+
+def _chart_source() -> str:
+    if not os.path.isfile(_CHART):
+        pytest.skip(
+            "streamlit_app/readiness_chart.py is not present — this is an "
+            "installed tree, not a checkout. This gate asks a question about "
+            "the repository's source."
+        )
+    with open(_CHART, encoding="utf-8") as handle:
+        return handle.read()
+
 
 def _page_source() -> str:
     if not os.path.isfile(_PAGE):
@@ -112,26 +131,31 @@ def _readiness_chart_block_lines(source: str) -> tuple:
 
 
 def _readiness_chart_block(source: str) -> str:
-    """The readiness-breakdown block only, so an unrelated 70 cannot satisfy
-    or trip this gate.
+    """The readiness chart's source — which is now a whole module.
 
-    Delimited by the two markers that bound it in the file. Both are asserted
-    present, so a rename fails loudly here instead of silently narrowing the
-    scanned region to nothing — the vacuity shape this package keeps finding.
+    WHY THIS IS NO LONGER A LINE RANGE (1.5.5 T2). Through 1.5.4 the chart
+    was twenty lines inside 1_Pipeline_Analyzer.py and this helper carved it
+    out between two markers, so that an unrelated 70 elsewhere on a
+    1,400-line page could neither satisfy nor trip the gate. The chart moved
+    to its own module to be geometry-testable, and ``readiness_chart.py``
+    contains NOTHING ELSE — so the whole file is the block, and the carve is
+    not merely unnecessary, it is now the weaker choice: the colour ladder
+    lives in ``_score_color`` and the band labels in
+    ``readiness_band_legend``, both OUTSIDE any range a marker pair would
+    have bounded. A carve here would have quietly stopped reading the ladder
+    it exists to read, which is the vacuity shape this package keeps finding.
+
+    The markers are still asserted, as a check that this really is the chart
+    module and not something that inherited the filename.
     """
-    start_marker = "**Readiness score breakdown**"
-    end_marker = "# TAB 1 — Distress"
-    assert start_marker in source, (
-        "the readiness-breakdown block's opening marker is gone; this gate no "
-        "longer knows which region to read."
-    )
-    assert end_marker in source, (
-        "the readiness-breakdown block's closing marker is gone; this gate "
-        "would read to end-of-file."
-    )
-    block = source[source.index(start_marker):source.index(end_marker)]
-    assert len(block) > 800, f"scanned block is {len(block)} chars — too small"
-    return block
+    for marker in ("def build_readiness_breakdown_figure(",
+                   "def _score_color(", "def readiness_band_legend("):
+        assert marker in source, (
+            f"{marker!r} is gone from readiness_chart.py; this gate no longer "
+            "knows it is reading the readiness chart."
+        )
+    assert len(source) > 800, f"scanned module is {len(source)} chars — too small"
+    return source
 
 
 def _jobs_chart_block(source: str) -> str:
@@ -236,9 +260,9 @@ def test_the_jobs_chart_reads_all_four_percentiles_from_the_constant():
 
 def test_the_chart_reads_grade_thresholds_rather_than_re_typing_them():
     """The constant must be IMPORTED and READ by the block that draws it."""
-    source = _page_source()
+    source = _chart_source()
     assert "GRADE_THRESHOLDS" in source, (
-        "1_Pipeline_Analyzer.py does not import GRADE_THRESHOLDS. The colour "
+        "readiness_chart.py does not import GRADE_THRESHOLDS. The colour "
         "ladder and the reference line are drawn from its values; typing them "
         "again is the L-3 duplication this module exists to forbid."
     )
@@ -265,7 +289,7 @@ def test_no_grade_threshold_is_typed_as_a_literal_in_the_chart_block(value):
     ``if score < 70: return ACCENT`` puts ast.Constant(70) back in the block
     and fails the [70] case.
     """
-    source = _page_source()
+    source = _chart_source()
     first, last = _readiness_chart_block_lines(source)
     # THE WHOLE FILE IS PARSED AND THE NODES ARE FILTERED BY LINE, rather than
     # re-indenting the fragment and parsing it alone. The fragment approach
@@ -304,7 +328,7 @@ def test_the_orphan_fifty_is_gone():
         "50 is now a grade threshold, so this test's premise has changed. "
         "Re-read it rather than deleting it."
     )
-    block = _readiness_chart_block(_page_source())
+    block = _readiness_chart_block(_chart_source())
     code = "\n".join(
         line for line in block.splitlines() if not line.strip().startswith("#")
     )
@@ -350,7 +374,7 @@ def test_the_reference_line_says_whose_band_it_is():
     reader still infers a bar and now has nothing telling them whose it is.
     The replacement has to name the band AND its provenance.
     """
-    source = _page_source()
+    source = _chart_source()
     tree = ast.parse(source)
     labels = [text for text, _ in _string_literals(tree) if "grade-B cut" in text]
     assert labels, (
