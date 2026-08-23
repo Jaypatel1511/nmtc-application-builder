@@ -1,6 +1,6 @@
 """NMTC Application Builder — Streamlit demo entry point."""
 import streamlit as st
-from utils import apply_theme
+from utils import SAMPLE_APPLICATION_ROUND, apply_theme, md, round_label
 
 st.set_page_config(
     page_title="NMTC Application Builder",
@@ -83,7 +83,7 @@ def home():
         # it is unsourced. A provenance claim on the landing page is still a
         # provenance claim.
         "📊 CDFI Fund NMTC eligibility data, 2016–2020 ACS &nbsp;|&nbsp; "
-        "✅ 1,422 tests &nbsp;|&nbsp; "
+        "✅ 1,558 tests &nbsp;|&nbsp; "
         "🔓 MIT License"
         "</div>",
         unsafe_allow_html=True,
@@ -152,7 +152,10 @@ def home():
             NMTC eligibility and distress classification.
             """
         )
-        st.info("**Requested allocation:** $65,000,000 | **Round:** CY2025")
+        st.info(md(
+            "**Requested allocation:** $65,000,000 | "
+            f"**Round:** {round_label(SAMPLE_APPLICATION_ROUND)}"
+        ))
 
     st.markdown("---")
     st.info(

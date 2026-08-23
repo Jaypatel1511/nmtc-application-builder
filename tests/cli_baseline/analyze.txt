@@ -13,7 +13,7 @@
 ======================================================================
   NMTC APPLICATION ANALYSIS
   CDE:   Riverbend Community Capital CDE, LLC
-  Round: CY2025  |  Requested: $55,000,000
+  Round: not specified — CDE to state  |  Requested: $55,000,000
   Analyzed: <TIMESTAMP>
 ======================================================================
 ============================================================
@@ -218,7 +218,7 @@ Still emitted — NOT derived from the readiness composite:
 ======================================================================
   NMTC APPLICATION ANALYSIS
   CDE:   Riverbend Community Capital CDE, LLC
-  Round: CY2025  |  Requested: $55,000,000
+  Round: not specified — CDE to state  |  Requested: $55,000,000
   Analyzed: <TIMESTAMP>
 ======================================================================
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -436,7 +436,7 @@ Location could not be verified for project PRJ-S004 (9500 S Grape St, Los Angele
 ======================================================================
   NMTC APPLICATION ANALYSIS
   CDE:   Riverbend Community Capital CDE, LLC
-  Round: CY2025  |  Requested: $55,000,000
+  Round: not specified — CDE to state  |  Requested: $55,000,000
   Analyzed: <TIMESTAMP>
 ======================================================================
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -607,7 +607,7 @@ nmtc-mapper eligibility data unavailable (eligibility dataset could not be loade
 ======================================================================
   NMTC APPLICATION ANALYSIS
   CDE:   Riverbend Community Capital CDE, LLC
-  Round: CY2025  |  Requested: $55,000,000
+  Round: not specified — CDE to state  |  Requested: $55,000,000
   Analyzed: <TIMESTAMP>
 ======================================================================
 ============================================================

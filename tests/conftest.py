@@ -95,7 +95,7 @@ def application_analysis(sample_cde, sample_pipeline, sample_pipeline_result) ->
     return ApplicationAnalysis(
         cde_name=sample_cde.name,
         requested_allocation=65_000_000,
-        application_round="CY2025",
+        application_round="CY 2026",
         pipeline_result=sample_pipeline_result,
         distress_analysis=sample_pipeline_result.distress_breakdown,
         geographic_analysis=sample_pipeline_result.geographic_diversity,

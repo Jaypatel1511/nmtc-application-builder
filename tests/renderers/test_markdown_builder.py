@@ -68,8 +68,17 @@ class TestMarkdownBuilder:
         assert f"${sample_application.requested_allocation:,.0f}" in cover
 
     def test_cover_contains_round(self, builder, sample_application):
+        # THE COVER STATES THE ROUND FIELD, WHATEVER IT HOLDS (1.5.5 T1).
+        # This asserted `sample_application.application_round in cover`, and
+        # sample_application takes the default -- which used to be the string
+        # "CY2025", a round the CDFI Fund has never run. The assertion passed
+        # BECAUSE the defect was there. With no default to invent one the
+        # cover renders the disclosure instead, and that is what a cover
+        # generated from an Application with no round must carry.
+        from nmtcapp.core.application_round import round_label
         cover = builder._cover()
-        assert sample_application.application_round in cover
+        assert sample_application.application_round is None
+        assert round_label(sample_application.application_round) in cover
 
     # ---- Executive summary ----
 

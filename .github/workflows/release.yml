@@ -821,7 +821,44 @@ jobs:
           # missing one optional renderer skips a whole module on importorskip
           # -- which is why the ceiling only ever widens the FLOOR band
           # downward and never tightens anything. Recorded, not raised.
-          FLOOR=680
+          #
+          # RE-DERIVED FOR 1.5.5, THE LONG WAY, AND THE GATE ANNOUNCED IT A
+          # FOURTH TIME. 1.5.5 adds four test modules (the two rendered-output
+          # gates of T6, plus test_application_round and
+          # test_assessment_does_not_instruct);
+          # test_release_floor_is_derived_from_the_current_suite went red on
+          # FLOOR=680 before this file was opened. Derived from a REAL SDIST
+          # BUILD with this job's exact invocation -- built the tarball,
+          # installed it with [dev] into a fresh 3.12.13 venv, copied ONLY
+          # tests/, streamlit_app/, README.md and pyproject.toml out of the
+          # tarball into a directory with NO nmtcapp/ in it, confirmed
+          # `import nmtcapp` resolved to site-packages, and read the breakdown
+          # off the junit report rather than off the terminal:
+          #
+          #     collected under -m "not wheel" 1,557
+          #     skipped in the sdist             -49
+          #     EXECUTED                       1,508
+          #     half                             754
+          #     rounded down                     750
+          #
+          # NOT HAND-TYPED: 750 is what the step's own formula returns from
+          # ${RUNNER_TEMP}/sdist-junit.xml, run against the same XML this job
+          # reads.
+          #
+          # AND THE DERIVATION CAUGHT ITS OWN NEW SKIP. The first pass measured
+          # FIFTY skips against MAX_SDIST_SKIPS = 49 -- a ceiling breached by
+          # exactly the change being measured. The fiftieth was a
+          # `pytest.skip` inside 1.5.5's own
+          # test_no_section_total_is_printed_over_the_other_sections_maximum,
+          # taken when the two section maxima are equal, which they are and
+          # always have been. That skip was removed rather than the ceiling
+          # raised: a test that skips on every run it will ever have is a test
+          # that asserts nothing while looking like coverage, and the
+          # source-level half of it runs unconditionally and is what actually
+          # holds the rule. The sdist is back to 49 and the stated ceiling is
+          # true again. Raising a ceiling to admit a number nobody re-measured
+          # is the 40 -> 20 -> 24 -> 28 -> 40 history this file exists to stop.
+          FLOOR=750
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()

@@ -16,6 +16,7 @@ from nmtcapp.data.benchmark_thresholds import (
 )
 
 from utils import (
+    md,
     fmt_pct,
     get_or_create_app,
     priority_color,
@@ -55,7 +56,7 @@ render_methodology_warning()
 #
 # READ, NOT RETYPED. A fifth hand-typed copy of the round caveat is the exact
 # shape _round_provenance was created to remove.
-st.info(round_provenance_paragraphs()[0])
+st.info(md(round_provenance_paragraphs()[0]))
 st.markdown("---")
 
 # ---------------------------------------------------------------------------
@@ -108,7 +109,7 @@ with st.sidebar:
 if _is_demo:
     st.info(
         "📊 **DEMO MODE** — This page is scoring the sample CDE "
-        "**Riverbend Community Capital CDE, LLC** ($65M requested, 20-project pipeline). "
+        "**Riverbend Community Capital CDE, LLC** (\\$65M requested, 20-project pipeline). "
         "Scores shown here are NOT your application's scores. "
         "Go to **Pipeline Analyzer** and upload your own CSV first."
     )

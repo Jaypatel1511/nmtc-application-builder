@@ -82,9 +82,9 @@ DERIVED | deal-economics / pipeline-overview row: fixed label, value computed fr
 DERIVED | deal-economics / pipeline-overview row: fixed label, value computed from the CDE's own pipeline | **Total Projects in Pipeline:** N
 DERIVED | methodology appendix, composed from nmtcapp/data/ by renderers/_methodology rather than typed. Every figure in it is a constant this package publishes, and tests/pinned_constants.txt pins it | - DEAL ECONOMICS: computed using the nmtc-calc library, standard leveraged NMTC structure. Statutory credit rate N% of QEI over N years (IRC §ND(a)(N): N% of the QEI on each of the first three credit allowance dates and N% on each of the remaining four). Assumed credit price $N/credit and CDE fee N% of QEI are market assumptions of this model, not CDFI Fund parameters. The leverage loan is the residual of QEI less investor equity, so leverage plus equity equals QEI in every surface of this document.
 DERIVED | methodology appendix, composed from nmtcapp/data/ by renderers/_methodology rather than typed. Every figure in it is a constant this package publishes, and tests/pinned_constants.txt pins it | - IMPACT SCREENING BANDS: THIS TOOL'S OWN BANDS (N / N / N FTE per $NMM QEI). The CDFI Fund publishes no jobs-per-QEI benchmark in any denominator: it reports job counts and dollar counts separately and never divides them, and it publishes no distribution, so no band here is a percentile. These are not a federal figure and must not be cited as one.
-DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | <CDE> requests $N million in New Markets Tax Credit allocation for CYN. Our N-project pipeline spans N states, with N% of QEI committed to deep and severely distressed census tracts.
-DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | <CDE> respectfully requests $NMM in New Markets Tax Credit allocation for application round CYN. Our N-project pipeline spans N states with **N% of QEI committed to deep/severely distressed tracts**.
-DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | <CDE> targets a CYN award.
+DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | <CDE> requests $N million in New Markets Tax Credit allocation. Our N-project pipeline spans N states, with N% of QEI committed to deep and severely distressed census tracts.
+DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | <CDE> respectfully requests $NMM in New Markets Tax Credit allocation. Our N-project pipeline spans N states with **N% of QEI committed to deep/severely distressed tracts**.
+PLACEHO | 1.5.5 T1: no round was supplied, so the sentence states the gap and hands it back to the CDE rather than naming a round the Fund never ran | <CDE> targets an NMTC allocation award. Application round: not specified — CDE to state.
 DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | <CDE> was certified as a Community Development Entity by the CDFI Fund on <DATE>. Since certification, the organization has received N NMTC allocation awards totaling $N of which N are recorded as fully deployed.
 DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | <CDE> will deploy $N million in NMTC allocation across N projects in N states — targeting N% of QEI in deep and severely distressed census tracts. The pipeline's largest sector concentration is <SECTOR>.
 DERIVED | quotes the CDE's own mission field back verbatim; asserts nothing about it | <CDE>'s stated mission is: "<MISSION>"
@@ -102,10 +102,12 @@ DERIVED | narrative frame; every figure in it is computed from the CDE's own inp
 DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | • N jobs per $NMM of QEI deployed
 DERIVED | narrative frame; every figure in it is computed from the CDE's own inputs | • N permanent full-time-equivalent jobs created
 DERIVED | impact bullet; the square-footage figure is the CDE's own. '<SECTOR>' is a mask artifact - the phrase 'community facility' here is descriptive prose that happens to collide with a sector value in the fixtures | • N sq ft of <SECTOR> / commercial space
-FORMAT | document header/footer/table scaffolding; no propositional content | <CDE> | CYN | Generated N-N-N
-FORMAT | document header/footer/table scaffolding; no propositional content | <CDE> — NMTC CYN Application | CONFIDENTIAL
-FORMAT | document header/footer/table scaffolding; no propositional content | <CDE> — NMTC CYN | CONFIDENTIAL
-FORMAT | document header/footer/table scaffolding; no propositional content | CONFIDENTIAL — <CDE> — NMTC CYN — Generated N-N-N
+FORMAT | document header/footer/table scaffolding; no propositional content | <CDE> | Application round not specified | Generated N-N-N
+FORMAT | document header/footer/table scaffolding; no propositional content | <CDE> — NMTC Application | CONFIDENTIAL
+LABEL | 1.5.5 T1: field label plus its unsupplied-value disclosure; names no round | Application Round: not specified — CDE to state
+PLACEHO | 1.5.5 T1: the unsupplied-round disclosure standing alone in a table cell; the absence of a claim, not a claim | not specified — CDE to state
+FORMAT | document header/footer/table scaffolding; no propositional content | <CDE> — NMTC | CONFIDENTIAL
+FORMAT | document header/footer/table scaffolding; no propositional content | CONFIDENTIAL — <CDE> — NMTC — Generated N-N-N
 FORMAT | document header/footer handling marking, not content | CONFIDENTIAL — Prepared for CDFI Fund Review Only | Do Not Distribute Without CDE Authorization
 FORMAT | wrapped continuation of a cross-reference to the Excel attachment | Excel workbook, Pipeline Detail tab.
 FORMAT | wrapped cross-reference to the Excel attachment | Full N-column pipeline detail (deal economics, QLICI structure, timeline) is provided in the accompanying
@@ -115,7 +117,7 @@ FORMAT | cross-reference to the Excel attachment | Full impact detail is in the 
 FORMAT | markdown table rule; no propositional content | | --- | --- | --- | --- | --- | --- | --- | --- |
 FORMAT | markdown table rule; no propositional content | | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 FORMAT | markdown table rule; no propositional content | | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-FORMAT | document header/footer/table scaffolding; no propositional content | | <CDE> — NMTC CYN Application | CONFIDENTIAL
+FORMAT | document header/footer/table scaffolding; no propositional content | | <CDE> — NMTC Application | CONFIDENTIAL
 FORMAT | document header/footer/table scaffolding; no propositional content | | SUMMARY | N total projects | | | N/N | | N/N (N%) | N/N | | | | | | | |
 HEADING | table-of-contents link | - [Appendix A: Pipeline Detail](#appendix-a)
 HEADING | table-of-contents link | - [Appendix B: Distress Documentation](#appendix-b)

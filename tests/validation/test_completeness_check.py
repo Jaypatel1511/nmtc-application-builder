@@ -67,7 +67,7 @@ def test_completeness_cde_missing_name_fails():
     app = Application.__new__(Application)
     app.cde = cde_bad
     app.requested_allocation = 50_000_000
-    app.application_round = "CY2025"
+    app.application_round = "CY 2026"
     app._pipeline = Pipeline.sample(n=5)
     app._analysis_cache = None
     result = check_completeness(app)

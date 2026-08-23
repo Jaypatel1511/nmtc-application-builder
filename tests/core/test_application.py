@@ -10,7 +10,11 @@ def test_application_creation(sample_cde):
     app = Application(cde=sample_cde, requested_allocation=65_000_000)
     assert app.cde == sample_cde
     assert app.requested_allocation == 65_000_000
-    assert app.application_round == "CY2025"
+    # NO DEFAULT ROUND (1.5.5 T1). This asserted the literal "CY2025" -- a
+    # round the CDFI Fund has never run -- and so held the defect in place.
+    # The round a CDE files into is the CDE's fact; see
+    # tests/test_application_round.py for the ruling.
+    assert app.application_round is None
 
 
 def test_application_custom_round(sample_cde):

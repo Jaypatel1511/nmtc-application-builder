@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from nmtcapp.optimizer.constraints import OptimizationConstraints
     from nmtcapp.optimizer.pipeline_optimizer import OptimizationResult
 
+from nmtcapp.core.application_round import round_label
 from nmtcapp.core.cde import CDEProfile
 from nmtcapp.core.pipeline import Pipeline, PipelineProject
 from nmtcapp.intelligence.pipeline_analyzer import PipelineAnalyzer, PipelineAnalysisResult
@@ -70,7 +71,7 @@ class ApplicationAnalysis:
     """
     cde_name: str
     requested_allocation: float
-    application_round: str
+    application_round: Optional[str]
     pipeline_result: PipelineAnalysisResult
     distress_analysis: dict
     geographic_analysis: dict
@@ -94,7 +95,7 @@ class ApplicationAnalysis:
         print("\n" + "=" * 70)
         print(f"  NMTC APPLICATION ANALYSIS")
         print(f"  CDE:   {self.cde_name}")
-        print(f"  Round: {self.application_round}  |  "
+        print(f"  Round: {round_label(self.application_round)}  |  "
               f"Requested: ${self.requested_allocation:,.0f}")
         print(f"  Analyzed: {self.analyzed_at[:19]}")
         print("=" * 70)
@@ -164,7 +165,7 @@ class Application:
         self,
         cde: CDEProfile,
         requested_allocation: float,
-        application_round: str = "CY2025",
+        application_round: Optional[str] = None,
     ) -> None:
         if not isinstance(cde, CDEProfile):
             raise TypeError("cde must be a CDEProfile instance")

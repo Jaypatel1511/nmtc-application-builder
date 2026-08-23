@@ -14,7 +14,7 @@ Master orchestration class — the single entry point for all NMTC application f
 Application(
     cde: CDEProfile,
     requested_allocation: float,
-    application_round: str = "CY2025",
+    application_round: Optional[str] = None,
 )
 ```
 
@@ -22,7 +22,9 @@ Application(
 
 - `cde` — A `CDEProfile` instance. Required.
 - `requested_allocation` — Requested NMTC allocation in dollars (e.g., `65_000_000`). Must be > 0.
-- `application_round` — Application round label used for display and acceptance rate lookup. Default: `"CY2025"`.
+- `application_round` — The round the CDE is FILING INTO, e.g. `"CY 2026"`. Rendered on the title page, in the running header/footer and in the executive-summary sentence of every generated document. **Default: `None`, and there is deliberately no default round** — the round a CDE files into is the CDE's fact, not the tool's, and until 1.5.5 this defaulted to `"CY2025"`, a round the CDFI Fund has never run. Omit it and every surface renders an explicit disclosure (`not specified — CDE to state`) instead of naming a round; supply it and it renders verbatim.
+
+  **It feeds no calculation.** An earlier version of this line said the field was "used for display and acceptance rate lookup". **That was false** — `get_overall_acceptance_rate(rounds=4)` takes a COUNT of recent rounds, not a round label, and no lookup in this package is keyed on this field. `WinProbabilityModel.score()` accepts it and never reads it. Setting, changing or omitting it moves no score.
 
 **Raises:** `TypeError` if `cde` is not a `CDEProfile`. `ValueError` if `requested_allocation <= 0`.
 
@@ -139,7 +141,7 @@ Dataclass returned by `Application.analyze()`. All fields are populated by the a
 |-------|------|-------------|
 | `cde_name` | `str` | CDE name from the profile |
 | `requested_allocation` | `float` | Allocation requested in dollars |
-| `application_round` | `str` | Round label (e.g. "CY2025") |
+| `application_round` | `Optional[str]` | Round label the CDE supplied (e.g. "CY 2026"), or `None` when none was — see `Application` above |
 | `pipeline_result` | `PipelineAnalysisResult` | Full pipeline analysis result |
 | `distress_analysis` | `dict` | Distress concentration breakdown |
 | `geographic_analysis` | `dict` | Geographic diversity metrics |

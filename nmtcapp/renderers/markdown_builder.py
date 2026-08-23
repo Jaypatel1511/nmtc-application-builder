@@ -21,6 +21,7 @@ from nmtcapp.tables.geographic_table import build_geographic_table
 from nmtcapp.tables.impact_table import build_impact_table
 from nmtcapp.tables.pipeline_table import build_pipeline_table
 from nmtcapp.tables.track_record_table import build_track_record_table
+from nmtcapp.core.application_round import allocation_round_clause, round_label
 
 if TYPE_CHECKING:
     from nmtcapp.core.application import Application, ApplicationAnalysis
@@ -108,7 +109,7 @@ class MarkdownApplicationBuilder:
             f"# NEW MARKETS TAX CREDIT ALLOCATION APPLICATION\n\n"
             f"**{app.cde.name}**\n\n"
             + banner +
-            f"Application Round: {app.application_round}  \n"
+            f"Application Round: {round_label(app.application_round)}  \n"
             f"Requested Allocation: **${app.requested_allocation:,.0f}**  \n"
             f"Prepared: {date.today().isoformat()}  \n"
             f"Readiness Grade: **{score.grade}** ({score.overall_score:.1f}/100{partial_tag}"
@@ -142,7 +143,8 @@ class MarkdownApplicationBuilder:
             )
             summary = (
                 f"{app.cde.name} respectfully requests ${app.requested_allocation/1e6:.1f}MM in "
-                f"New Markets Tax Credit allocation for application round {app.application_round}. "
+                f"New Markets Tax Credit allocation"
+                f"{allocation_round_clause(app.application_round, 'application round ')}. "
                 f"Our {pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states. Census tract "
                 "eligibility and distress concentration are unverified — eligibility "
@@ -152,7 +154,8 @@ class MarkdownApplicationBuilder:
             banner = f"**UNVERIFIED PROJECT LOCATIONS — {unverified_banner(pr)}**\n\n"
             summary = (
                 f"{app.cde.name} respectfully requests ${app.requested_allocation/1e6:.1f}MM in "
-                f"New Markets Tax Credit allocation for application round {app.application_round}. "
+                f"New Markets Tax Credit allocation"
+                f"{allocation_round_clause(app.application_round, 'application round ')}. "
                 f"Our {pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states with "
                 f"**{d.get('pct_deep_or_severe', 0):.0%} of QEI {unverified_qualifier(pr)} "
@@ -164,7 +167,8 @@ class MarkdownApplicationBuilder:
             banner = ""
             summary = (
                 f"{app.cde.name} respectfully requests ${app.requested_allocation/1e6:.1f}MM in "
-                f"New Markets Tax Credit allocation for application round {app.application_round}. "
+                f"New Markets Tax Credit allocation"
+                f"{allocation_round_clause(app.application_round, 'application round ')}. "
                 f"Our {pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states with "
                 f"**{d.get('pct_deep_or_severe', 0):.0%} of QEI committed to deep/severely "

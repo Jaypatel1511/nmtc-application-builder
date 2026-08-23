@@ -33,6 +33,9 @@ from nmtcapp.tables.investor_table import build_investor_table
 from nmtcapp.tables.investor_table import INVESTOR_TABLE_TITLE
 from nmtcapp.tables.pipeline_table import build_pipeline_table
 from nmtcapp.tables.track_record_table import build_track_record_table
+from nmtcapp.core.application_round import (
+    nmtc_round_phrase, round_label_standalone,
+)
 
 if TYPE_CHECKING:
     from nmtcapp.core.application import Application, ApplicationAnalysis
@@ -237,7 +240,8 @@ class ExcelApplicationBuilder:
         # So the surface held up as the model for the other three was the one
         # with an undisclosed grade on its front page.
         ws["A3"] = (
-            f"{app.application_round}  |  Prepared: {date.today().strftime('%B %d, %Y')}  |  "
+            f"{round_label_standalone(app.application_round)}  |  "
+            f"Prepared: {date.today().strftime('%B %d, %Y')}  |  "
             f"Readiness Grade: {score.grade} ({score.overall_score:.1f}/100"
             + (" PARTIAL)" if getattr(score, "partial", False) else ")")
             + f" — {readiness_inline_qualifier()}"
@@ -516,7 +520,8 @@ class ExcelApplicationBuilder:
         footer_row = disclosure_row + 2
         ws.merge_cells(f"A{footer_row}:F{footer_row}")
         ws.cell(row=footer_row, column=1,
-                value=f"CONFIDENTIAL — {app.cde.name} — NMTC {app.application_round} — "
+                value=f"CONFIDENTIAL — {app.cde.name} — "
+                      f"{nmtc_round_phrase(app.application_round)} — "
                       f"Generated {date.today().isoformat()}")
         ws.cell(row=footer_row, column=1).font = _font(italic=True, color=xl_color("text_muted"), size=8)
         ws.cell(row=footer_row, column=1).alignment = _center()
@@ -708,7 +713,8 @@ class ExcelApplicationBuilder:
         # Sub-header: generation info
         ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=n_cols)
         sub_cell = ws.cell(row=2, column=1,
-                           value=f"{self.application.cde.name}  |  {self.application.application_round}  "
+                           value=f"{self.application.cde.name}  |  "
+                                 f"{round_label_standalone(self.application.application_round)}  "
                                  f"|  Generated {date.today().isoformat()}")
         sub_cell.font = _font(italic=True, color=xl_color("text_muted"), size=8)
         sub_cell.fill = _fill(xl_color("bg_light"))

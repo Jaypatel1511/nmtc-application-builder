@@ -149,7 +149,7 @@ The embedded historical data in `nmtcapp/data/historical_awards.py` covers CY202
 1. The CDFI Fund publishes new award announcement data (typically once per year)
 2. Annual report data is released with new impact statistics
 
-Users working on CY2025 and later applications should verify that the winner patterns used for scoring reflect the most recent available data. Check the `historical_awards.py` module header comment for the current data coverage date.
+Users working on CY 2026 and later applications should verify that the winner patterns used for scoring reflect the most recent available data. (This line named "CY2025" until 1.5.5. The CDFI Fund has never run a round by that name: the most recent PUBLISHED round is CY 2024-2025, awarded 23 Dec 2025, and the upcoming one is CY 2026.) Check the `historical_awards.py` module header comment for the current data coverage date.
 
 To see the current round data programmatically:
 

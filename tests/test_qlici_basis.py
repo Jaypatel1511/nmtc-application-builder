@@ -187,7 +187,7 @@ def _application() -> Application:
         },
     )
     app = Application(cde=cde, requested_allocation=80_000_000.0,
-                      application_round="CY2025")
+                      application_round="CY 2026")
     app.add_pipeline(_divergent_pipeline())
     return app
 

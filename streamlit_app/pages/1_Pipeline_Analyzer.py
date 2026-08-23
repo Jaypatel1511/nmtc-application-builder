@@ -42,7 +42,10 @@ from nmtcapp.renderers._question_22 import (
     Q22_METRO_LABEL, Q22_NON_METRO_LABEL, Q22_NON_METRO_METRIC_LABEL,
     Q22_UNDETERMINED_LABEL, q22_basis_note, q22_undetermined_caveat,
 )
+from readiness_chart import build_readiness_breakdown_figure
 from utils import (
+    md,
+    round_label,
     fmt_millions,
     fmt_pct,
     get_or_create_app,
@@ -102,7 +105,7 @@ st.markdown("---")
 # the parts the way the reader's screen does.
 #
 # READ, NOT RETYPED, for the same reason as pages 2 and 4.
-st.info(round_provenance_paragraphs()[0])
+st.info(md(round_provenance_paragraphs()[0]))
 st.markdown("---")
 
 # ---------------------------------------------------------------------------
@@ -245,7 +248,7 @@ if run_clicked:
                     "project's QEI request was used in its place so the "
                     "pipeline could load, but that is not your QLICI amount "
                     "and the document does not present it as one: Appendix A's "
-                    "**Total QLICI ($)** reads *not supplied [CDE TO "
+                    "**Total QLICI (\\$)** reads *not supplied [CDE TO "
                     "COMPLETE]*, and the QLICI ≤ QEI consistency check is "
                     "reported as not checkable rather than passed. Add a "
                     "`qlici_amount` column and re-upload before filing."
@@ -368,7 +371,7 @@ with tabs[0]:
     left, right = st.columns(2)
     with left:
         st.markdown(f"**CDE:** {analysis.cde_name}")
-        st.markdown(f"**Application round:** {analysis.application_round}")
+        st.markdown(md(f"**Application round:** {round_label(analysis.application_round)}"))
         st.markdown(f"**Requested allocation:** {fmt_millions(analysis.requested_allocation)}")
         st.markdown(f"**Analyzed at:** {analysis.analyzed_at[:19]}")
 
@@ -390,67 +393,21 @@ with tabs[0]:
     st.caption(readiness_inline_qualifier())
     breakdown = rs.component_scores if hasattr(rs, "component_scores") else {}
     if breakdown:
-        breakdown_df = pd.DataFrame(
-            [
-                {"Dimension": k.replace("_", " ").title(), "Score": round(v, 1)}
-                for k, v in breakdown.items()
-            ]
-        )
-
-        # THREE HAND-TYPED NUMBERS, TWO OF THEM TWINS OF A LIVE CONSTANT
-        # (1.5.2 T4). This ladder read ``50 / 70 / 85``. The 70 and the 85 are
-        # GRADE_THRESHOLDS["B"] and ["A"] re-typed, and the 50 was an ORPHAN --
-        # it is not a grade cut at all (C is 55, D is 40), so the colour
-        # boundary a CDE saw on this chart matched no band this package
-        # defines anywhere.
+        # THE CHART LIVES IN readiness_chart.py (1.5.5 T2/T6).
         #
-        # tests/pinned_constants.txt's WAIVE row for GRADE_THRESHOLDS has
-        # documented these twins since 1.5.1 and closed with "no gate reads
-        # either". One does now: tests/test_grade_threshold_twins.py.
+        # It was twenty lines here, and for a release the threshold
+        # annotation's second line -- "not a CDFI Fund threshold", the clause
+        # that does the disclaiming -- was overprinted by the Completeness
+        # bar's value label, because that component happened to score 80.0
+        # and the annotation sat at x = 70.5 inside the data area. The claim
+        # rendered; the disclaimer did not.
         #
-        # The ladder is now one statement. Deleting GRADE_THRESHOLDS cannot
-        # leave this chart drawing bands that no longer exist, and re-basing
-        # the grades moves the colours with them.
-        _A = GRADE_THRESHOLDS["A"]
-        _B = GRADE_THRESHOLDS["B"]
-        _C = GRADE_THRESHOLDS["C"]
-
-        def _score_color(score: float) -> str:
-            if score < _C:
-                return DANGER
-            if score < _B:
-                return ACCENT
-            if score < _A:
-                return MID_BLUE
-            return SUCCESS
-
-        bar_colors = [_score_color(s) for s in breakdown_df["Score"]]
-
-        fig, ax = plt.subplots(figsize=(8, max(3, len(breakdown_df) * 0.55)))
-        bars = ax.barh(breakdown_df["Dimension"], breakdown_df["Score"], color=bar_colors, height=0.6)
-        # "COMPETITIVE" WAS A CLAIM ABOUT THE FUND WITH NO FUND REFERENT
-        # (1.5.2 T4). This line was drawn at a hardcoded 70 and labelled
-        # "Competitive (70)" — the same defect shape as the false attribution
-        # T2 removed from schema.py, except rendered to a CDE instead of
-        # hidden in a comment. The CDFI Fund publishes no readiness score and
-        # no grade, so it publishes no competitiveness bar on this axis;
-        # nothing about 70 makes an application competitive, and a dashed
-        # reference line beside a chart of six sub-scores is exactly where a
-        # reader takes a word like that literally.
-        #
-        # What survives is the true statement: 70 is where THIS TOOL's grade B
-        # begins. Interpolated, so the line and the label cannot drift from
-        # the constant or from each other.
-        ax.axvline(x=_B, color=NEUTRAL, linestyle="--", linewidth=1.2, alpha=0.8)
-        ax.text(_B + 0.5, ax.get_ylim()[1] * 0.98,
-                f"This tool's grade-B cut ({_B:.0f})\nnot a CDFI Fund threshold",
-                color=NEUTRAL, fontsize=8, va="top", ha="left")
-        for bar, score in zip(bars, breakdown_df["Score"]):
-            ax.text(score + 1, bar.get_y() + bar.get_height() / 2, f"{score:.1f}",
-                    va="center", ha="left", fontsize=9, color=TEXT_DARK)
-        ax.set_xlim(0, 118)
-        style_matplotlib_axes(ax, xlabel="Score (0–100)")
-        fig.tight_layout()
+        # Inline chart code cannot be gated on GEOMETRY: nothing can measure
+        # a bounding box inside a Streamlit page body. Extracted so
+        # tests/test_readiness_chart_geometry.py can render the figure and
+        # assert the boxes do not intersect, across a spread of component
+        # shapes rather than the one this page happens to produce.
+        fig, ax, _parts = build_readiness_breakdown_figure(breakdown)
         st.pyplot(fig, width="stretch")
         plt.close(fig)
     else:
@@ -1075,7 +1032,7 @@ with tabs[4]:
             st.markdown("- Commercial sq ft: **—** (not supplied by any project)")
         else:
             st.markdown(f"- Commercial sq ft: **{total_sqft:,.0f}**")
-        st.markdown(f"- Jobs / $1MM QEI: **{jpm:.1f}**")
+        st.markdown(f"- Jobs / \\$1MM QEI: **{jpm:.1f}**")
 
         # --- G: Deal economics waterfall ---
         econ = analysis.deal_economics
