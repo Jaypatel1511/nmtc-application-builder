@@ -1940,15 +1940,16 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">Application</span><span class="p">(</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">cde</span><span class="p">:</span> <span class="n">CDEProfile</span><span class="p">,</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">requested_allocation</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">application_round</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"CY2025"</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">application_round</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span>
 </code></pre></div>
 <p><strong>Parameters:</strong></p>
 <ul>
 <li><code>cde</code> — A <code>CDEProfile</code> instance. Required.</li>
 <li><code>requested_allocation</code> — Requested NMTC allocation in dollars (e.g., <code>65_000_000</code>). Must be &gt; 0.</li>
-<li><code>application_round</code> — Application round label used for display and acceptance rate lookup. Default: <code>"CY2025"</code>.</li>
+<li><code>application_round</code> — The round the CDE is FILING INTO, e.g. <code>"CY 2026"</code>. Rendered on the title page, in the running header/footer and in the executive-summary sentence of every generated document. <strong>Default: <code>None</code>, and there is deliberately no default round</strong> — the round a CDE files into is the CDE's fact, not the tool's, and until 1.5.5 this defaulted to <code>"CY2025"</code>, a round the CDFI Fund has never run. Omit it and every surface renders an explicit disclosure (<code>not specified — CDE to state</code>) instead of naming a round; supply it and it renders verbatim.</li>
 </ul>
+<p><strong>It feeds no calculation.</strong> An earlier version of this line said the field was "used for display and acceptance rate lookup". <strong>That was false</strong> — <code>get_overall_acceptance_rate(rounds=4)</code> takes a COUNT of recent rounds, not a round label, and no lookup in this package is keyed on this field. <code>WinProbabilityModel.score()</code> accepts it and never reads it. Setting, changing or omitting it moves no score.</p>
 <p><strong>Raises:</strong> <code>TypeError</code> if <code>cde</code> is not a <code>CDEProfile</code>. <code>ValueError</code> if <code>requested_allocation &lt;= 0</code>.</p>
 <hr />
 <h3 id="add_pipeline"><code>add_pipeline</code><a class="headerlink" href="#add_pipeline" title="Permanent link">&para;</a></h3>
@@ -2031,8 +2032,8 @@
 </tr>
 <tr>
 <td><code>application_round</code></td>
-<td><code>str</code></td>
-<td>Round label (e.g. "CY2025")</td>
+<td><code>Optional[str]</code></td>
+<td>Round label the CDE supplied (e.g. "CY 2026"), or <code>None</code> when none was — see <code>Application</code> above</td>
 </tr>
 <tr>
 <td><code>pipeline_result</code></td>
