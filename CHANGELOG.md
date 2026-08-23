@@ -5,6 +5,113 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.6] — 2026-08-23
+
+**PATCH. No public names change, no score moves, no new methodology.** Verified
+by A/B against `111541f`: every sub-score of both scored sections, both
+priority-point sub-scores, both aggregates, the tier, the readiness composite,
+its grade and all six component scores are **byte-identical**, with the
+application round both set and unset. `git diff 111541f -- nmtcapp/` is
+**empty** — this release changes `streamlit_app/` and `tests/` only.
+
+**THE DEFECT. `nmtc-application-builder.streamlit.app/Pipeline_Analyzer` raised
+`AttributeError` and the entire readiness section did not render.** Validation
+results, the round and the allocation rendered fine; the chart below them was
+gone. The traceback ended at `readiness_chart.py` line 84:
+
+```
+renderer = fig.canvas.get_renderer()
+```
+
+**`get_renderer` IS NOT PART OF MATPLOTLIB'S PUBLIC `FigureCanvasBase` API.**
+It is supplied by particular backends. `FigureCanvasAgg` has it;
+`FigureCanvasBase`, `FigureCanvasSVG`, `FigureCanvasPdf`, `FigureCanvasPS` and
+`FigureCanvasTemplate` do not — measured in this repository, not read off a
+changelog. Asking for it was never safe, whatever the runtime happened to
+supply on any given day.
+
+**BOTH LINES HAD TO GO, AND THE FIRST IS THE EASY ONE TO MISS.**
+`FigureCanvasBase.draw()` is a **no-op**. On a canvas without `get_renderer` it
+succeeds *silently* while drawing nothing, so replacing only the renderer
+lookup would have left the measurement loop reading text that had never been
+laid out — a green suite over a chart with the annotation back on top of a bar.
+The fix is `fig.draw_without_rendering()` followed by
+`annotation.get_window_extent()` with no renderer argument, which is the form
+matplotlib's own docstring prescribes and which routes through matplotlib's
+backend-agnostic `_get_renderer` helper.
+
+**THE MEASUREMENT LOOP SURVIVES UNCHANGED.** Its docstring is right that the
+annotation's height in data units is a function of the y-limit being chosen and
+that solving it by measurement beats assuming it. Only how it obtains the
+renderer changed. **The numbers did not move:** on Agg the boxes the new form
+returns are **bit-identical** to the old, the solved y-limit is the same
+`6.598315` to six places, and the gate's recorded 10.26 px minimum clearance is
+unchanged. No rendered baseline was regenerated.
+
+### The gate was green the entire time, and why
+
+`tests/test_readiness_chart_geometry.py` measures real bounding boxes across 38
+component shapes and **passed through this**, because its second line of setup
+is `matplotlib.use("Agg")` — **the one canvas on which this defect is
+invisible**. It then measured that canvas very carefully. Six of its own call
+sites asked for a renderer exactly the way line 84 did.
+
+**That is this cycle's recurring shape for the eighth time across 1.5.4 and
+1.5.5: the gate and the surface looking at different objects.** 1.5.5's version
+was a page gate measuring a module the page had stopped importing. This one is
+a canvas gate measuring a canvas the runtime does not necessarily hand over.
+
+The gate now:
+
+- builds the chart through the real entry point on **every canvas matplotlib
+  ships** (`svg`, `pdf`, `ps`, `template`) and asserts it does not raise, with
+  the premise — that these canvases really lack `get_renderer` — asserted
+  rather than assumed, so the test cannot go quietly vacuous;
+- asserts the reserved headroom still **solves** on every canvas with real text
+  metrics, not merely that nothing crashes;
+- forbids the assumption structurally: an AST walk of `readiness_chart.py` for
+  any attribute access named `get_renderer`, which survives a rename of the
+  local variable and a change of call style;
+- measures through the same renderer-free public API the module now uses.
+
+**None of the new parametrisations can skip** — all five backends ship inside
+matplotlib and need no optional dependency. The sdist skip count is unchanged
+at **57**.
+
+### What this release does NOT establish
+
+**The crash was NOT reproduced outside Streamlit Cloud, and this entry does not
+claim it was.** A Python 3.12 environment built from `streamlit_app/
+requirements.txt` — resolving matplotlib 3.11.1, streamlit 1.62.0, the same
+versions Cloud reports — renders the chart **cleanly** under Agg, under the
+default backend, inside a worker thread, and under the real Streamlit
+`ScriptRunner` via `AppTest`. Every one of those is green.
+
+**So WHY Cloud supplied a canvas without `get_renderer` is unestablished.** The
+fix removes the *assumption*, not the unknown. The new gate asserts "does not
+depend on backend-private API on any canvas" and deliberately **not** "Cloud is
+fixed" — nothing in CI can assert the second, because there is no Streamlit
+Cloud in CI and this repository has no way to put one there.
+
+### Recorded, not fixed
+
+- **`streamlit_app/requirements.txt` is the deployment manifest and almost
+  nothing governs it.** Streamlit Cloud installs from this file, not
+  `pyproject.toml` — the deploy log says so explicitly, having detected both
+  and chosen. It floors `streamlit>=1.28.0`, **below `st.pyplot(...,
+  width="stretch")` which the pages call**, and `matplotlib>=3.5`, looser than
+  `pyproject.toml`'s `>=3.7`. 62 packages resolve from it unbounded, including
+  `pandas 3.0.5`, `numpy 2.5.2` and `altair 6.2.2`, and Streamlit itself
+  overrode `pyarrow 25.0.1` → `24.0.0` citing a known segfault.
+  `test_streamlit_deployment_pin.py` governs exactly one line of it. **The
+  bound decision is its own round.**
+- **`findfont: Failed to find font weight 500` and `600`.** `chart_style.py`
+  sets `axes.labelweight: "500"` and `axes.titleweight: "600"`; matplotlib
+  falls back to 400 and 700. The chart's typography silently degrades. **This
+  reproduces locally, so it is not Cloud-specific** — and it is not the crash.
+
+---
+
 ## [1.5.5] — 2026-08-23
 
 **PATCH. No public names change, no score moves, no new methodology.** Verified
