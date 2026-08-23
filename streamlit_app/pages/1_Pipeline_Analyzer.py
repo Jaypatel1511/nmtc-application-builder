@@ -47,6 +47,7 @@ from utils import (
     md,
     round_label,
     fmt_millions,
+    requested_allocation_label,
     fmt_pct,
     get_or_create_app,
     apply_theme,
@@ -372,7 +373,14 @@ with tabs[0]:
     with left:
         st.markdown(f"**CDE:** {analysis.cde_name}")
         st.markdown(md(f"**Application round:** {round_label(analysis.application_round)}"))
-        st.markdown(f"**Requested allocation:** {fmt_millions(analysis.requested_allocation)}")
+        # requested_allocation_label, not fmt_millions (1.5.5 audit B6): an
+        # upload that never stated a request must not have one rendered for
+        # it. This is the only surface in the app that shows the figure, and
+        # it sits one line under the round's own disclosure.
+        st.markdown(
+            f"**Requested allocation:** "
+            f"{requested_allocation_label(analysis.requested_allocation)}"
+        )
         st.markdown(f"**Analyzed at:** {analysis.analyzed_at[:19]}")
 
     with right:

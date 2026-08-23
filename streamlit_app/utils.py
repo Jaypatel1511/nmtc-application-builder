@@ -18,6 +18,7 @@ from nmtcapp.core.application_round import (  # noqa: F401  (round_label re-expo
     is_round_specified,
     round_label,
 )
+from nmtcapp.renderers._cell_format import NOT_SUPPLIED_INPUT
 from nmtcapp.renderers._round_provenance import UPCOMING_ROUND
 
 #: The round the FICTIONAL sample CDE is filing into.
@@ -145,6 +146,130 @@ def _supplied_round(cde_extra: dict | None) -> str | None:
     return value.strip() if is_round_specified(value) else None
 
 
+#: The largest figure the "Requested Allocation ($M)" cell can hold, IN MILLIONS.
+#:
+#: NOT an invented plausibility band. ``data/historical_awards`` records that
+#: "CY 2026 is a $5 billion single round" -- $5B is the national allocation
+#: authority competed in one round, across every applicant. A single CDE
+#: cannot request more than the entire country's round, so a cell above this
+#: is not an ambitious request; it is a unit error. ``AWARD_SIZE_TIERS``
+#: deliberately leaves its top tier unbounded ("over_65MM" -> inf) and is
+#: therefore no help here: it describes what winners got, not what the cell
+#: can mean.
+_MAX_ALLOCATION_MILLIONS = 5_000
+
+#: What ``Application`` is given when an upload states no allocation.
+#:
+#: THIS IS A PLACEHOLDER AND NOT A CLAIM, AND THE DISTINCTION IS LOAD-BEARING.
+#: ``Application.__init__`` raises on ``requested_allocation <= 0``; the
+#: library has no "unstated allocation" the way it has an unstated round, and
+#: giving it one means an Optional float through eight renderers, two
+#: sections and the validators -- a library API change, and not this patch.
+#: So the Streamlit layer still hands it a number.
+#:
+#: WHAT MAKES IT NOT A CLAIM IS THAT NOTHING RENDERS IT. The only surface in
+#: this app that shows the figure is page 1, and it now shows
+#: ``NOT_SUPPLIED_INPUT`` instead whenever the CDE did not state one. There is
+#: no document export in the Streamlit app -- the Word/PDF/Excel/Markdown
+#: builders are library and CLI surfaces, reached with an allocation the
+#: caller passed in.
+#:
+#: IT IS 65_000_000 RATHER THAN SOMETHING NEUTRAL-LOOKING ON PURPOSE. It is
+#: what this line already held, so an upload that states no allocation
+#: computes exactly what it computed at e4c6586 and this change moves nothing
+#: for it. A "more obviously fake" number would move the optimizer's size-fit
+#: sub-score for every such upload, which is a real behavioural change made
+#: for cosmetic reasons.
+#:
+#: AND IT IS NOT FULLY INERT, WHICH IS RECORDED RATHER THAN GLOSSED:
+#: ``optimizer/objectives.score_pipeline_quality`` reads the allocation for a
+#: size-fit band, so page 3 scores an unstated allocation as though it were
+#: $65MM. That is pre-existing, it is unchanged here, and it is the reason
+#: _IDENTITY_KEYS' "none of them feeds a score" is false -- see the audit note
+#: on that frozenset. Making page 3 disclose it is its own change.
+_UNSTATED_ALLOCATION_PLACEHOLDER = 65_000_000
+
+
+def _supplied_allocation(cde_extra: dict | None) -> float | None:
+    """The requested allocation off an uploaded CDE Profile sheet, in DOLLARS.
+
+    Returns ``None`` when the cell cannot be read as a request, which is
+    DISCLOSED by the caller rather than replaced with a guess.
+
+    WHY THIS EXISTS, AND WHY IT MIRRORS ``_supplied_round`` (1.5.5 audit B6).
+    ``requested_allocation_millions`` is correctly stripped from the dict that
+    merges into ``cde.extra`` -- that dict is a SCORING-ATTRIBUTE bag and a
+    request is not a scoring attribute. The defect was, exactly as with the
+    round, that nothing then routed it to its real destination,
+    ``Application``, so a CDE that filled the template's own "Requested
+    Allocation ($M)" cell had a different money figure asserted in its place
+    on every surface that shows one.
+
+    THE UNITS, RULED FROM WHAT THE TEMPLATE ASKS. The blank template's CDE
+    Profile sheet labels column 10 ``Requested Allocation ($M)``; the shipped
+    ``pipeline_sample.xlsx`` states ``65`` in it; and the Pipeline sheet's
+    ``QEI ($M)`` and ``Total Cost ($M)`` use the same convention and are
+    already multiplied by 1_000_000 in ``_XLSX_MILLIONS_COLS``. Three
+    independent readings of the same workbook agree, so the cell is MILLIONS
+    and the conversion is unambiguous.
+
+    WHAT IS REFUSED, AND WHY NOTHING IS COERCED OR CLAMPED:
+
+      * blank / whitespace / absent -- not an answer, same as a blank round.
+      * zero or negative -- not a request, and ``Application`` forbids it.
+      * non-numeric -- a typo is not a licence to guess what was meant.
+      * above ``_MAX_ALLOCATION_MILLIONS`` -- the unit trap. A user who types
+        ``65000000`` into a ($M) cell means $65MM and would otherwise get $65
+        TRILLION. "They obviously meant 65" is a guess about which unit they
+        used, and clamping to the ceiling invents a request they never made.
+        A wrong allocation is worse than a disclosed absent one, so it
+        discloses.
+
+    Note the cell arrives as a STRING: ``_parse_cde_profile_from_wb`` sends
+    every unrecognised key through ``str(val).strip()``, so ``65`` is
+    ``"65"``. Numbers are accepted too, for callers that pass a parsed dict.
+
+    Example::
+
+        _supplied_allocation({"requested_allocation_millions": "42"})   # -> 42000000.0
+        _supplied_allocation({"requested_allocation_millions": "  "})   # -> None
+        _supplied_allocation({"requested_allocation_millions": 65000000})  # -> None
+    """
+    raw = (cde_extra or {}).get("requested_allocation_millions")
+    if raw is None:
+        return None
+    text = str(raw).strip().lstrip("$").strip()
+    if not text:
+        return None
+    try:
+        millions = float(text)
+    except (TypeError, ValueError):
+        return None
+    if millions != millions or millions in (float("inf"), float("-inf")):
+        return None
+    if millions <= 0 or millions > _MAX_ALLOCATION_MILLIONS:
+        return None
+    return millions * 1_000_000
+
+
+def requested_allocation_label(value: float) -> str:
+    """Render the requested allocation, or disclose that the CDE never stated one.
+
+    The counterpart of ``round_label`` for the figure on the adjacent line of
+    page 1. ``NOT_SUPPLIED_INPUT`` is the library's own vocabulary for "a
+    REQUIRED field was absent from the input and the tool put a number there
+    anyway" -- written for the QLICI defect, which is the same shape -- so
+    this invents no new string and renders as text that cannot be mistaken
+    for a figure.
+
+    Defaults to showing the figure: every path that does not go through an
+    upload (the demo, and any Application built directly) states its own.
+    """
+    if not st.session_state.get("allocation_is_stated", True):
+        return NOT_SUPPLIED_INPUT
+    return fmt_millions(value)
+
+
 def _scoring_attrs_only(cde_extra: dict, is_demo: bool) -> dict:
     """Strip identity keys and blanks from a parsed CDE Profile sheet.
 
@@ -190,8 +315,9 @@ def get_or_create_app(
             so the Win Alignment Scorer automatically picks them up.
     """
     creating_new = "app" not in st.session_state or pipeline is not None
-    # Read before _scoring_attrs_only() below rebinds cde_extra without it.
+    # Read before _scoring_attrs_only() below rebinds cde_extra without them.
     supplied_round = _supplied_round(cde_extra)
+    supplied_allocation = _supplied_allocation(cde_extra)
     if creating_new:
         effective_demo = is_demo if is_demo is not None else pipeline is None
         if effective_demo:
@@ -237,13 +363,30 @@ def get_or_create_app(
         # false claim for an unverified one. The demo is a fictional worked
         # example and may state its own round; an upload's round is the
         # uploader's fact, honoured when supplied and DISCLOSED when not.
-        app = Application(cde=cde, requested_allocation=65_000_000,
+        # THE ALLOCATION IS GATED ON effective_demo TOO (1.5.5 audit B6), for
+        # the reason directly above and on the same line of the same
+        # frozenset. This read ``requested_allocation=65_000_000``
+        # unconditionally, so a CDE that stated its own request in the
+        # template's "Requested Allocation ($M)" cell had $65,000,000
+        # asserted over it -- rendered on page 1 and fed to page 3's
+        # optimizer. The demo is a fictional worked example and states its
+        # own $65MM; an upload's request is the uploader's fact, honoured
+        # when supplied and DISCLOSED when not.
+        allocation_is_stated = effective_demo or supplied_allocation is not None
+        if effective_demo:
+            requested = 65_000_000
+        elif supplied_allocation is not None:
+            requested = supplied_allocation
+        else:
+            requested = _UNSTATED_ALLOCATION_PLACEHOLDER
+        app = Application(cde=cde, requested_allocation=requested,
                           application_round=(
                               SAMPLE_APPLICATION_ROUND if effective_demo
                               else supplied_round))
         app.add_pipeline(p)
         st.session_state["app"] = app
         st.session_state["is_demo_data"] = effective_demo
+        st.session_state["allocation_is_stated"] = allocation_is_stated
     elif cde_extra and "app" in st.session_state:
         # User re-supplied CDE data without re-uploading the pipeline — patch extra in place
         st.session_state["app"].cde.extra = {
@@ -259,6 +402,13 @@ def get_or_create_app(
         # through this side door.
         if supplied_round and not st.session_state.get("is_demo_data", True):
             st.session_state["app"].application_round = supplied_round
+        # The request on that second sheet is the same fact off the same cell
+        # and is honoured the same way -- and, like the round, not through
+        # this side door on the demo, whose $65MM is the fixture's own.
+        if (supplied_allocation is not None
+                and not st.session_state.get("is_demo_data", True)):
+            st.session_state["app"].requested_allocation = supplied_allocation
+            st.session_state["allocation_is_stated"] = True
     elif "is_demo_data" not in st.session_state:
         st.session_state["is_demo_data"] = True
     return st.session_state["app"]

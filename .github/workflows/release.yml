@@ -905,7 +905,37 @@ jobs:
           # then no single number to publish. It is parametrised over a named
           # tuple now and each case skips in the tarball instead of vanishing
           # from it. Invisible from a checkout.
-          FLOOR=760
+          # RE-DERIVED AGAIN IN B6, AND THE GATE ANNOUNCED IT A SIXTH TIME.
+          # test_release_floor_is_derived_from_the_current_suite went red on
+          # FLOOR=760 before this file was opened -- 760 sat exactly on its
+          # band's lower bound, so B6's sixteen new cases (six test functions,
+          # one of them parametrised eleven ways) pushed the bound past it.
+          #
+          # Derived from a REAL SDIST BUILD with this job's exact invocation,
+          # on 3.12.13: pristine clone with no egg-info, `python -m build
+          # --sdist`, the tarball installed with [dev] into a fresh venv, ONLY
+          # tests/, streamlit_app/, README.md and pyproject.toml copied out of
+          # it into a directory with NO nmtcapp/, `import nmtcapp` confirmed to
+          # resolve to site-packages, and the breakdown read off the junit
+          # report rather than off the terminal:
+          #
+          #     collected under -m "not wheel" 1,606
+          #     skipped in the sdist             -57
+          #     EXECUTED                       1,549
+          #     half                             774.5
+          #     rounded down                     770
+          #
+          # The tarball ran CLEAN on that build: 1,549 passed, 57 skipped, 1
+          # deselected, zero failures.
+          #
+          # MAX_SDIST_SKIPS DOES NOT MOVE, AND THAT IS THE MEASUREMENT TOO, NOT
+          # an assumption: the same run skipped exactly 57, the value the
+          # constant already carries. B6 adds no gate that reads examples/,
+          # docs/ or scripts/ -- its tests exercise the Streamlit boundary,
+          # which the tarball ships -- so all sixteen new cases EXECUTE in the
+          # sdist. The ceiling has NOT been raised to absorb a new skip. The
+          # resulting band is [770, 803].
+          FLOOR=770
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()
