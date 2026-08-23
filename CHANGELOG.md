@@ -580,6 +580,38 @@ sets — now **measured**, across all 23 score fields, not reported.
 size-fit band, so page 3's composite moves — 0.7512 at 5MM, 0.7587 at 55–65MM,
 0.7557 at 200MM. Recorded below.
 
+### `FLOOR` — re-derived the long way a sixth time, and nothing was raised
+
+`test_release_floor_is_derived_from_the_current_suite` went red on `FLOOR=760`
+before `release.yml` was opened. **760 sat exactly on its band's lower bound**,
+so B6's sixteen new cases pushed the bound past it — the sixth consecutive
+round where the freshness gate, not a re-read comment, caught the stale digit.
+
+Derived from a **real sdist build** on 3.12.13 with the job's exact invocation
+— pristine clone, no egg-info, `python -m build --sdist`, tarball installed
+with `[dev]` into a fresh venv, only `tests/`, `streamlit_app/`, `README.md`
+and `pyproject.toml` staged into a directory with **no `nmtcapp/`**, `import
+nmtcapp` confirmed to resolve to site-packages, breakdown read off the junit
+XML with the job's own formula:
+
+```
+collected under -m "not wheel" 1,606
+skipped in the sdist             -57
+EXECUTED                       1,549
+half                             774.5
+rounded down                     770
+```
+
+The tarball ran **clean**: 1,549 passed, 57 skipped, 1 deselected, zero
+failures. Band is now `[770, 803]`.
+
+**`MAX_SDIST_SKIPS` does not move, and that is measured rather than assumed.**
+The same run skipped **exactly 57**, the value the constant already carries.
+B6 adds no gate that reads `examples/`, `docs/` or `scripts/` — its tests
+exercise the Streamlit boundary, which the tarball ships — so all sixteen new
+cases **execute** in the sdist. **No skip was added and no ceiling was raised
+to absorb one.**
+
 ### B6a — what else in `_IDENTITY_KEYS` fails its own comment
 
 **Its comment makes a claim about every member, and nothing checks it.** Both
@@ -621,6 +653,19 @@ itself wrong, and that header is still wrong.** Recorded below.
   members have now failed it in consecutive fixes and were both found by
   reading. A comment asserting a property of a set nobody checks is this
   package's recurring shape.
+- **Which of the three `examples/` defects is a LIBRARY defect rather than an
+  example defect — asked and answered by execution.** Only the third.
+  `WinProbabilityScore.community_outcomes` is a public dataclass field holding
+  a dict of numeric-looking sub-scores, and on the degraded path it hands out
+  `None` for `higher_distress_targeting` and `deep_distress_commitment`
+  alongside plain ints — so **any** consumer that iterates and formats it hits
+  `TypeError: unsupported format string passed to NoneType.__format__`,
+  notebook or not. That is an API-shape defect and its priority rises
+  accordingly. The other two are stale consumers of deliberate, documented
+  renames — `Sector (NAICS)` → `Sector (as supplied)` and `TOP_TIER_*` →
+  `HOUSE_TOP_TIER_*` — and the library is internally consistent on both
+  (verified: no occurrence of either old name survives in `nmtcapp/`). **Not
+  fixed here, as instructed.**
 - **`streamlit_app/pages/1_Pipeline_Analyzer.py` imports `GRADE_THRESHOLDS`
   and never uses it.** The only remaining occurrence is inside a comment; the
   live uses left with the chart when it moved to `readiness_chart.py`.
