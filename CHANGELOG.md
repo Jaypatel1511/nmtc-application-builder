@@ -842,6 +842,27 @@ actually declared, so deleting a line cannot be how it goes quiet.
 **No source file under `nmtcapp/` changes in B7 or B7b.** `git diff 4c41615 --
 nmtcapp/` is empty.
 
+**`FLOOR` RE-DERIVED THE LONG WAY A FIFTH TIME, AND IT DOES NOT MOVE.** Measured,
+not typed: pristine clone with no egg-info → `python -m build --sdist` → tarball
+plus `[dev]` into a clean venv → only `tests/`, `streamlit_app/`, `README.md` and
+`pyproject.toml` staged into a directory with **no `nmtcapp/`** → `import nmtcapp`
+confirmed to resolve to site-packages → the release job's exact invocation → the
+junit XML read with the job's own formula. **1,611 collected, 57 skipped, 1,554
+executed, half 777.0, rounded down 770.** Band `[770, 805]`, width 35, still
+sitting on its lower bound by design. The tarball ran clean.
+
+**THIS ROUND ADDS NO SKIP.** All five of B7b's cases execute in the sdist — the
+gate reads `pyproject.toml`, which the job copies out of the tarball, so it has
+nothing to skip on. **`MAX_SDIST_SKIPS` was not touched.**
+
+**Recorded, and not visible from the number alone: skip headroom is ZERO.**
+Measured skips (57) now equal the ceiling (`MAX_SDIST_SKIPS = 57`) — and they
+already did at the 1.5.4 derivation, which measured the same 57 against the same
+57. The release.yml prose still says "headroom is still two", which was true at
+1.5.2 and is not true now. **The next round that adds a single skipping case
+breaches the ceiling.** Not raised here — raising it is precisely the move that
+bound exists to make somebody defend, and it is not B7b's scope.
+
 
 ---
 
