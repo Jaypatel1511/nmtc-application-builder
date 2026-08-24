@@ -991,8 +991,42 @@ jobs:
           # skipping); nothing compares the MEASUREMENT above to it. That gate
           # is not added here because it would be RED ON ARRIVAL -- 57 against
           # 57 leaves no room -- and landing a red gate is not this round's job.
-          # 1.5.6 -- RE-DERIVED THE LONG WAY A SEVENTH TIME, AND FLOOR MOVES
-          # 770 -> 780. test_release_floor_is_derived_from_the_current_suite
+          # 1.5.7 -- RE-DERIVED THE LONG WAY AN EIGHTH TIME, AND FLOOR MOVES
+          # 780 -> 790. test_release_floor_is_derived_from_the_current_suite
+          # went red on FLOOR=780 before this file was opened, for the EIGHTH
+          # consecutive cycle: 780 sat exactly on its band's lower bound (the
+          # 1.5.6 close said so), so 1.5.7's 23 new cases -- 15 in
+          # test_streamlit_page_drive.py and 8 in test_shipped_workbook_xml.py
+          # -- pushed the bound past it. THE GATE ANNOUNCED IT; this number
+          # was not noticed by hand.
+          #
+          # Derived from a REAL SDIST BUILD with this job's exact invocation,
+          # on 3.12.13: pristine clone with no egg-info, `python -m build
+          # --sdist`, the tarball installed with [dev] into a fresh venv, ONLY
+          # tests/, streamlit_app/, README.md and pyproject.toml copied out of
+          # it into a directory with NO nmtcapp/, `import nmtcapp` confirmed to
+          # resolve to site-packages, and the figures read off the junit report
+          # rather than off the terminal:
+          #
+          #     junit total (not wheel)        1,640
+          #     skipped in the sdist             -57
+          #     EXECUTED                       1,583
+          #     half                             791
+          #     rounded down to ten              790
+          #
+          # The tarball ran CLEAN on that build: 1,583 passed, 57 skipped, 1
+          # deselected, zero failures.
+          #
+          # NEITHER GATE 1.5.7 ADDS SKIPS ANYWHERE, AND THAT IS MEASURED FROM
+          # THE SAME JUNIT REPORT, NOT ASSERTED: the per-module skip breakdown
+          # names 17 modules and neither test_streamlit_page_drive nor
+          # test_shipped_workbook_xml is among them. The page-driving gate was
+          # designed for this -- it stubs st.file_uploader's RETURN VALUE
+          # instead of using AppTest's FileUploader accessor, which does not
+          # exist in the streamlit 1.50.0 that `[dev]` resolves on PYTHON 3.9,
+          # so it needs no skipif on a quarter of the CI matrix.
+          #
+          # SUPERSEDED, KEPT FOR THE TRAIL -- 1.5.6's derivation: test_release_floor_is_derived_from_the_current_suite
           # went red on FLOOR=770 before this file was opened, for the seventh
           # consecutive cycle: 770 sat exactly on its band's lower bound (the
           # 1.5.5 close said so in as many words), so 1.5.6's NINE new cases
@@ -1038,7 +1072,7 @@ jobs:
           # bounds the CONSTANT; nothing compares the MEASUREMENT above to it.
           # Still not added here, and for the same reason as at 1.5.5 -- 57
           # against 57 leaves no room, so the gate would be RED ON ARRIVAL.
-          FLOOR=780
+          FLOOR=790
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()
