@@ -260,6 +260,41 @@ if run_clicked:
             # ships and in plenty of real pipelines.
             _no_qlici = [p.project_id for p in pipeline if not p.qlici_amount_supplied]
             if _no_qlici:
+                # THE PARAGRAPH THAT WAS HERE WAS FALSE AS EXECUTED (1.5.7
+                # audit close). It told the CDE that "the Excel v1.1 template
+                # cannot carry this column" and sent them to CSV instead. The
+                # premise was generalised from ONE header spelling: adding a
+                # `QLICI ($M)` column does fail (it is not in
+                # _XLSX_PIPELINE_COL_MAP, so nothing renames it), and that
+                # single failure was read as "the xlsx path can never supply
+                # qlici_amount". It can. _read_pipeline_sheet_from_wb reads
+                # ws.max_column with dynamic headers and renames only mapped
+                # display labels, so an unmapped column passes through
+                # untouched; a column headed `qlici_amount` in a
+                # template-built .xlsx is read and marked supplied. Measured:
+                #   header 'QLICI ($M)'   -> supplied=False qlici=8500000.0
+                #   header 'qlici_amount' -> supplied=True  qlici=7500000.0
+                # There is no 28-column restriction anywhere.
+                #
+                # AND THE ADVICE COMPOUNDED THE ERROR. CDE Profile is an xlsx
+                # SHEET; CSV cannot carry it. So the recommended path drops
+                # application_round and requested_allocation_millions -- the
+                # two facts THIS RELEASE exists to make survive the identity
+                # strip (see T1 above). Measured on the CSV path:
+                # application_round=None, requested_allocation=None ->
+                # $65,000,000 placeholder.
+                #
+                # REVERTED, NOT REWRITTEN. The closing instruction below is
+                # 1.5.6's, restored verbatim -- the paragraph around it never
+                # changed -- and it is followable on BOTH paths. A rewrite
+                # would have to teach the xlsx column, and doing that creates
+                # a NEW exposure: a hand-added `qlici_amount` in an .xlsx is
+                # not in _XLSX_MILLIONS_COLS, so a CDE who follows the
+                # neighbouring `QEI ($M)` convention and writes 1.5 gets
+                # $1.50, silently, in a federal filing. That trap is
+                # PRE-EXISTING and latent precisely because nothing tells
+                # anyone to add the column. Recorded in CHANGELOG.md under
+                # this release's audit close, and deferred; not opened here.
                 st.warning(
                     f"**No `qlici_amount` column in this file** — "
                     f"{len(_no_qlici)} of {len(pipeline)} projects. Each "
@@ -268,17 +303,8 @@ if run_clicked:
                     "and the document does not present it as one: Appendix A's "
                     "**Total QLICI (\\$)** reads *not supplied [CDE TO "
                     "COMPLETE]*, and the QLICI ≤ QEI consistency check is "
-                    "reported as not checkable rather than passed.\n\n"
-                    "**The Excel v1.1 template cannot carry this column** "
-                    "(1.5.7 T5). Its Pipeline sheet defines 28 columns and "
-                    "none of them is QLICI, so no .xlsx built from it can "
-                    "supply the figure -- an instruction to add one to that "
-                    "workbook cannot be followed through the path this app "
-                    "calls recommended. To supply it, upload a **CSV** "
-                    "carrying a `qlici_amount` column: that path reads it and "
-                    "marks it supplied. Adding the column to the Excel "
-                    "template is a template-VERSION change and is not in this "
-                    "release."
+                    "reported as not checkable rather than passed. Add a "
+                    "`qlici_amount` column and re-upload before filing."
                 )
             if _missing_cde:
                 st.info(
