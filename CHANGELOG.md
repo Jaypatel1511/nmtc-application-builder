@@ -122,10 +122,74 @@ and a `None` round. The single fix on page 1 repairs all three.
   fields scores 80.0 — so this is a finding about the composite and the
   template, not a quiet patch. A component weighted 5% is unreachable through
   the path the app calls recommended.
-- **The xlsx path can never supply `qlici_amount`.** `_XLSX_PIPELINE_COL_MAP`
-  has 28 entries and none maps to it, so EVERY xlsx upload takes the
-  substitution branch and is told to "supply a `qlici_amount` column and
-  re-run" — an instruction that cannot be followed through that path.
+- **~~The xlsx path can never supply `qlici_amount`.~~ RETRACTED in the audit
+  close below — the claim was false and it shipped to users.** What is true is
+  narrower: `_XLSX_PIPELINE_COL_MAP` has 28 entries and none maps to
+  `qlici_amount`, so a column headed `QLICI ($M)` is never renamed and every
+  *template-as-shipped* upload takes the substitution branch. It does NOT
+  follow that the path can never supply the figure. See below.
+
+### Audit close — a false paragraph shipped, and is deleted
+
+**`streamlit_app/pages/1_Pipeline_Analyzer.py` shipped a user-facing paragraph
+that is false as executed.** The `if _no_qlici:` warning told the CDE that
+**"The Excel v1.1 template cannot carry this column"**, that "no .xlsx built
+from it can supply the figure", and that the remedy was to **upload a CSV
+instead**. All of it is removed. The closing instruction is **1.5.6's,
+restored verbatim** — *"Add a `qlici_amount` column and re-upload before
+filing"* — which is followable on **both** paths. **Reverted, not rewritten.**
+
+**The premise was generalised from one header spelling.** The 1.5.7 build
+prompt offered as proof: *"adding a `QLICI ($M)` column: the supplied flags
+stayed `False`."* That experiment is real and it proves nothing about the
+general claim. `QLICI ($M)` is not in `_XLSX_PIPELINE_COL_MAP`, so nothing
+renames it — but `_read_pipeline_sheet_from_wb` reads `ws.max_column` with
+dynamic headers and renames **only** mapped display labels, so an *unmapped*
+column passes through untouched. Measured on a workbook built from the shipped
+`pipeline_template.xlsx`:
+
+```
+header 'QLICI ($M)'     -> supplied=False  qlici=8500000.0
+header 'qlici_amount'   -> supplied=True   qlici=7500000.0
+```
+
+**There is no 28-column restriction anywhere.** The sheet does define 28
+columns and none is QLICI — both true, and neither implies the conclusion
+drawn from them.
+
+**The advice compounded the error.** `CDE Profile` is an xlsx *sheet*; CSV
+cannot carry it. So the banner's own recommendation discards the two facts
+**this release exists to preserve**. Measured on the CSV path:
+
+```
+qlici supplied      = True
+application_round   = None      -> disclosed as not specified
+requested_allocation= None      -> $65,000,000 placeholder
+```
+
+A release whose subject is *"the uploaded round and allocation survive the
+identity strip"* shipped a banner routing CDEs onto the one path that drops
+both — and it fired on **every** template-built xlsx upload, because the
+template has no QLICI column and `_no_qlici` is therefore always non-empty.
+
+**No gate asserted the deleted claim.** Verified by grepping all of `tests/`
+for its distinctive phrases before and after deletion: zero hits. `FLOOR`
+stays **790**, `MAX_SDIST_SKIPS` stays **57**, collection unchanged at 1641.
+`git diff 72f0008 -- nmtcapp/` is empty — this round is text only.
+
+### Recorded, not fixed — the units trap that makes this a revert
+
+- **A hand-added `qlici_amount` column in an `.xlsx` is not unit-converted,
+  and that is why the banner was reverted rather than rewritten.**
+  `_XLSX_MILLIONS_COLS` is `{"qei_request", "total_project_cost"}` only. A CDE
+  who adds `qlici_amount` beside the template's `QEI ($M)` column, follows
+  that column's visible convention, and writes `1.5` gets **`$1.50`** —
+  silently, in a federal filing. Measured: `qlici_amount=1.5` → `qlici=1.5`.
+  **This is PRE-EXISTING and latent: nothing currently tells anyone to add
+  that column.** A banner that taught the xlsx column would create the
+  exposure, which is the coupling — a rewrite could not be written safely
+  without also gating the units, and this round is not scoped to touch code.
+  **Deferred to 1.6.0.**
 
 ---
 
