@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import sys
 import os
+from dataclasses import dataclass
 
 # Ensure project root is on the path so nmtcapp imports work from any working directory.
 _REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -297,10 +298,79 @@ def _scoring_attrs_only(cde_extra: dict, is_demo: bool) -> dict:
     }
 
 
+@dataclass(frozen=True)
+class UploadedCDEProfile:
+    """A parsed CDE Profile sheet, split into the two destinations it serves.
+
+    THE TYPE EXISTS BECAUSE THE ORDER OF TWO CALLS WAS LOAD-BEARING AND
+    NOTHING ENFORCED IT (1.5.7 T1). ``load_uploaded_pipeline`` returns ONE
+    dict that feeds TWO destinations: the scoring-attribute bag that merges
+    into ``CDEProfile.extra``, and two facts -- the round and the requested
+    allocation -- whose destination is ``Application``. ``_scoring_attrs_only``
+    correctly removes the second from the first. ``get_or_create_app``
+    correctly read them before doing so.
+
+    The defect was that page 1 ALSO called ``_scoring_attrs_only``, one line
+    earlier, and rebound the name. ``get_or_create_app`` then read a dict the
+    caller had already emptied, found nothing, and fell back to
+    ``_UNSTATED_ALLOCATION_PLACEHOLDER`` -- telling a CDE that had filled in
+    both cells that it had supplied neither, and then computing with
+    \\$65,000,000. Its defence was a comment naming its OWN strip; it could not
+    see the caller's.
+
+    WHY A TYPE AND NOT "READ EARLIER". Reading earlier fixes this caller and
+    leaves the trap armed for the next one: the hazard is that a
+    SCORING-ATTRIBUTE BAG and TWO IDENTITY FACTS travel in one dict, so
+    stripping the bag silently discards the facts. A dict cannot carry the
+    distinction; this can. Once the facts are on their own fields, no caller
+    can strip them by forgetting, because the strip does not reach them --
+    and a caller who hands ``get_or_create_app`` one of these hands over
+    both destinations at once or neither.
+
+    ``scoring_attrs`` is already stripped and blank-filtered: it is exactly
+    what may merge into ``CDEProfile.extra``.
+
+    Example::
+
+        parsed = read_uploaded_cde_profile({"application_round": "CY 2027",
+                                            "dbc_focus_years": 4},
+                                           is_demo=False)
+        parsed.scoring_attrs      # -> {'dbc_focus_years': 4}
+        parsed.supplied_round     # -> 'CY 2027'
+    """
+
+    scoring_attrs: dict
+    supplied_round: str | None
+    supplied_allocation: float | None
+
+
+def read_uploaded_cde_profile(
+    cde_extra: dict | None, *, is_demo: bool
+) -> UploadedCDEProfile:
+    """Split a parsed CDE Profile sheet into scoring attrs + the two facts.
+
+    THE ONLY CORRECT ORDER, WRITTEN ONCE. Both reads happen before the strip,
+    here, in the one place that performs the strip for callers. There is no
+    second ordering for a caller to get wrong.
+
+    Example::
+
+        read_uploaded_cde_profile({"requested_allocation_millions": "42"},
+                                  is_demo=False).supplied_allocation
+        # -> 42000000.0
+    """
+    cde_extra = cde_extra or {}
+    return UploadedCDEProfile(
+        scoring_attrs=_scoring_attrs_only(cde_extra, is_demo),
+        supplied_round=_supplied_round(cde_extra),
+        supplied_allocation=_supplied_allocation(cde_extra),
+    )
+
+
 def get_or_create_app(
     pipeline: Pipeline | None = None,
     is_demo: bool | None = None,
-    cde_extra: dict | None = None,
+    cde_extra: dict | UploadedCDEProfile | None = None,
 ) -> Application:
     """Return the shared Application object from session_state, creating if needed.
 
@@ -310,14 +380,41 @@ def get_or_create_app(
             supplied their own pipeline so the demo banner is suppressed.
             Defaults to ``True`` whenever no pipeline is provided (i.e., the
             sample pipeline is being used).
-        cde_extra: Optional dict of CDE-level scoring attributes (from the
-            CDE Profile sheet in an uploaded xlsx). Merged into CDEProfile.extra
-            so the Win Alignment Scorer automatically picks them up.
+        cde_extra: The parsed CDE Profile sheet from an uploaded xlsx, as
+            either an ``UploadedCDEProfile`` (preferred -- see below) or the
+            raw dict ``load_uploaded_pipeline`` returns. Scoring attributes
+            merge into ``CDEProfile.extra`` so the Win Alignment Scorer picks
+            them up; the round and requested allocation go to ``Application``.
+
+            EITHER SHAPE IS SAFE, WHICH IS THE POINT (1.5.7 T1). Handed a raw
+            dict, this function does the read-then-strip itself, in that
+            order. Handed an ``UploadedCDEProfile``, the facts arrive on their
+            own fields and no strip can have reached them. What is no longer
+            possible is the shape that shipped in 1.5.6: a caller stripping
+            first and handing over a dict whose facts are already gone, which
+            this function could not distinguish from a sheet that stated
+            neither.
     """
     creating_new = "app" not in st.session_state or pipeline is not None
-    # Read before _scoring_attrs_only() below rebinds cde_extra without them.
-    supplied_round = _supplied_round(cde_extra)
-    supplied_allocation = _supplied_allocation(cde_extra)
+    # THE READ HAPPENS BEFORE ANY STRIP AND NO CALLER CAN REORDER IT.
+    #
+    # Through 1.5.6 these two lines were the whole defence, and the comment
+    # here said "Read before _scoring_attrs_only() below rebinds cde_extra
+    # without them." It named THIS function's strip. Page 1 ran its own strip
+    # one line before the call, so by the time these ran there was nothing
+    # left to read -- and the 18 tests over this behaviour all passed, because
+    # every one of them hand-wrote a dict that still contained the keys.
+    # See UploadedCDEProfile for why the fix is a type and not "read earlier".
+    if isinstance(cde_extra, UploadedCDEProfile):
+        _parsed, _raw_extra = cde_extra, None
+        supplied_round = _parsed.supplied_round
+        supplied_allocation = _parsed.supplied_allocation
+        _has_extra = bool(_parsed.scoring_attrs)
+    else:
+        _parsed, _raw_extra = None, cde_extra
+        supplied_round = _supplied_round(_raw_extra)
+        supplied_allocation = _supplied_allocation(_raw_extra)
+        _has_extra = bool(_raw_extra)
     if creating_new:
         effective_demo = is_demo if is_demo is not None else pipeline is None
         if effective_demo:
@@ -339,7 +436,7 @@ def get_or_create_app(
                 governance={},
                 extra={},
             )
-        if cde_extra:
+        if _has_extra:
             # IDENTITY NEVER MERGES. The neutral profile above exists so an
             # upload's framework score cannot inherit the sample CDE's
             # attributes — and through 1.1.5 this merge handed them straight
@@ -353,8 +450,13 @@ def get_or_create_app(
             # Only genuinely-supplied SCORING attributes may merge. Identity
             # keys are dropped, and anything blank is dropped too so an
             # untouched cell cannot register as an answer.
-            cde_extra = _scoring_attrs_only(cde_extra, effective_demo)
-            cde.extra = {**cde.extra, **cde_extra}
+            # Already stripped when the caller handed over a parsed
+            # profile; the identity guard ran at read time in that case.
+            _attrs = (
+                _parsed.scoring_attrs if _parsed is not None
+                else _scoring_attrs_only(_raw_extra, effective_demo)
+            )
+            cde.extra = {**cde.extra, **_attrs}
         p = pipeline if pipeline is not None else Pipeline.sample(n=20)
         # THE ROUND IS GATED ON effective_demo (1.5.5 audit B4). This line
         # applied SAMPLE_APPLICATION_ROUND unconditionally, so a real upload
@@ -387,11 +489,17 @@ def get_or_create_app(
         st.session_state["app"] = app
         st.session_state["is_demo_data"] = effective_demo
         st.session_state["allocation_is_stated"] = allocation_is_stated
-    elif cde_extra and "app" in st.session_state:
+    elif _has_extra and "app" in st.session_state:
         # User re-supplied CDE data without re-uploading the pipeline — patch extra in place
+        _side_attrs = (
+            _parsed.scoring_attrs if _parsed is not None
+            else _scoring_attrs_only(
+                _raw_extra, st.session_state.get("is_demo_data", True)
+            )
+        )
         st.session_state["app"].cde.extra = {
             **st.session_state["app"].cde.extra,
-            **_scoring_attrs_only(cde_extra, st.session_state.get("is_demo_data", True)),
+            **_side_attrs,
         }
         if "is_demo_data" not in st.session_state:
             st.session_state["is_demo_data"] = True

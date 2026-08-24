@@ -18,6 +18,7 @@ from utils import (
     fmt_pct,
     get_or_create_app,
     apply_theme,
+    md,
     metric_classification,
 )
 from chart_style import (
@@ -150,10 +151,17 @@ if getattr(result, "score_is_partial", False):
         "Distress alignment is excluded from the scores below."
     )
 if not result.constraints_satisfied:
-    st.warning(
+    # ROUTED THROUGH md() (1.5.7 T3). infeasibility_reason is model-produced
+    # and OptimizationConstraints.is_feasible emits two currency figures in
+    # one string -- "Total QEI $20,500,000 < minimum $900,000,000". Rendered
+    # raw, micromark pairs the two "$", eats both and re-typesets the run
+    # between, so the CDE is shown two unitless numbers in a sentence about
+    # whether its pipeline clears a dollar threshold. Same mechanism as the
+    # validation warnings on page 1; this page had no md() call at all.
+    st.warning(md(
         f"⚠️ **Constraints not fully satisfied:** {result.infeasibility_reason}. "
         "The optimizer returned the best feasible result given the pipeline."
-    )
+    ))
 else:
     st.success("✅ All constraints satisfied.")
 

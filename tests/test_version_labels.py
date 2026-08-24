@@ -77,6 +77,17 @@ _NOT_OUR_RELEASES = {
         "is about that library at that version -- `use_container_width` was "
         "announced for removal after 2025-12-31 and still worked there"
     ),
+    "1.50.0": (
+        "the Streamlit that ``pip install \".[dev]\"`` RESOLVES on PYTHON 3.9 "
+        "-- the oldest interpreter in this repository's CI matrix -- because "
+        "streamlit 1.62.0 declares Requires-Python >=3.10. Measured on "
+        "3.9.25, not assumed. The version is named because the claim in "
+        "tests/test_streamlit_page_drive.py is about that library at that "
+        "version: its streamlit.testing.v1.element_tree has no FileUploader "
+        "class at all, which is why that gate stubs st.file_uploader's return "
+        "value instead of using AppTest's widget accessor, and therefore why "
+        "it needs no skipif on a quarter of the matrix"
+    ),
     "1.61.1": (
         "the INSTALLED Streamlit whose st.metric delta behaviour was executed "
         "for 1.5.1 T4 — _determine_delta_color_and_direction returns GREEN/UP "
