@@ -5,6 +5,130 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.7] — 2026-08-24
+
+**PATCH. No public names change, no score moves, no new methodology.** Verified
+by A/B against `a9c9f23` on the same upload: every readiness component, both
+win-probability aggregates, all three section sub-scores, the tier, the
+composite, the competitive tier, the optimizer's objective and alignment
+scores and every validation count are **byte-identical**. Exactly three fields
+differ, and all three ARE the fix:
+
+| field | `a9c9f23` | 1.5.7 |
+|---|---|---|
+| `application_round` | `None` | `CY2026` |
+| `requested_allocation` | `65000000` | `48000000.0` |
+| `allocation_is_stated` | `False` | `True` |
+
+**THE DEFECT. A CDE filled in the template's own "Requested Allocation ($M)"
+and "Application Round" cells. The page told it that it had supplied neither —
+and then used `$65,000,000` in its own arithmetic.** Three statements from one
+upload supplying `CY2026` and `48`:
+
+```
+Application round:    not specified — CDE to state
+Requested allocation: not supplied [CDE TO COMPLETE]
+⚠ Total pipeline QEI (30,200,000) is below the requested allocation
+  (65,000,000) — pipeline undersized
+```
+
+The first two were false. The third used a number the CDE never typed.
+
+**THE MECHANISM WAS AN ORDER OF TWO CALLS, AND NOTHING ENFORCED IT.**
+`load_uploaded_pipeline` returns ONE dict serving TWO destinations: a
+scoring-attribute bag that merges into `CDEProfile.extra`, and two facts —
+the round and the requested allocation — whose destination is `Application`.
+`get_or_create_app` read both BEFORE its own `_scoring_attrs_only` strip, and
+its comment said so. `pages/1_Pipeline_Analyzer.py:237` called that same strip
+ONE LINE EARLIER and **rebound the name**, so line 276 handed over a dict
+already emptied. `Application` then fell back to
+`_UNSTATED_ALLOCATION_PLACEHOLDER`.
+
+**WHY EVERY GATE MISSED IT — AND WHY IT IS A NEW SHAPE ON THE LEDGER.**
+`tests/test_streamlit_upload_profile.py` has EIGHTEEN tests over exactly this
+behaviour, including `test_an_upload_that_states_its_round_has_it_honoured`
+and `test_an_upload_that_states_its_allocation_has_it_honoured`. They pass.
+They have always passed. **They are correct.** Every one of them hands the
+function a dict that STILL CONTAINS THE KEYS, because the test author wrote
+the dict by hand. The page hands it a dict already emptied.
+
+**The tests construct the input the function wants. The page constructs the
+input the function gets.** This is not a dead assertion and not a detector
+wired to its own subject: it is a correct unit with a correct test, called in
+an order that makes both irrelevant. No unit test over `utils` can see it.
+
+**THE FIX IS A TYPE, NOT "READ EARLIER".** Reading earlier repairs this caller
+and leaves the trap armed for the next one. `UploadedCDEProfile` (frozen
+dataclass) and `read_uploaded_cde_profile()` perform the strip and the two
+reads together, in the only correct order, in one place; the facts then travel
+on their own fields where no caller's strip can reach them.
+`get_or_create_app` accepts either shape, so the eighteen existing tests keep
+passing unchanged and a raw dict is still read-then-stripped internally.
+
+**THE BLAST RADIUS WAS ALL THREE PAGES, VERIFIED BY DRIVING THEM.**
+`2_Win_Alignment_Scorer.py:65` and `3_Pipeline_Optimizer.py:99` call
+`get_or_create_app()` with no arguments and reuse the `Application` page 1
+stored in `st.session_state` — measured as the IDENTICAL object (same `id()`),
+not inferred from the two lines. Both therefore scored against `$65,000,000`
+and a `None` round. The single fix on page 1 repairs all three.
+
+### Also fixed
+
+- **The `$` delimiter, live again in the validation warnings.**
+  `completeness_check.py:101` and `consistency_check.py:148` each carry TWO
+  `$` in ONE body, and `pages/1_Pipeline_Analyzer.py` rendered them raw, so
+  micromark's `singleDollarTextMath` paired the delimiters, ate both and
+  re-typeset the run between: `(30,200,000)isbelowtherequestedallocation
+  (65,000,000)`. Routed through `md()`. `consistency_check.py:95` (QLICI >
+  QEI) shares that render line and is covered by the same change.
+  `3_Pipeline_Optimizer.py:154` renders `infeasibility_reason`, whose producer
+  emits two `$` — routed through `md()` too, and recorded as **latent rather
+  than live**: the page exposes no `min_total_qei` widget, so that branch is
+  not currently reachable from the UI. **Measured, not assumed.**
+- **Both shipped workbooks offered `CY2025`, a round the CDFI Fund has never
+  run** — in `Valid Values`, in a data-validation dropdown, and (in
+  `pipeline_sample.xlsx`) in the stated round cell. A text `grep` cannot see
+  any of it: `.xlsx` is zipped XML, and every sweep this package runs reads
+  its trees as TEXT. The dropdown is invisible to `openpyxl`'s cell iteration
+  as well, so the new gate reads the RAW XML of every zip member.
+- **The Excel template's row-2 "Identity" banner spanned columns 1–11**,
+  including `Requested Allocation ($M)` and `Application Round`. Neither is
+  identity. This is the ORIGIN of the mirrored `_IDENTITY_KEYS` that produced
+  both this release's defect and 1.5.5's; the banner now stops at column 9 and
+  the two request columns carry an `Application Request` banner of their own.
+
+### Gates added
+
+- `tests/test_streamlit_page_drive.py` — the first test in this package to
+  drive the REAL Streamlit pages through `AppTest`, upload a workbook and
+  assert on RENDERED text. **Proved RED against `a9c9f23`: 7 of its 15 tests
+  fail there.** It stubs only `st.file_uploader`'s return value, because
+  `pip install ".[dev]"` on PYTHON 3.9 — in this repository's CI matrix —
+  resolves `streamlit==1.50.0`, whose `AppTest` has no `FileUploader` class at
+  all. Measured on 3.9.25. Using the widget accessor would have required a
+  `skipif` on a quarter of the matrix; **this gate skips nowhere.**
+- `tests/test_shipped_workbook_xml.py` — reads both shipped workbooks as
+  zipped XML. **Proved RED against `a9c9f23`: 6 of its 8 tests fail there.**
+
+### Recorded, not fixed
+
+- **`completeness` is pinned at 0.0 for every upload, and its ceiling through
+  the xlsx path is 60.0.** `_completeness_score` is `100 − 20 × issues`; the
+  neutral profile an upload builds fails five required fields, so it floors.
+  Three of them (`certification_date`, `mission`, `target_markets`) are on the
+  CDE Profile sheet but stripped as identity; **`contact` and `governance` the
+  template never collects at all**, so no xlsx upload can ever clear them. It
+  is NOT structurally unreachable — a library caller supplying all eight
+  fields scores 80.0 — so this is a finding about the composite and the
+  template, not a quiet patch. A component weighted 5% is unreachable through
+  the path the app calls recommended.
+- **The xlsx path can never supply `qlici_amount`.** `_XLSX_PIPELINE_COL_MAP`
+  has 28 entries and none maps to it, so EVERY xlsx upload takes the
+  substitution branch and is told to "supply a `qlici_amount` column and
+  re-run" — an instruction that cannot be followed through that path.
+
+---
+
 ## [1.5.6] — 2026-08-23
 
 **PATCH. No public names change, no score moves, no new methodology.** Verified

@@ -51,7 +51,7 @@ from utils import (
     fmt_pct,
     get_or_create_app,
     apply_theme,
-    _scoring_attrs_only,
+    read_uploaded_cde_profile,
     metric_classification,
 )
 from chart_style import (
@@ -217,6 +217,7 @@ run_clicked = st.button("▶  Run Analysis", type="primary", width="content")
 if run_clicked:
     pipeline = None
     _cde_extra: dict | None = None
+    _parsed_cde = None
     _is_user_upload = data_source == "Upload your own file"
 
     if _is_user_upload:
@@ -234,7 +235,23 @@ if run_clicked:
             # CDE's values — affirmatively telling the user their own data had
             # been read. Whatever this reports has to be true of what actually
             # reaches the scorer, so it must see the same dict the scorer does.
-            _cde_extra = _scoring_attrs_only(_cde_extra or {}, is_demo=False)
+            #
+            # AND THE STRIP MUST NOT DISCARD THE TWO FACTS IT PASSES OVER
+            # (1.5.7 T1). This line called _scoring_attrs_only and REBOUND
+            # _cde_extra, so the dict handed to get_or_create_app below no
+            # longer carried application_round or
+            # requested_allocation_millions. That function reads both — before
+            # its OWN strip, which is what its comment guarded — and therefore
+            # read a dict this page had already emptied. A CDE that filled in
+            # the template's "Application Round" and "Requested Allocation
+            # ($M)" cells was told it had supplied neither, and \$65,000,000
+            # was then used in the validators' own arithmetic.
+            #
+            # read_uploaded_cde_profile performs the same strip and returns
+            # the facts alongside it, so the reporting below still sees
+            # exactly what the scorer sees and the facts survive the trip.
+            _parsed_cde = read_uploaded_cde_profile(_cde_extra, is_demo=False)
+            _cde_extra = _parsed_cde.scoring_attrs
             _missing_cde = _summarise_cde_defaults(_cde_extra)
             st.success(f"Loaded {len(pipeline)} projects from {uploaded_file.name}")
             # THE COLUMN THE CDE DID NOT SUPPLY (1.3.0 S3). Read off the flag
@@ -251,8 +268,17 @@ if run_clicked:
                     "and the document does not present it as one: Appendix A's "
                     "**Total QLICI (\\$)** reads *not supplied [CDE TO "
                     "COMPLETE]*, and the QLICI ≤ QEI consistency check is "
-                    "reported as not checkable rather than passed. Add a "
-                    "`qlici_amount` column and re-upload before filing."
+                    "reported as not checkable rather than passed.\n\n"
+                    "**The Excel v1.1 template cannot carry this column** "
+                    "(1.5.7 T5). Its Pipeline sheet defines 28 columns and "
+                    "none of them is QLICI, so no .xlsx built from it can "
+                    "supply the figure -- an instruction to add one to that "
+                    "workbook cannot be followed through the path this app "
+                    "calls recommended. To supply it, upload a **CSV** "
+                    "carrying a `qlici_amount` column: that path reads it and "
+                    "marks it supplied. Adding the column to the Excel "
+                    "template is a template-VERSION change and is not in this "
+                    "release."
                 )
             if _missing_cde:
                 st.info(
@@ -276,7 +302,9 @@ if run_clicked:
             app = get_or_create_app(
                 pipeline=pipeline,
                 is_demo=not _is_user_upload,
-                cde_extra=_cde_extra,
+                # The PARSED profile, not the stripped bag: it carries the
+                # round and the requested allocation on their own fields.
+                cde_extra=_parsed_cde,
             )
             analysis = app.analyze()
         st.session_state["analysis"] = analysis
@@ -388,12 +416,23 @@ with tabs[0]:
         for vr in analysis.validation_results:
             icon = "✅" if vr.passed else "❌"
             st.markdown(f"{icon} `{vr.check_name}`")
+            # ROUTED THROUGH md() (1.5.7 T3). These are MODEL-PRODUCED
+            # strings and several of them carry TWO currency figures in ONE
+            # body -- completeness_check and consistency_check both emit
+            # "Pipeline QEI ($X) is below the requested allocation ($Y)".
+            # Rendered raw, micromark's singleDollarTextMath pairs the two
+            # "$" characters, eats both and re-typesets the run between them,
+            # so a CDE reading its own validation warnings saw
+            # "(30,200,000)isbelowtherequestedallocation(65,000,000)" -- two
+            # money figures stripped of their unit and the words welded
+            # together. 1.5.5 applied md() to the round-provenance note and
+            # not here.
             if vr.warnings:
                 for w in vr.warnings:
-                    st.caption(f"  ⚠️ {w}")
+                    st.caption(md(f"  ⚠️ {w}"))
             if vr.issues:
                 for iss in vr.issues:
-                    st.caption(f"  🚨 {iss}")
+                    st.caption(md(f"  🚨 {iss}"))
 
     # --- H: Readiness score breakdown ---
     st.markdown("---")
