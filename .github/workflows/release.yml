@@ -1027,6 +1027,34 @@ jobs:
           # so it needs no skipif on a quarter of the CI matrix.
           #
           # SUPERSEDED, KEPT FOR THE TRAIL -- 1.5.6's derivation: test_release_floor_is_derived_from_the_current_suite
+          # 1.6.0: RE-DERIVED THE LONG WAY, 790 -> 840, and 790 went red
+          # before this file was opened -- the ninth consecutive release in
+          # which the gate, not a person, is what noticed. Measured from a
+          # REAL SDIST, not from the working tree: pristine clone of
+          # feat/deliverable-1.6.0 (no egg-info, no build/), `python -m build
+          # --sdist`, a fresh venv with `pip install "<sdist>[dev]"`, then
+          # tests/, streamlit_app/, README.md and pyproject.toml copied OUT OF
+          # THE TARBALL into a directory holding no nmtcapp/. `import nmtcapp`
+          # was confirmed to resolve into site-packages before the run. The
+          # invocation is this job's own, and the counts are read off the
+          # junit XML by the formula below rather than off the summary line:
+          #
+          #     total 1742  skipped 57  EXECUTED 1685
+          #     1685 // 2 = 842 -> 840 rounded down to ten
+          #
+          # SKIP HEADROOM IS STILL EXACTLY ZERO. 57 measured against
+          # MAX_SDIST_SKIPS = 57, unchanged, and NOT ONE of the five test
+          # modules this release adds skips -- the per-module breakdown the
+          # next step prints was read and every one of the 57 belongs to a
+          # module that already skipped at 1.5.7. The ceiling was not raised.
+          #
+          # ONE FAILURE IN THAT DERIVATION RUN, AND IT IS THE ENVIRONMENT, NOT
+          # THE TREE: test_mapper_contract::test_the_floor_field_is_tri_state
+          # _not_a_bool asserts nmtc-mapper renders the field as
+          # `Optional[bool]`, and on Python 3.14 typing renders it `bool |
+          # None`. CI's matrix is 3.9-3.12; the same test passes on 3.12,
+          # verified directly. It does not affect the count above -- a failure
+          # still executes.
           # went red on FLOOR=770 before this file was opened, for the seventh
           # consecutive cycle: 770 sat exactly on its band's lower bound (the
           # 1.5.5 close said so in as many words), so 1.5.6's NINE new cases
@@ -1072,7 +1100,7 @@ jobs:
           # bounds the CONSTANT; nothing compares the MEASUREMENT above to it.
           # Still not added here, and for the same reason as at 1.5.5 -- 57
           # against 57 leaves no room, so the gate would be RED ON ARRIVAL.
-          FLOOR=790
+          FLOOR=840
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()
