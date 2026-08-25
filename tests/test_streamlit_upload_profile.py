@@ -25,7 +25,7 @@ import streamlit as st
 from nmtcapp.core.cde import CDEProfile
 from nmtcapp.core.pipeline import Pipeline
 
-from utils import get_or_create_app
+from utils import get_or_create_app, read_uploaded_cde_profile
 
 # Signature values of the sample CDE that must never influence an upload score
 SAMPLE_SIGNATURES = {
@@ -42,6 +42,24 @@ def _fresh_session():
     st.session_state.clear()
     yield
     st.session_state.clear()
+
+
+def _profile(sheet: dict, *, is_demo: bool = False):
+    """The parsed CDE Profile sheet, built the way page 1 builds it.
+
+    MIGRATED IN 1.6.0 (T1b ruling). Every call in this file used to hand
+    ``get_or_create_app`` a RAW DICT, and that is precisely the gap 1.5.7 T2
+    found: the eighteen tests here were correct, passed, and could not see the
+    defect, because each hand-wrote a dict that still contained the keys page
+    1 had already stripped out. ``get_or_create_app`` no longer accepts a
+    dict, so these now travel the route the page travels -- through
+    ``read_uploaded_cde_profile``, which performs the strip and carries the
+    round, the allocation and the identity past it.
+
+    The dicts themselves are unchanged. What changed is that no test in this
+    file can any longer construct an input shape the page cannot produce.
+    """
+    return read_uploaded_cde_profile(sheet, is_demo=is_demo)
 
 
 def _uploaded_pipeline() -> Pipeline:
@@ -62,7 +80,7 @@ def test_upload_gets_neutral_profile():
 def test_upload_cde_extra_from_upload_is_kept():
     app = get_or_create_app(
         pipeline=_uploaded_pipeline(), is_demo=False,
-        cde_extra={"prior_award_count": 1, "years_in_operation": 2},
+        cde_extra=_profile({"prior_award_count": 1, "years_in_operation": 2}),
     )
     assert app.cde.extra == {"prior_award_count": 1, "years_in_operation": 2}
 
@@ -195,7 +213,7 @@ def test_an_upload_that_states_its_round_has_it_honoured():
     app = get_or_create_app(
         pipeline=_uploaded_pipeline(),
         is_demo=False,
-        cde_extra={"application_round": "CY 2027", "dbc_focus_years": 4},
+        cde_extra=_profile({"application_round": "CY 2027", "dbc_focus_years": 4}),
     )
     assert app.application_round == "CY 2027", (
         f"the CDE Profile sheet said 'CY 2027' and the tool rendered "
@@ -214,7 +232,7 @@ def test_a_blank_round_cell_discloses_rather_than_defaulting(blank):
     app = get_or_create_app(
         pipeline=_uploaded_pipeline(),
         is_demo=False,
-        cde_extra={"application_round": blank},
+        cde_extra=_profile({"application_round": blank}),
     )
     assert app.application_round is None
     assert round_label(app.application_round) == ROUND_UNSPECIFIED_VALUE
@@ -235,14 +253,19 @@ def test_a_round_supplied_on_a_later_cde_upload_is_honoured_too():
     left the round alone.
     """
     get_or_create_app(pipeline=_uploaded_pipeline(), is_demo=False)
-    app = get_or_create_app(cde_extra={"application_round": "CY 2027"})
+    app = get_or_create_app(cde_extra=_profile({"application_round": "CY 2027"}))
     assert app.application_round == "CY 2027"
 
 
 def test_a_later_cde_upload_cannot_put_a_round_on_the_demo():
     """The demo's own round is not user-overridable through the side door."""
     get_or_create_app()  # demo
-    app = get_or_create_app(cde_extra={"application_round": "CY 2027"})
+    # READ AS THE DEMO, because the session is the demo (1.6.0 T1b). The
+    # MISMATCHED pairing -- a sheet read as a real upload applied to a demo
+    # session -- no longer silently proceeds; it raises, and that refusal is
+    # gated in tests/test_upload_identity_routing.py::TestTheIsDemoSeam.
+    app = get_or_create_app(cde_extra=_profile({"application_round": "CY 2027"},
+                                               is_demo=True))
     assert app.application_round == SAMPLE_APPLICATION_ROUND
 
 
@@ -283,7 +306,7 @@ def test_an_upload_that_states_its_allocation_has_it_honoured():
     app = get_or_create_app(
         pipeline=_uploaded_pipeline(),
         is_demo=False,
-        cde_extra={"requested_allocation_millions": "42", "dbc_focus_years": 4},
+        cde_extra=_profile({"requested_allocation_millions": "42", "dbc_focus_years": 4}),
     )
     assert app.requested_allocation == 42_000_000, (
         f"the CDE Profile sheet said 42 in a cell labelled 'Requested "
@@ -302,7 +325,7 @@ def test_the_stated_allocation_renders_as_the_amount_the_cde_stated():
     app = get_or_create_app(
         pipeline=_uploaded_pipeline(),
         is_demo=False,
-        cde_extra={"requested_allocation_millions": 42},
+        cde_extra=_profile({"requested_allocation_millions": 42}),
     )
     assert fmt_millions(app.requested_allocation) == "$42.0M"
     assert requested_allocation_label(app.requested_allocation) == "$42.0M"
@@ -335,7 +358,7 @@ def test_an_unusable_allocation_cell_discloses_rather_than_coercing(cell):
     app = get_or_create_app(
         pipeline=_uploaded_pipeline(),
         is_demo=False,
-        cde_extra={"requested_allocation_millions": cell},
+        cde_extra=_profile({"requested_allocation_millions": cell}),
     )
     assert requested_allocation_label(app.requested_allocation) == NOT_SUPPLIED_INPUT, (
         f"the cell held {cell!r} and the tool rendered a figure anyway. A "
@@ -354,6 +377,6 @@ def test_the_demo_still_states_its_own_allocation():
 def test_an_allocation_supplied_on_a_later_cde_upload_is_honoured_too():
     """The re-supply branch reads the same fact off the same cell."""
     get_or_create_app(pipeline=_uploaded_pipeline(), is_demo=False)
-    app = get_or_create_app(cde_extra={"requested_allocation_millions": "42"})
+    app = get_or_create_app(cde_extra=_profile({"requested_allocation_millions": "42"}))
     assert app.requested_allocation == 42_000_000
     assert requested_allocation_label(app.requested_allocation) == "$42.0M"

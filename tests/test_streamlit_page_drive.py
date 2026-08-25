@@ -123,6 +123,21 @@ _PAGES = _STREAMLIT_APP / "pages"
 _TYPED_ROUND = "CY2026"
 _TYPED_ALLOCATION_MILLIONS = 48
 
+#: The CDE's OWN NAME, typed into the template's own "CDE Name" cell.
+#:
+#: THE GATE THAT CAUGHT 1.5.7 HAD TO CATCH THIS CLASS TOO (1.6.0 T1). The
+#: workbook below has always overwritten this cell -- ``assert_not_sample_
+#: identity`` refuses an upload still carrying Riverbend's -- and nothing
+#: asserted what became of the value. The round and the allocation were
+#: gated; the name was not, and it was being thrown away by the same strip,
+#: for the same reason, one field over. Page 1 rendered "(your CDE)" and so
+#: did every page of the generated federal filing draft.
+_TYPED_CDE_NAME = "Cascade Community Capital, LLC"
+
+#: What the neutral profile puts in when an upload names no CDE. Correct for
+#: an upload that names none; the DEFECT for one that names its own.
+_PLACEHOLDER_IDENTITY = ("(your CDE)", "user-upload")
+
 #: The figure ``_UNSTATED_ALLOCATION_PLACEHOLDER`` puts in when an upload
 #: states no allocation. It is correct for an upload that states none; it is
 #: the DEFECT for an upload that states one, which is what this drives.
@@ -144,7 +159,7 @@ def _cde_edited_workbook() -> bytes:
     """
     wb = openpyxl.load_workbook(Path(templates_dir()) / "pipeline_sample.xlsx")
     ws = wb["CDE Profile"]
-    ws.cell(row=4, column=1).value = "Cascade Community Capital, LLC"
+    ws.cell(row=4, column=1).value = _TYPED_CDE_NAME
     ws.cell(row=4, column=2).value = "CDE-2020-0455"
     ws.cell(row=4, column=3).value = "45-9876543"
     ws.cell(row=4, column=10).value = _TYPED_ALLOCATION_MILLIONS
@@ -237,6 +252,32 @@ class TestTheUploadersOwnFiguresReachTheScreen:
             "supplied [CDE TO COMPLETE]' instead."
         )
 
+    def test_the_name_the_cde_typed_reaches_the_application(self, driven):
+        """1.6.0 T1. The third fact off the same sheet, gated like the other two."""
+        assert driven["1"].session_state["app"].cde.name == _TYPED_CDE_NAME
+
+    def test_the_name_the_cde_typed_is_rendered(self, driven):
+        text = "\n".join(v for _, v in _bodies(driven["1"]))
+        assert _TYPED_CDE_NAME in text, (
+            f"page 1 never renders the name the CDE typed ({_TYPED_CDE_NAME!r}). "
+            "The CDE Profile sheet's 'CDE Name' cell stated it and the page is "
+            "showing something else -- through 1.5.7, '(your CDE)'."
+        )
+
+    @pytest.mark.parametrize("page", ["1", "2", "3"])
+    def test_the_placeholder_identity_is_rendered_nowhere(self, driven, page):
+        offenders = [
+            f"{kind}: {value[:130]!r}"
+            for kind, value in _bodies(driven[page])
+            for placeholder in _PLACEHOLDER_IDENTITY
+            if placeholder in value
+        ]
+        assert not offenders, (
+            f"page {page} renders the neutral profile's placeholder identity "
+            "to a CDE that NAMED ITSELF. Nothing on screen may call a CDE "
+            "something it did not type:\n" + "\n".join(offenders)
+        )
+
     @pytest.mark.parametrize("page", ["1", "2", "3"])
     def test_the_unstated_allocation_placeholder_is_rendered_nowhere(
         self, driven, page
@@ -280,6 +321,7 @@ class TestTheDownstreamPagesInheritWhatPageOneBuilt:
         app = driven[page].session_state["app"]
         assert app.application_round == _TYPED_ROUND
         assert app.requested_allocation == _TYPED_ALLOCATION_MILLIONS * 1_000_000
+        assert app.cde.name == _TYPED_CDE_NAME
 
 
 # ---------------------------------------------------------------------------
