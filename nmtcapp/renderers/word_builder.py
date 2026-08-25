@@ -20,7 +20,8 @@ from nmtcapp.renderers._disclosure import (
 )
 from nmtcapp.renderers._methodology import (
     ACS_VINTAGE, deal_economics_note, distress_definitions, impact_bands_note,
-    noaa_note, readiness_weights_note, readiness_inline_qualifier,
+    noaa_note, readiness_weights_note, readiness_narrative_pointer,
+    readiness_inline_qualifier,
 )
 from nmtcapp.renderers._word_helpers import (
     add_styled_paragraph, add_styled_table, shade_cell, _hex_to_rgb,
@@ -358,6 +359,18 @@ class WordApplicationBuilder:
         note_r = note_p.add_run(readiness_weights_note())
         note_r.font.size = Pt(TYPOGRAPHY["size_caption"])
         note_r.font.italic = True
+
+        # THE SAME PLACEMENT RULING AS MARKDOWN'S (1.6.0 T2). This surface
+        # never carried narrative_withdrawal_note() -- only markdown did, so
+        # the four "same" documents disagreed by ~700 words about the same
+        # number. The grade is docked here as it is everywhere, and a tool
+        # that declines to advise may not deduct silently, so the withdrawal
+        # is STATED and the arithmetic is pointed at rather than repeated.
+        # Read from one place; see _methodology.readiness_narrative_pointer.
+        pointer_p = doc.add_paragraph()
+        pointer_r = pointer_p.add_run(readiness_narrative_pointer())
+        pointer_r.font.size = Pt(TYPOGRAPHY["size_caption"])
+        pointer_r.font.italic = True
 
     # ------------------------------------------------------------------
     # Appendices

@@ -47,6 +47,7 @@ Summary Dashboard!A24|str|fmt=General|OVERALL SCORE
 Summary Dashboard!C24|float|fmt=0.0|84.9
 Summary Dashboard!D24|str|fmt=General|Grade B
 Summary Dashboard!A25|str|fmt=General|READINESS SCORE BREAKDOWN — weights are this tool's own unsourced judgement (eligibility quality 25%; distress concentration 25%; geographic diversity 15%; impact metrics 20%; validation pass rate 10%; completeness 5%); the CDFI Fund publishes no such weighting and this score does not predict an award outcome.
+Summary Dashboard!A26|str|fmt=General|READINESS NARRATIVE WITHDRAWN. This tool emits no strengths, weaknesses or recommendations from the readiness composite, and none appear in this document. It nevertheless deducted points from the grade above, and it does not deduct silently: the full component-by-component deduction table, with the reason each row is or is not a quantity the CDFI Fund also scores, is printed by the Pipeline Analyzer page of the app and by `nmtcapp analyze`. It is not repeated here, because it is an account of what this tool did to its own number rather than a finding about this application.
 Summary Dashboard!A27|str|fmt=General|CONFIDENTIAL — Great Lakes Regional Capital CDE, LLC — NMTC CY 2026 — Generated <RUNDATE>
 @@SHEET Q25 Basis Note
 Q25 Basis Note!A1|str|fmt=General|BASIS NOTE — the CDFI Fund's two distress commitments are measured on QLICIs, not on QEI

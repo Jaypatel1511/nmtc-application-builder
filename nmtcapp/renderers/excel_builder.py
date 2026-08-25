@@ -13,6 +13,7 @@ from nmtcapp.renderers._disclosure import (
 )
 from nmtcapp.renderers._methodology import (
     readiness_inline_qualifier,
+    readiness_narrative_pointer,
     readiness_weights_sheet_note,
 )
 from nmtcapp.renderers._round_provenance import (
@@ -464,6 +465,29 @@ class ExcelApplicationBuilder:
         note_cell = ws.cell(row=disclosure_row, column=1, value=disclosure_text)
         note_cell.font = _font(italic=True, color=xl_color("text_muted"), size=8)
         note_cell.alignment = _left()
+
+        # THE SAME PLACEMENT RULING AS MARKDOWN'S (1.6.0 T2). This surface
+        # never carried narrative_withdrawal_note() -- only markdown did, so
+        # the four "same" documents disagreed by ~700 words about the same
+        # number. The grade is docked here as it is everywhere, and a tool
+        # that declines to advise may not deduct silently, so the withdrawal
+        # is STATED and the arithmetic is pointed at rather than repeated.
+        # Read from one place; see _methodology.readiness_narrative_pointer.
+        #
+        # THE HEIGHT IS DERIVED, not typed, like every other full-span note on
+        # this sheet: a hardcoded height clips a disclosure the moment its
+        # wording grows, which ships an undisclosed grade in a way that looks
+        # disclosed in the source.
+        pointer_row = disclosure_row + 1
+        ws.merge_cells(start_row=pointer_row, start_column=1,
+                       end_row=pointer_row, end_column=6)
+        pointer_text = readiness_narrative_pointer()
+        ws.row_dimensions[pointer_row].height = required_row_height(
+            pointer_text, DASHBOARD_FULL_SPAN_PTS, 8,
+        )
+        pointer_cell = ws.cell(row=pointer_row, column=1, value=pointer_text)
+        pointer_cell.font = _font(italic=True, color=xl_color("text_muted"), size=8)
+        pointer_cell.alignment = _left()
 
         # --- Bar chart: component scores ---
         try:

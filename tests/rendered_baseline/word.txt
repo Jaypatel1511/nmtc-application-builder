@@ -6,6 +6,7 @@ P|Normal|Great Lakes Regional Capital CDE, LLC requests $70.0 million in New Mar
 P|Heading 2|Key Metrics
 P|Heading 2|Application Readiness Assessment
 P|Normal|READINESS SCORE: An UNSOURCED HOUSE HEURISTIC of this tool (eligibility 25%, distress concentration 25%, geographic diversity 15%, impact metrics 20%, validation 10%, completeness 5%). The weights are this tool's own judgement; they are not calibrated against award data, the CDFI Fund publishes no such weighting, and the score does not predict an award outcome.
+P|Normal|READINESS NARRATIVE WITHDRAWN. This tool emits no strengths, weaknesses or recommendations from the readiness composite, and none appear in this document. It nevertheless deducted points from the grade above, and it does not deduct silently: the full component-by-component deduction table, with the reason each row is or is not a quantity the CDFI Fund also scores, is printed by the Pipeline Analyzer page of the app and by `nmtcapp analyze`. It is not repeated here, because it is an account of what this tool did to its own number rather than a finding about this application.
 P|Heading 1|Section A: Business Strategy
 P|Heading 2|Investment Thesis and Strategy
 P|Normal|Great Lakes Regional Capital CDE, LLC will deploy $70.0 million in NMTC allocation across 8 projects in 4 states — targeting 85% of QEI in deep and severely distressed census tracts. The pipeline's largest sector concentration is affordable housing.

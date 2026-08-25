@@ -52,10 +52,20 @@ READINESS SCORE: An UNSOURCED HOUSE HEURISTIC of this tool (eligibility 25%, dis
 geographic diversity 15%, impact metrics 20%, validation 10%, completeness 5%). The weights are this tool's own
 judgement; they are not calibrated against award data, the CDFI Fund publishes no such weighting, and the score
 does not predict an award outcome.
+READINESS NARRATIVE WITHDRAWN. This tool emits no strengths, weaknesses or recommendations from the
+readiness composite, and none appear in this document. It nevertheless deducted points from the grade above, and it
+does not deduct silently: the full component-by-component deduction table, with the reason each row is or is not a
+quantity the CDFI Fund also scores, is printed by the Pipeline Analyzer page of the app and by `nmtcapp analyze`. It is
+not repeated here, because it is an account of what this tool did to its own number rather than a finding about this
 
 @@PAGE 3
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
 Page 3
+application.
+
+@@PAGE 4
+Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
+Page 4
 Section A: Business Strategy
 Investment Thesis and Strategy
 Great Lakes Regional Capital CDE, LLC will deploy $70.0 million in NMTC allocation
@@ -95,9 +105,9 @@ States Represented
 % QEI in Deep/Severe Distress
 85%
 
-@@PAGE 4
+@@PAGE 5
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
-Page 4
+Page 5
 Dominant Sector
 Affordable Housing
 Total Jobs to Be Created
@@ -126,9 +136,9 @@ community need. Length is governed by the limit printed on the published applica
 form for this question, which this tool does not encode — check the form, not this
 draft.]
 
-@@PAGE 5
+@@PAGE 6
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
-Page 5
+Page 6
 Section B: Community Outcomes
 Aggregate Community Impact Projections
 The 8 projects in Great Lakes Regional Capital CDE, LLC's pipeline will produce the
@@ -178,9 +188,9 @@ or by at least TWO of items 6-12 (25% poverty /
 70% median family income / 1.25x unemployment;
 Brownfield Sites; ARC and/or DRA Areas; Colonias
 
-@@PAGE 6
+@@PAGE 7
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
-Page 6
+Page 7
 Areas; Federal Medically Underserved Areas;
 FEMA Disaster Areas; Low-Income and
 Low-Access to Supermarkets). "Multiple indicia of
@@ -233,9 +243,9 @@ map rather than a tract-keyed lookup this package
 could perform (U.S. territory is the CDE's own
 word; the Application's U.S. Island Areas is a
 
-@@PAGE 7
+@@PAGE 8
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
-Page 7
+Page 8
 specific list of five). Non-Metropolitan Counties:
 TOOL-VERIFIED AND TRI-STATE — the OMB
 designation is read for the same geocoded tract,
@@ -276,18 +286,18 @@ Per-Project Impact Detail
 (See Attachment: Impact Projections Table)
 Long-Term Community Impact Strategy
 
-@@PAGE 8
+@@PAGE 9
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
-Page 8
+Page 9
 [NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific
 information. CDFI Fund reviewers score on specificity, evidence, and alignment with
 community need. Length is governed by the limit printed on the published application
 form for this question, which this tool does not encode — check the form, not this
 draft.]
 
-@@PAGE 9
+@@PAGE 10
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
-Page 9
+Page 10
 Section C: Management Capacity
 CDE History and Certification
 Great Lakes Regional Capital CDE, LLC was certified as a Community Development
@@ -328,9 +338,9 @@ Track Record — Prior NMTC Deployments
 (See Attachment: Track Record Table)
 Underwriting Process and Internal Controls
 
-@@PAGE 10
+@@PAGE 11
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
-Page 10
+Page 11
 [CDE TO COMPLETE: Describe your CDE's underwriting process end to end — initial
 screening and how eligibility is established, impact assessment, financial underwriting
 and credit criteria, your investment committee's composition and approval threshold,
@@ -349,9 +359,9 @@ community need. Length is governed by the limit printed on the published applica
 form for this question, which this tool does not encode — check the form, not this
 draft.]
 
-@@PAGE 11
+@@PAGE 12
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
-Page 11
+Page 12
 Section D: Capitalization Strategy
 Deal Economics Summary
  Item
@@ -397,9 +407,9 @@ form for this question, which this tool does not encode — check the form, not 
 draft.]
 Leverage Structure
 
-@@PAGE 12
+@@PAGE 13
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
-Page 12
+Page 13
 Each transaction will utilize a standard leveraged NMTC structure:
 1. Leverage Lender provides senior debt (approx. $59.9MM total) 2. Tax Credit
 Investor contributes equity ($28.6MM) 3. Combined proceeds flow through the CDE as
@@ -427,9 +437,9 @@ community need. Length is governed by the limit printed on the published applica
 form for this question, which this tool does not encode — check the form, not this
 draft.]
 
-@@PAGE 13
+@@PAGE 14
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
-Page 13
+Page 14
 Section E: Prior Awards — Deployment History
 Prior Allocation Summary
 Great Lakes Regional Capital CDE, LLC has 3 prior NMTC allocation awards totaling
@@ -465,14 +475,14 @@ information. CDFI Fund reviewers score on specificity, evidence, and alignment w
 community need. Length is governed by the limit printed on the published application
 form for this question, which this tool does not encode — check the form, not this
 
-@@PAGE 14
-Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
-Page 14
-draft.]
-
 @@PAGE 15
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
 Page 15
+draft.]
+
+@@PAGE 16
+Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
+Page 16
 Appendix A: Pipeline Detail
  Project ID
  Project Name
@@ -569,13 +579,13 @@ $125,450,00
 Full 33-column pipeline detail (deal economics, QLICI structure, timeline) is provided in the accompanying
 Excel workbook, Pipeline Detail tab.
 
-@@PAGE 16
-Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
-Page 16
-
 @@PAGE 17
-Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026  |  CONFIDENTIAL
+Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
 Page 17
+
+@@PAGE 18
+Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026  |  CONFIDENTIAL
+Page 18
 Appendix B: Distress Documentation
  Project ID
  Project
@@ -784,9 +794,9 @@ ACS
 5-Year
 Estimates
 
-@@PAGE 18
+@@PAGE 19
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026  |  CONFIDENTIAL
-Page 18
+Page 19
  Project ID
  Project
  Name
@@ -889,9 +899,9 @@ projects
 6/8 (75%)
 1/8
 
-@@PAGE 19
+@@PAGE 20
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
-Page 19
+Page 20
 Appendix C: Geographic Targeting
  State
  Projec
@@ -958,9 +968,9 @@ $88,500,00
 1
 3
 
-@@PAGE 20
+@@PAGE 21
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
-Page 20
+Page 21
 Appendix D: Impact Projections
  Project Name
  State
@@ -1070,9 +1080,9 @@ $88,500,000
 $166,353
 Full impact detail is in the Excel attachment.
 
-@@PAGE 21
+@@PAGE 22
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
-Page 21
+Page 22
 Appendix E: CDE Track Record
  Award Year
  Allocation ($)
@@ -1105,9 +1115,9 @@ $160,000,00
 0 total prior
 allocation
 
-@@PAGE 22
+@@PAGE 23
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
-Page 22
+Page 23
 Appendix F: Methodology
 Generated by nmtc-application-builder v<VERSION> on <RUNDATE>.
 ELIGIBILITY: CDFI Fund NMTC Eligibility Table, 2016–2020 ACS 5-Year Estimates.
@@ -1146,9 +1156,9 @@ Application for its Subsidiary CDE(s) through AMIS by 11:59 p.m. ET on August 31
 2026. Full eligibility information, including the QEI issuance thresholds themselves,
 comes with the NOAA when it publishes. Verified against cdfifund.gov on 2026-08-20.
 
-@@PAGE 23
+@@PAGE 24
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
-Page 23
+Page 24
 DEAL ECONOMICS: computed using the nmtc-calc library, standard leveraged NMTC
 structure. Statutory credit rate 39% of QEI over 7 years (IRC §45D(a)(2): 5% of the
 QEI on each of the first three credit allowance dates and 6% on each of the remaining

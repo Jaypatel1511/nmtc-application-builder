@@ -94,10 +94,26 @@ class SectionABusinessStrategy(SectionGenerator):
         # Now it renders only what the CDE declared, attributed to the
         # declaration, and says nothing when nothing was declared. Suppressed
         # entirely on the degraded path, where no share is trustworthy.
-        mission = cde.mission.strip()
+        mission = (cde.mission or "").strip()
         # "..." was appended unconditionally, so a 44-character mission rendered
         # as though it had been cut off. Only elide when something was elided.
         mission_display = (mission[:200].rstrip() + "…") if len(mission) > 200 else mission
+        # AN ABSENT MISSION IS DISCLOSED, NOT QUOTED EMPTY (1.6.0 T1c). This
+        # interpolated unconditionally into `stated mission is: "{...}"`, so a
+        # profile with no mission rendered a pair of quotation marks around
+        # nothing -- in the section the CDFI Fund scores for Business
+        # Strategy. A CDE reading it cannot tell whether the tool lost the
+        # mission or the CDE never wrote one; the empty quotes assert that
+        # this IS the stated mission. Every xlsx upload took that path before
+        # T1, because the identity strip removed the cell the CDE filled in.
+        if mission:
+            mission_sentence = f"{cde.name}'s stated mission is: \"{mission_display}\""
+        else:
+            mission_sentence = _cde_todo(
+                "State this CDE's mission. No mission statement was supplied "
+                "in this CDE's profile, and this tool will not print an empty "
+                "quotation in its place."
+            )
 
         # WHO EACH FLAG BELONGS TO, SEPARATELY (1.2.1 L-2).
         #
@@ -155,7 +171,7 @@ class SectionABusinessStrategy(SectionGenerator):
 
         target_markets_body = (
             f"Primary geographic targets: {states_str}.\n\n"
-            f"{cde.name}'s stated mission is: \"{mission_display}\"\n\n"
+            f"{mission_sentence}\n\n"
             f"{targeting}"
         ) + _placeholder()
 

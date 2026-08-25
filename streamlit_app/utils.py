@@ -10,7 +10,11 @@ _REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
+import logging
+
 import streamlit as st
+
+logger = logging.getLogger(__name__)
 
 from nmtcapp.core.application import Application
 from nmtcapp.core.cde import CDEProfile
@@ -120,6 +124,16 @@ _IDENTITY_KEYS = frozenset({
     "cde_name", "cde_id", "ein", "headquarters_state", "certification_date",
     "mission", "website", "organization_type", "target_markets",
     "requested_allocation_millions", "application_round",
+    # v1.2 (1.6.0 T3). The CDE Profile sheet collected six of the eight
+    # REQUIRED_CDE_FIELDS; ``contact`` and ``governance`` had no columns at
+    # all, so the RECOMMENDED path guaranteed its own incompleteness. These
+    # four columns supply them, and they are listed HERE, with the rest of the
+    # identity, because that is what they are: they describe WHO the CDE is
+    # and no scorer reads any of them. ``lic_board_representation_pct`` is the
+    # board figure the scorer DOES read, it is a different cell, and it is
+    # deliberately not in this set.
+    "contact_name", "contact_email",
+    "governance_board_members", "governance_community_representatives",
 })
 
 
@@ -271,6 +285,44 @@ def requested_allocation_label(value: float) -> str:
     return fmt_millions(value)
 
 
+def _is_blank(value) -> bool:
+    """Is this value an unanswered cell? Answers, rather than raising.
+
+    THE MEMBERSHIP TEST COULD BE CRASHED BY ITS OWN INPUT (1.6.0 T0). This was
+    ``value not in ("", [], {}, None)`` inline in ``_scoring_attrs_only``.
+    ``in`` compares by equality, and a numpy scalar compared against ``[]``
+    returns an EMPTY ARRAY rather than ``False`` -- so numpy refuses to decide
+    its truth value and the filter raises ``ValueError`` instead of answering.
+    ``upload_handler`` emitted exactly such a scalar for every starred CDE
+    Profile cell a CDE left blank, which the shipped template instructs, and
+    page 1 turned the ValueError into "Failed to read file" and stopped.
+
+    The source is fixed where the scalar is produced. This is the second
+    defence, and it is the one that generalises: the class is "a value the
+    filter cannot compare", and the next such value will not be a numpy float.
+
+    ``False``, ``0`` and ``0.0`` ARE ANSWERS AND SURVIVE, unchanged -- the
+    equality comparisons below are the same ones the tuple performed, with the
+    ones that can raise reordered behind an identity check and a type check.
+
+    Example::
+
+        _is_blank("")      # -> True
+        _is_blank(0.0)     # -> False
+        _is_blank([])      # -> True
+    """
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return value == ""
+    if isinstance(value, (list, tuple, dict, set)):
+        return len(value) == 0
+    # Anything else -- int, float, bool, numpy scalar, Decimal -- is a value
+    # the CDE (or the derivation) produced. None of the four blanks is any of
+    # those, so there is nothing left to compare against.
+    return False
+
+
 def _scoring_attrs_only(cde_extra: dict, is_demo: bool) -> dict:
     """Strip identity keys and blanks from a parsed CDE Profile sheet.
 
@@ -294,8 +346,184 @@ def _scoring_attrs_only(cde_extra: dict, is_demo: bool) -> dict:
         )
     return {
         k: v for k, v in cde_extra.items()
-        if k not in _IDENTITY_KEYS and v not in ("", [], {}, None)
+        if k not in _IDENTITY_KEYS and not _is_blank(v)
     }
+
+
+#: The identity fields the CDE Profile sheet collects that belong on
+#: ``CDEProfile`` itself, mapped from the parsed sheet's key to the dataclass
+#: attribute. Read from ``_IDENTITY_KEYS`` conceptually but stated separately
+#: because the two lists answer DIFFERENT questions and must be free to
+#: diverge: ``_IDENTITY_KEYS`` is "what may not merge into the scoring bag",
+#: and it correctly contains ``application_round`` and
+#: ``requested_allocation_millions``, which belong to ``Application`` and not
+#: to ``CDEProfile``. This is "what CDEProfile's own attributes are named".
+#:
+#: ``ein``, ``headquarters_state`` and ``organization_type`` are absent
+#: DELIBERATELY: ``CDEProfile`` has no attribute for any of them, and nothing
+#: reads them. Inventing three fields to hold values nothing renders would be
+#: a bigger change than this release is scoped for, and they stay in
+#: ``_IDENTITY_KEYS`` where they are already correctly kept out of the bag.
+#: tests/test_cde_paths_agree.py records the gap rather than leaving it
+#: unstated.
+_IDENTITY_TO_PROFILE_ATTR = {
+    "cde_name": "name",
+    "cde_id": "cde_id",
+    "certification_date": "certification_date",
+    "mission": "mission",
+    "website": "website",
+}
+
+
+def _split_target_markets(raw) -> list:
+    """The "Target Markets (states, comma-sep)" cell, as the list CDEProfile wants.
+
+    ``CDEProfile.target_markets`` is a list and ``__post_init__`` enforces it;
+    the sheet holds one comma-separated string. Blank entries are dropped so a
+    trailing comma does not become an empty market.
+
+    Example::
+
+        _split_target_markets("Ohio, Michigan")   # -> ['Ohio', 'Michigan']
+        _split_target_markets("  ")               # -> []
+    """
+    if raw is None:
+        return []
+    if isinstance(raw, (list, tuple)):
+        return [str(v).strip() for v in raw if str(v).strip()]
+    return [part.strip() for part in str(raw).split(",") if part.strip()]
+
+
+@dataclass(frozen=True)
+class UploadedIdentity:
+    """WHO the CDE is, on its way to ``CDEProfile`` -- never to the scoring bag.
+
+    THE THIRD DESTINATION (1.6.0 T1). ``load_uploaded_pipeline`` returns ONE
+    dict feeding what are now THREE destinations: the scoring-attribute bag
+    that merges into ``CDEProfile.extra``; the round and the requested
+    allocation, whose destination is ``Application``; and these, whose
+    destination is ``CDEProfile``'s own named attributes.
+
+    1.5.7 routed the second past ``_scoring_attrs_only``. It routed nothing
+    else, so the third stayed stripped and discarded -- and a CDE that typed
+    its name into the template's own "CDE Name" cell got a federal filing
+    draft that said ``(your CDE)`` eight times and was written to
+    ``user-upload_application.md``.
+
+    THIS IS NOT THE 1.1.5 DEFECT RE-OPENED, AND THE DISTINCTION IS THE WHOLE
+    DESIGN. 1.1.5 merged an uploaded sheet's identity INTO ``cde.extra``,
+    which is a SCORING bag, so the fictional Riverbend CDE's
+    ``has_prior_reporting_issues: False`` reached
+    ``sections/base._compliance_statement`` and rendered a clean-compliance
+    claim into a federal filing. Nothing here reaches ``extra``: these values
+    land on ``CDEProfile.name``, ``.cde_id``, ``.certification_date``,
+    ``.mission``, ``.target_markets`` and ``.website``, none of which is read
+    by any scorer. ``_scoring_attrs_only`` is UNCHANGED and
+    ``_IDENTITY_KEYS`` is unchanged; the strip still removes every one of
+    these from the bag. What changed is that they now have somewhere to go.
+
+    A FIELD LEFT BLANK STAYS BLANK. Every attribute here is Optional and the
+    caller supplies the neutral profile's value when it is absent, so an
+    upload that names no CDE still gets ``(your CDE)`` -- routing identity may
+    not invent one.
+
+    Example::
+
+        _read_identity({"cde_name": "Cardinal Ridge Community Capital, LLC"})
+        # -> UploadedIdentity(name='Cardinal Ridge Community Capital, LLC', ...)
+    """
+
+    name: str | None = None
+    cde_id: str | None = None
+    certification_date: str | None = None
+    mission: str | None = None
+    website: str | None = None
+    target_markets: tuple = ()
+    contact: dict | None = None
+    governance: dict | None = None
+
+
+def _read_contact(cde_extra: dict) -> dict | None:
+    """The CDE's contact mapping, from the v1.2 sheet's two contact columns.
+
+    ``_FIELD_GUIDANCE`` describes ``contact`` as "a mapping with at least name
+    and email", so that is what the two columns build. Returns ``None`` when
+    the CDE filled in neither, so an untouched pair stays absent rather than
+    becoming an empty mapping that ``check_completeness`` would report the
+    same way but that reads, to anything downstream, as an answered field.
+
+    A CDE that filled in only one of the two gets a mapping with only that
+    key. That is a PARTIAL answer, not a blank one, and the completeness
+    check treats a non-empty mapping as supplied -- which is the same rule the
+    YAML path applies, where ``contact: {name: ...}`` also loads.
+    """
+    pairs = {
+        key: str(cde_extra[raw]).strip()
+        for raw, key in (("contact_name", "name"), ("contact_email", "email"))
+        if not _is_blank(cde_extra.get(raw))
+    }
+    pairs = {k: v for k, v in pairs.items() if v}
+    return pairs or None
+
+
+def _read_governance(cde_extra: dict) -> dict | None:
+    """The CDE's governance mapping, from the v1.2 sheet's two board columns.
+
+    ``_FIELD_GUIDANCE`` describes ``governance`` as "a mapping describing your
+    board, e.g. board_members: 7", and ``sections/section_c_management`` reads
+    ``board_members`` and ``community_representatives`` by those exact names.
+    Both are read here rather than a free-text cell so the section prints
+    figures instead of prose it cannot parse.
+
+    A cell that is not a whole number is DROPPED rather than coerced: a
+    governance table is scored content, and "about 7" is not 7.
+    """
+    out: dict = {}
+    for raw, key in (("governance_board_members", "board_members"),
+                     ("governance_community_representatives",
+                      "community_representatives")):
+        value = cde_extra.get(raw)
+        if _is_blank(value):
+            continue
+        try:
+            out[key] = int(str(value).strip())
+        except (TypeError, ValueError):
+            logger.warning(
+                "CDE Profile cell for %r is %r, which is not a whole number. "
+                "It has been left out of the governance table rather than "
+                "coerced -- a governance figure in a federal filing draft "
+                "must be the one the CDE stated.", key, value,
+            )
+    return out or None
+
+
+def _read_identity(cde_extra: dict | None) -> UploadedIdentity:
+    """Lift the CDE's own identity off a parsed CDE Profile sheet.
+
+    Reads BEFORE any strip, in the one place that performs the strip for
+    callers -- the same single-correct-order property
+    ``read_uploaded_cde_profile`` already gives the round and the allocation.
+
+    A blank or whitespace cell is NOT an answer, so it arrives as ``None`` and
+    the caller's neutral default stands. That is the same predicate
+    ``_scoring_attrs_only`` applies to the scoring bag, so absent and blank
+    mean the same thing on both halves of the same sheet.
+    """
+    cde_extra = cde_extra or {}
+
+    def _text(key):
+        value = cde_extra.get(key)
+        if value is None:
+            return None
+        text = str(value).strip()
+        return text or None
+
+    return UploadedIdentity(
+        **{attr: _text(key) for key, attr in _IDENTITY_TO_PROFILE_ATTR.items()},
+        target_markets=tuple(_split_target_markets(cde_extra.get("target_markets"))),
+        contact=_read_contact(cde_extra),
+        governance=_read_governance(cde_extra),
+    )
 
 
 @dataclass(frozen=True)
@@ -342,6 +570,23 @@ class UploadedCDEProfile:
     scoring_attrs: dict
     supplied_round: str | None
     supplied_allocation: float | None
+    #: WHO the CDE is, on its way to ``CDEProfile`` (1.6.0 T1). The third
+    #: destination; see :class:`UploadedIdentity`.
+    identity: UploadedIdentity = UploadedIdentity()
+    #: THE ``is_demo`` THIS PROFILE WAS READ WITH (1.6.0 T1b, 1.5.7 audit).
+    #:
+    #: ``is_demo`` was supplied TWICE and nothing checked the two agreed.
+    #: ``read_uploaded_cde_profile(raw, is_demo=True)`` skips
+    #: ``assert_not_sample_identity`` entirely; ``get_or_create_app(...,
+    #: is_demo=False)`` then treats the same sheet as a real upload and merges
+    #: its attributes with NO REFUSAL. The guard was bypassable by passing two
+    #: different answers to the same question.
+    #:
+    #: Latent -- page 1 passes consistent values on every path -- and closed
+    #: structurally rather than left depending on that. The profile now
+    #: carries the answer it was read with, and ``get_or_create_app`` asserts
+    #: it matches the one it was called with. Neither caller can drift alone.
+    is_demo: bool = False
 
 
 def read_uploaded_cde_profile(
@@ -360,17 +605,62 @@ def read_uploaded_cde_profile(
         # -> 42000000.0
     """
     cde_extra = cde_extra or {}
+    # EVERY read happens before the strip, here, in the one place that
+    # performs the strip for callers. Identity joined the round and the
+    # allocation on that list in 1.6.0 T1; there is still no second ordering
+    # for a caller to get wrong.
     return UploadedCDEProfile(
         scoring_attrs=_scoring_attrs_only(cde_extra, is_demo),
         supplied_round=_supplied_round(cde_extra),
         supplied_allocation=_supplied_allocation(cde_extra),
+        identity=_read_identity(cde_extra),
+        is_demo=is_demo,
     )
+
+
+def _assert_demo_agrees(parsed: "UploadedCDEProfile | None", effective_demo: bool) -> None:
+    """The two answers to "is this the demo?" must be the same answer.
+
+    See ``UploadedCDEProfile.is_demo``. An ``AssertionError`` here means a
+    caller read a sheet with the sample-identity guard SKIPPED and then used
+    the result as a real upload (or the reverse), which is the bypass the
+    1.5.7 audit found and could not be closed by the type alone.
+    """
+    if parsed is None:
+        return
+    assert parsed.is_demo == effective_demo, (
+        "the CDE Profile sheet was read with is_demo="
+        f"{parsed.is_demo!r} and is being used with is_demo="
+        f"{effective_demo!r}. read_uploaded_cde_profile's is_demo decides "
+        "whether assert_not_sample_identity runs; get_or_create_app's decides "
+        "whether the sheet is treated as a real upload. Two different answers "
+        "means the shipped sample CDE's identity can reach a real "
+        "application with no refusal. Pass the same value to both."
+    )
+
+
+def _apply_identity(cde: CDEProfile, identity: "UploadedIdentity") -> None:
+    """Overwrite a profile's identity attributes with the ones the sheet stated.
+
+    Only where the sheet stated one: a blank cell leaves whatever is already
+    there, so uploading a second sheet cannot BLANK a name the first supplied.
+    """
+    for attr in ("name", "cde_id", "certification_date", "mission", "website"):
+        value = getattr(identity, attr)
+        if value:
+            setattr(cde, attr, value)
+    if identity.target_markets:
+        cde.target_markets = list(identity.target_markets)
+    if identity.contact:
+        cde.contact = {**cde.contact, **identity.contact}
+    if identity.governance:
+        cde.governance = {**cde.governance, **identity.governance}
 
 
 def get_or_create_app(
     pipeline: Pipeline | None = None,
     is_demo: bool | None = None,
-    cde_extra: dict | UploadedCDEProfile | None = None,
+    cde_extra: UploadedCDEProfile | None = None,
 ) -> Application:
     """Return the shared Application object from session_state, creating if needed.
 
@@ -380,20 +670,31 @@ def get_or_create_app(
             supplied their own pipeline so the demo banner is suppressed.
             Defaults to ``True`` whenever no pipeline is provided (i.e., the
             sample pipeline is being used).
-        cde_extra: The parsed CDE Profile sheet from an uploaded xlsx, as
-            either an ``UploadedCDEProfile`` (preferred -- see below) or the
-            raw dict ``load_uploaded_pipeline`` returns. Scoring attributes
-            merge into ``CDEProfile.extra`` so the Win Alignment Scorer picks
-            them up; the round and requested allocation go to ``Application``.
+        cde_extra: The parsed CDE Profile sheet, as an ``UploadedCDEProfile``
+            from ``read_uploaded_cde_profile``. Scoring attributes merge into
+            ``CDEProfile.extra`` so the Win Alignment Scorer picks them up;
+            the round and requested allocation go to ``Application``; the
+            CDE's identity goes to ``CDEProfile``'s own attributes.
 
-            EITHER SHAPE IS SAFE, WHICH IS THE POINT (1.5.7 T1). Handed a raw
-            dict, this function does the read-then-strip itself, in that
-            order. Handed an ``UploadedCDEProfile``, the facts arrive on their
-            own fields and no strip can have reached them. What is no longer
-            possible is the shape that shipped in 1.5.6: a caller stripping
-            first and handing over a dict whose facts are already gone, which
-            this function could not distinguish from a sheet that stated
-            neither.
+            THE RAW-DICT SHAPE IS GONE (1.6.0 T1b, ruling). 1.5.7 accepted
+            ``dict | UploadedCDEProfile`` and its own audit proved the type
+            was OPTIONAL ARMOUR -- the page-driving gate, not the type, is
+            what closed the 1.5.6 class. That was defensible while this
+            function could redo the read itself. After T1 it cannot do so
+            SAFELY: redoing the read means running ``_scoring_attrs_only``,
+            whose sample-identity guard is gated on an ``is_demo`` this
+            function receives SEPARATELY -- which is precisely the second seam
+            the same audit named, and which the assertion below closes. A dict
+            caller would also silently lose the CDE's identity, which is the
+            1.5.6 defect re-armed one field wider.
+
+            So the two seams are closed by the same move: one shape, carrying
+            the answer it was read with. ``streamlit_app`` is not shipped
+            (``pyproject`` packages ``nmtcapp*`` only), so this is an
+            app-internal signature and not a public API break. The eighteen
+            legacy tests in ``tests/test_streamlit_upload_profile.py`` were
+            the only remaining dict callers and now build the profile the way
+            page 1 does -- which is the property that file exists to check.
     """
     creating_new = "app" not in st.session_state or pipeline is not None
     # THE READ HAPPENS BEFORE ANY STRIP AND NO CALLER CAN REORDER IT.
@@ -405,18 +706,39 @@ def get_or_create_app(
     # left to read -- and the 18 tests over this behaviour all passed, because
     # every one of them hand-wrote a dict that still contained the keys.
     # See UploadedCDEProfile for why the fix is a type and not "read earlier".
-    if isinstance(cde_extra, UploadedCDEProfile):
-        _parsed, _raw_extra = cde_extra, None
-        supplied_round = _parsed.supplied_round
-        supplied_allocation = _parsed.supplied_allocation
-        _has_extra = bool(_parsed.scoring_attrs)
-    else:
-        _parsed, _raw_extra = None, cde_extra
-        supplied_round = _supplied_round(_raw_extra)
-        supplied_allocation = _supplied_allocation(_raw_extra)
-        _has_extra = bool(_raw_extra)
+    if cde_extra is not None and not isinstance(cde_extra, UploadedCDEProfile):
+        raise TypeError(
+            "get_or_create_app() takes an UploadedCDEProfile, not "
+            f"{type(cde_extra).__name__}. Build one with "
+            "read_uploaded_cde_profile(raw_sheet, is_demo=...), which reads "
+            "the round, the allocation and the CDE's identity BEFORE it "
+            "strips the scoring bag. Handing over a raw dict is the 1.5.6 "
+            "defect: the facts are stripped and silently lost."
+        )
+    _parsed = cde_extra
+    supplied_round = _parsed.supplied_round if _parsed else None
+    supplied_allocation = _parsed.supplied_allocation if _parsed else None
+    _identity = _parsed.identity if _parsed else UploadedIdentity()
+    # "DID A PROFILE ARRIVE?", NOT "IS THE SCORING BAG NON-EMPTY?" (1.6.0).
+    #
+    # This read ``bool(_parsed.scoring_attrs)`` on the typed path, and the
+    # DICT path -- which read ``bool(_raw_extra)`` -- was masking what that
+    # costs. A CDE Profile sheet stating ONLY a round, or only a requested
+    # allocation, strips to an EMPTY scoring bag, so on the typed path the
+    # re-supply branch below was skipped entirely and the fact it exists to
+    # carry was dropped. Removing the dict shape (T1b) surfaced it: the two
+    # legacy side-door tests had always driven the dict path and so had never
+    # asked this question of the path page 1 actually uses.
+    #
+    # Latent today -- no page calls get_or_create_app with a profile and no
+    # pipeline, so the branch below is reachable only from tests -- and fixed
+    # rather than left armed for whichever page adds a CDE-Profile-only
+    # uploader. Merging an empty bag is a no-op, so widening this cannot
+    # change what any populated sheet does.
+    _has_extra = _parsed is not None
     if creating_new:
         effective_demo = is_demo if is_demo is not None else pipeline is None
+        _assert_demo_agrees(_parsed, effective_demo)
         if effective_demo:
             cde = CDEProfile.sample()
         else:
@@ -425,15 +747,31 @@ def get_or_create_app(
             # third-party validation, ...) must never influence an upload's
             # framework score — page 1 discloses missing CDE fields as
             # "defaulted to 0/False", and that must be literally true.
+            # THE CDE'S OWN IDENTITY, WHERE THE SHEET SUPPLIED IT (1.6.0 T1).
+            #
+            # Every value below still DEFAULTS to the neutral profile's, so an
+            # upload that names no CDE gets exactly what it got at 9a2d584 --
+            # routing identity may not invent one. What changed is that a CDE
+            # which typed its name into the template's own "CDE Name" cell no
+            # longer reads "(your CDE)" on every page of its own federal
+            # filing draft, and no longer has its certification date, mission
+            # and target markets reported missing by a completeness check that
+            # was telling the truth about a strip that had thrown them away.
+            #
+            # NOTHING HERE TOUCHES ``extra``. That is the whole distinction
+            # from 1.1.5: these land on CDEProfile's own attributes, none of
+            # which any scorer reads, while the SCORING BAG below is built by
+            # the unchanged strip from the unchanged _IDENTITY_KEYS.
             cde = CDEProfile(
-                name="(your CDE)",
-                cde_id="user-upload",
-                certification_date="",
-                mission="",
-                target_markets=[],
+                name=_identity.name or "(your CDE)",
+                cde_id=_identity.cde_id or "user-upload",
+                certification_date=_identity.certification_date or "",
+                mission=_identity.mission or "",
+                target_markets=list(_identity.target_markets),
                 prior_awards=[],
-                contact={},
-                governance={},
+                contact=dict(_identity.contact or {}),
+                governance=dict(_identity.governance or {}),
+                website=_identity.website,
                 extra={},
             )
         if _has_extra:
@@ -452,11 +790,7 @@ def get_or_create_app(
             # untouched cell cannot register as an answer.
             # Already stripped when the caller handed over a parsed
             # profile; the identity guard ran at read time in that case.
-            _attrs = (
-                _parsed.scoring_attrs if _parsed is not None
-                else _scoring_attrs_only(_raw_extra, effective_demo)
-            )
-            cde.extra = {**cde.extra, **_attrs}
+            cde.extra = {**cde.extra, **_parsed.scoring_attrs}
         p = pipeline if pipeline is not None else Pipeline.sample(n=20)
         # THE ROUND IS GATED ON effective_demo (1.5.5 audit B4). This line
         # applied SAMPLE_APPLICATION_ROUND unconditionally, so a real upload
@@ -491,12 +825,8 @@ def get_or_create_app(
         st.session_state["allocation_is_stated"] = allocation_is_stated
     elif _has_extra and "app" in st.session_state:
         # User re-supplied CDE data without re-uploading the pipeline — patch extra in place
-        _side_attrs = (
-            _parsed.scoring_attrs if _parsed is not None
-            else _scoring_attrs_only(
-                _raw_extra, st.session_state.get("is_demo_data", True)
-            )
-        )
+        _assert_demo_agrees(_parsed, st.session_state.get("is_demo_data", True))
+        _side_attrs = _parsed.scoring_attrs
         st.session_state["app"].cde.extra = {
             **st.session_state["app"].cde.extra,
             **_side_attrs,
@@ -517,6 +847,12 @@ def get_or_create_app(
                 and not st.session_state.get("is_demo_data", True)):
             st.session_state["app"].requested_allocation = supplied_allocation
             st.session_state["allocation_is_stated"] = True
+        # The identity on that second sheet is the same fact off the same
+        # cells and is honoured the same way -- and, like the round and the
+        # request, not through this side door on the demo, whose identity is
+        # the fixture's own and is labelled fictional on every screen.
+        if not st.session_state.get("is_demo_data", True):
+            _apply_identity(st.session_state["app"].cde, _identity)
     elif "is_demo_data" not in st.session_state:
         st.session_state["is_demo_data"] = True
     return st.session_state["app"]

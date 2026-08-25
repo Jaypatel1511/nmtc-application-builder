@@ -1,4 +1,4 @@
-"""File upload parsing for Pipeline Analyzer — handles xlsx (v1.1 template) and CSV."""
+"""File upload parsing for Pipeline Analyzer — handles xlsx (v1.2 template) and CSV."""
 from __future__ import annotations
 
 import io
@@ -86,6 +86,55 @@ _CDE_FIELD_MAP: dict[str, str] = {
     "Unrelated Entities Pct (0–1)*":   "unrelated_entities_pct",
     "Favorable Fee Structure (Y/N/Unknown)": "has_favorable_fee_structure",
     "Prior Reporting Issues (Y/N)":         "has_prior_reporting_issues",
+    # v1.2 (1.6.0 T3). ``contact`` and ``governance`` are two of the eight
+    # REQUIRED_CDE_FIELDS and the sheet collected NEITHER, so the recommended
+    # path guaranteed its own incompleteness -- see
+    # tests/test_cde_paths_agree.py for the ruling and why the alternative
+    # (stop requiring them here) was rejected.
+    #
+    # FOUR FLAT COLUMNS, NOT TWO FREE-TEXT ONES. Both fields are MAPPINGS on
+    # CDEProfile and ``_FIELD_GUIDANCE`` says what they must contain: contact
+    # is "a mapping with at least name and email", governance is "a mapping
+    # describing your board, e.g. board_members: 7". A single "Governance"
+    # cell would collect prose this tool cannot parse into the figures
+    # ``sections/section_c_management`` prints -- it has rows for
+    # ``board_members`` and ``community_representatives`` that no xlsx upload
+    # could fill before this.
+    #
+    # THESE ARE IDENTITY, NOT SCORING. All four are in
+    # ``streamlit_app.utils._IDENTITY_KEYS``, so none reaches ``cde.extra``.
+    # ``lic_board_representation_pct`` is the board figure the SCORER reads,
+    # it is a different cell, and it is deliberately not one of these.
+    "Contact Name":                         "contact_name",
+    "Contact Email":                        "contact_email",
+    "Board Members":                        "governance_board_members",
+    "Community Representatives":            "governance_community_representatives",
+}
+
+#: WHICH CDE Profile COLUMNS SUPPLY EACH ``REQUIRED_CDE_FIELDS`` ENTRY.
+#:
+#: NOT A FOURTH HAND-MAINTAINED COPY OF THE ONE LIST.
+#: tests/test_cde_paths_agree.py asserts this map's keys ARE
+#: ``REQUIRED_CDE_FIELDS`` minus ``CDE_FIELDS_WHERE_EMPTY_IS_AN_ANSWER``, so a
+#: required field added to ``core.cde._FIELD_GUIDANCE`` and not given columns
+#: here fails a gate instead of quietly becoming un-collectable on the
+#: recommended path. That is the failure this map exists to make impossible,
+#: and it is the same failure the constant's own comment records costing a
+#: silently-unvalidated ``governance``.
+#:
+#: ``prior_awards`` is absent on purpose: ``[]`` is a COMPLETE ANSWER for a
+#: first-time applicant (``CDE_FIELDS_WHERE_EMPTY_IS_AN_ANSWER``), so the
+#: sheet needs no column to answer it. The sheet's "Prior Award Count" is a
+#: SCORED attribute and is not this field; where the two disagree,
+#: ``sections/section_c_management`` discloses rather than narrating either.
+CDE_PROFILE_COLUMNS_FOR_REQUIRED_FIELD: dict[str, tuple[str, ...]] = {
+    "name":               ("CDE Name",),
+    "cde_id":             ("CDE ID",),
+    "certification_date": ("Certification Date",),
+    "mission":            ("Mission Statement",),
+    "target_markets":     ("Target Markets (states, comma-sep)",),
+    "contact":            ("Contact Name", "Contact Email"),
+    "governance":         ("Board Members", "Community Representatives"),
 }
 
 _BOOL_FIELDS: frozenset[str] = frozenset({
@@ -123,7 +172,7 @@ def _read_csv_with_encoding_fallback(buf: io.BytesIO) -> pd.DataFrame:
 def _read_pipeline_sheet_from_wb(wb, sheet_name: str) -> pd.DataFrame:
     """Read the Pipeline sheet from an openpyxl workbook.
 
-    The v1.1 template has a 3-row preamble (title / section banners / column headers)
+    The v1.1/v1.2 template has a 3-row preamble (title / section banners / column headers)
     before data rows.  Plain xlsx files (column headers in row 1) are also supported.
     """
     ws = wb[sheet_name]
@@ -174,7 +223,9 @@ def _parse_cde_profile_from_wb(wb) -> Optional[dict]:
             val_str = str(val).strip().upper()
             result[key] = val_str in ("Y", "YES", "TRUE", "1")
         elif key in ("products_flexible_indicia_count", "prior_award_count",
-                     "years_in_operation", "dbc_focus_years"):
+                     "years_in_operation", "dbc_focus_years",
+                     "governance_board_members",
+                     "governance_community_representatives"):
             try:
                 result[key] = int(val)
             except (ValueError, TypeError):
@@ -205,7 +256,7 @@ def load_uploaded_pipeline(
 
     Returns:
         (Pipeline, cde_extra_or_None) — cde_extra is populated when the file
-        contains a 'CDE Profile' sheet with v1.1 CDE-level scoring fields.
+        contains a 'CDE Profile' sheet with v1.1/v1.2 CDE-level fields.
     """
     ext = filename.rsplit(".", 1)[-1].lower()
     buf = io.BytesIO(file_bytes)
@@ -298,7 +349,31 @@ def load_uploaded_pipeline(
                         .fillna(0)
                         .sum()
                     )
-                    cde_extra[attr_key] = round(flag_qei / total_qei, 4)
+                    # float(), NOT np.float64 (1.6.0 T0). THIS WAS A LIVE
+                    # CRASH ON THE RECOMMENDED PATH AT v1.5.7, and the shipped
+                    # blank template's own row 5 is what triggered it: "Fields
+                    # marked with * can be left blank -- they will be computed
+                    # automatically from the per-project flags". Leaving one
+                    # blank runs this branch, and pandas returns np.float64.
+                    #
+                    # Every layer downstream treats this dict as plain Python.
+                    # streamlit_app.utils._scoring_attrs_only filters blanks
+                    # with `v not in ("", [], {}, None)`; `in` compares by
+                    # equality, and `np.float64(0.79) == []` is not False --
+                    # it is an EMPTY ARRAY, whose truth value numpy refuses to
+                    # decide. Page 1 caught the ValueError in its `except
+                    # Exception` and called st.stop(), so a CDE that followed
+                    # the template's instruction saw only "Failed to read
+                    # file: The truth value of an empty array is ambiguous"
+                    # and the tool did nothing else.
+                    #
+                    # COERCED AT THE SOURCE rather than at the filter, because
+                    # this is the line that puts a foreign scalar into a
+                    # plain-Python dict. The filter is hardened too -- a
+                    # filter a value can crash is a filter the next value will
+                    # crash -- but that is defence in depth, not the fix.
+                    # tests/test_upload_derived_pct_types.py drives both.
+                    cde_extra[attr_key] = float(round(flag_qei / total_qei, 4))
 
     with tempfile.NamedTemporaryFile(
         suffix=".csv", delete=False, mode="w", newline=""

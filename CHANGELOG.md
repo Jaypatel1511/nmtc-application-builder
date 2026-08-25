@@ -5,6 +5,141 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.6.0] — 2026-08-25
+
+**MINOR. It changes what the generated document CONTAINS.** No score formula,
+weight, band or grade threshold moves; scores move because inputs the tool was
+throwing away now reach it, and every movement is named below with its cause.
+
+### T0 — a live crash on the recommended path, found while reproducing T1
+
+The shipped blank template's CDE Profile sheet says, in its own row 5, that the
+four starred cells *"can be left blank — they will be computed automatically
+from the per-project flags"*. Doing that ran `upload_handler`'s derivation,
+which returns `np.float64`. `_scoring_attrs_only` filtered blanks with
+`v not in ("", [], {}, None)`; `in` compares by equality, and
+`np.float64(0.79) == []` is an **empty array**, not `False`. Page 1 caught the
+`ValueError` in its `except Exception` and called `st.stop()`, so a CDE that
+followed the template's own instruction saw
+
+    Failed to read file: The truth value of an empty array is ambiguous.
+
+and nothing else. **Fixed at the source** (`float()` where the scalar is
+produced) and the filter is hardened independently (`_is_blank`), because a
+filter a value can crash is a filter the next value will crash. No existing
+fixture reached it: every one either hand-wrote Python literals or uploaded
+`pipeline_sample.xlsx`, whose starred cells are all filled.
+
+### T1 — one root cause behind four symptoms: identity never reached `CDEProfile`
+
+1.5.7 routed the round and the allocation past the identity strip. It routed
+nothing else. A CDE that typed its name into the template's own **CDE Name**
+cell got a federal filing draft that said `(your CDE)` **eight times**, written
+to `user-upload_application.md`, with `certification_date`, `mission` and
+`target_markets` reported missing by a completeness check that was telling the
+truth about a strip that had discarded them.
+
+`UploadedIdentity` is the third destination, alongside the scoring bag and
+`Application`. **The strip is unchanged and `_IDENTITY_KEYS` is unchanged.**
+Identity lands on `CDEProfile`'s own attributes and never in `.extra`, so the
+1.1.5 defence — Riverbend's `has_prior_reporting_issues` reaching
+`sections/base._compliance_statement` — is intact, and is now asserted
+directly rather than implied.
+
+**T1b, both seams the 1.5.7 audit named on this code, ruled:**
+
+* `is_demo` was supplied twice and nothing checked the two agreed, so
+  `assert_not_sample_identity` was bypassable. `UploadedCDEProfile` now carries
+  the `is_demo` it was read with and `get_or_create_app` asserts the match.
+* **Dual-shape acceptance is removed.** After T1 the function cannot redo the
+  read safely — doing so needs an `is_demo` it receives separately, which *is*
+  the first seam — and a dict caller would silently lose identity, the 1.5.6
+  defect one field wider. `streamlit_app` is not shipped (`pyproject` packages
+  `nmtcapp*`), so this is an app-internal signature, not a public API break.
+
+Removing the dict shape surfaced a defect it had been masking: `_has_extra`
+read `bool(scoring_attrs)`, so a sheet stating **only** a round stripped to an
+empty bag and the re-supply branch dropped the fact entirely.
+
+**T1c — an absent value is disclosed, never rendered blank.** `"certified …
+by the CDFI Fund on ."` and `'stated mission is: ""'` are fixed on their own
+terms rather than declared solved by T1. A fourth candidate was **checked, not
+assumed**: `Primary geographic targets` reads the pipeline's states and was
+never a symptom. And T1 *escalates* one — `"has received 0 NMTC allocation
+awards totaling $0"` was a sentence about a placeholder and is now a sentence
+about a named CDE that may have declared a count two cells away, in Sections C
+and E; both now disclose the disagreement instead of asserting either side.
+
+### T2 — the readiness disclosure, ruled on PLACEMENT
+
+**The round's leading option — remove the grade from the documents — is
+rejected, on a measurement.** Only `markdown_builder` ever rendered
+`narrative_withdrawal_note()`. `word_builder`, `pdf_builder` and
+`excel_builder` render the grade and `readiness_weights_note()` and nothing
+else. So the four "same" documents **already disagreed by ~700 words** about
+the same number, and three of the four were already at the fallback.
+
+The 700 words are not the grade's disclosure. `readiness_weights_note()`
+discloses the **grade** — whose weighting, uncalibrated, no Fund referent,
+predicts nothing — and stays, beside the claim, on all four surfaces.
+`narrative_withdrawal_note()` discloses a **different** claim: *this tool
+declines to advise you, and here is what it deducted anyway.* A CDE asks that
+while deciding what to change; a Fund reviewer scoring a filing does not. It is
+already answered where it is asked — `1_Pipeline_Analyzer.py` renders the full
+table through `wrap_note`, and `nmtcapp analyze` prints it. **Nothing moved;
+one surface stopped repeating it.**
+
+**Withdrawn, not silently emptied** (this package's own precedent, 1.5.1 and
+1.5.2). `readiness_narrative_pointer()` is the one statement, read by all four
+renderers, never restated. It carries **no release number and no Python call**:
+those, with the recital of what earlier releases withdrew, are roughly half the
+block they replace, and they are changelog and developer documentation.
+`Application.recommendations()` no longer appears in a federal filing draft.
+
+Out of scope and untouched: what the composite **computes**.
+
+### T3 — the two input paths now agree, and the template says so: **v1.1 → v1.2**
+
+YAML collected all eight `REQUIRED_CDE_FIELDS`; the xlsx CDE Profile sheet
+collected six — `contact` and `governance` had **no columns at all**, so the
+recommended path guaranteed its own incompleteness. **Ruled add, not
+stop-requiring:** dropping them would make the paths agree by weakening the
+definition and turn `REQUIRED_CDE_FIELDS` into "the one list, except on the
+recommended path" — the drift the constant's own comment exists to prevent.
+Four columns (`Contact Name`, `Contact Email`, `Board Members`, `Community
+Representatives`) under a new **Contact & Governance** banner.
+`CDE_PROFILE_COLUMNS_FOR_REQUIRED_FIELD` is derived from the one list and gated
+against both shipped workbooks. **v1.1 files still load**, supplying neither.
+
+### The A/B, and every score that moved
+
+One filled scaffold, the same file both sides, `9a2d584` vs this tree:
+
+| | `9a2d584` | 1.6.0 | why |
+|---|---|---|---|
+| `(your CDE)` in the document | **8** | **0** | T1 |
+| `completeness` | 0.0 | **100.0** | 3 fields T1 restored + 2 T3 added; `check_completeness` finds 0 issues, 0 warnings |
+| `validation_pass_rate` | 0.0 | **56.7** | the same 5 issues left the penalty: `2/3×100 − min(50, 1×10)` |
+| readiness composite | 58.2 | **68.9** | `+100.0×0.05` and `+56.7×0.10` — no formula changed |
+| readiness grade | C | C | both inside the same band |
+| `eligibility_quality` · `distress_concentration` · `geographic_diversity` · `impact_metrics` | 60.0 · 75.6 · 100.0 · 46.6 | **unchanged** | identity feeds no scorer |
+| win aggregate base / with priority / tier | 73 / 81 / Not Qualified | **unchanged** | **this is the proof identity did not reach the scoring bag** |
+| all three win sections and every sub-score | — | **unchanged** | as above |
+
+> **53 insertions, 68 deletions** in `tests/rendered_baseline/`, measured
+> `9a2d584`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+> *(markdown −28/+1 is the withdrawal block becoming the pointer; word +1 and
+> excel +1 are the pointer arriving on surfaces that never carried the block;
+> pdf +50/−40 is the pointer's six lines plus repagination, 23 pages to 24,
+> with no content line removed — verified by diffing the two projections with
+> page markers stripped.)*
+
+The rendered-string sweep is unchanged in shape, and 238 constants are swept
+(237 at 1.5.7; this release adds
+`upload_handler.CDE_PROFILE_COLUMNS_FOR_REQUIRED_FIELD`, waived).
+
+---
+
 ## [1.5.7] — 2026-08-24
 
 **PATCH. No public names change, no score moves, no new methodology.** Verified
@@ -389,7 +524,7 @@ default costs a CLI user no capability they had. Adding the option is a new
 feature and belongs in 1.6.0.
 
 > **43 insertions, 43 deletions** in `tests/rendered_baseline/`, measured
-> `81c03d5`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+> `81c03d5`..`9a2d584`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
 > *(Every changed line is the fixture's round label, `CY2025` → `CY 2026`, and
 > nothing else — which is the evidence that the round-SUPPLIED rendering path is
 > structurally unchanged. The unsupplied path is not in the baseline at all,
@@ -5667,7 +5802,7 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 237 constants are swept
+colour". The rendered-string sweep demands **19**, and 238 constants are swept
 where 49 were. *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
 round label, its status, the re-check list and the pinned-document facts; 1.5.2
 adds `readiness_score._COMPONENT_BASIS`, the withdrawal note's per-component
@@ -5685,7 +5820,15 @@ WAIVED rather than pinned, because they render only when the CDE supplied no
 round and every fixture in this suite supplies one; the waiver names
 `tests/test_application_round.py::TestRenderedSurfaces`, which renders a
 document from an Application with no round and asserts both strings against
-it.)*
+it. 1.6.0 adds one, `upload_handler.CDE_PROFILE_COLUMNS_FOR_REQUIRED_FIELD`,
+the map from each `REQUIRED_CDE_FIELDS` entry to the CDE Profile columns that
+supply it. WAIVED rather than pinned: it holds INPUT-template column headers,
+not output text, and `tests/test_cde_paths_agree.py` already asserts every
+label in it against row 3 of both shipped workbooks — a stronger check than a
+pin on a copy of itself. The same release NARROWS
+`readiness_score._COMPONENT_BASIS` from `markdown,cli_summary` to
+`cli_summary`, because T2 moved the deduction table off the generated
+documents; the pin follows the claim rather than being relaxed to stay green.)*
 
 > **Remeasured in 1.3.0, and again in FIX-2, and again in 1.4.0.** This
 > sentence read **160** when 1.2.2 shipped, **183** at `ff49064` and **203**
