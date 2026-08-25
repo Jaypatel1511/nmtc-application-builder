@@ -192,6 +192,62 @@ def readiness_inline_qualifier() -> str:
     return "this tool's own unsourced house heuristic, not a CDFI Fund evaluation"
 
 
+def readiness_narrative_pointer() -> str:
+    """The ONE statement that the readiness narrative is withdrawn from HERE.
+
+    THE PLACEMENT RULING (1.6.0 T2), IN ONE PARAGRAPH.
+
+    ``validation.readiness_score.narrative_withdrawal_note()`` is ~700 words:
+    the withdrawal, the six-row docking table, the two subtotals, the
+    no-trade-off rule, and a closing pointer at the sourced engine. Through
+    1.5.7 the whole of it rendered into the EXECUTIVE SUMMARY of the generated
+    markdown application -- the first page a CDFI Fund reviewer reads -- and
+    into none of the other three documents, which have carried the grade and
+    ``readiness_weights_note()`` alone since 1.5.2.
+
+    WHAT IS AND IS NOT THE GRADE'S DISCLOSURE. ``readiness_weights_note()``
+    discloses the GRADE: whose weighting, that it is uncalibrated, that the
+    Fund publishes none, that it predicts nothing. It stays, on all four
+    surfaces, beside the claim. The withdrawal note discloses a DIFFERENT
+    claim -- "this tool declines to advise you, and here is what it deducted
+    anyway" -- and that claim answers a question a CDE asks while deciding
+    what to change. It is not asked by a reviewer scoring a filing, and it is
+    already answered where it IS asked: ``1_Pipeline_Analyzer.py`` renders the
+    full table through ``wrap_note`` beside the grade and the component chart,
+    and ``nmtcapp analyze`` prints it. Nothing is lost; one surface stops
+    repeating it.
+
+    WITHDRAWN, NOT SILENTLY EMPTIED, which is this package's own precedent
+    twice over (1.5.1, 1.5.2): an absent disclosure and a withdrawn one read
+    differently to a CDE who generated a document last week. Hence a pointer
+    rather than a deletion.
+
+    IT CARRIES NO RELEASE NUMBER AND NO PYTHON CALL, deliberately. Those --
+    with the recital of what earlier releases withdrew and why -- are roughly
+    half the block they replace, and they are changelog and developer
+    documentation: they disclose nothing this document asserts, and a reader
+    of a federal filing draft is not a caller of this library.
+
+    READ, NEVER RESTATED. Four near-identical copies of one disclosure is the
+    shape that produced the 1.2.1 defect where a sentence was deleted from one
+    file and stayed live in a second, and it is why
+    ``markdown_builder``'s executive summary reads the withdrawal note rather
+    than re-rendering it. tests/test_readiness_placement.py asserts all four
+    renderers call THIS function, and gates the RENDERED output of each.
+    """
+    return (
+        "READINESS NARRATIVE WITHDRAWN. This tool emits no strengths, "
+        "weaknesses or recommendations from the readiness composite, and "
+        "none appear in this document. It nevertheless deducted points from "
+        "the grade above, and it does not deduct silently: the full "
+        "component-by-component deduction table, with the reason each row is "
+        "or is not a quantity the CDFI Fund also scores, is printed by the "
+        "Pipeline Analyzer page of the app and by `nmtcapp analyze`. It is "
+        "not repeated here, because it is an account of what this tool did "
+        "to its own number rather than a finding about this application."
+    )
+
+
 def readiness_weights_sheet_note() -> str:
     """The same disclosure, sized for a spreadsheet cell.
 

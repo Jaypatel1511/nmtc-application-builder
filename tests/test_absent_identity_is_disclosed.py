@@ -45,6 +45,7 @@ from nmtcapp.core.cde import CDEProfile
 from nmtcapp.core.pipeline import Pipeline
 from nmtcapp.sections.section_a_business import SectionABusinessStrategy
 from nmtcapp.sections.section_c_management import SectionCManagementCapacity
+from nmtcapp.sections.section_e_prior_awards import SectionEPriorAwards
 
 
 def _cde(**overrides) -> CDEProfile:
@@ -196,3 +197,41 @@ class TestPriorAwardsThatWereDeclaredButNotDetailed:
         app, analysis = _analysis(cde)
         text = _text(SectionCManagementCapacity().generate_content(app, analysis))
         assert "received 1 NMTC allocation awards totaling $40,000,000" in text
+
+
+class TestSectionEDoesNotClaimAFirstApplicationOverADeclaredCount:
+    """The same disagreement, in the CDE'S OWN VOICE, in the deployment-history
+    section. "This is our first allocation application" is a stronger claim
+    than Section C's arithmetic: it is an affirmative statement about the
+    applicant's history, and it was asserted to a CDE whose own profile
+    declared one prior award two cells away.
+    """
+
+    def test_a_declared_count_is_not_overridden_by_an_empty_list(self):
+        cde = _cde()
+        cde.extra = {"prior_award_count": 1}
+        app, analysis = _analysis(cde)
+        text = _text(SectionEPriorAwards().generate_content(app, analysis))
+        assert "This is our first allocation application" not in text, (
+            "Section E asserted a first application, in the CDE's own voice, "
+            "against the CDE's own declared prior-award count."
+        )
+
+    def test_the_disagreement_is_disclosed(self):
+        cde = _cde()
+        cde.extra = {"prior_award_count": 1}
+        app, analysis = _analysis(cde)
+        text = _text(SectionEPriorAwards().generate_content(app, analysis))
+        assert "will not state that this is a first application" in text
+
+    def test_a_genuine_first_time_applicant_still_says_so(self):
+        app, analysis = _analysis(_cde())
+        text = _text(SectionEPriorAwards().generate_content(app, analysis))
+        assert "This is our first allocation application" in text
+
+    def test_a_declared_zero_is_a_first_time_applicant(self):
+        cde = _cde()
+        cde.extra = {"prior_award_count": 0}
+        app, analysis = _analysis(cde)
+        text = _text(SectionEPriorAwards().generate_content(app, analysis))
+        assert "This is our first allocation application" in text

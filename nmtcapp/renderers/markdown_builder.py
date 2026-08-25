@@ -13,6 +13,7 @@ from nmtcapp.renderers._cell_format import format_cell
 from nmtcapp.renderers._methodology import (
     ACS_VINTAGE, deal_economics_note, impact_bands_note, noaa_note,
     readiness_weights_note,
+    readiness_narrative_pointer,
     readiness_inline_qualifier,
 )
 from nmtcapp.sections import ALL_SECTIONS
@@ -195,11 +196,29 @@ class MarkdownApplicationBuilder:
             # forwards this file. Both lists were produced by house bands with
             # no CDFI Fund referent; both are withdrawn.
             #
-            # The note is read from validation.readiness_score, not restated
-            # here. Four near-identical copies of one disclosure is the shape
-            # that produced the 1.2.1 defect where a sentence was deleted from
-            # one file and stayed live in a second.
-            + _withdrawal_markdown(score)
+            # AND 1.5.2 REPLACED THEM WITH ~700 WORDS, HERE AND NOWHERE ELSE
+            # (1.6.0 T2). This was `_withdrawal_markdown(score)`, the whole of
+            # narrative_withdrawal_note(): the six-row docking table, two
+            # subtotals, the no-trade-off rule, what 1.5.1 and 1.5.2 withdrew
+            # and why, and `Application.recommendations()`. Measured on a
+            # generated application: 962 words in this Executive Summary, 144
+            # of them about the applicant.
+            #
+            # word_builder, pdf_builder and excel_builder never rendered it at
+            # all, so the four "same" documents disagreed by ~700 words about
+            # the same number. The ruling puts each disclosure where its own
+            # claim is: readiness_weights_note() above discloses the GRADE and
+            # stays; the deduction table discloses "this tool declines to
+            # advise", a claim this document does not make, and is printed in
+            # full by the Pipeline Analyzer page and `nmtcapp analyze` -- the
+            # surfaces where a CDE reads it while deciding.
+            #
+            # A POINTER, NOT A DELETION. Read from one place, like the note it
+            # replaces and for the same reason: four near-identical copies of
+            # one disclosure is the shape that produced the 1.2.1 defect where
+            # a sentence was deleted from one file and stayed live in a
+            # second. See _methodology.readiness_narrative_pointer.
+            f"*{readiness_narrative_pointer()}*\n\n"
         )
 
     def _toc(self) -> str:
@@ -298,17 +317,3 @@ def _df_to_md(df, max_rows: int = 50) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _withdrawal_markdown(score) -> str:
-    """Render :attr:`ReadinessScore.narrative_note` as markdown.
-
-    The deduction table arrives pre-aligned with a four-space indent, which is
-    already a markdown code block, so the columns survive the format change
-    without a second copy of the layout living here.
-    """
-    note = getattr(score, "narrative_note", "") or ""
-    if not note:
-        return ""
-    out = []
-    for para in note.split("\n"):
-        out.append(para if para.startswith("    ") or not para.strip() else f"*{para}*")
-    return "\n".join(out)

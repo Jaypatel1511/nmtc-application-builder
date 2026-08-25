@@ -17,7 +17,8 @@ from nmtcapp.renderers._frame_geometry import (
 )
 from nmtcapp.renderers._methodology import (
     ACS_VINTAGE, deal_economics_note, distress_definitions, impact_bands_note,
-    noaa_note, readiness_weights_note, readiness_inline_qualifier,
+    noaa_note, readiness_weights_note, readiness_narrative_pointer,
+    readiness_inline_qualifier,
 )
 from nmtcapp.renderers.styles import COLORS, TYPOGRAPHY, PAGE_LAYOUT, rl_hex
 from nmtcapp.sections import ALL_SECTIONS
@@ -698,6 +699,20 @@ class PDFApplicationBuilder:
             Spacer(1, 4),
             Paragraph(
                 f'<font size="8"><i>{_rl_escape(readiness_weights_note())}</i></font>',
+                styles["body"],
+            ),
+            Spacer(1, 4),
+            # THE SAME PLACEMENT RULING AS MARKDOWN'S (1.6.0 T2). This surface
+            # never carried narrative_withdrawal_note() -- only markdown did,
+            # so the four "same" documents disagreed by ~700 words about the
+            # same number. The grade is docked here as it is everywhere, and a
+            # tool that declines to advise may not deduct silently, so the
+            # withdrawal is STATED and the arithmetic is pointed at rather
+            # than repeated. Read from one place; see
+            # _methodology.readiness_narrative_pointer.
+            Paragraph(
+                f'<font size="8"><i>'
+                f'{_rl_escape(readiness_narrative_pointer())}</i></font>',
                 styles["body"],
             ),
             Spacer(1, 8),

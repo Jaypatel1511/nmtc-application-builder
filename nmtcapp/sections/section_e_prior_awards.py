@@ -43,13 +43,52 @@ class SectionEPriorAwards(SectionGenerator):
         awards = cde.prior_awards
 
         if not awards:
+            # AN EMPTY LIST IS NOT ALWAYS A FIRST-TIME APPLICANT (1.6.0 T1c).
+            #
+            # The same disagreement section_c_management discloses, in the
+            # section the CDFI Fund reads for deployment history, and stated
+            # more strongly: "This is our first allocation application" is an
+            # affirmative claim in the CDE's own voice about its own history.
+            #
+            # ``prior_awards`` is the detailed list; ``extra["prior_award_
+            # count"]`` is a SCORED attribute and, on the xlsx path, the only
+            # one of the two a CDE can supply -- the sheet has a "Prior Award
+            # Count" cell and no award list. So a CDE that typed 1 there had a
+            # federal filing draft assert, in its own voice, that it had never
+            # received an allocation. Before T1 that sentence named "(your
+            # CDE)"; it now names the applicant.
+            #
+            # THE LIST STILL GOVERNS WHERE THE TWO AGREE. A genuine first-time
+            # applicant -- no declared count, or a declared 0 -- reaches the
+            # unchanged sentence below.
+            declared = cde.extra.get("prior_award_count") if cde.extra else None
+            try:
+                declared = int(declared) if declared is not None else None
+            except (TypeError, ValueError):
+                declared = None
+            if declared:
+                body = (
+                    f"{cde.name}'s profile declares {declared} prior NMTC "
+                    f"allocation award{'s' if declared != 1 else ''}, and this "
+                    "draft was generated from a profile carrying no details "
+                    "for any of them. "
+                    + _cde_todo(
+                        "State each prior allocation's year, amount, states "
+                        "served, sectors financed and deployment status. This "
+                        "tool has the count and nothing else, and will not "
+                        "state that this is a first application when the "
+                        "profile says it is not."
+                    )
+                )
+            else:
+                body = (f"{cde.name} has not received prior NMTC allocations. "
+                        "This is our first allocation application.")
             return {
                 "section_id": self.section_id,
                 "title": self.title,
                 "subsections": [{
                     "heading": "Prior Award Status",
-                    "body": f"{cde.name} has not received prior NMTC allocations. "
-                            "This is our first allocation application.",
+                    "body": body,
                     "type": "narrative",
                 }],
             }
