@@ -197,6 +197,44 @@ and "absent" and "blank" can no longer come to mean different things on the two
 paths a CDE can take. `False`, `0` and `0.0` still survive on both; verified by
 execution, along with the loader's end-to-end behaviour on plain-Python input.
 
+### Release bookkeeping
+
+`FLOOR` **840 → 860**, and the freshness gate announced it before this file was
+opened — the ninth consecutive cycle in which that number was caught by a check
+rather than by somebody re-reading the comment beside it. 840 sat exactly on
+its band's lower bound, so T1's new gate pushed the bound past it.
+
+**Re-derived from a real sdist**, not typed: pristine clone with no egg-info,
+`python -m build --sdist`, the tarball installed with `[dev]` into a fresh
+venv, only `tests/`, `streamlit_app/`, `README.md` and `pyproject.toml` copied
+out of it into a directory with **no `nmtcapp/`**, `import nmtcapp` confirmed
+to resolve to site-packages, and the breakdown read off the junit report rather
+than off the terminal:
+
+```
+collected under -m "not wheel"   1,782
+skipped in the sdist               -57
+EXECUTED                         1,725
+half                               862.5
+rounded down                       860
+```
+
+The tarball ran **clean**: 1,725 passed, 57 skipped, 1 deselected, zero
+failures. Band `[860, 891]`.
+
+**SKIP HEADROOM IS STILL EXACTLY ZERO AND WAS NOT BOUGHT.** The same run
+skipped exactly **57**, the value `MAX_SDIST_SKIPS` already carries and the
+same 57 the 1.5.4, 1.5.5, 1.5.6 and 1.6.0 derivations measured. The one test
+module this release adds **skips nothing, by design**: its five cases with
+nothing to assert are a filtered parametrize and not a `pytest.skip`. Verified
+by reading the per-module breakdown rather than trusting the total —
+`test_one_ruling_on_prior_awards` appears nowhere in it. The ceiling was not
+raised, and the fact that nothing machine-enforces the measured skip count
+against the constant is recorded open for the fifth time.
+
+Published test count **1,743 → 1,783** in `README.md`, `CONTRIBUTING.md` and
+`streamlit_app/app.py`. `CLAIMED_NEW_TEST_MODULES` 31 → 32.
+
 ---
 
 ## [1.6.0] — 2026-08-25
