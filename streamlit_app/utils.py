@@ -17,7 +17,10 @@ import streamlit as st
 logger = logging.getLogger(__name__)
 
 from nmtcapp.core.application import Application
-from nmtcapp.core.cde import CDEProfile
+from nmtcapp.core.cde import (  # noqa: F401  (_is_blank re-exported)
+    CDEProfile,
+    _is_blank,
+)
 from nmtcapp.core.pipeline import Pipeline
 from nmtcapp.core.application_round import (  # noqa: F401  (round_label re-exported)
     is_round_specified,
@@ -285,42 +288,13 @@ def requested_allocation_label(value: float) -> str:
     return fmt_millions(value)
 
 
-def _is_blank(value) -> bool:
-    """Is this value an unanswered cell? Answers, rather than raising.
-
-    THE MEMBERSHIP TEST COULD BE CRASHED BY ITS OWN INPUT (1.6.0 T0). This was
-    ``value not in ("", [], {}, None)`` inline in ``_scoring_attrs_only``.
-    ``in`` compares by equality, and a numpy scalar compared against ``[]``
-    returns an EMPTY ARRAY rather than ``False`` -- so numpy refuses to decide
-    its truth value and the filter raises ``ValueError`` instead of answering.
-    ``upload_handler`` emitted exactly such a scalar for every starred CDE
-    Profile cell a CDE left blank, which the shipped template instructs, and
-    page 1 turned the ValueError into "Failed to read file" and stopped.
-
-    The source is fixed where the scalar is produced. This is the second
-    defence, and it is the one that generalises: the class is "a value the
-    filter cannot compare", and the next such value will not be a numpy float.
-
-    ``False``, ``0`` and ``0.0`` ARE ANSWERS AND SURVIVE, unchanged -- the
-    equality comparisons below are the same ones the tuple performed, with the
-    ones that can raise reordered behind an identity check and a type check.
-
-    Example::
-
-        _is_blank("")      # -> True
-        _is_blank(0.0)     # -> False
-        _is_blank([])      # -> True
-    """
-    if value is None:
-        return True
-    if isinstance(value, str):
-        return value == ""
-    if isinstance(value, (list, tuple, dict, set)):
-        return len(value) == 0
-    # Anything else -- int, float, bool, numpy scalar, Decimal -- is a value
-    # the CDE (or the derivation) produced. None of the four blanks is any of
-    # those, so there is nothing left to compare against.
-    return False
+# ``_is_blank`` IS IMPORTED, NOT DEFINED HERE (1.6.1 T4). It was written for
+# this module in 1.6.0 T0, and ``nmtcapp/core/cde.py`` carried the very
+# membership shape it replaces -- twice, on the YAML path -- because the
+# library cannot import from ``streamlit_app``. It moved to ``core.cde`` so
+# both input paths call ONE predicate; a copy here is what
+# ``REQUIRED_CDE_FIELDS`` exists to warn about. The full reasoning, including
+# why ``False``/``0``/``0.0`` survive, is in its docstring there.
 
 
 def _scoring_attrs_only(cde_extra: dict, is_demo: bool) -> dict:
@@ -418,9 +392,17 @@ class UploadedIdentity:
     claim into a federal filing. Nothing here reaches ``extra``: these values
     land on ``CDEProfile.name``, ``.cde_id``, ``.certification_date``,
     ``.mission``, ``.target_markets`` and ``.website``, none of which is read
-    by any scorer. ``_scoring_attrs_only`` is UNCHANGED and
-    ``_IDENTITY_KEYS`` is unchanged; the strip still removes every one of
-    these from the bag. What changed is that they now have somewhere to go.
+    by any scorer. THE STRIP STILL REMOVES EVERY ONE OF THESE FROM THE BAG,
+    and that -- not the two objects being untouched -- is what makes this
+    safe. (CORRECTED IN 1.6.1 T3: this read "``_scoring_attrs_only`` is
+    UNCHANGED and ``_IDENTITY_KEYS`` is unchanged", and BOTH changed in the
+    same commit that added this paragraph. ``_scoring_attrs_only``'s filter
+    went from ``v not in ("", [], {}, None)`` to ``not _is_blank(v)`` for
+    1.6.0 T0, and ``_IDENTITY_KEYS`` gained ``contact_name``,
+    ``contact_email``, ``governance_board_members`` and
+    ``governance_community_representatives`` for 1.6.0 T3. Both changes are
+    safe and both WIDEN the strip; the sentence claiming they had not happened
+    was not.) What changed is that these values now have somewhere to go.
 
     A FIELD LEFT BLANK STAYS BLANK. Every attribute here is Optional and the
     caller supplies the neutral profile's value when it is absent, so an
@@ -761,7 +743,14 @@ def get_or_create_app(
             # NOTHING HERE TOUCHES ``extra``. That is the whole distinction
             # from 1.1.5: these land on CDEProfile's own attributes, none of
             # which any scorer reads, while the SCORING BAG below is built by
-            # the unchanged strip from the unchanged _IDENTITY_KEYS.
+            # the strip, from _IDENTITY_KEYS. (This said "the unchanged strip
+            # from the unchanged _IDENTITY_KEYS" -- the same claim as the
+            # UploadedIdentity docstring above, and false for the same reason.
+            # Corrected in 1.6.1 T3: fixing one instance of a statement and
+            # leaving the other is the two-copies shape this release is about.
+            # What holds is that the strip removes every identity key from the
+            # bag, which it does more thoroughly than before, not that either
+            # object went untouched.)
             cde = CDEProfile(
                 name=_identity.name or "(your CDE)",
                 cde_id=_identity.cde_id or "user-upload",

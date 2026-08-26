@@ -158,6 +158,95 @@ def _cde_todo(what: str) -> str:
     return _CDE_TODO.format(what=what)
 
 
+#: THE ONE RULING ON THE PRIOR-AWARD COUNT (1.6.1 T1).
+#:
+#: Sections C and E BOTH narrate the same fact about the same CDE -- how many
+#: prior NMTC allocations it has received -- off TWO DIFFERENT INPUTS:
+#:
+#:     cde.prior_awards              the detailed list: year, amount, states,
+#:                                   sectors, deployment status
+#:     cde.extra["prior_award_count"] a SCORED attribute, and on the xlsx path
+#:                                   the ONLY one of the two a CDE can supply
+#:                                   -- the CDE Profile sheet has a "Prior
+#:                                   Award Count" cell and no award list.
+#:
+#: 1.6.0 taught ONE of the two sections to compare them. Section C compared in
+#: every case; Section E read the count only inside its ``if not awards:``
+#: branch, so a non-empty list fell straight through to the summary with no
+#: comparison at all. Measured at fc34af5 (= v1.6.0), one detailed award and a
+#: declared count of 4, in ONE generated document:
+#:
+#:   Section C  "declares 4 prior NMTC allocation awards, and 1 is detailed
+#:               ... [CDE TO COMPLETE: ...]"            <- disclosed
+#:   Section E  "has 1 prior NMTC allocation awards totaling $45,000,000, of
+#:               which 1 are recorded ... as fully deployed."
+#:                                                      <- asserted as complete
+#:
+#: At 9a2d584 neither section looked, so they agreed by not looking. This is
+#: the same shape ``_compliance_statement`` below already exists to prevent:
+#: two sections asserting the same thing about the same field out of two
+#: hand-maintained copies of the reasoning. So the reasoning is stated ONCE,
+#: here, and both sections read the predicate rather than re-deriving it.
+#:
+#: THE RULING IS SECTION C'S, UNCHANGED AND NOT RE-OPENED: **the list still
+#: governs where it exists.** This does not adopt the count as the answer --
+#: the count carries no year, no amount and no deployment status, so nothing
+#: can narrate it. What each section does when they disagree is to say so and
+#: name which input is missing. What each section SAYS around that fact stays
+#: its own: C narrates certification history, E narrates the award table.
+#:
+#: ``[]`` IS AN ANSWER AND STAYS ONE. ``core.cde`` documents at length that an
+#: empty ``prior_awards`` list is a CDE affirmatively stating it has no prior
+#: allocations, and that 1.3.0 B3 fixed a validator that pressured a user
+#: toward a false statement about its own history. A genuine first-time
+#: applicant -- no declared count, or a declared 0 -- must reach the unchanged
+#: first-application sentence, and ``_prior_awards_disagree`` returns False for
+#: both. Over-hedging is a defect in the other direction.
+
+
+def _declared_prior_award_count(cde) -> "int | None":
+    """The prior-award count the CDE declared, or ``None`` if it declared none.
+
+    ``None`` covers three cases that are all "the CDE did not state a count":
+    the key is absent, the cell was left blank, and the cell holds something
+    that is not a whole number. A blank cell is NOT a declared zero -- that
+    distinction is the same one ``streamlit_app.utils._is_blank`` and
+    ``CDEProfile.from_yaml`` draw, and it is why ``0`` and ``None`` are kept
+    apart here rather than collapsed to a falsy test.
+
+    Example::
+
+        _declared_prior_award_count(cde)   # -> 4, or None
+    """
+    declared = getattr(cde, "extra", None)
+    declared = declared.get("prior_award_count") if declared else None
+    if declared is None:
+        return None
+    try:
+        return int(declared)
+    except (TypeError, ValueError):
+        return None
+
+
+def _prior_awards_disagree(cde) -> bool:
+    """Do the CDE's declared prior-award count and its detailed list disagree?
+
+    ``False`` when the CDE declared no count at all -- there is nothing to
+    disagree with, and an absent count may not be read as a claim of zero.
+    ``False`` when a declared ``0`` meets an empty list: those AGREE, and the
+    CDE is a first-time applicant saying so.
+
+    Read by Sections C and E. See the ruling above for why it is one predicate
+    and not two copies of one.
+
+    Example::
+
+        _prior_awards_disagree(cde)   # -> True when 4 declared, 1 detailed
+    """
+    declared = _declared_prior_award_count(cde)
+    return declared is not None and declared != len(cde.prior_awards)
+
+
 def _compliance_statement(cde) -> str:
     """Compliance-history text derived only from what the CDE supplied.
 

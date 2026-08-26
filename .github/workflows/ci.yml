@@ -55,6 +55,132 @@ jobs:
     - name: Run tests
       run: pytest -m "not wheel" -v
 
+  # THE MERGE-TO-PUBLISH WINDOW, MADE IMPOSSIBLE TO MISS (1.6.1 T2).
+  #
+  # THE FAILURE THIS EXISTS FOR. Streamlit Community Cloud deploys the app's
+  # SOURCE from main and installs its LIBRARY from PyPI, pinned by
+  # streamlit_app/requirements.txt to `nmtc-application-builder==<version>`.
+  # A merge to main therefore does TWO things in one commit: it bumps the
+  # version, and it redeploys the public app against a PyPI that does not
+  # have that version yet. PR #32 did exactly that and the app was down for
+  # the whole merge-to-publish window. PR #12 did it before that.
+  #
+  # THIS JOB DOES NOT PREVENT THE OUTAGE. It cannot: the outage is what those
+  # two effects do when they ride in one commit, and separating them is a
+  # Streamlit Cloud app-settings change (point the app at a `deploy` branch
+  # fast-forwarded to the tag AFTER publish -- the ruling already written in
+  # streamlit_app/requirements.txt and scripts/release.sh). What this job does
+  # is make the window LOUD. Red here means one thing and says it: the public
+  # app cannot resolve its own pin right now. It goes green by itself when the
+  # release publishes.
+  #
+  # WHY THE PIN IS NOT LOOSENED INSTEAD. Ruled at 1.5.0 S6 and re-affirmed
+  # here: `>=<this version>` is the SAME unresolvable failure spelled
+  # differently, and `>=<last published>` serves a library older than the
+  # source beside it -- silent, per-page, on a tool whose numbers inform a
+  # federal filing -- and needs a hand-maintained "last published" constant,
+  # which is the shape FLOOR and MAX_SDIST_SKIPS have gone stale in five times
+  # in this repository.
+  #
+  # PUSH TO main ONLY, DELIBERATELY. On a pull request the pin naming an
+  # unpublished version is CORRECT and expected -- that is what a release PR
+  # looks like -- so running this there would be red on every release PR and
+  # would teach everyone to ignore it. The question "is the deployed app able
+  # to install its library" is only meaningful once the branch is deployed.
+  #
+  # IT NEEDS NETWORK, and that is the whole point: PyPI's state is the fact
+  # being asserted and nothing in the tree can answer it. One unauthenticated
+  # GET to the public JSON API, no secrets, no write scope.
+  #
+  # A PyPI OUTAGE IS NOT A RELEASE DEFECT. If the index cannot be reached the
+  # job says "could not answer" and exits 0. A gate that cannot distinguish
+  # "the version is missing" from "I could not look" is a gate that gets
+  # muted, and this repository has that pattern on record.
+  deployment-pin:
+    name: Guard — the deployed app can resolve its pin
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+      with:
+        python-version: "3.12"
+
+    - name: Is the pinned version on PyPI?
+      shell: bash
+      run: |
+        set -euo pipefail
+        python - <<'PY'
+        import json, re, sys, urllib.error, urllib.request
+
+        REQ = "streamlit_app/requirements.txt"
+        DIST = "nmtc-application-builder"
+
+        # Read the pin the same way tests/test_streamlit_deployment_pin.py does:
+        # the requirement line, not pyproject. That test forces the two equal,
+        # so reading the deployed file rather than the metadata keeps this job
+        # asking about the artifact Streamlit Cloud actually installs.
+        pinned = None
+        for line in open(REQ, encoding="utf-8"):
+            line = line.split("#", 1)[0].strip()
+            m = re.fullmatch(re.escape(DIST) + r"==([^\s;]+)", line)
+            if m:
+                pinned = m.group(1)
+                break
+        if pinned is None:
+            print(f"::error::no '{DIST}==<version>' requirement in {REQ}. The "
+                  "deployed app has no pin to resolve and this job cannot ask "
+                  "its question.")
+            sys.exit(1)
+        print(f"pin in {REQ}: {DIST}=={pinned}")
+
+        url = f"https://pypi.org/pypi/{DIST}/json"
+        try:
+            with urllib.request.urlopen(url, timeout=30) as fh:
+                releases = json.load(fh).get("releases", {})
+        except urllib.error.HTTPError as exc:
+            if exc.code == 404:
+                print(f"::error::PyPI has no project named {DIST} at all.")
+                sys.exit(1)
+            print(f"::notice::COULD NOT ANSWER -- PyPI returned HTTP {exc.code}. "
+                  "This job asserts nothing on this run; it is not a release "
+                  "defect and it is not evidence that the pin is fine.")
+            sys.exit(0)
+        except Exception as exc:                       # noqa: BLE001
+            print(f"::notice::COULD NOT ANSWER -- could not reach PyPI ({exc!r}). "
+                  "This job asserts nothing on this run.")
+            sys.exit(0)
+
+        files = releases.get(pinned)
+        if files:
+            live = [f for f in files if not f.get("yanked")]
+            if live:
+                print(f"{DIST}=={pinned} is on PyPI with {len(live)} file(s). "
+                      "The deployed app can resolve its pin.")
+                sys.exit(0)
+            print(f"::error::{DIST}=={pinned} exists on PyPI but every file is "
+                  "YANKED, so `pip install` cannot resolve it. The public "
+                  "Streamlit app is down.")
+            sys.exit(1)
+
+        newest = sorted(releases)[-1] if releases else "(none)"
+        print(f"::error::THE PUBLIC STREAMLIT APP IS DOWN RIGHT NOW.")
+        print(f"::error::main pins {DIST}=={pinned}; PyPI does not have it "
+              f"(newest published: {newest}).")
+        print("::error::Streamlit Cloud deploys this branch's SOURCE and "
+              "installs its LIBRARY from PyPI, so `pip install "
+              f"{DIST}=={pinned}` fails and nothing is served.")
+        print("::error::FINISH THE RELEASE: push the matching vX.Y.Z tag, let "
+              "release.yml publish, then reboot the app. This job goes green "
+              "on its own once the upload lands.")
+        print("::error::TO STOP THIS HAPPENING AT ALL, point Streamlit Cloud "
+              "at a `deploy` branch fast-forwarded to the tag AFTER publish -- "
+              "see scripts/release.sh. That is an app-settings change, not a "
+              "change to the pin.")
+        sys.exit(1)
+        PY
+
   # BUILD THE DOCS IN CI. They built nowhere before this job, and that is why a
   # source correction to docs/reference/data-sources.md sat unpublished on
   # gh-pages, and why the sample-output hook's degradation — two of four

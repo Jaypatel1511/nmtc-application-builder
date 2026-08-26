@@ -1100,7 +1100,50 @@ jobs:
           # bounds the CONSTANT; nothing compares the MEASUREMENT above to it.
           # Still not added here, and for the same reason as at 1.5.5 -- 57
           # against 57 leaves no room, so the gate would be RED ON ARRIVAL.
-          FLOOR=840
+          # RE-DERIVED FOR 1.6.1, AND THE GATE ANNOUNCED IT AGAIN -- the
+          # NINTH consecutive cycle in which this number was caught by a check
+          # rather than by somebody re-reading the comment beside it.
+          # test_release_floor_is_derived_from_the_current_suite went red on
+          # FLOOR=840 before this file was opened. 840 sat exactly on its
+          # band's lower bound (the 1.6.0 close said so), so T1's new gate
+          # pushed the bound past it.
+          #
+          # Derived from a REAL SDIST BUILD with this job's exact invocation,
+          # on 3.12.13: pristine clone with no egg-info, `python -m build
+          # --sdist`, the tarball installed with [dev] into a fresh venv, ONLY
+          # tests/, streamlit_app/, README.md and pyproject.toml copied out of
+          # it into a directory with NO nmtcapp/, `import nmtcapp` confirmed to
+          # resolve to site-packages, and the breakdown read off the junit
+          # report rather than off the terminal:
+          #
+          #     collected under -m "not wheel" 1,782
+          #     skipped in the sdist             -57
+          #     EXECUTED                       1,725
+          #     half                             862.5
+          #     rounded down                     860
+          #
+          # The tarball ran CLEAN on that build: 1,725 passed, 57 skipped, 1
+          # deselected, zero failures. The resulting band is [860, 891].
+          #
+          # SKIP HEADROOM IS STILL EXACTLY ZERO, AND STILL NOT BOUGHT. The same
+          # run skipped exactly 57 -- the value MAX_SDIST_SKIPS already carries
+          # and the same 57 the 1.5.4, 1.5.5, 1.5.6 and 1.6.0 derivations
+          # measured. THE ONE TEST MODULE 1.6.1 ADDS SKIPS NOTHING, and it was
+          # designed not to: tests/test_one_ruling_on_prior_awards.py has five
+          # cases with nothing to assert (the pairs where the count and the
+          # list agree cannot adopt a count), and they are a FILTERED
+          # PARAMETRIZE rather than a `pytest.skip`. Verified by reading the
+          # per-module breakdown the next step prints, not by trusting the
+          # total: that module appears nowhere in it, and every one of the 57
+          # belongs to a module that already skipped at 1.6.0. The ceiling was
+          # not raised.
+          #
+          # AND STILL OPEN, RECORDED A FIFTH TIME: NOTHING MACHINE-ENFORCES
+          # THE MEASURED SKIP COUNT AGAINST THIS CONSTANT. test_small_claims
+          # bounds the CONSTANT; nothing compares the MEASUREMENT above to it.
+          # Still not added, and for the same reason as at 1.5.5 and 1.5.6 --
+          # 57 against 57 leaves no room, so the gate would be RED ON ARRIVAL.
+          FLOOR=860
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()
