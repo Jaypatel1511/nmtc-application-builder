@@ -5,6 +5,200 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.6.1] — 2026-08-26
+
+**PATCH. No score formula, weight, band, threshold or grade moves, and no score
+moves.** A/B against `fc34af5` over 345 measured values — every win sub-score,
+both aggregates, the tier, the composite, its grade and all six readiness
+components — differed in **nothing but the two wall-clock `analyzed_at`
+stamps**. The rendered baselines did not move either, and that is measured, not
+assumed: `git status tests/rendered_baseline/` is empty, because every shipped
+fixture declares `prior_award_count: 3` against three detailed awards, so both
+sections take the agreeing branch whose text is byte-identical to 1.6.0.
+
+### T1 — Sections C and E now implement ONE ruling on the prior-award count
+
+**1.6.0 put a contradiction about a named CDE's federal award history inside
+one document.** A CDE's prior allocations reach the draft from two inputs that
+can disagree: `cde.prior_awards`, the detailed list, and
+`cde.extra["prior_award_count"]`, a SCORED attribute which on the xlsx path is
+the only one of the two a CDE can supply — the CDE Profile sheet has a
+**Prior Award Count** cell and no award list.
+
+1.6.0 taught **one** of the two sections that narrate it to compare them.
+`section_c_management` compared in every case. `section_e_prior_awards:64` read
+the count **inside its `if not awards:` branch**, so a non-empty list fell
+through to `total_prior = cde.total_prior_allocation()` and narrated the list
+with no comparison at all. Executed at `fc34af5`, one detailed award against a
+declared count of four:
+
+| | at `fc34af5` |
+|---|---|
+| Section C | *"This CDE's profile declares **4** prior NMTC allocation awards, and **1** is detailed… `[CDE TO COMPLETE: …]`"* — **discloses** |
+| Section E | *"…has **1** prior NMTC allocation awards totaling **$45,000,000**, of which 1 are recorded as fully deployed."* — **asserts it as the whole history** |
+
+At `9a2d584` neither section looked, so they agreed by not looking. Reachable
+on the YAML/library path only: the xlsx sheet carries a count and no list, so
+it always takes the empty-list branch.
+
+**THE FIX IS ONE PREDICATE, NOT A THIRD POSITION.** Both files carried
+near-identical ~20-line comment blocks arguing the same case in slightly
+different words — the two-hand-maintained-copies shape `REQUIRED_CDE_FIELDS`'
+own docstring records the cost of, where deleting `governance` from the third
+copy passed the entire suite. `sections/base` already solves exactly this for
+exactly these two sections: `_compliance_statement` exists because *"Sections C
+and E … both previously asserted a clean record unconditionally."*
+`_declared_prior_award_count` and `_prior_awards_disagree` now live beside it,
+the reasoning is stated once, and both sections read it.
+
+**The ruling is Section C's, unchanged: THE LIST STILL GOVERNS WHERE IT
+EXISTS.** The count is not adopted — it carries no year, no amount and no
+deployment status, so nothing can narrate it. Section E's figures are still the
+list's; what changes is that they are **scoped to the awards they were computed
+from** instead of standing for the whole history, and the missing input is
+named. Withholding the total the way Section C does would be theatre in Section
+E: every award's amount prints in the table immediately below.
+
+**`[]` IS STILL AN ANSWER.** `core/cde.py` documents at length that an empty
+list is a CDE affirmatively stating it has no prior allocation, and that 1.3.0
+B3 fixed a validator that pressured a user toward a false statement about its
+own history. A genuine first-time applicant — no declared count, a declared
+`0`, or a blank cell — reaches *"This is our first allocation application"*
+unchanged, and that is asserted **positively** rather than left alone, because
+over-hedging is a defect in the other direction.
+
+**Eight count/list pairs, executed.** Seven render byte-identically to
+`fc34af5`; `1 award + 4` is the one that moves.
+
+| pair | disagree? | at `fc34af5` | at 1.6.1 |
+|---|---|---|---|
+| `[] + absent` · `[] + 0` · `[] + blank` | no | first application | **unchanged** |
+| `[] + 1` · `[] + 3` | yes | both disclose | **unchanged** |
+| `1 award + absent` · `1 award + 1` | no | both narrate the list | **unchanged** |
+| `1 award + 4` | **yes** | **C discloses, E asserts** | **both disclose** |
+
+`tests/test_one_ruling_on_prior_awards.py` is the gate, and its load-bearing
+assertion is the **cross-section** one — that C and E reach the same verdict on
+the same input — because a per-section assertion is exactly what 1.6.0 already
+had and it passed while the two disagreed. Proved RED at `fc34af5`: the module
+fails to import there (the predicate does not exist), and with the new symbols
+stripped out the behavioural half runs **4 failed, 18 passed**, failing on
+exactly the `1 award + 4` pair. The audit found Section E's tests covered only
+empty-list cases and Section C's non-empty test used a count that AGREES, so
+the disagreement path was untested on both sides.
+
+### T2 — the merge-to-publish window is now loud
+
+**Three merges before their audits: #30, #31, #32. #32 took the public app down**
+because main pinned `==1.6.0` against a PyPI that had 1.5.7.
+
+**RULED, with the argument.** Streamlit Community Cloud deploys the app's
+SOURCE from main and installs its LIBRARY from PyPI. One commit therefore does
+two things — bumps the version and redeploys — and the outage is what those two
+effects do in that order. Nothing in this repository can separate them.
+
+* **Option 2 (let the pin lag by design) is REJECTED**, and not only for the
+  stale-constant reason. It needs a source of truth for "last published", and
+  both candidates are bad: a hand-maintained constant is the exact shape that
+  has gone stale five times here (`FLOOR`, `MAX_SDIST_SKIPS`, the three
+  required-field copies), and a git tag is invisible inside an sdist. The
+  deeper objection is that a lagging pin **dissolves a guarantee that currently
+  holds**: the equality pin is what makes the deployed library provably the
+  audited artifact matching the deployed source, which is what makes
+  `test_streamlit_deployment_pin`'s gate 2 scope true rather than approximate.
+  It also trades a loud total outage for silent, per-page half-working — on a
+  tool whose numbers inform a federal filing.
+* **Option 3's real form already exists in this repository, written down
+  twice** (`streamlit_app/requirements.txt` and `scripts/release.sh`): point
+  Streamlit Cloud at a `deploy` branch fast-forwarded to the tag **after**
+  publish. Source and library then advance together and both are the published
+  artifact. That is an **app-settings change, not a code change**. Automating
+  the fast-forward from `release.yml` is possible and was **deliberately not
+  done here**: it would ship an untested `contents: write` push into the
+  release path of a package that has just had three merge-before-audit
+  incidents, and it only runs on a tag — which this round is forbidden to
+  create, so it could not be exercised before shipping.
+* **Option 1 is what code can do, and it is what shipped.** A new
+  `deployment-pin` job in `ci.yml`, on **push to main only**, resolves the pin
+  in `streamlit_app/requirements.txt` against PyPI's public JSON API. Green
+  means the deployed app can install its library. Red means one thing and says
+  it: *the public Streamlit app is down right now*, with the tag to push to fix
+  it. **It does not prevent the outage. It makes it impossible to miss**, and
+  it goes green by itself when the upload lands.
+
+It runs on `push` and not on `pull_request` deliberately: on a release PR the
+pin naming an unpublished version is CORRECT, so running it there would be red
+on every release PR and would teach everyone to ignore it. **It needs network,
+and that is the point** — PyPI's state is the fact being asserted and nothing
+in the tree can answer it; one unauthenticated GET, no secrets, `contents:
+read`. **A PyPI outage is not a release defect**: if the index cannot be
+reached the job prints `COULD NOT ANSWER` and exits 0, because a gate that
+cannot tell "the version is missing" from "I could not look" is a gate that
+gets muted. Both branches were executed before shipping — green against the
+published `1.6.0`, red against this release's unpublished `1.6.1`.
+
+**`streamlit_app/requirements.txt` bumps to `==1.6.1` and the pin stays an
+equality.** The 1.5.0 S6 ruling is re-affirmed above rather than re-opened, so
+the outage window returns on merge — now with a named, timestamped red instead
+of silence. **The window closes with the `deploy`-branch settings change, not
+with this PR.**
+
+### T3 — four claims that were true when written and are not now
+
+1. **`streamlit_app/utils.py`** asserted `_scoring_attrs_only` and
+   `_IDENTITY_KEYS` were *"unchanged"*. **Both changed in the same commit that
+   added the paragraph**: the filter went `v not in ("", [], {}, None)` →
+   `not _is_blank(v)` (1.6.0 T0), and the frozenset gained `contact_name`,
+   `contact_email`, `governance_board_members` and
+   `governance_community_representatives` (1.6.0 T3). Both changes are safe and
+   both WIDEN the strip; the sentence claiming they had not happened was not.
+   **Corrected in both places it appears** — the `UploadedIdentity` docstring
+   and the neighbouring comment 340 lines below — because fixing one instance
+   of a statement and leaving the other is the shape this release is about.
+2. **`tests/pinned_constants.txt`'s 1.6.0 WAIVE row contradicted itself**:
+   *"Filed WAIVE and not KNOWN"* followed by *"Filed KNOWN rather than
+   pinned"*. The second now reads WAIVE, which is what the row is.
+3. **`CHANGELOG.md:130` read `9a2d584..HEAD`.** A `HEAD` endpoint in a shipped
+   release note silently re-targets on every subsequent commit — 1.5.1's did
+   exactly that. Pinned to **`fc34af5`** (tag `v1.6.0`), and a hash rather than
+   the tag because `test_the_changelogs_rendered_baseline_delta_matches_the_
+   tree` matches `[0-9a-fA-F]{7,40}`: a tag name would stop being parsed, and a
+   claim that stops being parsed stops being checked. Re-derived at the pin —
+   53 insertions, 68 deletions, unchanged.
+4. **A v1.1 upload reported two missing fields with no way to act on them.**
+   1.6.0 T3 added four CDE Profile columns and bumped the sheet to v1.2; a v1.1
+   workbook still loads and simply supplies neither `contact` nor `governance`.
+   Measured: those two are then the **only** completeness issues reported, and
+   the message is the same one a YAML profile gets — which sends a CDE looking
+   for a cell that is not in the file it is holding. **The validation is not
+   changed**: the fields ARE missing and the check is telling the truth. Page 1
+   now adds the one fact the check cannot know, beside the existing disclosure,
+   read off the issues actually emitted so it cannot fire for a YAML profile or
+   for a v1.2 upload that left the cells blank.
+
+### T4 — the membership shape, in the two places it survived
+
+`core/cde.py:180` (`data.get(key) in ("", [], {}, None)`) and `:221`
+(`v == blank for blank in (…)`) carried the identical shape that crashed page 1
+in 1.6.0's T0. **Executed against production numpy 2.5.2: both raise the same
+`ValueError: The truth value of an empty array is ambiguous`.**
+
+**Currently unreachable** — their only input is `yaml.safe_load` output, which
+is plain Python — and **fixed anyway**, because T0's version was latent in
+exactly the same way right up until the template told a CDE to leave four cells
+blank.
+
+**RULED: `_is_blank` MOVES; it is not copied.** It lived in
+`streamlit_app/utils.py`, which the library cannot import. It now lives in
+`nmtcapp/core/cde.py`, where both call sites are, and `streamlit_app/utils.py`
+imports it from there under the same name — that module already imported from
+`core.cde`, so this adds no new coupling. **One definition, two input paths**,
+and "absent" and "blank" can no longer come to mean different things on the two
+paths a CDE can take. `False`, `0` and `0.0` still survive on both; verified by
+execution, along with the loader's end-to-end behaviour on plain-Python input.
+
+---
+
 ## [1.6.0] — 2026-08-25
 
 **MINOR. It changes what the generated document CONTAINS.** No score formula,
@@ -127,12 +321,24 @@ One filled scaffold, the same file both sides, `9a2d584` vs this tree:
 | all three win sections and every sub-score | — | **unchanged** | as above |
 
 > **53 insertions, 68 deletions** in `tests/rendered_baseline/`, measured
-> `9a2d584`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+> `9a2d584`..`fc34af5`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
 > *(markdown −28/+1 is the withdrawal block becoming the pointer; word +1 and
 > excel +1 are the pointer arriving on surfaces that never carried the block;
 > pdf +50/−40 is the pointer's six lines plus repagination, 23 pages to 24,
 > with no content line removed — verified by diffing the two projections with
 > page markers stripped.)*
+>
+> *Endpoint pinned in 1.6.1 (T3). This read `9a2d584`..`HEAD`, and a `HEAD`
+> endpoint in a shipped release note is a claim that silently re-targets on
+> every subsequent commit — 1.5.1's did exactly that and turned its own
+> paragraph false without anyone editing it, which is why that one now names
+> `fde3eca`. `fc34af5` is the commit this was measured at — tag `v1.6.0`,
+> which did not exist when the claim was written and does now. A hash and not
+> the tag because `test_the_changelogs_rendered_baseline_delta_matches_the_
+> tree` matches `[0-9a-fA-F]{7,40}`: a tag name here would stop matching, and
+> a claim that stops being parsed stops being checked. Re-derived at the pin:
+> `git diff --numstat 9a2d584 fc34af5 -- tests/rendered_baseline/` gives 53
+> insertions and 68 deletions, unchanged.*
 
 The rendered-string sweep is unchanged in shape, and 238 constants are swept
 (237 at 1.5.7; this release adds

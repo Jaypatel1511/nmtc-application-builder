@@ -8,7 +8,9 @@ from nmtcapp.sections.base import (
     SectionGenerator,
     _cde_todo,
     _compliance_statement,
+    _declared_prior_award_count,
     _placeholder,
+    _prior_awards_disagree,
 )
 
 if TYPE_CHECKING:
@@ -66,30 +68,23 @@ class SectionCManagementCapacity(SectionGenerator):
         #
         # ``prior_awards`` is the detailed list this sentence narrates.
         # ``extra["prior_award_count"]`` is a SCORED attribute, and on the
-        # xlsx path it is the only one of the two a CDE can supply -- the CDE
-        # Profile sheet has a "Prior Award Count" cell and no award list at
-        # all. So a CDE that declared 1 prior award was told, in the section
-        # where management capacity is scored, that it had received 0
-        # totalling $0.
+        # xlsx path it is the only one of the two a CDE can supply. So a CDE
+        # that declared 1 prior award was told, in the section where
+        # management capacity is scored, that it had received 0 totalling $0.
         #
-        # That was already the arithmetic at 9a2d584. What T1 changes is WHOSE
-        # it is: the sentence used to be about "(your CDE)", a placeholder no
-        # reader could mistake for an applicant, and is now about a named one.
-        # A false quantitative claim about a named CDE is a different artifact
-        # from the same words about a placeholder, so the disagreement is
-        # disclosed rather than asserted.
+        # That was already the arithmetic at 9a2d584. What T1c changed is
+        # WHOSE it is: the sentence used to be about "(your CDE)", a
+        # placeholder no reader could mistake for an applicant, and is now
+        # about a named one.
         #
-        # THE LIST STILL GOVERNS WHERE IT EXISTS. This does not adopt the
-        # count as the answer -- the count carries no year, no amount and no
-        # deployment status, so nothing here can narrate it. It says the two
-        # disagree and names which input is missing.
-        declared_count = cde.extra.get("prior_award_count") if cde.extra else None
-        try:
-            declared_count = int(declared_count) if declared_count is not None else None
-        except (TypeError, ValueError):
-            declared_count = None
+        # THE PREDICATE AND THE RULING BEHIND IT LIVE IN sections/base
+        # (1.6.1 T1). They were TWO near-identical twenty-line comment blocks,
+        # one here and one in section_e_prior_awards, arguing the same case in
+        # slightly different words -- and the two sections had already drifted
+        # to opposite answers on the same input. Read, do not re-derive.
+        declared_count = _declared_prior_award_count(cde)
 
-        if declared_count is not None and declared_count != len(cde.prior_awards):
+        if _prior_awards_disagree(cde):
             awards_clause = (
                 f"This CDE's profile declares {declared_count} prior NMTC "
                 f"allocation award{'s' if declared_count != 1 else ''}, and "

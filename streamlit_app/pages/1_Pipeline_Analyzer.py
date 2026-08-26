@@ -460,6 +460,38 @@ with tabs[0]:
                 for iss in vr.issues:
                     st.caption(md(f"  🚨 {iss}"))
 
+        # WHERE THE TWO FIELDS COME FROM, FOR A v1.1 UPLOAD (1.6.1 T3).
+        #
+        # 1.6.0 T3 added four CDE Profile columns -- Contact Name, Contact
+        # Email, Board Members, Community Representatives -- and bumped the
+        # sheet to v1.2, because ``contact`` and ``governance`` are in
+        # REQUIRED_CDE_FIELDS and the sheet collected NEITHER. A v1.1 workbook
+        # still loads: ``_parse_cde_profile_from_wb`` maps by header text and
+        # skips headers it does not know. Measured on a v1.1-shaped sheet, the
+        # two are then the ONLY completeness issues reported, and the message
+        # is the same one a YAML profile gets -- which sends a CDE looking for
+        # a cell that is not in the file it is holding.
+        #
+        # THE VALIDATION IS NOT CHANGED, deliberately: the fields ARE missing
+        # and the check is telling the truth. What is added is the one fact
+        # the check cannot know, namely that the current template has columns
+        # for them. Read off the ISSUES the check actually emitted rather than
+        # off the sheet's own version cell, so it cannot fire for a YAML
+        # profile or for a v1.2 upload that simply left the cells blank.
+        _v12_fields = [f for f in ("contact", "governance")
+                       if any(f"missing required field: {f}" in iss
+                              for vr in analysis.validation_results
+                              for iss in vr.issues)]
+        if _v12_fields:
+            _named = " and ".join(f"`{f}`" for f in _v12_fields)
+            st.caption(
+                f"↳ {_named} {'has' if len(_v12_fields) == 1 else 'have'} "
+                "columns in the **v1.2** CDE Profile sheet. If your workbook "
+                "predates it, re-download the blank template from the sidebar, "
+                "copy your rows across, and re-upload — no other change is "
+                "needed, and v1.1 files still load."
+            )
+
     # --- H: Readiness score breakdown ---
     st.markdown("---")
     st.markdown("**Readiness score breakdown**")

@@ -442,7 +442,14 @@ def test_max_sdist_skips_is_bounded_from_ABOVE_as_well(collected_count):
 
 #: The number of test MODULES this release adds, as claimed in the comment
 #: above. Re-derived from the tree by the gate below rather than trusted.
-CLAIMED_NEW_TEST_MODULES = 31
+#:
+#: 31 -> 32 at 1.6.1: tests/test_one_ruling_on_prior_awards.py, the gate for
+#: the one ruling Sections C and E now share on the prior-award count. IT ADDS
+#: NO SKIPPING CASE, deliberately -- its "nothing to adopt" cases are a
+#: FILTERED PARAMETRIZE (``DISAGREEING``) and not a ``pytest.skip``, because
+#: MAX_SDIST_SKIPS has zero headroom and a skipping case would breach a
+#: ceiling this repository has declined to raise four times.
+CLAIMED_NEW_TEST_MODULES = 32
 
 
 def test_the_module_count_in_this_comment_matches_the_tree():

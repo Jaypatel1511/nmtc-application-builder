@@ -72,6 +72,63 @@ REQUIRED_CDE_FIELDS = tuple(_FIELD_GUIDANCE)
 CDE_FIELDS_WHERE_EMPTY_IS_AN_ANSWER = frozenset({"prior_awards"})
 
 
+def _is_blank(value) -> bool:
+    """Is this value an unanswered cell? Answers, rather than raising.
+
+    THE ONE DEFINITION, FOR BOTH INPUT PATHS (1.6.1 T4). This function was
+    written for the workbook path and lived in ``streamlit_app/utils.py``,
+    which the library cannot import -- so ``from_yaml`` below carried the
+    membership shape it replaces, twice, on the YAML path:
+
+        data.get(key) in ("", [], {}, None)
+        any(v is blank or v == blank for blank in ("", [], {}, None))
+
+    THE MEMBERSHIP TEST COULD BE CRASHED BY ITS OWN INPUT (1.6.0 T0). ``in``
+    compares by equality, and a numpy scalar compared against ``[]`` returns
+    an EMPTY ARRAY rather than ``False`` -- so numpy refuses to decide its
+    truth value and the filter raises ``ValueError`` instead of answering.
+    ``upload_handler`` emitted exactly such a scalar for every starred CDE
+    Profile cell a CDE left blank, which the shipped template instructs, and
+    page 1 turned the ValueError into "Failed to read file" and stopped. Both
+    sites here were executed against a production numpy scalar and BOTH raise
+    the same ValueError.
+
+    THEY ARE CURRENTLY UNREACHABLE AND ARE FIXED ANYWAY. Their only input is
+    ``yaml.safe_load`` output, which is plain Python, so no numpy scalar can
+    arrive on this path today. T0's version was latent in exactly the same way
+    right up until the template told a CDE to leave four cells blank. The
+    class is "a value the filter cannot compare", and the next such value will
+    not be a numpy float either.
+
+    MOVED RATHER THAN COPIED, and that is the whole ruling: a second copy here
+    is the shape ``REQUIRED_CDE_FIELDS`` above records the cost of -- three
+    hand-maintained copies of one list, of which deleting a member from the
+    third passed the entire suite. ``streamlit_app.utils`` imports this name
+    from here and keeps calling it ``_is_blank``.
+
+    ``False``, ``0`` and ``0.0`` ARE ANSWERS AND SURVIVE, unchanged -- these
+    are the same equality comparisons the tuples performed, with the ones that
+    can raise reordered behind an identity check and a type check. A CDE that
+    answered No has answered.
+
+    Example::
+
+        _is_blank("")      # -> True
+        _is_blank(0.0)     # -> False
+        _is_blank([])      # -> True
+    """
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return value == ""
+    if isinstance(value, (list, tuple, dict, set)):
+        return len(value) == 0
+    # Anything else -- int, float, bool, numpy scalar, Decimal -- is a value
+    # the CDE (or the derivation) produced. None of the four blanks is any of
+    # those, so there is nothing left to compare against.
+    return False
+
+
 def _missing_fields_message(path: str, missing: set, data: dict) -> str:
     """Name what the CDE must complete, in the order the scaffold lists it."""
     lines = [
@@ -174,10 +231,14 @@ class CDEProfile:
         # constant, not retyped here — completeness_check reads the same one,
         # and when this was a local literal the two disagreed (1.3.0 B3).
         blank_is_answer = CDE_FIELDS_WHERE_EMPTY_IS_AN_ANSWER
+        # ``_is_blank``, not ``in ("", [], {}, None)`` (1.6.1 T4). The
+        # membership form is the shape that crashed page 1 in 1.6.0's T0; see
+        # the predicate's own docstring for why it is fixed here while being
+        # unreachable from this path today.
         missing = {
             key for key in required
             if key not in data
-            or (key not in blank_is_answer and data.get(key) in ("", [], {}, None))
+            or (key not in blank_is_answer and _is_blank(data.get(key)))
         }
         if missing:
             raise ValueError(_missing_fields_message(path, missing, data))
@@ -211,16 +272,16 @@ class CDEProfile:
         # UNTOUCHED scaffold would score differently from — and worse than — no
         # scaffold at all, and this is a patch.
         #
-        # ``False``, ``0`` and ``0.0`` SURVIVE. The membership test compares by
-        # equality and none of them equals "", [], {} or None, so a CDE that
-        # answered No has answered. This is the same rule
-        # ``streamlit_app.utils._scoring_attrs_only`` has always applied to the
-        # workbook path, so absent and blank now mean the same thing on both
-        # paths a CDE can take.
+        # ``False``, ``0`` and ``0.0`` SURVIVE. ``_is_blank`` returns False for
+        # every one of them, so a CDE that answered No has answered. This is
+        # now LITERALLY the same rule
+        # ``streamlit_app.utils._scoring_attrs_only`` applies to the workbook
+        # path rather than a restatement of it -- both call the one predicate
+        # (1.6.1 T4), so absent and blank cannot come to mean different things
+        # on the two paths a CDE can take.
         extra = {
             k: v for k, v in data.items()
-            if k not in known_keys
-            and not any(v is blank or v == blank for blank in ("", [], {}, None))
+            if k not in known_keys and not _is_blank(v)
         }
         return cls(
             name=data["name"],

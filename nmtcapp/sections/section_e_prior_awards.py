@@ -8,7 +8,9 @@ from nmtcapp.sections.base import (
     SectionGenerator,
     _cde_todo,
     _compliance_statement,
+    _declared_prior_award_count,
     _placeholder,
+    _prior_awards_disagree,
 )
 
 if TYPE_CHECKING:
@@ -42,31 +44,28 @@ class SectionEPriorAwards(SectionGenerator):
         cde = application.cde
         awards = cde.prior_awards
 
+        # THE ONE RULING, READ FROM sections/base (1.6.1 T1). Both branches
+        # below ask the SAME predicate the same way, because at 1.6.0 they did
+        # not: the count was read inside ``if not awards:`` only, so a
+        # NON-EMPTY list fell through to the summary with no comparison at
+        # all, and one document carried Section C disclosing the disagreement
+        # while Section E asserted the list as this CDE's complete history.
+        #
+        # The reasoning is stated once in ``sections/base``, beside the
+        # predicate -- it used to be twenty lines here and twenty more in
+        # section_c_management, which is the two-hand-maintained-copies shape
+        # ``REQUIRED_CDE_FIELDS`` records the cost of.
+        declared = _declared_prior_award_count(cde)
+        disagrees = _prior_awards_disagree(cde)
+
         if not awards:
-            # AN EMPTY LIST IS NOT ALWAYS A FIRST-TIME APPLICANT (1.6.0 T1c).
-            #
-            # The same disagreement section_c_management discloses, in the
-            # section the CDFI Fund reads for deployment history, and stated
-            # more strongly: "This is our first allocation application" is an
-            # affirmative claim in the CDE's own voice about its own history.
-            #
-            # ``prior_awards`` is the detailed list; ``extra["prior_award_
-            # count"]`` is a SCORED attribute and, on the xlsx path, the only
-            # one of the two a CDE can supply -- the sheet has a "Prior Award
-            # Count" cell and no award list. So a CDE that typed 1 there had a
-            # federal filing draft assert, in its own voice, that it had never
-            # received an allocation. Before T1 that sentence named "(your
-            # CDE)"; it now names the applicant.
-            #
-            # THE LIST STILL GOVERNS WHERE THE TWO AGREE. A genuine first-time
-            # applicant -- no declared count, or a declared 0 -- reaches the
-            # unchanged sentence below.
-            declared = cde.extra.get("prior_award_count") if cde.extra else None
-            try:
-                declared = int(declared) if declared is not None else None
-            except (TypeError, ValueError):
-                declared = None
-            if declared:
+            # ``[]`` IS AN ANSWER. A genuine first-time applicant -- no
+            # declared count, or a declared 0 -- reaches the unchanged
+            # sentence below, because the predicate calls those two AGREEING.
+            # "This is our first allocation application" is an affirmative
+            # claim in the CDE's own voice about its own history, so it is
+            # withheld only where the CDE's own profile contradicts it.
+            if disagrees:
                 body = (
                     f"{cde.name}'s profile declares {declared} prior NMTC "
                     f"allocation award{'s' if declared != 1 else ''}, and this "
@@ -136,10 +135,48 @@ class SectionEPriorAwards(SectionGenerator):
                 )
             )
 
+        # THE SAME RULING, ON THE BRANCH THAT NEVER ASKED (1.6.1 T1). This
+        # sentence read "{name} has {n} prior NMTC allocation awards totaling
+        # ${total}, of which {d} are recorded ... as fully deployed" in EVERY
+        # case, which is a claim about the CDE's whole allocation history --
+        # in the section the CDFI Fund reads for deployment history. Against a
+        # profile declaring four and detailing one it was false, and Section C
+        # said so in the same document.
+        #
+        # THE LIST STILL GOVERNS WHERE IT EXISTS, which is Section C's ruling
+        # and is why the figures below are still the list's and the count is
+        # still not adopted: the count carries no year, no amount and no
+        # deployment status, so nothing here can narrate it. What changes is
+        # that the figures are SCOPED to the awards they were computed from
+        # instead of standing for the whole history, and the missing input is
+        # named. Withholding the total the way Section C does would be theatre
+        # here -- every award's amount prints in the table immediately below.
+        if disagrees:
+            prior_summary = (
+                f"{cde.name}'s profile declares {declared} prior NMTC "
+                f"allocation award{'s' if declared != 1 else ''}, and "
+                f"{len(awards)} {'is' if len(awards) == 1 else 'are'} detailed "
+                "in the profile this draft was generated from. The figures "
+                f"below cover only {'that one' if len(awards) == 1 else 'those'}"
+                f": ${total_prior:,.0f} allocated, of which {fully_deployed} "
+                f"{'is' if fully_deployed == 1 else 'are'} recorded in the CDE "
+                "profile as fully deployed. "
+                + _cde_todo(
+                    "Supply the year, amount, states served, sectors financed "
+                    "and deployment status of every prior allocation. The "
+                    "declared count and the detailed list disagree, so nothing "
+                    "here states this CDE's full deployment history."
+                )
+            )
+        else:
+            prior_summary = (
+                f"{cde.name} has {len(awards)} prior NMTC allocation awards "
+                f"totaling ${total_prior:,.0f}, of which {fully_deployed} are "
+                "recorded in the CDE profile as fully deployed."
+            )
+
         summary = (
-            f"{cde.name} has {len(awards)} prior NMTC allocation awards totaling "
-            f"${total_prior:,.0f}, of which {fully_deployed} are recorded in the CDE "
-            f"profile as fully deployed.\n\n"
+            prior_summary + "\n\n"
             + _compliance_statement(cde) + "\n\n"
             + table_note + "\n\n"
         )
