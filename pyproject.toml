@@ -273,10 +273,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Jaypatel1511/nmtc-application-builder"
+Homepage = "https://jaypatel1511.github.io/cdfi-superpowers/"
 Repository = "https://github.com/Jaypatel1511/nmtc-application-builder"
 Documentation = "https://github.com/Jaypatel1511/nmtc-application-builder#readme"
-"Issue Tracker" = "https://github.com/Jaypatel1511/nmtc-application-builder/issues"
+Issues = "https://github.com/Jaypatel1511/nmtc-application-builder/issues"
+Changelog = "https://github.com/Jaypatel1511/nmtc-application-builder/blob/main/CHANGELOG.md"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
