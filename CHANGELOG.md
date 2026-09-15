@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.6.2] — UNRELEASED
+## [1.6.2] — 2026-09-15
 
 **PATCH. A CORRECTNESS RELEASE WITH A FEDERAL DEADLINE BEHIND IT. No score
 formula, weight, band, threshold or grade moves, and no score moves.** The only
