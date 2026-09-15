@@ -276,6 +276,34 @@ _CONTRACT_FLOOR = "0.5.0"
 _FLOOR_FIELD = "is_non_metro"
 
 
+def _version_tuple(version: str) -> tuple:
+    """``"0.6.1"`` -> ``(0, 6, 1)``, for ordering against ``_CONTRACT_FLOOR``.
+
+    ONLY EVER USED TO CHOOSE A FAILURE MESSAGE, never to decide whether a gate
+    passes, so it does not need to be PEP 440 and deliberately does not import
+    ``packaging`` to pretend otherwise. A version it cannot parse sorts as
+    ``(-1,)`` — below every real release — which routes an unknown version to
+    the "check your install" wording rather than to the "upstream regressed"
+    wording. That is the right way round: an unparseable version string is
+    itself a reason to look at the install.
+
+    Example::
+
+        _version_tuple("0.6.1") >= _version_tuple("0.5.0")   # True
+    """
+    parts = []
+    for chunk in version.split("."):
+        digits = ""
+        for char in chunk:
+            if not char.isdigit():
+                break
+            digits += char
+        if not digits:
+            return (-1,)
+        parts.append(int(digits))
+    return tuple(parts) if parts else (-1,)
+
+
 def test_the_floor_field_is_present():
     """``is_non_metro`` must exist on the installed EligibilityResult.
 
@@ -311,7 +339,7 @@ def test_the_floor_field_is_present():
 
 
 def test_the_floor_field_is_tri_state_not_a_bool():
-    """``Optional[bool]``, not ``bool``. THIS IS WHY THE FLOOR IS 0.5.0.
+    """The field must ADMIT ``None``. THIS IS WHY THE FLOOR IS 0.5.0.
 
     Measured across every installable release:
 
@@ -333,28 +361,189 @@ def test_the_floor_field_is_tri_state_not_a_bool():
     **RED against nmtc-mapper 0.4.3, GREEN against 0.5.0.** Verified by
     installing each and running this file. It is the assertion that makes
     ``nmtc-mapper>=0.5.0`` a floor with a reason rather than a preference.
+
+    THE CHECK IS ON THE RESOLVED TYPE, NOT ON HOW IT IS SPELLED (1.6.2 R2)
+
+    Through 1.6.2 this gate asserted the SUBSTRING ``"Optional[bool]"`` against
+    ``dataclasses.fields(...)[i].type``. That is an assertion about typography,
+    and typography is not stable across interpreters. nmtc-mapper 0.6.1 writes
+    ``is_non_metro: Optional[bool]`` at ``eligibility/checker.py`` with no
+    ``from __future__ import annotations``, and the IDENTICAL declaration
+    renders:
+
+        Python 3.10.12   ``typing.Optional[bool]``   — gate passed
+        Python 3.14.7    ``bool | None``             — gate FAILED
+
+    Both measured, on those two interpreters, against the same installed
+    0.6.1. PEP 649 builds the annotation lazily on 3.14 and normalises the
+    union to its ``|`` form. The library did not change and the floor was not
+    violated: a correct dependency went red on the maintainer's 3.14 machine
+    while CI stayed green on an older one. That is a gate reporting the
+    renderer, not the contract.
+
+    The PROPERTY the floor rests on was never the spelling. It is *can this
+    field say ``None``* — can the mapper report "I could not determine this"
+    instead of being forced to report "no". So the annotation is RESOLVED with
+    ``typing.get_type_hints`` and the union's arguments are inspected for
+    ``bool`` and ``NoneType``. That answer is identical on every interpreter
+    and under every spelling: ``Optional[bool]``, ``bool | None`` and the
+    stringised ``"Optional[bool]"`` a PEP 563 module produces all resolve to a
+    union over ``bool`` and ``NoneType``, while a plain ``bool`` resolves to a
+    bare class whose ``get_args`` is empty — the 0.4.3 shape this gate exists
+    to reject. Verified on 3.10.12 and 3.14.7 for all four cases.
+
+    ``get_type_hints`` is also what handles the stringised form properly. The
+    old code special-cased it by comparing strings, which works only while the
+    string happens to be spelled the way the comparison expects; resolving it
+    removes the coincidence.
+
+    RESOLUTION FAILURE IS A THIRD OUTCOME AND IS REPORTED AS ITSELF. See the
+    ``except`` branch below: "the annotation would not evaluate" is not
+    evidence that the field is a plain ``bool``, and must not be reported as
+    though it were.
     """
     import typing
     from nmtcmapper.eligibility.checker import EligibilityResult
 
-    annotations = {f.name: f.type for f in dataclasses.fields(EligibilityResult)}
-    declared = annotations[_FLOOR_FIELD]
-    # Dataclass field types may arrive as a string under `from __future__
-    # import annotations`; compare on the rendered form so both spellings work.
-    rendered = declared if isinstance(declared, str) else str(declared)
-
     import nmtcmapper
     version = getattr(nmtcmapper, "__version__", "unknown")
 
-    assert "Optional[bool]" in rendered or "bool, NoneType" in rendered, (
+    declared = {
+        f.name: f.type for f in dataclasses.fields(EligibilityResult)
+    }[_FLOOR_FIELD]
+
+    # NOT AN ASSERTION FAILURE DRESSED AS THE DEFECT. get_type_hints evaluates
+    # the annotation in the DEFINING MODULE's namespace and raises when a name
+    # there is unresolvable (a stringised annotation naming something imported
+    # only under TYPE_CHECKING, for one). That says the annotation is
+    # unreadable. It says NOTHING about whether the field is tri-state, so
+    # this branch refuses to answer rather than guessing.
+    try:
+        resolved = typing.get_type_hints(EligibilityResult)[_FLOOR_FIELD]
+    except Exception as exc:                        # noqa: BLE001 — see above
+        raise AssertionError(
+            f"could not RESOLVE EligibilityResult.{_FLOOR_FIELD} on installed "
+            f"nmtc-mapper {version}: {type(exc).__name__}: {exc}\n\n"
+            f"The raw annotation is {declared!r}.\n\n"
+            "THIS IS A RESOLUTION FAILURE, NOT A FINDING ABOUT THE FIELD. "
+            "This gate cannot tell you whether the field admits None, so it "
+            "is not telling you. Do NOT change the installed version and do "
+            "NOT touch pyproject.toml's floor on the strength of this "
+            "message. Find out why the annotation does not evaluate in "
+            "nmtcmapper.eligibility.checker's namespace — that is the "
+            "question this raised."
+        ) from exc
+
+    args = typing.get_args(resolved)
+    admits_none = bool(args) and bool in args and type(None) in args
+
+    # Whether the INSTALLED version is already at or above the floor decides
+    # which of two different things went wrong, and therefore what the reader
+    # should do. Telling someone to upgrade a package that is already current
+    # sends them to do nothing, twice.
+    at_or_above_floor = _version_tuple(version) >= _version_tuple(_CONTRACT_FLOOR)
+
+    if at_or_above_floor:
+        remedy = (
+            f"The installed {version} is AT OR ABOVE the {_CONTRACT_FLOOR} "
+            "floor, so this is NOT an old-version problem and upgrading will "
+            "not fix it. Upstream has REGRESSED the field to two states in a "
+            "release that is supposed to have three — the same class of "
+            "event as 0.5.0 dropping is_nmtc_native_area. Read that release's "
+            "changelog and raise it with the mapper, then decide whether this "
+            "package can still enrich against it at all. Do not lower "
+            "pyproject.toml's floor: a lower version has the same defect."
+        )
+    else:
+        remedy = (
+            f"The installed {version} is BELOW the {_CONTRACT_FLOOR} floor "
+            "pyproject.toml declares, which is exactly the version range "
+            "where this field is a plain bool. Something installed it over "
+            "the declared floor — pip warns about that conflict and proceeds "
+            f"anyway. FIX: pip install --upgrade 'nmtc-mapper>="
+            f"{_CONTRACT_FLOOR}'. Do not lower the floor to accommodate it."
+        )
+
+    assert admits_none, (
         f"installed nmtc-mapper {version} declares "
-        f"EligibilityResult.{_FLOOR_FIELD} as {rendered!r}, not Optional[bool]."
-        f"\n\nThis is almost certainly a mapper older than "
-        f"{_CONTRACT_FLOOR}, where the field is a plain bool and the "
-        f"indeterminate branch returns False. geographic_analysis reads False "
-        f"as a DETERMINATION and counts those dollars metropolitan, so the "
-        f"'not determined' bucket empties silently and the non-metropolitan "
-        f"share goes back to being a complement. Raise the installed version; "
-        f"do not lower pyproject.toml's floor."
+        f"EligibilityResult.{_FLOOR_FIELD} as {resolved!r}, which does NOT "
+        f"admit None — it is a two-state field, so the mapper has no value "
+        f"left to mean 'not determined'.\n\n"
+        f"(raw annotation {declared!r}; resolved args {args!r}. The check is "
+        f"on the resolved type, so this is not a spelling difference — see "
+        f"this test's docstring.)\n\n"
+        "geographic_analysis reads False as a DETERMINATION and counts those "
+        "dollars metropolitan, so the 'not determined' bucket empties "
+        "silently and the non-metropolitan share goes back to being a "
+        f"complement.\n\n{remedy}"
     )
-    assert typing.Optional[bool] == typing.Union[bool, None]  # pin the premise
+
+    # Pin the premise: Optional[X] IS the union of X and None, whatever the
+    # interpreter prints. If this ever stops holding, the predicate above is
+    # reading something other than what the docstring says it reads.
+    assert typing.get_args(typing.Optional[bool]) == (bool, type(None))
+
+
+def test_every_double_neutral_matches_the_librarys_own_default():
+    """A double's "neutral" must be the LIBRARY's neutral, not a plausible one.
+
+    THE HOLE THIS CLOSES, FOUND BY MUTATION (1.6.2 fix round).
+    ``tests/mapper_doubles._NEUTRAL`` gained three entries when nmtc-mapper
+    0.6.1 added the OZ 2.0 fields. ``_defaults()`` fails loud on a field with
+    NO entry -- that is what stopped the suite and is the mechanism working --
+    but it says nothing at all about whether the VALUE chosen is neutral.
+    Measured: flipping ``is_oz2_nomination_eligible`` to ``False`` and running
+    the whole suite reddened **nothing**.
+
+    That is the expensive direction. ``is_opportunity_zone``'s ``False`` never
+    occurs upstream; ``is_oz2_nomination_eligible``'s ``False`` is, in the
+    library's own words, "a real published fact about 60,197 tracts". A double
+    answering ``False`` where the library answers ``None`` asserts a published
+    federal negative about a fixture address -- a fabricated negative, which is
+    the defect class ``mapper_doubles`` exists to refuse, produced by the
+    module written to refuse it.
+
+    THE ANSWER IS READ OFF THE INSTALLED LIBRARY, NOT LISTED HERE. Every field
+    ``EligibilityResult`` declares WITH A DEFAULT has already had its neutral
+    chosen upstream, by the author who knows what the field means; the double
+    must agree with it. Fields with no default are the double's own call and
+    are not constrained here -- there is nothing upstream to compare them to.
+
+    This is the same shape as the contract tests above: introspect the library,
+    do not restate it.
+    """
+    import dataclasses
+
+    from nmtcmapper.eligibility.checker import EligibilityResult
+
+    from tests.mapper_doubles import _NEUTRAL
+
+    disagree = []
+    checked = 0
+    for field in dataclasses.fields(EligibilityResult):
+        if field.default is dataclasses.MISSING:
+            continue
+        checked += 1
+        if field.name not in _NEUTRAL:
+            continue        # _defaults() already raises on this, loudly
+        if _NEUTRAL[field.name] != field.default:
+            disagree.append(
+                f"{field.name}: the library defaults to "
+                f"{field.default!r}; mapper_doubles neutralises to "
+                f"{_NEUTRAL[field.name]!r}"
+            )
+
+    assert checked, (
+        "the installed EligibilityResult declares NO field with a default, so "
+        "this gate compared nothing. Either the library changed shape or the "
+        "introspection did; establish which before deleting this line."
+    )
+    assert not disagree, (
+        f"{len(disagree)} double neutral(s) disagree with the installed "
+        "nmtc-mapper's own default:\n  " + "\n  ".join(disagree) + "\n\n"
+        "A default is the library author's statement of what the field says "
+        "when nothing was determined. A double that answers something else "
+        "answers CONFIDENTLY where the real package abstains, and every test "
+        "built on it is then validating the mock. Change the neutral, not "
+        "this gate."
+    )

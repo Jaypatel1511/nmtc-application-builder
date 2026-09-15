@@ -12,3 +12,11 @@ site/
 # Generated sample output — produced at docs-build time, never committed.
 # See docs/hooks/generate_sample_output.py.
 examples/sample_output/
+
+# Quarantine for files this repository's working environment cannot delete
+# (an `rm` inside the mounted working tree fails, so a file being removed is
+# MOVED here instead). It was protected by .git/info/exclude alone, which is
+# machine-local and does not travel with a clone — so on any other checkout
+# the directory was untracked-but-visible and one `git add -A` away from being
+# committed. Ignored here, where the ignore is part of the repository.
+_to_delete/

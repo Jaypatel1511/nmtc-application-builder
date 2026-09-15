@@ -5,6 +5,535 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.6.2] — 2026-09-15
+
+**PATCH. A CORRECTNESS RELEASE WITH A FEDERAL DEADLINE BEHIND IT. No score
+formula, weight, band, threshold or grade moves, and no score moves.** The only
+rendered text that changes is the round-provenance note, on all four formats and
+the recommendations surface. `APPLICATION_SHA256` is untouched and still
+correct; `RECHECK_ITEMS` is untouched and every round-specific figure in this
+package remains sourced from the **CY 2024-2025** Application, which the note
+still says.
+
+> **45 insertions, 31 deletions** in `tests/rendered_baseline/`, measured
+> `268ab26`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+
+### What happened
+
+The CY 2026 **NOAA published** — Federal Register document **2026-18883**, filed
+14 Sep 2026 08:45 ET, publication date **15 Sep 2026**. The CY 2026 **Allocation
+Application materials did not**. Through 1.6.1 this package rendered both facts
+through a single boolean, in a single sentence:
+
+> *"The **CY 2026** Allocation Application and NOAA are **NOT YET PUBLISHED**…"*
+
+That is a **conjunction**. One half went false on 15 Sep 2026 and the other
+stayed true, and `UPCOMING_MATERIALS_PUBLISHED` had no state that could say so.
+
+`tests/test_round_provenance.py` predicted this in writing, in its own module
+header: *"When CY 2026 publishes, the hash still matches, the suite is still
+green, and every citation in the package is stale."* It was right about the
+class and it did not prevent the instance, **because it scheduled the check past
+the event**. That is what this release fixes.
+
+### T1 — the conjunction is split
+
+`UPCOMING_MATERIALS_PUBLISHED = False` becomes two constants, each with its own
+verified date:
+
+| | 1.6.1 | 1.6.2 |
+|---|---|---|
+| CY 2026 NOAA | *(no constant — folded into the pair below)* | `UPCOMING_NOAA_PUBLISHED = True` |
+| CY 2026 Allocation Application | `UPCOMING_MATERIALS_PUBLISHED = False` | `UPCOMING_APPLICATION_PUBLISHED = False` |
+
+The note now says the round has **OPENED** and that what has not arrived is the
+**instrument this package encodes** — a distinction a CDE cannot make from one
+boolean and could not make from the old sentence.
+
+### T2 — the CDE-certification paragraph no longer offers a closed route
+
+1.6.1 told a reader, in the future conditional, that it must *"either already be
+a certified CDE as of the NOAA's Federal Register publication date, or have
+submitted its CDE Certification Application through AMIS by 11:59 p.m. ET on
+August 31, 2026."* Both variables are now settled: the publication date is
+**15 Sep 2026** and the AMIS window closed on **31 Aug 2026**. A CDE reading the
+1.6.1 document today was handed two options it could no longer take.
+
+It now states them as closed and determinate, and says the consequence plainly:
+an organization that did neither **CANNOT APPLY IN CY 2026**. Not "may not be
+eligible" — `test_the_disclosure_states_both_directions` asserts the phrase
+`CANNOT APPLY` is in the note, because the softening is what costs a reader the
+decision.
+
+### T3 — the only deadline a CDE can still miss is now IN the note
+
+**5:00 p.m. ET on 10 Nov 2026** appeared nowhere in the rendered note through
+1.6.1, while three dates nobody could act on did. It is now a paragraph of its
+own and is pinned in `tests/pinned_constants.txt` on all four formats.
+
+`test_the_disclosure_states_both_directions` asserted `"August 31, 2026"` with
+the stated rationale that it was *"the only CY 2026 date a CDE can miss TODAY"*.
+That rationale went false on 1 Sep 2026 and the test went on asserting it. **The
+docstring is corrected along with the assertion** — a test whose reasoning argues
+for something untrue is the next person's wrong premise, and correcting only the
+assertion leaves the false sentence in the file.
+
+### T4 — the expiry no longer fires after the deadline it protects
+
+```
+                    1.6.1          1.6.2
+LAST_VERIFIED    2026-08-20     2026-09-14
+RECHECK_AFTER    2026-11-20     2026-10-05
+```
+
+`RECHECK_AFTER` was **ten days after** the 10 Nov 2026 application deadline. The
+expiry would have fired for the first time on a day when the one thing a CDE
+could still have done was already impossible.
+
+**21 days, and the shortness is the justification.** The round is OPEN and the
+Application Materials can drop on any business day inside an eight-week window;
+a horizon in months cannot catch that. 2026-10-05 leaves **36 days** of runway
+before the deadline — enough for a CDE to act on what a re-check finds, which is
+the only reason to look.
+
+`test_the_horizon_is_not_pushed_out_of_reach` (≤ 180 days) **stays, and it was
+not what failed**: 92 days sat comfortably inside its ceiling. A ceiling bounds
+how far out a horizon goes and has no opinion on whether it lands before the
+thing it watches.
+
+### T5 — the premise pin inverts instead of being deleted
+
+`test_upcoming_materials_are_still_unpublished` is rewritten as
+`test_the_round_state_is_pinned`. **Renamed, not deleted**: the old name asserts
+something now false — the CY 2026 materials are not "still unpublished", the
+NOAA published — and a test name is read more often than its body. Its honest
+docstring survives (*"DELIBERATELY WEAK… It is NOT evidence about the world"*).
+It now breaks when **either** constant moves, which splitting the boolean is what
+made possible.
+
+### T6 — the live check was right to go red, and is re-pointed
+
+`test_live_cdfi_fund_check` asserted `still_prior_round and not names_new_round`.
+It is **the only test in the module that could ever have told the truth**, and on
+2026-09-14 it fails — the instrument working, not a test to relax. It is
+re-pointed at the **next** transition: CY 2026 being named is now the expected
+state, and the alarm is the **Allocation Application materials** appearing. It
+stays `-m network`, skipped by default, and the header's reasoning for why that
+is a tool and not a gate is unchanged — that reasoning is correct and is not what
+failed.
+
+**It was not executed for this release.** `cdfifund.gov` is not reachable from
+the environment this branch was built in, and `federalregister.gov` is not
+either, so the CY 2026 facts above are the ones established by the repo owner
+and the Federal Register document number rather than re-fetched here. Run it
+before the next release:
+
+    pytest -m network tests/test_round_provenance.py
+
+### The new gate, and why it is derived
+
+`test_the_horizon_lands_before_the_deadline_it_watches` requires `RECHECK_AFTER`
+to precede `_round_provenance.next_hard_deadline()` — the earliest deadline the
+note's own constants carry that has not yet passed.
+
+**The date is not written into the test.** A test that learned `2026-11-10`
+would pass into CY 2027 while guarding a CY 2026 date, which is the same failure
+one level up. `next_hard_deadline()` also **fails closed on `None`**: when every
+deadline in the note has passed, the note describes a closed round, and that is a
+finding rather than a quiet green.
+
+`test_every_hard_deadline_the_constants_carry_reaches_the_note` is its anti-dodge
+half — the cheapest way to make a red horizon green is to drop an entry from
+`HARD_EXTERNAL_DEADLINES`, so anything the gate schedules against must be
+something a CDE can actually read.
+
+### Mutation results — measured, one run each, not predicted
+
+Every gate added or changed was mutation-tested by breaking the behaviour in
+the source and running the suite. "Reddens" below is what the run actually
+printed. Two rows did **not** match what was predicted before running, and both
+are recorded as measured rather than as intended.
+
+| mutation | what reddens (measured) |
+|---|---|
+| **`RECHECK_AFTER = "2026-11-20"` — the exact 1.6.1 value. FULL SUITE.** | `test_the_horizon_lands_before_the_deadline_it_watches`, **and nothing else**: 17 failed against 16 on the identical tree without the mutation. This is the headline evidence. |
+| add a deadline to `HARD_EXTERNAL_DEADLINES` the note never states | `test_every_hard_deadline_the_constants_carry_reaches_the_note` — alone |
+| **DROP** the application deadline from `HARD_EXTERNAL_DEADLINES` | `test_the_horizon_lands_before_the_deadline_it_watches` — alone, through its fail-closed `None` branch. **Not what was predicted**: the reaches-the-note gate stays green, because a deadline removed from the tuple is no longer a deadline that tuple carries. The dodge is still caught, by the other gate. |
+| `UPCOMING_NOAA_PUBLISHED = False` | `test_the_round_state_is_pinned` — alone |
+| `UPCOMING_APPLICATION_PUBLISHED = True` | `test_the_round_state_is_pinned` — alone |
+| `APPLICATION_DEADLINE = "2026-09-20"` (moved before `RECHECK_AFTER`) | 10 tests: the horizon gate, `test_the_round_provenance_reaches_all_four_formats`, `test_the_disclosure_states_both_directions`, all four rendered baselines, both invariant-allowlist gates, `test_pinned_constants_render_verbatim`. The horizon gate re-derives against the moved date **with no test edit**. |
+| `APPLICATION_DEADLINE_TEXT` stops carrying the date | 9 tests, including the four-format gate and both-directions |
+| soften `CANNOT APPLY` to "may not be eligible to apply" | 8 tests, including `test_the_disclosure_states_both_directions` |
+| revert paragraph 0 to the 1.6.1 conjunction | 8 tests, including the four-format gate and both-directions |
+| **DELETE the Nov-10 paragraph outright** | only the four rendered baselines and the two invariant-allowlist gates. **Not what was predicted, and recorded as a limitation:** the four-format gate stays green because **paragraph 0 states the deadline too**, so it is still in the note. The redundancy is deliberate — the recommendations surface renders paragraph 0 only, and the Streamlit About page renders `[:2]` — but it does mean no single gate fails on "the deadline paragraph was deleted". The gate that fails on the deadline being *lost* is the one above it. |
+
+### What date would the new gate have fired on
+
+`next_hard_deadline()` was evaluated at five frozen dates against **1.6.1's
+`RECHECK_AFTER` (2026-11-20) and 1.6.2's deadline tuple** — which is the only
+form the counterfactual can take, and the first version of this sentence said
+"against the **1.6.1 constants**", which is impossible: 1.6.1 has no
+`APPLICATION_DEADLINE`, no `HARD_EXTERNAL_DEADLINES` and no
+`next_hard_deadline`, so the gate could not have run on that tree at all. The
+question it answers is "would this gate have caught 1.6.1's horizon?", and
+answering it needs 1.6.1's horizon and this release's deadlines. Corrected in
+the 1.6.2 fix round.
+
+| today | next hard deadline | gate fires |
+|---|---|---|
+| 2026-08-26 *(the day 1.6.1 shipped)* | 2026-08-31 | **yes** |
+| 2026-09-01 | 2026-11-10 | **yes** |
+| 2026-09-14 | 2026-11-10 | **yes** |
+| 2026-10-05 | 2026-11-10 | **yes** |
+| 2026-11-09 | 2026-11-10 | **yes** |
+
+**It would have fired on the day 1.6.1 was cut, and every day after.** It is a
+comparison between two of the note's own constants, so it does not wait for a
+calendar date to arrive — which is the whole difference between it and the
+expiry it sits beside.
+
+Shipped 1.6.2 values, measured: span `LAST_VERIFIED`→`RECHECK_AFTER` **21 days**
+(ceiling 180), runway `RECHECK_AFTER`→application deadline **36 days**.
+
+### Fix round — the hostile audit returned NO-GO, and this is what moved
+
+Three blockers. Two survived; B3 self-cleared with the calendar and got its gate
+anyway.
+
+**B1 — `half the prior round` was a false comparison, and this repo's own source
+said so.** The note read *"it makes $5 billion available, **half the prior
+round**"*. The arithmetic is right; the implication is not.
+`data/historical_awards` carries `"double_round": True` on CY 2024-2025 and the
+comment above it records why: *"The announcement states the awards are 'a double
+round, covering 2024 and 2025'. Filing a double round under a single year beside
+four single rounds is what made $10 billion look like an error against its
+$5 billion neighbours."* **$10 billion over two allocation years against
+$5 billion for one is the same annual rate.** A CDE reading the clause concludes
+the program was cut in half and competition has doubled — decision-relevant and
+false, in all four formats.
+
+**Four words are deleted and nothing replaces them.** An annual-rate comparison
+would be a new inference and this package does not make those; the NOAA states
+an amount and compares it to nothing, so the note states the amount.
+
+The clause had been live since 1.5.0, but this release rewrote the sentence
+around it and **two gate-scope regressions rode along**:
+
+* `tests/invariant_allowlist.txt` ruled the whole clause **SOURCED against the
+  NOAA**. The NOAA states $5 billion; it makes no comparison. The 36 rows of
+  that block are re-ruled with a justification that says what the NOAA states
+  and what it therefore does not cover. Measured: 14 of those rows went dead
+  when the text changed and 8 replace them (36 → 30).
+* The 1.6.1 sentence named *"the CDFI Fund"* and was therefore in
+  `tests/attribution_allowlist.txt`; the 1.6.2 wording dropped the Fund, and the
+  row went with it while the claim went on rendering. Measured:
+  `grep -c "half the prior" tests/attribution_allowlist.txt` is **1** at
+  `268ab26` and **0** at `f5a8f24`.
+
+  Every other row that left that file between `268ab26` and this commit is
+  accounted for: **20 rows → 18**. Three dropped, one added. The added row is
+  the prior-allocatee sentence re-worded from *"falls on the same date"* to
+  *"fell on the same closed date"* — still ruled. Two of the three dropped are
+  the 1.6.1 *"the CDFI Fund has announced that CY 2026 will make $5 billion
+  available — half the prior round"* sentence and its PDF wrap fragment, both of
+  which no longer render at all. The third is the pre-reword prior-allocatee
+  row, replaced by the added one. Nothing else left a scanner's scope.
+
+**B2 — CI could not go green, so the tag gate could not be satisfied.** Not
+caused by this branch; identical at `268ab26`. `nmtc-mapper` **0.6.1** published
+2026-09-14 and added three OZ 2.0 fields to `EligibilityResult`.
+`tests/mapper_doubles.py` **failed closed, correctly** — `_defaults()` raises a
+`TypeError` naming any upstream field it has no neutral value for, which is the
+mechanism working. `pyproject.toml`'s `nmtc-mapper>=0.5.0` is open and
+`ci.yml` installs `".[dev]"` unpinned, so CI resolves 0.6.1 and hits the same
+wall.
+
+**Fixed the way the error message instructs**: three neutral values added, and
+**read off the installed library rather than guessed**. All three are declared
+`Optional[bool] = None`, and `nmtcmapper/mapper.py` returns `None` for all three
+on both indeterminate branches. `False` would have been a **fabricated
+negative**: the library's own docstring records that
+`is_oz2_nomination_eligible`'s `False` *"is a real published fact about 60,197
+tracts"* — the opposite of `is_opportunity_zone`, whose `False` never occurs —
+and `oz2_inputs_missing` is provenance qualifying that `False`, not a verdict.
+
+**Mutation found a hole and it is now closed.** Flipping
+`is_oz2_nomination_eligible`'s neutral to `False` and running the whole suite
+reddened **nothing**: `_defaults()` fails loud on a MISSING neutral and says
+nothing about whether the value chosen is neutral. `test_every_double_neutral_
+matches_the_librarys_own_default` compares every `_NEUTRAL` entry against the
+installed dataclass's own `field.default`, so the answer is read off the library
+rather than restated here.
+
+**The floor is deliberately NOT raised.** `nmtc-mapper>=0.6.1` is a separate
+decision with its own reasoning and is not in this release's scope.
+
+**B3 — a future-dated federal event stated in the present perfect.** On
+2026-09-14 the note asserted *"THE CY 2026 ROUND HAS OPENED"* and *"the CY 2026
+NOAA IS PUBLISHED"* while naming a publication date of 15 Sep 2026 and stamping
+itself `LAST_VERIFIED = 2026-09-14`. **The calendar cleared it** — 15 Sep 2026
+arrived and the sentences are now true — **and the calendar is not a gate.**
+`test_no_federal_event_is_stated_as_having_happened_before_it_has` reads the
+rendered note for the present-perfect phrases and compares them against
+`NOAA_PUBLICATION_DATE`. The date is derived from the constant, not typed into
+the test.
+
+### Fix-round housekeeping, same class as the release
+
+* **`CITATION.cff`** shipped `version: "1.6.2"` with `date-released:
+  "2026-08-26"` — 1.6.1's date, carried forward by the bump, so a 1.6.2 whose
+  metadata claimed release three weeks *before* the NOAA it describes. Now
+  `2026-09-15`.
+* **"There is no late filing and no cure"** is narrowed to **"There is no late
+  filing."** The NOAA's cure language carries *"except, if necessary and at the
+  request of the CDFI Fund"* and governs missing materials inside a **submitted
+  application**; this paragraph is about **certification eligibility**, so the
+  clause was unattributed rather than contradicted, and it errs safe. It is cut
+  rather than attributed because attributing it means quoting a Federal Register
+  sentence that could not be retrieved from the environment this fix was built
+  in — asserting less is the cheaper of the two corrections and the only one
+  with no unverified federal quote in it.
+* **"it was the only way to become certified in time"** and **"which
+  organizations meet the … as-of date is already fixed"** are gone. The NOAA
+  states two eligibility routes; it does not state that AMIS is the only
+  certification channel, nor that the qualifying set is closed. What is left is
+  arithmetic on two dates the NOAA does state: the AMIS window closed, and the
+  as-of date has arrived.
+* **`test_every_hard_deadline_the_constants_carry_reaches_the_note` was vacuous
+  on an empty tuple.** `missing` is `[]` over `()` and `assert not missing`
+  passes on nothing — in the gate whose entire job is to catch a deadline being
+  dropped from `HARD_EXTERNAL_DEADLINES`. One `assert HARD_EXTERNAL_DEADLINES`
+  line. Executed both ways: the `f5a8f24` body returns `missing = []` and passes
+  against `HARD_EXTERNAL_DEADLINES = ()`; the fixed body fails.
+* **`_to_delete/` is in `.gitignore`.** It was protected by
+  `.git/info/exclude` alone, which is machine-local and does not travel with a
+  clone.
+* **The `f5a8f24` commit message's suite figures did not reproduce.** It claimed
+  branch `1,785/1,760/16/1/8`. This commit's figures are re-measured on the tree
+  it describes and are stated with the interpreter and the environment they were
+  measured on, because the count is environment-dependent by design
+  (`test_test_count_claims` says so).
+
+### Fix-round mutation results — measured, full suite, one run each
+
+| mutation | what reddens (measured) |
+|---|---|
+| `NOAA_PUBLICATION_DATE = "2026-12-01"` (a FUTURE date) | 8: `test_no_federal_event_is_stated_as_having_happened_before_it_has`, the four rendered baselines, both invariant-allowlist gates, and the CHANGELOG baseline-delta gate |
+| `NOAA_PUBLICATION_DATE = "2026-09-10"` (a PAST date) | the four rendered baselines — **and NOT the new gate**. Run separately to prove the gate is sensitive to the DIRECTION of the date, not merely to the bytes moving |
+| `HARD_EXTERNAL_DEADLINES = ()` | `test_every_hard_deadline_the_constants_carry_reaches_the_note` **(the new line — it passed vacuously before)** and `test_the_horizon_lands_before_the_deadline_it_watches` through its fail-closed `None` branch |
+| restore `, half the prior round` | the four rendered baselines and both invariant-allowlist gates. **No gate fails on the claim being FALSE** — and none can: an allowlist rules a clause, it does not adjudicate arithmetic. The gate that caught this was a human reading the rendered note against the package's own `historical_awards` comment, and that is recorded rather than dressed up |
+| `_NEUTRAL["is_oz2_nomination_eligible"] = False` | `test_every_double_neutral_matches_the_librarys_own_default` — alone. **Before that gate existed the same mutation reddened NOTHING**, which is why it exists |
+
+### Not in this release, stated as a decision
+
+* **`RECHECK_ITEMS` is not re-worked against CY 2026.** The Application
+  Materials do not exist; there is nothing to verify against and re-working them
+  now would be invention. Every round-specific figure stays sourced from
+  CY 2024-2025 and the note keeps saying so. That is the **next** release, and
+  T6's re-pointed check is its trigger.
+* **`APPLICATION_SHA256`, `APPLICATION_BYTES`, `APPLICATION_PAGES` and
+  `APPLICATION_URL` are untouched.** The hash was never the defect.
+* **No new formats, no renderer changes beyond the note text, no schema
+  changes.**
+* **The `$5 billion` authority is stated from the NOAA but no figure is computed
+  from it.** It reaches prose only, and it is now stated WITHOUT a comparison to
+  the prior round — see the fix round above.
+
+Added by the fix round, same rule:
+
+* **The `nmtc-mapper` floor stays `>=0.5.0`.** Raising it to `>=0.6.1` is a
+  separate decision with its own reasoning: `>=0.5.0` is a floor with a stated
+  cause (`test_the_floor_field_is_tri_state_not_a_bool`, RED against 0.4.3 and
+  GREEN against 0.5.0), and nothing in 0.6.1 is yet depended on. The doubles are
+  fixed here; the floor is a later cycle's call.
+* **`test_live_cdfi_fund_check` still hardcodes `2026`** in three regexes where
+  `rp.UPCOMING_ROUND` exists, and the 1.6.2 rewrite dropped its
+  `still_prior_round` condition. It is `-m network`, opt-in, and never runs in
+  CI. It is worth fixing and it is not one line — deriving the round from the
+  constant means re-deriving three patterns and re-reasoning what the alarm
+  condition now is, which is exactly the work T6 already did once. Next round.
+* **`RECHECK_ITEMS` is still not re-worked against CY 2026** — unchanged from
+  the release decision above; the Application Materials still do not exist.
+* **`_PROVENANCE_FACTS` still hardcodes the deadline strings** where constants
+  exist. Measured as NOT vacuous — it reddens when the constants move — so it is
+  a duplication, not a hole, and de-duplicating it is a refactor this release
+  has no reason to carry.
+* **No gate is added on `CITATION.cff`'s `date-released`.** The field is only
+  correct at the moment of the tag, and the CHANGELOG entry for this version is
+  deliberately `UNRELEASED`, so there is nothing in the tree to derive it from.
+  A gate that compared it to anything available today would either be trivially
+  satisfiable or would fight the UNRELEASED discipline. If the tag slips past
+  2026-09-15, bump the field with the tag.
+* **`LAST_VERIFIED` is NOT gated against `NOAA_PUBLICATION_DATE`.** It is
+  2026-09-14, a day before publication, and that is legitimate: a Federal
+  Register document is on public inspection from its FILING, which the note
+  itself states as 14 Sep 2026. A gate there would red-flag the correct practice
+  of reading the filed document.
+
+### Housekeeping, and why two historical figures moved
+
+Three CHANGELOG figures are gate-asserted against the **current** tree rather
+than frozen at what shipped, so they are maintained forward:
+
+* swept constants **238 → 251** (`test_the_changelogs_sweep_figures_match_the_tree`).
+  Thirteen net new constants: thirteen added in `_round_provenance` and one
+  removed in the first fix round (250), plus `DEADLINE_TIMEZONE` in the second
+  (251).
+* Review Process sweep **111/107 → 112/108**
+  (`test_the_changelogs_review_process_sweep_matches_the_tree`), one mention
+  added in `_round_provenance`'s module docstring.
+* Published test count **1,783 → 1,790** in `README.md`, `CONTRIBUTING.md` and
+  `streamlit_app/app.py` (`test_test_count_claims`). Seven new gates: the two
+  above, the two added in the first fix round below, and the three added in the
+  second. All figures measured with `pytest tests/ --collect-only -q`.
+
+`historical_awards.NMTC_AWARD_ROUNDS` and `APPLICATION_VOLUME_TRENDS` are newly
+**waived** in `tests/pinned_constants.txt`. The only string in either dict long
+enough for the rendered-string sweep to see is the KEY `"applications"`, which
+is never printed; it became a match only because the note now renders the
+ordinary English word in the CY 2026 deadline sentence.
+
+### Second fix round — two gates were wrong, and neither was about this package
+
+**No rendered text changes. Not one word of the round-provenance note, and no
+constant in it, moves in this round.** Both defects are in the *gates*, and both
+are the same defect wearing different clothes: **an assertion that reads the
+machine instead of the fact.**
+
+**R1 — `test_the_floor_field_is_tri_state_not_a_bool` asserted a SPELLING, and
+Python 3.14 spells it differently.** The gate matched the substring
+`"Optional[bool]"` against `dataclasses.fields(...)[i].type`. `nmtc-mapper`
+0.6.1 declares `is_non_metro: Optional[bool]` with no
+`from __future__ import annotations`, and the *identical* declaration renders:
+
+| interpreter | `field.type` renders as | old gate |
+|---|---|---|
+| Python 3.10.12 | `typing.Optional[bool]` | passes |
+| Python 3.14.7 | `bool \| None` | **FAILS** |
+
+Both measured, both against the same installed 0.6.1 — PEP 649 builds the
+annotation lazily on 3.14 and normalises the union to its `|` form. A correct
+dependency went red on the maintainer's machine while CI, on an older
+interpreter, stayed green. **This is the eighth instance of this shape in the
+portfolio: a gate asserting a spelling where the property is what matters.**
+
+The property is *does this field admit `None`* — can the mapper say "I could
+not determine this" instead of being forced to say "no". The gate now resolves
+the annotation with `typing.get_type_hints` and inspects the union's arguments
+for `bool` and `NoneType`. Measured on 3.10.12 and 3.14.7: `Optional[bool]`,
+`bool | None` and the stringised `"Optional[bool]"` a PEP 563 module produces
+all resolve to a union over `bool` and `NoneType`; a plain `bool` resolves to a
+bare class with **no** arguments. The docstring's 0.4.2/0.4.3-vs-0.5.0 table and
+the reasoning about the emptied non-metropolitan bucket are unchanged — that is
+still why the floor exists.
+
+**The gate still goes RED against 0.4.3, which is the only reason it exists.**
+Measured, not asserted: 0.4.3 installed from its published wheel gives
+`field.type` `<class 'bool'>`, `get_args` `()`, and the gate fails. 0.6.1
+reinstalled gives 18 passed.
+
+**R1b — the failure message was confidently wrong, and that was its own
+defect.** It read *"This is almost certainly a mapper older than 0.5.0"* while
+printing *"installed nmtc-mapper 0.6.1"*, and ended *"Raise the installed
+version"* — sending a reader to upgrade a package already above the floor. The
+message now names the condition it actually found, and the two conditions have
+different remedies:
+
+* **installed below the floor** — "something installed it over the declared
+  floor; `pip install --upgrade 'nmtc-mapper>=0.5.0'`". Measured against 0.4.3.
+* **installed at or above the floor** — "upgrading will not fix it; upstream has
+  REGRESSED the field", the same class of event as 0.5.0 dropping
+  `is_nmtc_native_area`. Measured by mutating the installed 0.6.1's
+  `checker.py` to `is_non_metro: bool`.
+
+It **never** instructs raising a version that is already at or above the floor.
+A third branch reports a `get_type_hints` **resolution failure** as itself —
+"this gate cannot tell you whether the field admits `None`, so it is not telling
+you" — rather than as evidence about the field.
+
+**R2 — `test_no_federal_event_is_stated_as_having_happened_before_it_has`
+compared against the runner's local date.** The gate was **right** and it caught
+a real thing: at 2026-09-15 00:53 UTC the note stated `ROUND HAS OPENED` and
+`NOAA IS PUBLISHED` while it was 20:53 EDT on 14 Sep and `NOAA_PUBLICATION_DATE`
+had not arrived. **The gate is not weakened and the note is not changed.** The
+defect is narrower: `datetime.date.today()` made the verdict a property of the
+machine. Measured at that one instant:
+
+| runner | local date | old gate |
+|---|---|---|
+| maintainer's Mac | 2026-09-14 | **red** |
+| CI / bridge (UTC) | 2026-09-15 | green |
+
+**One repository, one moment, two answers — and the release would have been cut
+from the green one.** A Federal Register publication date is an **Eastern Time**
+fact: the document bears the ET date the Register assigns it. The comparison now
+runs in `America/New_York` via `zoneinfo`. **UTC would not have been a fix** —
+it agrees with ET for nineteen hours a day and disagrees for five, and those five
+are the evening hours in which a release gets cut.
+
+Measured after the change, same instant, real `pytest`, four runner timezones
+(`UTC`, `America/Los_Angeles`, `Asia/Tokyo`, `Pacific/Kiritimati`): **red in all
+four.** The same four against the old implementation: **red in one, green in
+three.** The gate goes green by itself at ET midnight on 2026-09-15 and needs no
+edit to do so.
+
+**R3 — the sweep found the same exposure in `next_hard_deadline()`, and that one
+is shipped code.** It decided whether a deadline had passed with
+`date.today()`, and the deadline it decides about is written into the note as
+**5:00 p.m. ET on November 10, 2026**. At 2026-11-11 04:59 UTC it is 23:59 EST
+on the 10th: a caller east of ET reads 2026-11-11, drops the entry and returns
+`None`, and `test_the_horizon_lands_before_the_deadline_it_watches` fails closed
+reporting a **CLOSED CY 2026 round while a CDE still has hours left to file.**
+Wrong by a day, in the expensive direction, on the one day anybody is looking.
+The default is now the Eastern date; `today=` is still accepted, so only the
+default changed, and there are **no production callers** — the exposure was to
+test verdicts.
+
+### Second-fix-round mutation results — measured, one run each
+
+| mutation | what reddens (measured) |
+|---|---|
+| installed `nmtc-mapper` 0.4.3 (published wheel) | `test_the_floor_field_is_tri_state_not_a_bool`, with the **below-the-floor** remedy |
+| installed 0.6.1's `is_non_metro: Optional[bool]` → `bool` | the same gate, with the **upstream-regressed** remedy — proving both branches |
+| gate predicate → `admits_none = True` (drop the `NoneType` clause) | **nothing**, against a `bool`-typed library: 18 passed. The clause is load-bearing and this is what proves it. |
+| `today = _eastern_date()` → `_dt.date.today()` in the gate | `test_the_gate_reads_the_eastern_date_and_not_the_local_one` — alone, and the real gate goes **green**, which is the dangerous swap the new test exists to catch |
+| `_eastern_date()` returns the local date | `test_the_future_event_gate_is_the_same_on_every_machine` |
+| `next_hard_deadline()` default → `date.today()` | `test_the_deadline_lookup_is_eastern_time_too` |
+| `_eastern_today()` returns the local date | `test_the_deadline_lookup_is_eastern_time_too` |
+
+**Two holes were found in the new tests by mutation and closed before commit,
+and both were the same hole.** The first versions of
+`test_the_future_event_gate_is_the_same_on_every_machine` and
+`test_the_deadline_lookup_is_eastern_time_too` exercised the ET helpers but not
+the **call sites**, so reverting the one line that calls them left both green —
+measured. A helper nobody is required to call is not a fix. Both now stub the
+helper and require the no-argument call to have obeyed it.
+
+### The same-shape sweep (R1c), and what was deliberately NOT changed
+
+Every assertion in the tree on an annotation repr, `str()` of a type, or
+`field.type` string matching:
+
+| site | judgement |
+|---|---|
+| `tests/integrations/test_mapper_contract.py` — the tri-state gate | **broken on 3.14. Fixed above.** |
+| `nmtcapp/integrations/_mapper_capabilities._renders_as_optional` | **spelling-based, but NOT broken.** It already accepts all four renderings including `bool \| None`. Measured: `tests/integrations/test_mapper_capabilities.py` is **9 passed on Python 3.14.7**. **Left alone** — it is production runtime behaviour and rewriting it is not this round's scope. Flagged: it is a *substring* match, so a composite annotation containing `Optional[bool]` would pass while not itself being tri-state, and it is a **second implementation of the one property** — the weaker copy is precisely what broke. Worth one narrow round. |
+| `tests/integrations/test_mapper_capabilities.test_the_optional_detector_accepts_every_spelling` | enumerates spellings **on purpose** — it is the test *of* that detector, and enumeration is the right shape there. Not broken on 3.14. Left alone. |
+| `type(exc).__name__` in `test_render_frame_geometry`, `test_small_claims`, `test_streamlit_deployment_pin`, `test_rendered_output_baseline`, `test_upload_derived_pct_types` | **exception and value class names, not annotations.** A class `__name__` is stable across interpreters and is the property being asserted. Not the same shape. Left alone. |
+
+Date comparisons, judged individually:
+
+| site | judgement |
+|---|---|
+| `next_hard_deadline()` vs `HARD_EXTERNAL_DEADLINES` | **federal deadlines. Wrong. Fixed (R3).** |
+| `test_no_federal_event_...` vs `NOAA_PUBLICATION_DATE` | **a federal publication date. Wrong. Fixed (R2).** |
+| `test_the_round_claim_has_not_expired` vs `RECHECK_AFTER` | **left on the local date, deliberately.** A re-check horizon is not a federal fact — it asks whether the *maintainer* has looked lately, and the maintainer looks on their own calendar day. The worst a boundary disagreement does is fire the re-check a few hours early or late. |
+| `LAST_VERIFIED` | **no exposure.** It is never compared against a clock — only against `RECHECK_AFTER`, constant against constant. |
+| `test_the_recheck_horizon_is_after_the_verification`, `test_the_horizon_is_not_pushed_out_of_reach`, and the `RECHECK_AFTER < next deadline` assertion | **no exposure.** Constant against constant; no clock is read. |
+| `_dt.date.today()` inside two failure **messages** | **not comparisons.** In the R2 message it is deliberate: showing the reader their local date is what explains why an ET gate is red on a machine whose calendar has already turned over. |
+
+---
+
 ## [1.6.1] — 2026-08-26
 
 **PATCH. No score formula, weight, band, threshold or grade moves, and no score
@@ -378,9 +907,14 @@ One filled scaffold, the same file both sides, `9a2d584` vs this tree:
 > `git diff --numstat 9a2d584 fc34af5 -- tests/rendered_baseline/` gives 53
 > insertions and 68 deletions, unchanged.*
 
-The rendered-string sweep is unchanged in shape, and 238 constants are swept
+The rendered-string sweep is unchanged in shape, and 251 constants are swept
 (237 at 1.5.7; this release adds
-`upload_handler.CDE_PROFILE_COLUMNS_FOR_REQUIRED_FIELD`, waived).
+`upload_handler.CDE_PROFILE_COLUMNS_FOR_REQUIRED_FIELD`, waived, for 238 as
+shipped — restated to 250 at 1.6.2, which splits the round-provenance
+published-status boolean into twelve net new constants. The count is
+gate-asserted against the CURRENT tree by
+`test_the_changelogs_sweep_figures_match_the_tree`, so it is maintained
+forward rather than frozen at what shipped).
 
 ---
 
@@ -4941,7 +5475,7 @@ and the value-only projection that hid B-3's number formats.
 > source for what the Applicant is asked to COMMIT TO, because the thing the
 > Applicant fills in is the Application.**
 
-**111 mentions across 107 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
+**112 mentions across 108 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
 `README.md`. *(75 across 71 when 1.3.0 shipped; 77 across 73 at 1.5.0, which
 added one in `renderers/_round_provenance`'s re-check list. 1.5.1's first round
 added ten more across ten lines — the T1 withdrawal string and its two
@@ -6046,8 +6580,9 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 238 constants are swept
-where 49 were. *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
+colour". The rendered-string sweep demands **19**, and 251 constants are swept
+where 49 were (238 as this release shipped; restated at 1.6.2 — the count is
+gate-asserted against the current tree, see that entry). *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
 round label, its status, the re-check list and the pinned-document facts; 1.5.2
 adds `readiness_score._COMPONENT_BASIS`, the withdrawal note's per-component
 basis labels, pinned on `markdown` and `cli_summary`. The 1.5.2 AUDIT ROUND

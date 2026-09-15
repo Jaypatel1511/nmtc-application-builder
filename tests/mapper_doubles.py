@@ -59,6 +59,26 @@ _NEUTRAL = {
     "geocode_success": False,
     "is_opportunity_zone": None,
     "tract_found": True,
+    # ── OZ 2.0, added by nmtc-mapper 0.6.1 (published 2026-09-14) ──────────
+    # None, NOT False, and the value was READ OFF THE INSTALLED LIBRARY rather
+    # than guessed. All three are declared `Optional[bool] = None` on
+    # EligibilityResult, and nmtcmapper/mapper.py returns None for all three on
+    # both indeterminate branches (no OZ 2.0 row for the tract; no tract).
+    #
+    # False IS A PUBLISHED FACT ON TWO OF THESE AND WOULD BE A FABRICATED ONE
+    # HERE. The library's own docstring says is_oz2_nomination_eligible's False
+    # "is a real published fact about 60,197 tracts" — the opposite of
+    # is_opportunity_zone, whose False never occurs. A double answering False
+    # would assert Treasury published a negative for a fixture address, which
+    # is the defect class this module exists to refuse.
+    #
+    # oz2_inputs_missing is PROVENANCE, not a verdict: True means Treasury
+    # published eligible_lic = 0 for a tract with both poverty_rate and
+    # mfi_ratio blank. Its neutral is None for the same reason — a double
+    # answering False would assert the negative above was measured.
+    "is_oz2_nomination_eligible": None,
+    "is_rural_area_qoz_eligible": None,
+    "oz2_inputs_missing": None,
 }
 
 
