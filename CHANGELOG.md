@@ -375,20 +375,162 @@ Added by the fix round, same rule:
 Three CHANGELOG figures are gate-asserted against the **current** tree rather
 than frozen at what shipped, so they are maintained forward:
 
-* swept constants **238 → 250** (`test_the_changelogs_sweep_figures_match_the_tree`).
-  Twelve net new constants: thirteen added in `_round_provenance`, one removed.
+* swept constants **238 → 251** (`test_the_changelogs_sweep_figures_match_the_tree`).
+  Thirteen net new constants: thirteen added in `_round_provenance` and one
+  removed in the first fix round (250), plus `DEADLINE_TIMEZONE` in the second
+  (251).
 * Review Process sweep **111/107 → 112/108**
   (`test_the_changelogs_review_process_sweep_matches_the_tree`), one mention
   added in `_round_provenance`'s module docstring.
-* Published test count **1,783 → 1,787** in `README.md`, `CONTRIBUTING.md` and
-  `streamlit_app/app.py` (`test_test_count_claims`). Four new gates: the two
-  above, plus the two added in the fix round below.
+* Published test count **1,783 → 1,790** in `README.md`, `CONTRIBUTING.md` and
+  `streamlit_app/app.py` (`test_test_count_claims`). Seven new gates: the two
+  above, the two added in the first fix round below, and the three added in the
+  second. All figures measured with `pytest tests/ --collect-only -q`.
 
 `historical_awards.NMTC_AWARD_ROUNDS` and `APPLICATION_VOLUME_TRENDS` are newly
 **waived** in `tests/pinned_constants.txt`. The only string in either dict long
 enough for the rendered-string sweep to see is the KEY `"applications"`, which
 is never printed; it became a match only because the note now renders the
 ordinary English word in the CY 2026 deadline sentence.
+
+### Second fix round — two gates were wrong, and neither was about this package
+
+**No rendered text changes. Not one word of the round-provenance note, and no
+constant in it, moves in this round.** Both defects are in the *gates*, and both
+are the same defect wearing different clothes: **an assertion that reads the
+machine instead of the fact.**
+
+**R1 — `test_the_floor_field_is_tri_state_not_a_bool` asserted a SPELLING, and
+Python 3.14 spells it differently.** The gate matched the substring
+`"Optional[bool]"` against `dataclasses.fields(...)[i].type`. `nmtc-mapper`
+0.6.1 declares `is_non_metro: Optional[bool]` with no
+`from __future__ import annotations`, and the *identical* declaration renders:
+
+| interpreter | `field.type` renders as | old gate |
+|---|---|---|
+| Python 3.10.12 | `typing.Optional[bool]` | passes |
+| Python 3.14.7 | `bool \| None` | **FAILS** |
+
+Both measured, both against the same installed 0.6.1 — PEP 649 builds the
+annotation lazily on 3.14 and normalises the union to its `|` form. A correct
+dependency went red on the maintainer's machine while CI, on an older
+interpreter, stayed green. **This is the eighth instance of this shape in the
+portfolio: a gate asserting a spelling where the property is what matters.**
+
+The property is *does this field admit `None`* — can the mapper say "I could
+not determine this" instead of being forced to say "no". The gate now resolves
+the annotation with `typing.get_type_hints` and inspects the union's arguments
+for `bool` and `NoneType`. Measured on 3.10.12 and 3.14.7: `Optional[bool]`,
+`bool | None` and the stringised `"Optional[bool]"` a PEP 563 module produces
+all resolve to a union over `bool` and `NoneType`; a plain `bool` resolves to a
+bare class with **no** arguments. The docstring's 0.4.2/0.4.3-vs-0.5.0 table and
+the reasoning about the emptied non-metropolitan bucket are unchanged — that is
+still why the floor exists.
+
+**The gate still goes RED against 0.4.3, which is the only reason it exists.**
+Measured, not asserted: 0.4.3 installed from its published wheel gives
+`field.type` `<class 'bool'>`, `get_args` `()`, and the gate fails. 0.6.1
+reinstalled gives 18 passed.
+
+**R1b — the failure message was confidently wrong, and that was its own
+defect.** It read *"This is almost certainly a mapper older than 0.5.0"* while
+printing *"installed nmtc-mapper 0.6.1"*, and ended *"Raise the installed
+version"* — sending a reader to upgrade a package already above the floor. The
+message now names the condition it actually found, and the two conditions have
+different remedies:
+
+* **installed below the floor** — "something installed it over the declared
+  floor; `pip install --upgrade 'nmtc-mapper>=0.5.0'`". Measured against 0.4.3.
+* **installed at or above the floor** — "upgrading will not fix it; upstream has
+  REGRESSED the field", the same class of event as 0.5.0 dropping
+  `is_nmtc_native_area`. Measured by mutating the installed 0.6.1's
+  `checker.py` to `is_non_metro: bool`.
+
+It **never** instructs raising a version that is already at or above the floor.
+A third branch reports a `get_type_hints` **resolution failure** as itself —
+"this gate cannot tell you whether the field admits `None`, so it is not telling
+you" — rather than as evidence about the field.
+
+**R2 — `test_no_federal_event_is_stated_as_having_happened_before_it_has`
+compared against the runner's local date.** The gate was **right** and it caught
+a real thing: at 2026-09-15 00:53 UTC the note stated `ROUND HAS OPENED` and
+`NOAA IS PUBLISHED` while it was 20:53 EDT on 14 Sep and `NOAA_PUBLICATION_DATE`
+had not arrived. **The gate is not weakened and the note is not changed.** The
+defect is narrower: `datetime.date.today()` made the verdict a property of the
+machine. Measured at that one instant:
+
+| runner | local date | old gate |
+|---|---|---|
+| maintainer's Mac | 2026-09-14 | **red** |
+| CI / bridge (UTC) | 2026-09-15 | green |
+
+**One repository, one moment, two answers — and the release would have been cut
+from the green one.** A Federal Register publication date is an **Eastern Time**
+fact: the document bears the ET date the Register assigns it. The comparison now
+runs in `America/New_York` via `zoneinfo`. **UTC would not have been a fix** —
+it agrees with ET for nineteen hours a day and disagrees for five, and those five
+are the evening hours in which a release gets cut.
+
+Measured after the change, same instant, real `pytest`, four runner timezones
+(`UTC`, `America/Los_Angeles`, `Asia/Tokyo`, `Pacific/Kiritimati`): **red in all
+four.** The same four against the old implementation: **red in one, green in
+three.** The gate goes green by itself at ET midnight on 2026-09-15 and needs no
+edit to do so.
+
+**R3 — the sweep found the same exposure in `next_hard_deadline()`, and that one
+is shipped code.** It decided whether a deadline had passed with
+`date.today()`, and the deadline it decides about is written into the note as
+**5:00 p.m. ET on November 10, 2026**. At 2026-11-11 04:59 UTC it is 23:59 EST
+on the 10th: a caller east of ET reads 2026-11-11, drops the entry and returns
+`None`, and `test_the_horizon_lands_before_the_deadline_it_watches` fails closed
+reporting a **CLOSED CY 2026 round while a CDE still has hours left to file.**
+Wrong by a day, in the expensive direction, on the one day anybody is looking.
+The default is now the Eastern date; `today=` is still accepted, so only the
+default changed, and there are **no production callers** — the exposure was to
+test verdicts.
+
+### Second-fix-round mutation results — measured, one run each
+
+| mutation | what reddens (measured) |
+|---|---|
+| installed `nmtc-mapper` 0.4.3 (published wheel) | `test_the_floor_field_is_tri_state_not_a_bool`, with the **below-the-floor** remedy |
+| installed 0.6.1's `is_non_metro: Optional[bool]` → `bool` | the same gate, with the **upstream-regressed** remedy — proving both branches |
+| gate predicate → `admits_none = True` (drop the `NoneType` clause) | **nothing**, against a `bool`-typed library: 18 passed. The clause is load-bearing and this is what proves it. |
+| `today = _eastern_date()` → `_dt.date.today()` in the gate | `test_the_gate_reads_the_eastern_date_and_not_the_local_one` — alone, and the real gate goes **green**, which is the dangerous swap the new test exists to catch |
+| `_eastern_date()` returns the local date | `test_the_future_event_gate_is_the_same_on_every_machine` |
+| `next_hard_deadline()` default → `date.today()` | `test_the_deadline_lookup_is_eastern_time_too` |
+| `_eastern_today()` returns the local date | `test_the_deadline_lookup_is_eastern_time_too` |
+
+**Two holes were found in the new tests by mutation and closed before commit,
+and both were the same hole.** The first versions of
+`test_the_future_event_gate_is_the_same_on_every_machine` and
+`test_the_deadline_lookup_is_eastern_time_too` exercised the ET helpers but not
+the **call sites**, so reverting the one line that calls them left both green —
+measured. A helper nobody is required to call is not a fix. Both now stub the
+helper and require the no-argument call to have obeyed it.
+
+### The same-shape sweep (R1c), and what was deliberately NOT changed
+
+Every assertion in the tree on an annotation repr, `str()` of a type, or
+`field.type` string matching:
+
+| site | judgement |
+|---|---|
+| `tests/integrations/test_mapper_contract.py` — the tri-state gate | **broken on 3.14. Fixed above.** |
+| `nmtcapp/integrations/_mapper_capabilities._renders_as_optional` | **spelling-based, but NOT broken.** It already accepts all four renderings including `bool \| None`. Measured: `tests/integrations/test_mapper_capabilities.py` is **9 passed on Python 3.14.7**. **Left alone** — it is production runtime behaviour and rewriting it is not this round's scope. Flagged: it is a *substring* match, so a composite annotation containing `Optional[bool]` would pass while not itself being tri-state, and it is a **second implementation of the one property** — the weaker copy is precisely what broke. Worth one narrow round. |
+| `tests/integrations/test_mapper_capabilities.test_the_optional_detector_accepts_every_spelling` | enumerates spellings **on purpose** — it is the test *of* that detector, and enumeration is the right shape there. Not broken on 3.14. Left alone. |
+| `type(exc).__name__` in `test_render_frame_geometry`, `test_small_claims`, `test_streamlit_deployment_pin`, `test_rendered_output_baseline`, `test_upload_derived_pct_types` | **exception and value class names, not annotations.** A class `__name__` is stable across interpreters and is the property being asserted. Not the same shape. Left alone. |
+
+Date comparisons, judged individually:
+
+| site | judgement |
+|---|---|
+| `next_hard_deadline()` vs `HARD_EXTERNAL_DEADLINES` | **federal deadlines. Wrong. Fixed (R3).** |
+| `test_no_federal_event_...` vs `NOAA_PUBLICATION_DATE` | **a federal publication date. Wrong. Fixed (R2).** |
+| `test_the_round_claim_has_not_expired` vs `RECHECK_AFTER` | **left on the local date, deliberately.** A re-check horizon is not a federal fact — it asks whether the *maintainer* has looked lately, and the maintainer looks on their own calendar day. The worst a boundary disagreement does is fire the re-check a few hours early or late. |
+| `LAST_VERIFIED` | **no exposure.** It is never compared against a clock — only against `RECHECK_AFTER`, constant against constant. |
+| `test_the_recheck_horizon_is_after_the_verification`, `test_the_horizon_is_not_pushed_out_of_reach`, and the `RECHECK_AFTER < next deadline` assertion | **no exposure.** Constant against constant; no clock is read. |
+| `_dt.date.today()` inside two failure **messages** | **not comparisons.** In the R2 message it is deliberate: showing the reader their local date is what explains why an ET gate is red on a machine whose calendar has already turned over. |
 
 ---
 
@@ -765,7 +907,7 @@ One filled scaffold, the same file both sides, `9a2d584` vs this tree:
 > `git diff --numstat 9a2d584 fc34af5 -- tests/rendered_baseline/` gives 53
 > insertions and 68 deletions, unchanged.*
 
-The rendered-string sweep is unchanged in shape, and 250 constants are swept
+The rendered-string sweep is unchanged in shape, and 251 constants are swept
 (237 at 1.5.7; this release adds
 `upload_handler.CDE_PROFILE_COLUMNS_FOR_REQUIRED_FIELD`, waived, for 238 as
 shipped — restated to 250 at 1.6.2, which splits the round-provenance
@@ -6438,7 +6580,7 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 250 constants are swept
+colour". The rendered-string sweep demands **19**, and 251 constants are swept
 where 49 were (238 as this release shipped; restated at 1.6.2 — the count is
 gate-asserted against the current tree, see that entry). *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
 round label, its status, the re-check list and the pinned-document facts; 1.5.2

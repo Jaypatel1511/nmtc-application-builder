@@ -125,6 +125,7 @@ from __future__ import annotations
 import datetime as _dt
 import os
 import re
+import sys
 
 import pytest
 
@@ -135,6 +136,103 @@ _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def _iso(value: str) -> _dt.date:
     return _dt.date(*(int(part) for part in value.split("-")))
+
+
+#: The timezone every federal publication date in this module is a date IN.
+#:
+#: A Federal Register document publishes on its EASTERN date, and the
+#: application deadline the note carries is written "5:00 p.m. ET". These are
+#: not facts about the machine running pytest, so no gate over them may consult
+#: the machine's clock-in-its-own-zone.
+_FEDERAL_TZ = "America/New_York"
+
+
+def _eastern_date(instant=None) -> _dt.date:
+    """The date in ``America/New_York`` at ``instant`` (default: now).
+
+    WHY ET AND NOT LOCAL, AND NOT UTC EITHER (1.6.2 R2)
+
+    ``test_no_federal_event_is_stated_as_having_happened_before_it_has`` used
+    ``_dt.date.today()`` -- the RUNNER's local date -- and that made the gate's
+    verdict a property of the machine. Measured, on 2026-09-15 00:53 UTC, with
+    ``NOAA_PUBLICATION_DATE = 2026-09-15``:
+
+        maintainer's Mac (UTC-5, 19:53)   local date 2026-09-14   -> RED
+        this bridge VM   (UTC,    00:53)  local date 2026-09-15   -> GREEN
+        GitHub Actions   (UTC)            local date 2026-09-15   -> GREEN
+
+    Three machines, one repository, one moment, two answers. The RED one was
+    right about the world -- it was 20:53 EDT and the NOAA had not published --
+    and CI would have shipped past it.
+
+    UTC IS NOT THE FIX, IT IS THE SAME BUG WITH A NICER NAME. It agrees with ET
+    for nineteen hours a day and disagrees for five, and the five are exactly
+    the evening hours in which somebody finishes a release. A publication date
+    is not a UTC date; it is the date the document bears, which the Federal
+    Register assigns in Eastern Time. So the comparison is done in the zone the
+    fact lives in, and then every machine returns the same verdict.
+
+    ``instant`` must be TIMEZONE-AWARE when given. A naive datetime is exactly
+    the ambiguity this function exists to remove, so it is refused rather than
+    guessed at.
+
+    Example::
+
+        _eastern_date(_dt.datetime(2026, 9, 15, 0, 53, tzinfo=_dt.timezone.utc))
+        # date(2026, 9, 14)  -- 20:53 the previous evening, in ET
+    """
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+    if instant is None:
+        instant = _dt.datetime.now(_dt.timezone.utc)
+    if instant.tzinfo is None or instant.utcoffset() is None:
+        raise ValueError(
+            f"_eastern_date() needs a timezone-AWARE instant; got {instant!r}. "
+            "A naive datetime is the ambiguity this function exists to remove."
+        )
+    try:
+        zone = ZoneInfo(_FEDERAL_TZ)
+    except ZoneInfoNotFoundError as exc:            # pragma: no cover
+        raise AssertionError(
+            f"the {_FEDERAL_TZ} timezone is not available on this machine "
+            f"({exc}), so no gate here can compare a federal date correctly.\n\n"
+            "THIS DELIBERATELY DOES NOT FALL BACK TO LOCAL TIME. A silent "
+            "fallback is the defect this helper replaced: it would make the "
+            "verdict machine-dependent again and nothing would say so. "
+            "Install the `tzdata` package."
+        ) from exc
+    return instant.astimezone(zone).date()
+
+
+#: Phrases in the rendered note that assert a federal event HAS HAPPENED.
+#: Read off the note rather than off ``UPCOMING_NOAA_PUBLISHED``, because no
+#: branch in ``round_provenance_paragraphs`` consults that constant -- a gate
+#: on the boolean alone would watch a variable the sentence never reads.
+_PRESENT_PERFECT_FEDERAL_CLAIMS = ("ROUND HAS OPENED", "NOAA IS PUBLISHED")
+
+
+def _federal_events_stated_as_done(note: str) -> list:
+    """Which "already happened" claims the rendered note actually makes.
+
+    Factored out of the gate below so the gate's VERDICT can be evaluated at
+    frozen instants without a clock. ``test_the_future_event_gate_is_the_same_
+    on_every_machine`` needs exactly that: the defect it pins is about WHICH
+    DATE gets compared, and a property you can only observe through
+    ``datetime.now()`` cannot be tested on both sides of a boundary.
+    """
+    return sorted(
+        phrase for phrase in _PRESENT_PERFECT_FEDERAL_CLAIMS if phrase in note
+    )
+
+
+def _claims_an_unhappened_event(note: str, published: _dt.date,
+                                today: _dt.date) -> list:
+    """The gate's property, as a pure function of the three things it reads.
+
+    Returns the offending phrases, or ``[]`` when the note is honest.
+    """
+    stated = _federal_events_stated_as_done(note)
+    return stated if (stated and published > today) else []
 
 
 #: Every format the application renders to. The gate below asserts the round
@@ -471,25 +569,384 @@ def test_no_federal_event_is_stated_as_having_happened_before_it_has():
     the note itself states as 14 Sep 2026. Gating verification against
     publication would red-flag the correct practice of reading the filed
     document.
+
+    "TODAY" IS THE EASTERN DATE, NOT THE RUNNER'S (1.6.2 R2)
+
+    This gate shipped comparing against ``_dt.date.today()``, and that made
+    its verdict a property of the machine rather than of the world. On
+    2026-09-15 00:53 UTC it was RED on the maintainer's Mac (local 2026-09-14)
+    and GREEN in CI and on the bridge VM (local/UTC 2026-09-15). The RED one
+    was correct -- 20:53 EDT, the NOAA not yet published -- and the gate that
+    was going to decide the release was the green one.
+
+    A Federal Register publication date is an EASTERN TIME fact: the document
+    bears the ET date the Register assigns it. So the comparison is made in
+    ``America/New_York`` via ``_eastern_date`` and every machine now returns
+    the same answer. Switching to UTC would have hidden the disagreement
+    without removing it -- UTC and ET differ for five hours of every day, and
+    those five hours are the evening in which releases get cut.
+
+    ``_claims_an_unhappened_event`` holds the property as a pure function so
+    that ``test_the_future_event_gate_is_the_same_on_every_machine`` can
+    exercise it at frozen instants either side of ET midnight, including the
+    instant at which UTC and ET disagree. A rule about which clock to read
+    cannot be checked by reading the clock.
     """
-    today = _dt.date.today()
+    today = _eastern_date()
     published = _iso(rp.NOAA_PUBLICATION_DATE)
     note = rp.round_provenance_note()
 
-    stated_as_done = sorted(
-        phrase for phrase in ("ROUND HAS OPENED", "NOAA IS PUBLISHED")
-        if phrase in note
-    )
+    stated_as_done = _federal_events_stated_as_done(note)
     assert not (stated_as_done and published > today), (
         f"the note states {stated_as_done} -- the present perfect, a thing "
         f"that has ALREADY happened -- while NOAA_PUBLICATION_DATE is "
-        f"{rp.NOAA_PUBLICATION_DATE} and today is {today.isoformat()}. The "
-        f"event is {(published - today).days} day(s) in the FUTURE.\n\n"
+        f"{rp.NOAA_PUBLICATION_DATE} and today in {_FEDERAL_TZ} is "
+        f"{today.isoformat()}. The event is {(published - today).days} day(s) "
+        f"in the FUTURE.\n\n"
         "A CDE reading this document today is told a federal round has opened "
         "when it has not. Either the date is wrong, or the sentence is early "
         "and must be written in the future tense until the date arrives. A "
         "document filed for public inspection is not yet published; the note "
-        "already carries both dates and can say which one it means."
+        "already carries both dates and can say which one it means.\n\n"
+        f"THE DATE COMPARED IS THE EASTERN ONE, NOT THIS MACHINE'S. If your "
+        f"local clock already reads {_dt.date.today().isoformat()}, that is "
+        "not a reason to dismiss this: the Federal Register publishes on its "
+        "ET date and this gate answers the same on every machine on purpose. "
+        "It goes green by itself when the ET date arrives."
+    )
+
+
+#: Frozen instants either side of ET midnight on the NOAA publication date,
+#: with the ET date each one falls on. 2026-09-15 is EDT (UTC-4), so ET
+#: midnight is 04:00 UTC and the two rows around it are the whole point:
+#: 03:59 UTC is ALREADY 15 Sep in UTC and STILL 14 Sep in Eastern Time. That
+#: is the disagreement that produced the defect -- the maintainer's machine
+#: said the 14th and CI said the 15th at the same instant.
+_ET_BOUNDARY_CASES = (
+    ("2026-09-15T03:59:00+00:00", _dt.date(2026, 9, 14), "UTC and ET DISAGREE"),
+    ("2026-09-15T04:00:00+00:00", _dt.date(2026, 9, 15), "ET midnight exactly"),
+    ("2026-09-15T04:01:00+00:00", _dt.date(2026, 9, 15), "one minute after"),
+    ("2026-09-14T23:59:00+00:00", _dt.date(2026, 9, 14), "same date both zones"),
+    ("2026-09-16T12:00:00+00:00", _dt.date(2026, 9, 16), "well past, both zones"),
+)
+
+#: Runner timezones to prove the verdict against. Chosen to straddle: one east
+#: of ET, one far east enough to be a whole calendar day ahead, one west, and
+#: UTC itself, which is what CI runs and what made this invisible.
+_RUNNER_TIMEZONES = ("UTC", "America/Los_Angeles", "Asia/Tokyo",
+                     "Pacific/Kiritimati", "America/New_York")
+
+
+def test_the_future_event_gate_is_the_same_on_every_machine():
+    """THE DEFECT WAS WHICH CLOCK, SO THE TEST CANNOT BE ALLOWED TO READ ONE.
+
+    ``test_no_federal_event_is_stated_as_having_happened_before_it_has``
+    compared ``NOAA_PUBLICATION_DATE`` against ``_dt.date.today()``. At
+    2026-09-15 00:53 UTC that was 2026-09-14 on the maintainer's machine and
+    2026-09-15 in CI: the gate went red where it should and green where the
+    release was going to be cut from. Not a flake -- a gate whose answer
+    depended on the runner.
+
+    This asserts the fix as a PROPERTY rather than as an outcome: at a fixed
+    instant, ``_eastern_date`` and therefore the gate's verdict must not move
+    when the runner's ``TZ`` moves. ``time.tzset()`` makes the runner's zone
+    an input instead of an assumption, so the claim is demonstrated rather
+    than reasoned about.
+
+    THE LAST BLOCK IS THE CONTROL, AND IT IS THE LOAD-BEARING ONE. It shows
+    the OLD approach really does give different answers at these same
+    instants. Without it, this test would pass just as happily against an
+    implementation that had never been broken, and would be evidence of
+    nothing.
+
+    POSIX ONLY. ``time.tzset()`` does not exist on Windows. CI is
+    ubuntu-latest and the maintainer is on macOS, so this runs everywhere it
+    is run; on Windows it skips rather than pretending to have checked.
+    """
+    import time
+
+    if not hasattr(time, "tzset"):                  # pragma: no cover
+        pytest.skip("time.tzset() is POSIX-only; cannot vary TZ in-process")
+
+    published = _iso(rp.NOAA_PUBLICATION_DATE)
+    honest_note = "nothing has happened yet"
+    claiming_note = "THE CY 2026 ROUND HAS OPENED and the NOAA IS PUBLISHED"
+
+    original_tz = os.environ.get("TZ")
+    observed = {}
+    try:
+        for zone_name in _RUNNER_TIMEZONES:
+            os.environ["TZ"] = zone_name
+            time.tzset()
+            for iso_instant, expected_et, why in _ET_BOUNDARY_CASES:
+                instant = _dt.datetime.fromisoformat(iso_instant)
+                actual_et = _eastern_date(instant)
+                assert actual_et == expected_et, (
+                    f"with TZ={zone_name}, _eastern_date({iso_instant}) "
+                    f"returned {actual_et}, not {expected_et} ({why}). The "
+                    "Eastern date at an instant is a fact about that instant; "
+                    "if the runner's zone can change it, the gate built on it "
+                    "is machine-dependent again."
+                )
+                verdict = tuple(_claims_an_unhappened_event(
+                    claiming_note, published, actual_et))
+                observed.setdefault(iso_instant, {})[zone_name] = verdict
+
+                assert not _claims_an_unhappened_event(
+                    honest_note, published, actual_et), (
+                    "a note claiming nothing cannot be claiming something "
+                    "unhappened, whatever the date or the runner's zone"
+                )
+    finally:
+        if original_tz is None:
+            os.environ.pop("TZ", None)
+        else:
+            os.environ["TZ"] = original_tz
+        time.tzset()
+
+    disagreed = {
+        instant: verdicts for instant, verdicts in observed.items()
+        if len(set(verdicts.values())) != 1
+    }
+    assert not disagreed, (
+        "the gate returned different verdicts for the same instant under "
+        f"different runner timezones: {disagreed}. That is the 1.6.2 defect "
+        "exactly."
+    )
+
+    # The verdicts themselves, so this is not merely "consistent" — a gate
+    # that answered "no problem" everywhere would also be consistent.
+    expected_verdicts = {
+        "2026-09-15T03:59:00+00:00": ("NOAA IS PUBLISHED", "ROUND HAS OPENED"),
+        "2026-09-15T04:00:00+00:00": (),
+        "2026-09-15T04:01:00+00:00": (),
+        "2026-09-14T23:59:00+00:00": ("NOAA IS PUBLISHED", "ROUND HAS OPENED"),
+        "2026-09-16T12:00:00+00:00": (),
+    }
+    actual_verdicts = {
+        instant: next(iter(set(verdicts.values())))
+        for instant, verdicts in observed.items()
+    }
+    assert actual_verdicts == expected_verdicts, (
+        f"the gate fires at the wrong instants.\n  expected "
+        f"{expected_verdicts}\n  actual   {actual_verdicts}\n\n"
+        "It must be RED while the ET date is before "
+        f"{rp.NOAA_PUBLICATION_DATE} and GREEN from ET midnight on that date "
+        "onwards — including at 03:59 UTC, which is still the previous "
+        "evening in Eastern Time and is the case the whole fix is for."
+    )
+
+    # THE CONTROL. The rejected implementation, run over the same table: the
+    # runner's own date at these instants DOES depend on TZ. This is what the
+    # gate used to read.
+    local_dates = {}
+    try:
+        for zone_name in _RUNNER_TIMEZONES:
+            os.environ["TZ"] = zone_name
+            time.tzset()
+            for iso_instant, _expected_et, _why in _ET_BOUNDARY_CASES:
+                instant = _dt.datetime.fromisoformat(iso_instant)
+                local_dates.setdefault(iso_instant, set()).add(
+                    instant.astimezone().date()
+                )
+    finally:
+        if original_tz is None:
+            os.environ.pop("TZ", None)
+        else:
+            os.environ["TZ"] = original_tz
+        time.tzset()
+
+    assert any(len(dates) > 1 for dates in local_dates.values()), (
+        "the runner's LOCAL date came out the same under every timezone in "
+        f"{list(_RUNNER_TIMEZONES)}, which means TZ is not actually taking "
+        "effect in this process and the comparison above proved nothing. "
+        "Establish that before trusting this file: an inert control is worse "
+        "than no control."
+    )
+
+
+def test_the_gate_reads_the_eastern_date_and_not_the_local_one():
+    """THE HOLE IN THE TEST ABOVE, FOUND BY MUTATION AND CLOSED HERE.
+
+    ``test_the_future_event_gate_is_the_same_on_every_machine`` exercises
+    ``_eastern_date`` and ``_claims_an_unhappened_event``. It does NOT exercise
+    the gate's CALL SITE -- so reverting one line,
+    ``today = _eastern_date()`` back to ``today = _dt.date.today()``, leaves it
+    green. Measured: with that revert in place the TZ test still passed. A
+    helper nobody is required to call is not a fix.
+
+    So this drives the gate itself, with the two clocks forced APART and in
+    OPPOSITE directions, and reads which one it obeyed:
+
+        eastern date  = the day AFTER publication  -> the note is honest
+        local date    = the day BEFORE publication -> the note is premature
+
+    A gate reading ET passes. A gate reading ``date.today()`` fails. Then the
+    two are swapped and the expected outcomes swap with them, so neither
+    result can be got by a gate that is simply always-green or always-red.
+
+    NO REAL CLOCK IS CONSULTED, which is the point: a test of which clock is
+    read cannot itself depend on what time it is.
+    """
+    import types
+
+    module = sys.modules[__name__]
+    published = _iso(rp.NOAA_PUBLICATION_DATE)
+    day_before = published - _dt.timedelta(days=1)
+    day_after = published + _dt.timedelta(days=1)
+
+    def _local_clock_frozen_at(frozen):
+        """A stand-in for this module's ``_dt`` whose ``date.today()`` lies.
+
+        ``datetime.date`` is a C type and will not take a monkeypatched
+        ``today``, so the module's handle on the datetime module is swapped
+        instead. Everything except ``date.today`` is the real thing, and the
+        subclass keeps ``_iso``'s ``_dt.date(y, m, d)`` and every comparison
+        working unchanged.
+        """
+        class _FrozenDate(_dt.date):
+            @classmethod
+            def today(cls):
+                return frozen
+
+        shim = types.SimpleNamespace(
+            date=_FrozenDate,
+            datetime=_dt.datetime,
+            timezone=_dt.timezone,
+            timedelta=_dt.timedelta,
+        )
+        return shim
+
+    gate = test_no_federal_event_is_stated_as_having_happened_before_it_has
+
+    # Sanity: the note under test really does make the claims, otherwise both
+    # halves below pass vacuously and this test checks nothing.
+    assert _federal_events_stated_as_done(rp.round_provenance_note()), (
+        "the rendered note makes NO 'has happened' claim, so this test "
+        "cannot distinguish the two clocks: every outcome below would be "
+        "green for the same uninteresting reason. The note is expected to "
+        f"contain one of {list(_PRESENT_PERFECT_FEDERAL_CLAIMS)}."
+    )
+
+    real_eastern, real_dt = module._eastern_date, module._dt
+    try:
+        # ET says the event has happened; the local clock says it has not.
+        module._eastern_date = lambda instant=None: day_after
+        module._dt = _local_clock_frozen_at(day_before)
+        gate()   # must NOT raise: a gate reading ET is satisfied
+
+        # Now the other way round.
+        module._eastern_date = lambda instant=None: day_before
+        module._dt = _local_clock_frozen_at(day_after)
+        with pytest.raises(AssertionError):
+            gate()
+    finally:
+        module._eastern_date, module._dt = real_eastern, real_dt
+
+    # The failure the first half would have produced, spelled out, because a
+    # bare "must NOT raise" says nothing about WHY it did if it does.
+    assert module._eastern_date is real_eastern
+    assert module._dt is real_dt
+
+
+def test_the_deadline_lookup_is_eastern_time_too():
+    """``next_hard_deadline()`` answers a FEDERAL question; same rule (1.6.2 R2).
+
+    Found by sweeping the module for the shape the gate above was fixed for.
+    ``next_hard_deadline`` decided whether a deadline had passed with
+    ``date.today()`` -- the caller's local date -- and the deadline it decides
+    about is written into the note as **5:00 p.m. ET on November 10, 2026**.
+
+    THE FAILURE IS A DAY EARLY, WHICH IS THE EXPENSIVE DIRECTION. At
+    2026-11-11 04:59 UTC it is 23:59 EST on the 10th: the ET deadline has
+    passed, but for the preceding five hours of that UTC day a CDE could still
+    file and a caller east of ET was already being told the round was closed.
+    ``test_the_horizon_lands_before_the_deadline_it_watches`` fails closed on
+    ``None``, so it would have reported a CLOSED CY 2026 round up to a day
+    early, on the one day anybody is looking.
+
+    Two properties, neither of which depends on what day it is when this runs:
+    the boundary is placed in ET, and the answer does not move with ``TZ``.
+    """
+    import time
+
+    tokyo_side = _dt.datetime(2026, 11, 11, 4, 59, tzinfo=_dt.timezone.utc)
+    assert _eastern_date(tokyo_side) == _dt.date(2026, 11, 10), (
+        "2026-11-11 04:59 UTC is 23:59 EST on 10 Nov 2026 (November is EST, "
+        "UTC-5). If this is not the 10th, the boundary arithmetic below is "
+        "not testing what it claims to."
+    )
+
+    still_open = rp.next_hard_deadline(_eastern_date(tokyo_side))
+    assert still_open is not None and still_open[0] == "2026-11-10", (
+        f"at 23:59 ET on the deadline date next_hard_deadline() returned "
+        f"{still_open!r}. The deadline is 5:00 p.m. ET on that date; the day "
+        "itself must not be treated as already gone."
+    )
+
+    # THE REJECTED IMPLEMENTATION, at the same instant. This is the control:
+    # without it the assertion above would pass against code that had never
+    # been wrong.
+    utc_local_date = tokyo_side.date()
+    assert utc_local_date == _dt.date(2026, 11, 11)
+    assert rp.next_hard_deadline(utc_local_date) is None, (
+        "the local-date reading of this instant is expected to report every "
+        "deadline passed — that is the defect being fixed. If it no longer "
+        "does, this control has gone inert and proves nothing."
+    )
+
+    if not hasattr(time, "tzset"):                  # pragma: no cover
+        pytest.skip("time.tzset() is POSIX-only; cannot vary TZ in-process")
+
+    original_tz = os.environ.get("TZ")
+    answers = {}
+    try:
+        for zone_name in _RUNNER_TIMEZONES:
+            os.environ["TZ"] = zone_name
+            time.tzset()
+            answers[zone_name] = rp._eastern_today()
+    finally:
+        if original_tz is None:
+            os.environ.pop("TZ", None)
+        else:
+            os.environ["TZ"] = original_tz
+        time.tzset()
+
+    assert len(set(answers.values())) == 1, (
+        f"_eastern_today() moved with the runner's timezone: {answers}. It is "
+        "supposed to be a fact about Eastern Time and about nothing else."
+    )
+
+    # AND THE DEFAULT PATH ACTUALLY CALLS IT. Everything above exercises
+    # _eastern_today directly or passes `today=` explicitly, so reverting the
+    # one line `today = _eastern_today()` back to `date.today()` left all of it
+    # green -- measured, as mutation E of this round. A helper nobody is
+    # required to call is not a fix, which is the same hole found in
+    # test_the_future_event_gate_is_the_same_on_every_machine.
+    #
+    # So _eastern_today is replaced with a stub and the NO-ARGUMENT call is
+    # required to have obeyed it. The two stub dates straddle the application
+    # deadline, so a default still reading the real clock (2026, months before
+    # it) cannot produce the second answer by accident.
+    real_eastern_today = rp._eastern_today
+    try:
+        rp._eastern_today = lambda: _dt.date(2026, 11, 10)
+        on_the_day = rp.next_hard_deadline()
+        rp._eastern_today = lambda: _dt.date(2026, 11, 11)
+        day_after = rp.next_hard_deadline()
+    finally:
+        rp._eastern_today = real_eastern_today
+
+    assert on_the_day is not None and on_the_day[0] == "2026-11-10", (
+        f"with the Eastern date stubbed to the deadline date itself, "
+        f"next_hard_deadline() returned {on_the_day!r}."
+    )
+    assert day_after is None, (
+        f"next_hard_deadline() returned {day_after!r} with the Eastern date "
+        "stubbed to the day AFTER the last deadline, so it did not consult "
+        "_eastern_today() at all -- it is reading some other clock. That is "
+        "the defect this test exists for, and it is invisible to every "
+        "assertion above."
     )
 
 

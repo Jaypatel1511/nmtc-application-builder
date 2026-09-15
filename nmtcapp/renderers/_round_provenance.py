@@ -248,6 +248,37 @@ HARD_EXTERNAL_DEADLINES = (
 )
 
 
+#: The timezone the deadlines above are deadlines IN. The application deadline
+#: is written "5:00 p.m. ET" in the note itself; it is not a fact about the
+#: machine asking.
+DEADLINE_TIMEZONE = "America/New_York"
+
+
+def _eastern_today():
+    """Today's date in ``America/New_York``.
+
+    NO SILENT FALLBACK TO LOCAL TIME. A fallback would restore the exact defect
+    this replaces -- a machine-dependent answer to a federal question -- and
+    would do it invisibly. A caller in an environment without tzdata can still
+    pass ``today=`` explicitly, which is an answer somebody chose rather than
+    one that was guessed.
+    """
+    import datetime as _datetime
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+    try:
+        zone = ZoneInfo(DEADLINE_TIMEZONE)
+    except ZoneInfoNotFoundError as exc:            # pragma: no cover
+        raise RuntimeError(
+            f"cannot determine the {DEADLINE_TIMEZONE} date: {exc}. The CY "
+            "2026 deadlines are Eastern Time deadlines, so answering with "
+            "this machine's local date would be wrong by up to a day on the "
+            "day it matters most. Install the `tzdata` package, or pass "
+            "next_hard_deadline(today=...) explicitly."
+        ) from exc
+    return _datetime.datetime.now(_datetime.timezone.utc).astimezone(zone).date()
+
+
 def next_hard_deadline(today=None):
     """The earliest CY 2026 deadline that has NOT yet passed, or ``None``.
 
@@ -263,6 +294,25 @@ def next_hard_deadline(today=None):
     behind it describes a closed round and needs rewriting, so the gate in
     ``tests/test_round_provenance.py`` fails closed on ``None``.
 
+    "TODAY" DEFAULTS TO THE EASTERN DATE, NOT THE RUNNER'S (1.6.2 R2)
+
+    Every deadline in ``HARD_EXTERNAL_DEADLINES`` is a federal one, and the
+    application deadline is written into the note as **5:00 p.m. ET**. Whether
+    it has passed is therefore a question about Eastern Time, and this used to
+    answer it with ``date.today()`` -- the local date of whatever machine
+    happened to call.
+
+    On 2026-11-10 that is wrong in the direction that matters. A caller east of
+    ET (CI in UTC after 19:00 ET, a maintainer in Tokyo all afternoon) reads a
+    local date of 2026-11-11, drops the entry, and gets ``None`` -- "this round
+    is closed" -- while a CDE still has hours left to file. The same class of
+    defect as the one the sibling gate in ``tests/test_round_provenance.py``
+    was fixed for, in the one comparison where being a day early is the
+    expensive direction.
+
+    ``today`` is still accepted so a caller can ask about any date it likes;
+    only the DEFAULT changed.
+
     Example::
 
         next_hard_deadline()   # ('2026-11-10', '5:00 p.m. ET on ...', ...)
@@ -270,7 +320,7 @@ def next_hard_deadline(today=None):
     import datetime as _datetime
 
     if today is None:
-        today = _datetime.date.today()
+        today = _eastern_today()
     upcoming = [
         entry for entry in HARD_EXTERNAL_DEADLINES
         if _datetime.date(*(int(p) for p in entry[0].split("-"))) >= today
