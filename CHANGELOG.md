@@ -133,13 +133,50 @@ about the live round that a human has read once, which is the price of
 completeness and is the whole difference between this gate and the one it
 replaces.
 
-**The status vocabulary still exists and can now only ever ADD failures.** It
-is not consulted to decide whether a segment is looked at, so a spelling
-missing from it cannot hide anything; it is consulted only to make the `()`
-classification cost a written argument. Proved rather than asserted: mutation
-**M9** deletes `unpublished` from the vocabulary — by restoring the build
-round's exact word list — while a false sentence is live in a renderer, and the
+**The status vocabulary is not consulted for a segment that NAMES THE ROUND,
+and it is the only thing that selects 20 of the 104.** Both halves matter and
+the first fix round shipped only the first.
+
+For a segment that names `UPCOMING_ROUND`, nothing about the wording is
+consulted: it is selected by net 1, it has to be registered, and deleting a
+word cannot turn a red into a green. Proved rather than asserted — mutation
+**M9** deletes `unpublished` from the vocabulary, by restoring the build
+round's exact word list, while a false sentence is live in a renderer, and the
 gate **stays red**.
+
+But **net 3 is a spelling net, and it is load-bearing.** A segment that names
+an *instrument* but not the round, inside a corpus item that does not name the
+round either, is selected **by spelling alone**. Measured on this tree by
+partitioning `selected()` by the net that admitted each segment:
+
+| | distinct segments |
+|---|---|
+| selected in total | **104** |
+| reachable through net 1 — names the round | 63 |
+| reachable **only** through net 2 — instrument, containing item names the round | 21 |
+| reachable **only** through net 3 — **instrument + spelling** | **20** |
+
+**And the 20 include this package's own authority module.** 13 of them are in
+`renderers/_round_provenance`, 9 of those are f-string templates: that module
+**derives** the round name from `UPCOMING_ROUND` instead of typing it — this
+package's own mandated pattern — so `_python_literals` renders the
+interpolation as `{}` and the round token is **gone** from the source segment.
+Nets 1 and 2 are structurally blind to the module that defines the constants.
+
+**What is true, and is the property to rely on: the list cannot be NARROWED
+silently.** Deleting a word that carries a net-3-only segment kills that
+segment's registry key and `test_every_registry_key_is_found_in_the_corpus`
+goes red. Measured one alternative at a time: `publish\w*` kills 9 keys,
+`\bopen\w*` 4, `publicat\w*` 2, `releas\w*` 1, `issu\w*` 1 — and
+`\bavailab\w*` kills **none**, so that one can still be deleted today with
+nothing going red. **The exposure is to NEW text**, and it is real: the
+re-audit added *"The NOAA has not dropped."* and *"The Allocation Application
+went out last week."* to this tree as a comment run, neither naming the round
+and neither carrying vocabulary. **Re-run here on this tip rather than relayed,
+and after F4 widened the backstop: 58 passed in the module and 1,846 in the
+full suite, with both false sentences live in `renderers/_methodology`.** `out`
+and `dropped` are two of the six words the module's own docstring names as the
+next spellings.
 
 **The corpus is wider, and nothing is excluded from it.**
 
@@ -173,15 +210,20 @@ version required the round word to touch the instrument word and so let
 *"The CY 2026 **Application** is not yet published"* through, a spelling this
 repository already uses.
 
-**Nine mutations were run against it and each one's command and red count is in
-the 1.6.3 commit message,** including four that the build round's gate would
-have passed. A gate never seen to fail is not evidence.
+**Eleven mutations were run against it and each one's command and red count is
+in the 1.6.3 commit messages,** including four that the build round's gate
+would have passed and two that fix round 2 added for the gates it added. A gate
+never seen to fail is not evidence.
 
 **It has been run on 3.9, 3.11 and 3.12, not reasoned about.** The module uses
 `ast` and `tokenize` over string literals and comments, and PEP 701 changed
 `JoinedStr` constant runs in 3.12; the build round had executed it on 3.10
-only. 56 passed on each, which — with the dead-entry test — means the selected
-set is byte-identical to the registry on all four interpreters.
+only. **58 passed on each**, re-run after fix round 2's two new tests, and each
+interpreter was confirmed to read the repository tree rather than an installed
+copy — `SOURCE_ROOT` printed, and 179 selected / 104 distinct / 79 modules /
+13,177 corpus sentences measured identically on all four. With the dead-entry
+test, that means the selected set is byte-identical to the registry on every
+interpreter.
 
 What the gate cannot see is written into its docstring rather than left to be
 discovered: it reads sentences, so a round-status claim expressed as a table
@@ -189,7 +231,12 @@ cell, a bare date or a number is invisible to it; a sentence assembled at run
 time from pieces that individually name nothing is not in the corpus; the
 baselines are a fresh render on every run but of **one fixture**; a segment
 naming neither the round nor an instrument is outside all three nets, which is
-the residual hole and is a **subject** hole rather than a spelling one; and it
+the **subject** half of the residual hole, while the other half is a
+**spelling** hole — the 20 net-3-only segments above, and any new sentence of
+that shape whose status word nobody listed; this gate's selector and this
+package's *"derive the round name, never type it"* rule are **mutually
+hostile**, because consolidating a typed round name into `UPCOMING_ROUND`
+moves that sentence out of net 1 and nothing goes red when it does; and it
 proves the package agrees with itself, not that the package is right about the
 world. That second thing is `test_the_round_claim_has_not_expired`, and
 `RECHECK_AFTER` is still **2026-10-05**.
@@ -226,6 +273,80 @@ capped, separately-tested `QUOTED_HISTORY`: the alternative was rewording a
 historical record so it no longer quotes what it is a record of, which would
 have made the suite green by making the documentation worse.
 
+### F4 — one word list, two hand-typed copies, already diverged
+
+`_STATUS_VOCABULARY` decides what gets selected; `_ASSERTION_SHAPE` is the hard
+backstop on the `()` classification. Both need the same status words, both had
+their own typed copy of them, and the copies had already come apart:
+
+```
+_STATUS_VOCABULARY : publish\w*|publicat\w*|releas\w*|issu\w*|\bopen\w*|\bavailab\w*
+_ASSERTION_SHAPE   : publish\w*|publicat\w*|releas\w*|issu\w*|\bavailab\w*   <- no \bopen\w*
+```
+
+Measured: *"The CY 2026 Allocation Application is not yet open."* carries
+vocabulary (**True**) and did **not** match the shape (**False**). It is
+selected, so a human has to classify it — but it could be waved through as `()`
+on a 60-character reason with **nothing behind it**. And *"not yet open"* is one
+of the five false sentences F3 above removed from `streamlit_app/utils.py`.
+
+**Two hand-typed copies of one word list, in a repository whose doctrine is one
+copy derived, is the finding; the missing word is the symptom.**
+`_ASSERTION_SHAPE` now splices `_STATUS_VOCABULARY.pattern` in rather than
+retyping it. That pattern is a top-level alternation, so it keeps its meaning
+inside a `(?: )` group — which is why the direct derivation is enough and a
+third named constant both regexes consume is not needed. The new
+`test_the_assertion_shape_does_not_retype_the_status_vocabulary` asserts the
+vocabulary's pattern is *in* the shape's, then walks every alternative in it,
+builds a probe sentence from the stem and requires the shape to complete on it.
+
+**It is green by construction while the derivation holds, and that is precisely
+its job: it reddens the moment somebody retypes the list.** Seen to fail —
+mutation **M10** puts the old literal back: **2 failed, 56 passed** (the
+agreement gate, and the new `not yet open` shape case). Mutation **M11** deletes
+`\bopen\w*` from the one remaining copy: **2 failed, 56 passed**
+(`test_every_registry_key_is_found_in_the_corpus`, reporting 4 dead keys, and
+the same shape case). Both were restored byte-identically afterwards.
+
+**What the wider shape costs, measured rather than assumed.** It matches
+**zero** additional registry segments; every `()` entry outside `QUOTED_HISTORY`
+still fails to match it; all four `_SHAPE_MUST_NOT_MATCH` sentences still do not
+match. The cost that is real and is accepted, and is written into the pattern's
+own note: `\bopen\w*` also matches the non-publication sense of "open", so a
+future *"…is open to interpretation"* would have to be argued rather than
+classified `()` for free.
+
+### F5 — a false number in the release workflow's own comment
+
+`.github/workflows/release.yml` carried `# The resulting band is [890, 924].`
+The rule the gate implements is `upper = collected // 2`, and that block's own
+recorded input is **1,845** collected under `-m "not wheel"`, so the band was
+**[890, 922]**. `FLOOR=890` was inside the real band, so CI was green and said
+nothing. A hand-typed number that is wrong, in the one file whose entire subject
+is hand-typed numbers going stale.
+
+**The re-audit also reported the PREVIOUS entry wrong the same way. It is
+not.** That block records **1,809** collected under `-m "not wheel"` — not the
+1,810 the whole suite collected — and `1809 // 2 = 904`, which is what it says.
+Every band in the file was checked against its own recorded input in the same
+pass — 1,590/795, 1,606/803, 1,608/804, 1,617/808, 1,782/891, 1,809/904 — and
+`[890, 924]` is the only wrong one. **Correcting a correct number would have
+been another instance of this defect, not a fix for it.**
+
+The block now records fix round 2's rebuild — 1,847 collected, 57 skipped,
+1,790 executed, half 895, rounded down **890**, band **[890, 923]** — and states
+plainly that `FLOOR=890` **sits exactly on the lower bound again**, as 870 and
+860 did before it: it goes red at 1,857 collected, ten tests from here.
+
+### F6 — three ragged rewraps
+
+`nmtcapp/intelligence/recommendations.py`, `nmtcapp/renderers/excel_builder.py`
+and `streamlit_app/pages/2_Win_Alignment_Scorer.py` were left short-lined by
+F3's rewordings. **Whitespace only, no word changes** — and the gate's corpus is
+whitespace-normalised, so nothing it measures moves. Re-measured to confirm
+rather than argued: 179 selected / 104 distinct / 79 modules / 13,177 corpus
+sentences, identical before and after, on 3.9, 3.10, 3.11 and 3.12.
+
 ### What else moved, and why
 
 Every file in `git diff --name-status e4a415e..HEAD` is named here.
@@ -249,13 +370,14 @@ Every file in `git diff --name-status e4a415e..HEAD` is named here.
 * `CITATION.cff`, `streamlit_app/requirements.txt` — version, which the
   1.5.1 audit put a gate on.
 * `.github/workflows/release.yml` — **`FLOOR` 860 → 870 → 890**, the constant
-  this repo has now been burned on eleven consecutive cycles. Re-derived in the
-  fix round from a **real sdist build** on 3.10.12, the job's exact invocation,
-  the breakdown read off the junit report: 1,845 collected under
-  `-m "not wheel"`, 57 skipped, 1,788 executed, half 894, rounded down **890**.
+  this repo has now been burned on eleven consecutive cycles. Re-derived from a
+  **real sdist build** on 3.10.12, the job's exact invocation, the breakdown
+  read off the junit report, and **rebuilt again in fix round 2** rather than
+  adjusted on paper: 1,847 collected under `-m "not wheel"`, 57 skipped, 1,790
+  executed, half 895, rounded down **890**. `FLOOR` itself does not move.
   `MAX_SDIST_SKIPS` is untouched at 57 — the rewritten gate still skips nothing
   in the tarball, verified from the per-module skip breakdown and not from the
-  total.
+  total. The band comment beside it was wrong and is corrected; see F5.
 * `tests/test_release_floor.py` — `CLAIMED_NEW_TEST_MODULES` 32 → 33 in the
   build round, and **unchanged in the fix round**: the rewrite adds tests, not
   modules. Its comment is corrected, because it said the new module finds its
@@ -263,9 +385,9 @@ Every file in `git diff --name-status e4a415e..HEAD` is named here.
   `streamlit_app/` half is resolved as `../streamlit_app`, which is what the
   sdist job copies out of the tarball.
 * `README.md`, `CONTRIBUTING.md`, `streamlit_app/app.py` — the published test
-  count, 1,790 → 1,810 → **1,846**, re-derived from
+  count, 1,790 → 1,810 → 1,846 → **1,848**, re-derived from
   `pytest tests/ --collect-only -q`. The gate module goes from 20 collected
-  tests to 56, and 56 − 20 = 36 is exactly the movement in the suite total.
+  tests to 58, and 58 − 20 = 38 is exactly the movement in the suite total.
 * `CHANGELOG.md` — this entry.
 * The **1.6.2** entry's baseline-delta blockquote was `268ab26`..`HEAD`. `HEAD`
   is not a fixed point: the moment any later commit touches
@@ -285,6 +407,43 @@ missing from the markdown TOC; the Executive Summary's uncaveated **87%**
 headline; literal `**` leaking into Word (3 paragraphs) and PDF (page 14); and
 adding 3.13/3.14 to the CI matrix, which touches branch-protection settings and
 is its own change.
+
+**And four more, found by the 1.6.3 re-audit and fix round 2, all in the new
+gate, all recorded for 1.7.0:**
+
+1. **`QUOTED_HISTORY` cannot tell a quotation from a false claim somebody
+   labelled historical.** Proven by the re-audit: the exact 1.6.2 defect
+   sentence `(The CY 2026 NOAA is not yet published.)`, injected as a comment
+   in `renderers/_methodology` and parked in `QUOTED_HISTORY` with a
+   64-character reason → **58 passed**, re-run here rather than relayed. It is
+   carried rather than fixed because the **cap is enforced independently**:
+   `_MAX_QUOTED_HISTORY = 6`, so a **7th** entry reddens
+   `test_quoted_history_is_small_and_live` while the hiding test stays green,
+   and CI still goes red on abuse at scale. **The pressure is real
+   and arrives when `UPCOMING_APPLICATION_PUBLISHED` flips**: `_ASSERTION_SHAPE`
+   false-positives on legitimate conditional and future-tense sentences
+   (*"When the CY 2026 Allocation Application is published, re-check Question
+   25"*), which have nowhere else to go, and 3 of the 6 slots are used.
+2. **The gate's two corpus halves are resolved differently and nothing checks
+   they are the same build.** `nmtcapp/` comes through `nmtcapp.__file__` — the
+   **installed** package, in the sdist job — while `streamlit_app/` comes
+   through `../streamlit_app`, the **tarball tree** that job copies out. One
+   tree locally, two artifacts in CI. **This is not theoretical; it fired during
+   this fix round.** Calling `selected()` from a plain interpreter instead of
+   under pytest resolved `nmtcapp` to a stale `site-packages` copy and measured
+   **105 distinct segments with 3 unregistered**, against this tree's 104 with
+   0 — the gate would have been red against an installed build that is not this
+   one. Under pytest the repository tree wins, verified by printing
+   `SOURCE_ROOT` on all four interpreters rather than assumed; but **nothing in
+   the suite asserts it**. A fact with copies, one copy read — the shape this
+   release exists to fix.
+3. **`\bavailab\w*` is the one alternative in `_STATUS_VOCABULARY` that is not
+   load-bearing.** Deleting it kills no registry key, so it is the one word in
+   that list that can be removed with nothing going red; the other five kill 9,
+   4, 2, 1 and 1. A gate asserting every alternative is load-bearing would be
+   **red on arrival**, which is why this is recorded here rather than added.
+4. `_round_provenance` paragraph 2's heading *"ONE OF THEM HAS ALREADY CLOSED"*
+   against its body's *"Neither route is still open"*.
 
 ---
 

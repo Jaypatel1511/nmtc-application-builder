@@ -49,10 +49,9 @@ render_methodology_warning()
 # CY 2024-2025 four times -- in its title docstring, in the sentence under the
 # heading, in the sidebar's Highly Qualified citation and in the sub-score
 # disclosure -- and said nothing about that round being closed and awarded on
-# 23 Dec 2025, or about CY 2026 at all.
-# Markdown, Word, Excel and PDF have all carried this note since
-# 1.5.0; the gate that put it there enumerates the four Application.generate()
-# formats, and a Streamlit page is not one of them.
+# 23 Dec 2025, or about CY 2026 at all. Markdown, Word, Excel and PDF have all
+# carried this note since 1.5.0; the gate that put it there enumerates the four
+# Application.generate() formats, and a Streamlit page is not one of them.
 #
 # READ, NOT RETYPED. A fifth hand-typed copy of the round caveat is the exact
 # shape _round_provenance was created to remove.

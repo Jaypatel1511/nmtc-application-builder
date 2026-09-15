@@ -163,9 +163,9 @@ class ExcelApplicationBuilder:
         # release the workbook was the ONLY one of the four formats carrying
         # no round provenance at all: markdown, Word and PDF each carried the
         # round-provenance disclosure, whose wording is owned by
-        # ``_round_provenance`` and stated nowhere else,
-        # while the workbook cited that round in the present tense on the Q25
-        # Basis Note sheet and said nothing about which round it was. Excel is
+        # ``_round_provenance`` and stated nowhere else, while the workbook
+        # cited that round in the present tense on the Q25 Basis Note sheet and
+        # said nothing about which round it was. Excel is
         # the format most likely to be circulated internally and pasted from,
         # so it was the worst one to leave silent.
         self._build_round_provenance_sheet(wb)

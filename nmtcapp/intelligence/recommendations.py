@@ -299,9 +299,9 @@ class RecommendationSet:
 
         THE ROUND NOTE IS READ, NOT RETYPED (1.5.4 T1). This surface cited the
         CY 2024-2025 Review Process thirteen times on a single run and said
-        nothing about that round being closed and awarded, or about CY 2026
-        at all. Markdown, Word, Excel and PDF have all
-        carried ``_round_provenance`` since 1.5.0; this surface did not,
+        nothing about that round being closed and awarded, or about CY 2026 at
+        all. Markdown, Word, Excel and PDF have all carried
+        ``_round_provenance`` since 1.5.0; this surface did not,
         because ``tests/test_round_provenance._ALL_FORMATS`` enumerates the
         four ``Application.generate()`` formats and a surface that is not one
         of them cannot appear in that list.

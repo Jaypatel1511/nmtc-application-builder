@@ -63,17 +63,63 @@ nothing about publication. That is correct, and it is the price of
 completeness. Every key is a sentence about the live round that a human read
 once.
 
-    THE STATUS VOCABULARY STILL EXISTS, BUT IT CAN NOW ONLY EVER ADD FAILURES.
-    ``_STATUS_VOCABULARY`` appears in exactly two places: as an ADDITIONAL way
-    into the corpus (an instrument word plus a status word is selected even
-    where the round is not named), and as a COST on the ``()`` classification
-    (a ``()`` segment carrying status vocabulary must carry a written reason,
-    and may not match ``_ASSERTION_SHAPE`` at all). A spelling missing from
-    that list can no longer hide anything: the segment is still selected by the
-    round token and still has to be registered. Deleting a word from
-    ``_STATUS_VOCABULARY`` cannot turn a red into a green for any segment that
-    names the round. That is mutation M9 in the 1.6.3 commit message, and it is
-    the proof this module is not the thing it replaced.
+    THE STATUS VOCABULARY IS STILL ON THE CRITICAL PATH FOR 20 OF THE 104
+    SEGMENTS THIS GATE SELECTS, AND THE SENTENCE THAT USED TO STAND HERE SAID
+    OTHERWISE. ``_STATUS_VOCABULARY`` appears in exactly two places: as net 3,
+    an ADDITIONAL way into the corpus (an instrument word plus a status word
+    is selected even where the round is not named), and as a COST on the
+    ``()`` classification (a ``()`` segment carrying status vocabulary must
+    carry a written reason, and may not match ``_ASSERTION_SHAPE`` at all).
+
+    WHAT IS TRUE: a spelling missing from that list cannot hide a segment THAT
+    NAMES THE ROUND. Nothing about the claim's wording is consulted for those,
+    they are selected by net 1 and still have to be registered, and deleting a
+    word cannot turn a red into a green for any of them. That is mutation M9,
+    and it is the property this module was rewritten for.
+
+    WHAT IS FALSE, AND WAS CLAIMED HERE THROUGH 1.6.3's FIRST FIX ROUND: that
+    a missing spelling "can no longer hide anything". A segment that names an
+    INSTRUMENT but not the round, inside a corpus item that does not name the
+    round either, is selected BY SPELLING ALONE. Measured on this tree on
+    2026-09-15 by partitioning ``selected()`` by the net that admitted each
+    segment::
+
+        104  distinct selected segments
+         63  reachable through net 1 -- the segment names the round
+         21  reachable ONLY through net 2 -- instrument, and the CONTAINING
+             corpus item names the round
+         20  reachable ONLY through net 3 -- INSTRUMENT + SPELLING, nothing
+             else
+
+    AND THE 20 INCLUDE THIS PACKAGE'S OWN AUTHORITY MODULE. 13 of them are in
+    ``renderers/_round_provenance``, and 9 of those are f-string templates.
+    That module DERIVES the round name from ``UPCOMING_ROUND`` instead of
+    typing it -- this package's own mandated pattern -- so ``_python_literals``
+    renders the interpolation as ``{}`` and the round token is GONE from the
+    source segment::
+
+        This tool encodes the {} NMTC Allocation Application, which is the
+        most recent PUBLISHED Application and is {}...
+
+    Nets 1 and 2 are structurally blind to the module that defines the
+    constants. Those sentences are in this corpus only because they happen to
+    contain ``publish`` / ``releas`` / ``open``.
+
+    THE MITIGATING PROPERTY, WHICH IS REAL AND IS THE ONE TO RELY ON: the
+    vocabulary cannot be NARROWED silently. Deleting a word that carries a
+    net-3-only segment kills that segment's registry key, and
+    ``test_every_registry_key_is_found_in_the_corpus`` goes red on a dead key.
+    Measured by removing one alternative at a time and re-running
+    ``selected()``: ``publish\\w*`` kills 9 keys, ``\\bopen\\w*`` 4,
+    ``publicat\\w*`` 2, ``releas\\w*`` 1, ``issu\\w*`` 1 -- and
+    ``\\bavailab\\w*`` kills NONE, so that one alternative can still be
+    deleted
+    today without anything going red. THE EXPOSURE IS THEREFORE TO NEW TEXT: a
+    NEW sentence that names an instrument, sits in an item that does not name
+    the round, and spells its status in a word nobody listed is not selected at
+    all. Two such sentences were run against this tree by the 1.6.3 re-audit
+    and the module reported 56 passed with both live -- see WHAT THIS GATE
+    CANNOT SEE.
 
 THE THREE WAYS IN
 
@@ -111,8 +157,41 @@ WHAT THIS GATE CANNOT SEE -- read this before trusting it
 
   * A SEGMENT THAT NAMES NEITHER THE ROUND NOR AN INSTRUMENT IS NOT SELECTED.
     "It has not been released yet", standing alone in a docstring that never
-    names CY 2026 and never names the NOAA, is outside all three nets. That is
-    the residual hole and it is a SUBJECT hole, not a spelling one.
+    names CY 2026 and never names the NOAA, is outside all three nets. That
+    part of the residual hole is a SUBJECT hole.
+
+  * AND THE REST OF THE RESIDUAL HOLE IS A SPELLING HOLE. A segment that names
+    an INSTRUMENT but not the round, in a corpus item that does not name the
+    round either, is selected BY SPELLING ALONE -- net 3 is the only net that
+    admits it, and 20 of the 104 segments selected on this tree are in that
+    class (see the count above). A NEW sentence of that shape whose status
+    word is not in ``_STATUS_VOCABULARY`` is invisible here, exactly the way
+    ``unpublished`` was invisible to the build round's ``\\bpublished\\b``.
+    PROVEN, not reasoned about: the 1.6.3 re-audit added two false sentences
+    to this tree as a comment run in ``renderers/_methodology`` --
+
+        # The NOAA has not dropped.
+        # The Allocation Application went out last week.
+
+    -- neither naming the round, neither carrying vocabulary, and this module
+    reported 56 passed and the full suite 1844 passed with both live. RE-RUN
+    ON THIS TIP, after fix round 2 widened ``_ASSERTION_SHAPE``: 58 and 1,846,
+    still green with both sentences live. ``out`` and ``dropped`` are two of
+    the six words the paragraph at the top of this docstring names as the next
+    spellings.
+
+  * THIS GATE'S SELECTOR AND THIS PACKAGE'S "DERIVE THE ROUND NAME, NEVER TYPE
+    IT" RULE ARE MUTUALLY HOSTILE. That is a doctrinal tension, not a bug in
+    either, and it is recorded here because it decides where this gate goes
+    next. Net 1 is STRONGEST over source that hard-types "CY 2026" -- which is
+    exactly the source the rest of this suite exists to eliminate. Every time
+    somebody does the right thing and consolidates a typed round name into
+    ``UPCOMING_ROUND``, that sentence's interpolation becomes ``{}``, it drops
+    out of net 1, and it falls back on net 2 or net 3 -- or out of the corpus
+    altogether. NOTHING GOES RED WHEN THAT HAPPENS: the gate's reach shrinks
+    silently as the package gets cleaner. If that becomes load-bearing the fix
+    is to RESOLVE the constants at scan time and read the sentence the reader
+    gets, not to widen the word list again.
 
   * THE BASELINES ARE A FRESH RENDER, NOT A SNAPSHOT -- but of ONE FIXTURE.
     ``tests/test_rendered_output_baseline.py`` renders all four formats from
@@ -1144,13 +1223,35 @@ _MIN_CORPUS_SEGMENTS = 9500           # measured 13,177
 #: and the status word is the same STEM-MATCHED vocabulary the rest of this
 #: module uses, so "remains unpublished" and "has not been released" match
 #: where ``\bpublished\b`` could not.
+#:
+#: THE STATUS ALTERNATION IS ``_STATUS_VOCABULARY`` ITSELF, NOT A COPY OF IT
+#: (1.6.3 fix round 2). It was retyped here, and the two copies had ALREADY
+#: DIVERGED: this one was missing ``\bopen\w*``. Measured:
+#: "The CY 2026 Allocation Application is not yet open." carried status
+#: vocabulary (so it cost a written reason) and did NOT match this shape (so
+#: it could be waved through as ``()`` with nothing behind it) -- and "not yet
+#: open" is one of the five false sentences THIS release removed from
+#: ``streamlit_app/utils.py``. Two hand-typed copies of one word list, in a
+#: repository whose doctrine is one copy derived, is the finding; the missing
+#: word is the symptom. ``_STATUS_VOCABULARY.pattern`` is a top-level
+#: alternation, so splicing it inside ``(?: )`` keeps its meaning exactly, and
+#: ``test_the_assertion_shape_does_not_retype_the_status_vocabulary`` goes red
+#: if anybody retypes it.
+#:
+#: THE COST IS REAL AND IS ACCEPTED. ``\bopen\w*`` also matches the
+#: non-publication sense of "open", so a future sentence like "The CY 2026
+#: Allocation Application is open to interpretation" would match this backstop
+#: and could no longer be classified ``()``. Measured on this tree the widened
+#: shape newly matches ZERO registry segments, every ``()`` entry outside
+#: ``QUOTED_HISTORY`` still fails to match it, and all four
+#: ``_SHAPE_MUST_NOT_MATCH`` sentences still do not match.
 _ASSERTION_SHAPE = re.compile(
     r"(?=[^.;]{0,240}?" + re.escape(rp.UPCOMING_ROUND) + r")"
     r"[^.;]{0,240}?\b(?:NOAA|Allocation Application|Application Materials"
     r"|Application)\b"
     r"[^.;]{0,120}?\b(?:is|are|was|were|has|have|had|be|been|being"
     r"|remains?|stays?|appears?|appeared)\b"
-    r"[^.;]{0,90}?(?:publish\w*|publicat\w*|releas\w*|issu\w*|\bavailab\w*)",
+    r"[^.;]{0,90}?(?:" + _STATUS_VOCABULARY.pattern + r")",
     re.IGNORECASE,
 )
 
@@ -1326,6 +1427,10 @@ def test_the_assertion_shape_backstop_is_not_vacuous():
 #: build round's ``_ASSERTION_SHAPE`` did not match. Written as literals on
 #: purpose: they are the test's INPUT, not a claim the package makes, and they
 #: are why this module's segments are read from the corpus rather than typed.
+#: THE LAST ONE IS FIX ROUND 2's: it is the sentence the two hand-typed copies
+#: of the status word list disagreed about, and it did not match this shape
+#: until the alternation was spliced in from ``_STATUS_VOCABULARY`` instead of
+#: being retyped.
 _SHAPE_MUST_MATCH = (
     "(The CY 2026 NOAA is not yet published.)",
     "The NOAA for CY 2026 is not yet published.",
@@ -1334,6 +1439,7 @@ _SHAPE_MUST_MATCH = (
     "The CY 2026 NOAA remains unpublished.",
     "The CY 2026 NOAA has not been released.",
     "The CY 2026 Allocation Application has not been issued.",
+    "The CY 2026 Allocation Application is not yet open.",
 )
 #: Sentences the backstop must NOT match, or legitimate `()` classifications
 #: become impossible and the escape hatch stops existing.
@@ -1375,6 +1481,50 @@ def test_the_assertion_shape_does_not_swallow_everything(sentence):
         f"{rp.UPCOMING_ROUND} instrument's publication, so no such sentence "
         f"could ever be classified `()`:\n\n    {sentence!r}"
     )
+
+
+def test_the_assertion_shape_does_not_retype_the_status_vocabulary():
+    r"""ONE COPY, DERIVED. Two hand-typed copies of one word list is the bug.
+
+    They WERE two copies until 1.6.3's second fix round, and they had already
+    diverged: ``_ASSERTION_SHAPE`` was missing ``\bopen\w*`` while
+    ``_STATUS_VOCABULARY`` had it, so
+    "The CY 2026 Allocation Application is not yet open." was selected, carried
+    vocabulary and did NOT match the backstop -- waveable through as ``()`` on
+    a 60-character reason with nothing behind it. "not yet open" is one of the
+    five false sentences this release removed from shipped source.
+
+    THIS TEST IS GREEN BY CONSTRUCTION WHILE THE DERIVATION HOLDS, AND THAT IS
+    ITS WHOLE JOB: it goes red the moment somebody retypes the alternation
+    here. Seen to fail -- restoring the literal word list this pattern used to
+    carry turns it red; the command and the count are in the fix round's
+    commit message.
+    """
+    assert _STATUS_VOCABULARY.pattern in _ASSERTION_SHAPE.pattern, (
+        "_ASSERTION_SHAPE no longer consumes _STATUS_VOCABULARY.pattern "
+        "itself, so this repository is maintaining one word list in two "
+        "places again. That is how the two came apart the first time: this "
+        "pattern was missing `\\bopen\\w*` while the vocabulary had it, and "
+        "'not yet open' -- a sentence this package actually shipped -- was "
+        "selected but not backstopped.\n\n"
+        f"  vocabulary: {_STATUS_VOCABULARY.pattern}\n"
+        f"  shape:      {_ASSERTION_SHAPE.pattern}"
+    )
+    for alternative in _STATUS_VOCABULARY.pattern.split("|"):
+        stem = alternative.replace(r"\b", "").replace(r"\w*", "")
+        probe = f"The {rp.UPCOMING_ROUND} NOAA is {stem}."
+        assert _has_vocabulary(probe), (
+            f"the alternative {alternative!r} does not match its own stem "
+            f"{stem!r}, so this test's probe construction is wrong rather "
+            "than the pattern. Fix the probe, not the vocabulary."
+        )
+        assert list(_ASSERTION_SHAPE.finditer(probe)), (
+            f"_STATUS_VOCABULARY admits {stem!r} but _ASSERTION_SHAPE does "
+            f"not complete on it:\n\n    {probe!r}\n\n"
+            "A word that is good enough to SELECT a segment but not good "
+            "enough to BACKSTOP it is exactly the divergence this test "
+            "exists for."
+        )
 
 
 def test_the_status_vocabulary_is_not_vacuous():
