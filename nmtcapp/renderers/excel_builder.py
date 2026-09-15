@@ -161,8 +161,9 @@ class ExcelApplicationBuilder:
         self._build_q25_basis_sheet(wb)
         # THIRD TAB, AND THE POSITION IS THE FIX (1.5.0 B1). Until this
         # release the workbook was the ONLY one of the four formats carrying
-        # no round provenance at all: markdown, Word and PDF each stated that
-        # CY 2024-2025 is closed and awarded and that CY 2026 is unpublished,
+        # no round provenance at all: markdown, Word and PDF each carried the
+        # round-provenance disclosure, whose wording is owned by
+        # ``_round_provenance`` and stated nowhere else,
         # while the workbook cited that round in the present tense on the Q25
         # Basis Note sheet and said nothing about which round it was. Excel is
         # the format most likely to be circulated internally and pasted from,

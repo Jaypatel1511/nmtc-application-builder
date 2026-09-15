@@ -40,8 +40,9 @@ from nmtcapp.renderers._round_provenance import UPCOMING_ROUND
 #: Read from ``_round_provenance.UPCOMING_ROUND`` rather than typed, so this
 #: cannot become the next "CY2025": a literal here would drift the moment the
 #: Fund opens a round, and drift is how a demo ends up naming a round nobody
-#: ran. What it names today is CY 2026 — announced 12 Aug 2026, not yet open,
-#: and the round a CDE using this tool would in fact enter.
+#: ran. What it names today is CY 2026 — its NOAA published 15 Sep 2026,
+#: applications due 10 Nov 2026, and the round a CDE using this tool would
+#: in fact enter.
 SAMPLE_APPLICATION_ROUND = UPCOMING_ROUND
 
 # ---------------------------------------------------------------------------

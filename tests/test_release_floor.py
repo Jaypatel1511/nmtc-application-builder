@@ -451,13 +451,24 @@ def test_max_sdist_skips_is_bounded_from_ABOVE_as_well(collected_count):
 #: ceiling this repository has declined to raise four times.
 #:
 #: 32 -> 33 at 1.6.3: tests/test_round_status_consistency.py, which binds every
-#: round-status sentence in the rendered output and in nmtcapp/ to
-#: _round_provenance's two published-state constants. IT ADDS NO SKIPPING CASE
-#: EITHER, and for the same reason -- headroom is still zero. It needs no tree
-#: the tarball prunes: the baselines it reads are tests/rendered_baseline/*.txt,
-#: which `recursive-include tests *.txt` ships, and it locates the package
-#: source through `nmtcapp.__file__` rather than as `../nmtcapp`, so in the
-#: sdist job it scans the INSTALLED package instead of skipping.
+#: round-status sentence in the rendered output, in nmtcapp/ and in
+#: streamlit_app/ to _round_provenance's two published-state constants. IT ADDS
+#: NO SKIPPING CASE EITHER, and for the same reason -- headroom is still zero.
+#: It needs no tree the tarball prunes, and it resolves its two source trees
+#: DIFFERENTLY because the sdist job treats them differently:
+#:
+#:   tests/rendered_baseline/*.txt  shipped by `recursive-include tests *.txt`
+#:   nmtcapp/                       through `nmtcapp.__file__` -- the job
+#:                                  deliberately does NOT copy nmtcapp/ out of
+#:                                  the tarball, so `../nmtcapp` would be absent
+#:   streamlit_app/                 as `../streamlit_app` -- the job DOES copy
+#:                                  it out, the same resolution
+#:                                  test_cde_scoring_inputs already relies on
+#:
+#: so in the sdist job it scans the INSTALLED package and the copied-out
+#: Streamlit tree instead of skipping. Verified against a real sdist build in
+#: the 1.6.3 fix round: 1,845 collected, 57 skipped, and this module
+#: contributes none of the 57.
 CLAIMED_NEW_TEST_MODULES = 33
 
 

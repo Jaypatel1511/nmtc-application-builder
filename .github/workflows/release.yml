@@ -1189,7 +1189,55 @@ jobs:
           # Still not added, and for the same reason as at 1.5.5, 1.5.6 and
           # 1.6.1 -- 57 against 57 leaves no room, so the gate would be RED ON
           # ARRIVAL.
-          FLOOR=870
+          # RE-DERIVED IN THE 1.6.3 FIX ROUND, AND THE GATE ANNOUNCED IT AN
+          # ELEVENTH TIME. test_release_floor_is_derived_from_the_current_suite
+          # went red on FLOOR=870 before this file was opened. 870 sat exactly
+          # on its band's lower bound (the block above says so), so the fix
+          # round's rewrite of tests/test_round_status_consistency.py -- which
+          # takes that module from 20 collected tests to 56 -- pushed the bound
+          # past it. 20 and 56 are both counts read off `pytest
+          # tests/test_round_status_consistency.py --collect-only -q`, and the
+          # difference, 36, is exactly the movement in the whole suite's
+          # collected total: 1,810 at the build round's tip, 1,846 here.
+          #
+          # Derived from a REAL SDIST BUILD with this job's exact invocation,
+          # on 3.10.12: a copy of the tree with no egg-info, `python -m build
+          # --sdist`, the tarball installed with [dev] into a fresh venv, ONLY
+          # tests/, streamlit_app/, README.md and pyproject.toml copied out of
+          # it into a directory with NO nmtcapp/, `import nmtcapp` confirmed to
+          # resolve to site-packages, and the breakdown read off the junit
+          # report rather than off the terminal:
+          #
+          #     collected under -m "not wheel" 1,845
+          #     skipped in the sdist             -57
+          #     EXECUTED                       1,788
+          #     half                             894
+          #     rounded down                     890
+          #
+          # The resulting band is [890, 924].
+          #
+          # SKIP HEADROOM IS STILL EXACTLY ZERO, AND STILL NOT BOUGHT. The same
+          # run skipped exactly 57 -- the value MAX_SDIST_SKIPS already carries
+          # and the same 57 measured at 1.5.4 through 1.6.3's build round.
+          # THE REWRITTEN GATE STILL SKIPS NOTHING HERE, AND IT NOW READS ONE
+          # MORE TREE. tests/test_round_status_consistency.py added
+          # streamlit_app/ to its corpus, resolved as `../streamlit_app` from
+          # the module -- which is exactly the resolution this environment
+          # supports, because the job copies streamlit_app/ out of the tarball
+          # beside tests/. (nmtcapp/ deliberately is NOT copied out, which is
+          # why that half of the corpus is still resolved through
+          # `nmtcapp.__file__`.) Verified by reading the per-module skip
+          # breakdown off the junit report: that module appears nowhere in it,
+          # and every one of the 57 belongs to a module that already skipped at
+          # the build round.
+          #
+          # AND STILL OPEN, RECORDED A SEVENTH TIME: NOTHING MACHINE-ENFORCES
+          # THE MEASURED SKIP COUNT AGAINST THIS CONSTANT. test_small_claims
+          # bounds the CONSTANT; nothing compares the MEASUREMENT above to it.
+          # Still not added, and for the same reason as at 1.5.5, 1.5.6, 1.6.1
+          # and 1.6.3's build round -- 57 against 57 leaves no room, so the
+          # gate would be RED ON ARRIVAL.
+          FLOOR=890
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()
