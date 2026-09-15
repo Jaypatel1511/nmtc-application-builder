@@ -288,7 +288,10 @@ Measured: *"The CY 2026 Allocation Application is not yet open."* carries
 vocabulary (**True**) and did **not** match the shape (**False**). It is
 selected, so a human has to classify it — but it could be waved through as `()`
 on a 60-character reason with **nothing behind it**. And *"not yet open"* is one
-of the five false sentences F3 above removed from `streamlit_app/utils.py`.
+of the five false sentences F3 above removed from shipped source. (The five
+are in five different modules, one each, as F3's own table above shows; only
+one of them is in `streamlit_app/utils.py`, which is what this paragraph used
+to say about all five.)
 
 **Two hand-typed copies of one word list, in a repository whose doctrine is one
 copy derived, is the finding; the missing word is the symptom.**
@@ -300,13 +303,50 @@ third named constant both regexes consume is not needed. The new
 vocabulary's pattern is *in* the shape's, then walks every alternative in it,
 builds a probe sentence from the stem and requires the shape to complete on it.
 
-**It is green by construction while the derivation holds, and that is precisely
-its job: it reddens the moment somebody retypes the list.** Seen to fail —
+**Both of those assertions run on the COMPILED patterns, so what they detect is
+that two copies have DIVERGED — not that two copies exist.** Seen to fail —
 mutation **M10** puts the old literal back: **2 failed, 56 passed** (the
 agreement gate, and the new `not yet open` shape case). Mutation **M11** deletes
 `\bopen\w*` from the one remaining copy: **2 failed, 56 passed**
 (`test_every_registry_key_is_found_in_the_corpus`, reporting 4 dead keys, and
 the same shape case). Both were restored byte-identically afterwards.
+
+**A BYTE-IDENTICAL RETYPE IS INVISIBLE TO A CONTAINMENT TEST, AND THIS ENTRY
+CLAIMED OTHERWISE UNTIL FIX ROUND 3.** The sentence that stood above —
+*"it reddens the moment somebody retypes the list"* — was false, and the
+identical sentence in the test's own docstring was false with it. The final
+audit replaced the splice with a hand-typed copy of exactly the same
+alternation — same bytes, same meaning, two copies again — and the module
+reported **58 passed**. The stem walk could not help: it iterates
+`_STATUS_VOCABULARY.pattern.split("|")`, so it probes whatever the vocabulary
+currently says, which a byte-identical copy agrees with entirely.
+
+**Fix round 3 makes the claim true by strengthening the test, not by softening
+the sentence.** The same test now parses its own module with `ast`, requires
+exactly one top-level `_ASSERTION_SHAPE` assignment, and requires that
+assignment's own expression to contain `_STATUS_VOCABULARY.pattern` as an
+attribute access. Mutation **M12**, the byte-identical retype: **1 failed, 57
+passed**, restored byte-identically afterwards.
+
+**What the source check cannot see is written into the docstring rather than
+left to be discovered**, because a source-level gate hunting for one spelling
+is the same shape as the word list it guards. It cannot see an alias
+(`_V = _STATUS_VOCABULARY` and then `_V.pattern`), any expression that merely
+*evaluates* to the same alternation (a `"|".join(...)`, a helper, a second
+`re.compile` whose `.pattern` is spliced in), or a third copy in any other
+file. It reads the AST rather than the bytes, so whitespace and line breaks
+between the name and the attribute are immaterial — that part is deliberate.
+The runtime containment assertion is kept beside it: it is the one that fires
+when the two copies diverge, which is how they came apart the first time.
+
+**And two hand-typed counts in the same module are now bound.**
+`test_the_assertion_shape_catches_the_restatements_it_missed`'s docstring said
+*"Three of the seven sentences below"* while `_SHAPE_MUST_MATCH` had grown to
+**eight** — fix round 2 added the `not yet open` entry and left the count
+behind. The *"three"* was still correct. Both numbers are now re-derived in the
+test body — the eight from `_SHAPE_MUST_MATCH`, the three from the build
+round's own pattern — so neither can go stale silently again. **No new test
+function was added: the collected count does not move in this round.**
 
 **What the wider shape costs, measured rather than assumed.** It matches
 **zero** additional registry segments; every `()` entry outside `QUOTED_HISTORY`
@@ -408,8 +448,8 @@ headline; literal `**` leaking into Word (3 paragraphs) and PDF (page 14); and
 adding 3.13/3.14 to the CI matrix, which touches branch-protection settings and
 is its own change.
 
-**And four more, found by the 1.6.3 re-audit and fix round 2, all in the new
-gate, all recorded for 1.7.0:**
+**And five more, found by the 1.6.3 re-audit and fix rounds 2 and 3, all in the
+new gate, all recorded for 1.7.0:**
 
 1. **`QUOTED_HISTORY` cannot tell a quotation from a false claim somebody
    labelled historical.** Proven by the re-audit: the exact 1.6.2 defect
@@ -444,6 +484,24 @@ gate, all recorded for 1.7.0:**
    **red on arrival**, which is why this is recorded here rather than added.
 4. `_round_provenance` paragraph 2's heading *"ONE OF THEM HAS ALREADY CLOSED"*
    against its body's *"Neither route is still open"*.
+5. **Widening `_STATUS_VOCABULARY` now widens the `()` backstop as a side
+   effect, and nobody wrote that down.** Splicing the vocabulary into
+   `_ASSERTION_SHAPE` (F4 above) created the coupling. Before it, adding a
+   spelling widened **selection** only — strictly more failures, which is the
+   design. Now it also widens the **hard bar on the `()` classification**,
+   which *removes* legitimate classifications. Measured: adding
+   `\bout\w*|\bdropped\b|\blive\w*` — three of the six words the gate's own
+   module docstring names as the next spellings — newly forbids *"The CY 2026
+   Allocation Application is outlined in Section B"*, *"…is outside the scope
+   of this tool"*, *"…is out of scope for Question 25"* and *"The CY 2026
+   NOAA is a live document"*, none of which assert anything about
+   publication. **Nothing in the tree is affected today** — **0** `()` registry
+   entries are newly forbidden and none of the four `_SHAPE_MUST_NOT_MATCH`
+   sentences newly match — which is why this is a carry and not a defect.
+   **The next spelling added must be checked against `_SHAPE_MUST_NOT_MATCH`
+   and the `QUOTED_HISTORY` budget, not only against the corpus.** It
+   interacts with carry 1: a shape false-positive has nowhere to go but
+   `QUOTED_HISTORY`, capped at **6** with **3** used.
 
 ---
 

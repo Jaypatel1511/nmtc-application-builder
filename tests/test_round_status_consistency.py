@@ -48,6 +48,24 @@ Widening the word list buys one round. ``released``, ``issued``, ``out``,
 ``available``, ``dropped``, ``live`` are all next, and every version of the
 list fails SILENTLY -- which is the one property this gate exists to remove.
 
+AND WIDENING IT NOW COSTS SOMETHING IT DID NOT COST BEFORE (1.6.3 fix round 3).
+``_ASSERTION_SHAPE`` splices ``_STATUS_VOCABULARY.pattern`` in rather than
+retyping it, so a word added to that list widens the HARD BAR on the ``()``
+classification as well as the net. Widening the net only ever ADDS failures,
+which is the design; widening the bar REMOVES legitimate ``()``
+classifications. Measured on this tree: adding
+``\\bout\\w*|\\bdropped\\b|\\blive\\w*`` -- three of the six words named just
+above -- newly forbids "The CY 2026 Allocation Application is outlined in
+Section B", "... is outside the scope of this tool", "... is out of scope for
+Question 25" and "The CY 2026 NOAA is a live document", none of which assert
+anything about publication. Nothing in this tree is affected today: 0 ``()``
+registry entries are newly forbidden and none of the four
+``_SHAPE_MUST_NOT_MATCH`` sentences newly match, which is why this is a carry
+and not a defect. THE NEXT SPELLING ADDED MUST BE CHECKED AGAINST
+``_SHAPE_MUST_NOT_MATCH`` AND THE ``QUOTED_HISTORY`` BUDGET, not only against
+the corpus -- a shape false-positive has nowhere to go but ``QUOTED_HISTORY``,
+which is capped at 6 with 3 used.
+
 WHAT CHANGED, AND IT IS THE WHOLE POINT OF THIS MODULE
 
 **Selection is on the SUBJECT, not on how the claim is spelled.** The subject
@@ -1230,13 +1248,18 @@ _MIN_CORPUS_SEGMENTS = 9500           # measured 13,177
 #: "The CY 2026 Allocation Application is not yet open." carried status
 #: vocabulary (so it cost a written reason) and did NOT match this shape (so
 #: it could be waved through as ``()`` with nothing behind it) -- and "not yet
-#: open" is one of the five false sentences THIS release removed from
-#: ``streamlit_app/utils.py``. Two hand-typed copies of one word list, in a
-#: repository whose doctrine is one copy derived, is the finding; the missing
-#: word is the symptom. ``_STATUS_VOCABULARY.pattern`` is a top-level
-#: alternation, so splicing it inside ``(?: )`` keeps its meaning exactly, and
+#: open" is one of the five false sentences THIS release removed from SHIPPED
+#: SOURCE. (The five are in five different modules, one each. This note used to
+#: attribute all five to ``streamlit_app/utils.py``, which holds exactly one of
+#: them.) Two hand-typed copies of one word list, in a repository whose
+#: doctrine is one copy derived, is the finding; the missing word is the
+#: symptom. ``_STATUS_VOCABULARY.pattern`` is a top-level alternation, so
+#: splicing it inside ``(?: )`` keeps its meaning exactly, and
 #: ``test_the_assertion_shape_does_not_retype_the_status_vocabulary`` goes red
-#: if anybody retypes it.
+#: if the assignment below stops naming ``_STATUS_VOCABULARY.pattern`` -- it
+#: reads THIS FILE'S SOURCE, because a check on the compiled patterns cannot
+#: tell a splice from a byte-identical retype. Read that test's docstring for
+#: what the source check still cannot see: it is narrow on purpose.
 #:
 #: THE COST IS REAL AND IS ACCEPTED. ``\bopen\w*`` also matches the
 #: non-publication sense of "open", so a future sentence like "The CY 2026
@@ -1450,6 +1473,19 @@ _SHAPE_MUST_NOT_MATCH = (
     "CY 2026 is a $5 billion single round.",
 )
 
+#: THE BUILD ROUND'S PATTERN, KEPT AS A TEST INPUT. The docstring below claims
+#: a count ("three of the eight sentences below"), and a hand-typed count with
+#: nothing asserting it is the defect shape this repository keeps being bitten
+#: by -- the "seven" that stood there was stale from the moment fix round 2
+#: added an eighth entry. Both numbers are now re-derived from
+#: ``_SHAPE_MUST_MATCH`` and from this pattern rather than counted by hand.
+#: It hard-types "CY 2026" on purpose: it is a superseded artifact being
+#: replayed, not a claim this package makes.
+_BUILD_ROUND_SHAPE = re.compile(
+    r"CY 2026\s+(?:NOAA|Allocation Application|Application Materials)",
+    re.IGNORECASE,
+)
+
 
 @pytest.mark.parametrize("sentence", _SHAPE_MUST_MATCH)
 def test_the_assertion_shape_catches_the_restatements_it_missed(sentence):
@@ -1457,10 +1493,31 @@ def test_the_assertion_shape_catches_the_restatements_it_missed(sentence):
 
     The build round's pattern was
     ``CY 2026\\s+(?:NOAA|Allocation Application|Application Materials)``, which
-    required the two to touch. Three of the seven sentences below are the same
+    required the two to touch. Three of the eight sentences below are the same
     claim with a word in between, and one of them is a spelling this repository
     already uses.
+
+    BOTH NUMBERS IN THAT SENTENCE ARE MACHINE-CHECKED BELOW (1.6.3 fix round
+    3). It said "seven" from the moment fix round 2 added an eighth entry, and
+    nothing was watching. The two assertions re-derive the eight from
+    ``_SHAPE_MUST_MATCH`` and the three from ``_BUILD_ROUND_SHAPE``, so the
+    prose cannot go stale silently again. They are stated inside this
+    parametrized test, and therefore re-run once per sentence, rather than as
+    a new test function: this docstring is what they exist to keep honest.
     """
+    assert len(_SHAPE_MUST_MATCH) == 8, (
+        f"the docstring above says EIGHT sentences; _SHAPE_MUST_MATCH now has "
+        f"{len(_SHAPE_MUST_MATCH)}. Update the sentence in the same commit "
+        "that changes the tuple -- a count in prose with nothing asserting it "
+        "is the defect this module's release exists for."
+    )
+    moved_apart = [s for s in _SHAPE_MUST_MATCH
+                   if not _BUILD_ROUND_SHAPE.search(s)]
+    assert len(moved_apart) == 3, (
+        f"the docstring above says THREE of these sentences put a word "
+        f"between the round and the instrument; {len(moved_apart)} do:"
+        f"\n\n    " + "\n    ".join(repr(s) for s in moved_apart)
+    )
     assert list(_ASSERTION_SHAPE.finditer(sentence)), (
         "_ASSERTION_SHAPE does not match a restatement of the sentence this "
         f"gate exists for, so that restatement could be waved through as `()`:"
@@ -1494,11 +1551,41 @@ def test_the_assertion_shape_does_not_retype_the_status_vocabulary():
     a 60-character reason with nothing behind it. "not yet open" is one of the
     five false sentences this release removed from shipped source.
 
-    THIS TEST IS GREEN BY CONSTRUCTION WHILE THE DERIVATION HOLDS, AND THAT IS
-    ITS WHOLE JOB: it goes red the moment somebody retypes the alternation
-    here. Seen to fail -- restoring the literal word list this pattern used to
-    carry turns it red; the command and the count are in the fix round's
-    commit message.
+    THE RUNTIME CHECK ALONE COULD NOT SEE A RETYPE, AND THIS DOCSTRING SAID IT
+    COULD (corrected in 1.6.3 fix round 3). The first assertion below is a
+    containment test on two COMPILED patterns, so what it detects is that two
+    copies have DIVERGED -- not that two copies exist. The 1.6.3 re-audit
+    replaced the splice with a BYTE-IDENTICAL hand-typed literal and this
+    module reported 58 passed. The stem walk does not help either: it iterates
+    ``_STATUS_VOCABULARY.pattern.split("|")``, so it probes whatever the
+    vocabulary currently says, and a byte-identical copy agrees with all of it.
+
+    SO THE DERIVATION IS ASSERTED ON THE SOURCE AS WELL. This test parses its
+    own module, finds the single top-level ``_ASSERTION_SHAPE`` assignment and
+    requires that assignment's own expression to contain
+    ``_STATUS_VOCABULARY.pattern`` as an attribute access. Seen to fail: the
+    byte-identical retype above, applied to this tree with that assertion in
+    place, gives 1 failed / 57 passed.
+
+    WHAT THE SOURCE CHECK CANNOT SEE, stated narrowly on purpose -- a
+    source-level gate hunting for one spelling is the same shape as the word
+    list it is guarding, and overclaiming it a second time is how this
+    docstring got here:
+
+      * IT CANNOT SEE AN ALIAS. ``_V = _STATUS_VOCABULARY`` and then
+        ``_V.pattern``, or any expression that merely EVALUATES to the same
+        alternation -- a ``"|".join(...)``, a helper function, a second
+        ``re.compile`` whose ``.pattern`` is spliced in -- satisfies this
+        assertion while being a second copy in every sense that matters.
+      * IT LOOKS AT ONE ASSIGNMENT IN ONE FILE. A third copy of this word list
+        anywhere else in the repository is outside both assertions.
+      * It reads the AST, not the bytes, so whitespace or a line break between
+        the name and the attribute does not matter. That part is deliberate:
+        a byte-level search for one spelling would be the same bug again.
+
+    Both assertions are kept. The containment one is what fires when the two
+    copies DIVERGE, which is how they came apart the first time; the source
+    one is what fires when a second copy is created at all.
     """
     assert _STATUS_VOCABULARY.pattern in _ASSERTION_SHAPE.pattern, (
         "_ASSERTION_SHAPE no longer consumes _STATUS_VOCABULARY.pattern "
@@ -1509,6 +1596,43 @@ def test_the_assertion_shape_does_not_retype_the_status_vocabulary():
         "selected but not backstopped.\n\n"
         f"  vocabulary: {_STATUS_VOCABULARY.pattern}\n"
         f"  shape:      {_ASSERTION_SHAPE.pattern}"
+    )
+
+    with open(__file__, encoding="utf-8") as handle:
+        module_source = handle.read()
+    shape_assignments = [
+        node
+        for node in ast.parse(module_source).body
+        if isinstance(node, ast.Assign)
+        and any(
+            isinstance(target, ast.Name) and target.id == "_ASSERTION_SHAPE"
+            for target in node.targets
+        )
+    ]
+    assert len(shape_assignments) == 1, (
+        f"this module has {len(shape_assignments)} top-level "
+        "_ASSERTION_SHAPE assignments; the source check below reads exactly "
+        "one and will not guess which of several is the live one."
+    )
+    spliced = [
+        node
+        for node in ast.walk(shape_assignments[0])
+        if isinstance(node, ast.Attribute)
+        and node.attr == "pattern"
+        and isinstance(node.value, ast.Name)
+        and node.value.id == "_STATUS_VOCABULARY"
+    ]
+    assert spliced, (
+        "_ASSERTION_SHAPE's own SOURCE no longer names "
+        "`_STATUS_VOCABULARY.pattern`, so the alternation has been RETYPED "
+        "here and this repository is maintaining one word list in two places "
+        "again. The containment assertion above cannot catch this by itself: "
+        "a byte-identical retype passes it, which is exactly what the 1.6.3 "
+        "re-audit demonstrated. Splice the vocabulary in; do not copy its "
+        "text.\n\n"
+        "  (What this check cannot see is written in the docstring: an alias, "
+        "any expression that merely evaluates to the same alternation, and a "
+        "copy in any other file all pass it.)"
     )
     for alternative in _STATUS_VOCABULARY.pattern.split("|"):
         stem = alternative.replace(r"\b", "").replace(r"\w*", "")
