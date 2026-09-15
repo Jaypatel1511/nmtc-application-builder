@@ -358,3 +358,68 @@ def test_the_floor_field_is_tri_state_not_a_bool():
         f"do not lower pyproject.toml's floor."
     )
     assert typing.Optional[bool] == typing.Union[bool, None]  # pin the premise
+
+
+def test_every_double_neutral_matches_the_librarys_own_default():
+    """A double's "neutral" must be the LIBRARY's neutral, not a plausible one.
+
+    THE HOLE THIS CLOSES, FOUND BY MUTATION (1.6.2 fix round).
+    ``tests/mapper_doubles._NEUTRAL`` gained three entries when nmtc-mapper
+    0.6.1 added the OZ 2.0 fields. ``_defaults()`` fails loud on a field with
+    NO entry -- that is what stopped the suite and is the mechanism working --
+    but it says nothing at all about whether the VALUE chosen is neutral.
+    Measured: flipping ``is_oz2_nomination_eligible`` to ``False`` and running
+    the whole suite reddened **nothing**.
+
+    That is the expensive direction. ``is_opportunity_zone``'s ``False`` never
+    occurs upstream; ``is_oz2_nomination_eligible``'s ``False`` is, in the
+    library's own words, "a real published fact about 60,197 tracts". A double
+    answering ``False`` where the library answers ``None`` asserts a published
+    federal negative about a fixture address -- a fabricated negative, which is
+    the defect class ``mapper_doubles`` exists to refuse, produced by the
+    module written to refuse it.
+
+    THE ANSWER IS READ OFF THE INSTALLED LIBRARY, NOT LISTED HERE. Every field
+    ``EligibilityResult`` declares WITH A DEFAULT has already had its neutral
+    chosen upstream, by the author who knows what the field means; the double
+    must agree with it. Fields with no default are the double's own call and
+    are not constrained here -- there is nothing upstream to compare them to.
+
+    This is the same shape as the contract tests above: introspect the library,
+    do not restate it.
+    """
+    import dataclasses
+
+    from nmtcmapper.eligibility.checker import EligibilityResult
+
+    from tests.mapper_doubles import _NEUTRAL
+
+    disagree = []
+    checked = 0
+    for field in dataclasses.fields(EligibilityResult):
+        if field.default is dataclasses.MISSING:
+            continue
+        checked += 1
+        if field.name not in _NEUTRAL:
+            continue        # _defaults() already raises on this, loudly
+        if _NEUTRAL[field.name] != field.default:
+            disagree.append(
+                f"{field.name}: the library defaults to "
+                f"{field.default!r}; mapper_doubles neutralises to "
+                f"{_NEUTRAL[field.name]!r}"
+            )
+
+    assert checked, (
+        "the installed EligibilityResult declares NO field with a default, so "
+        "this gate compared nothing. Either the library changed shape or the "
+        "introspection did; establish which before deleting this line."
+    )
+    assert not disagree, (
+        f"{len(disagree)} double neutral(s) disagree with the installed "
+        "nmtc-mapper's own default:\n  " + "\n  ".join(disagree) + "\n\n"
+        "A default is the library author's statement of what the field says "
+        "when nothing was determined. A double that answers something else "
+        "answers CONFIDENTLY where the real package abstains, and every test "
+        "built on it is then validating the mock. Change the neutral, not "
+        "this gate."
+    )

@@ -406,6 +406,16 @@ def test_every_hard_deadline_the_constants_carry_reaches_the_note():
     binds the tuple to the rendered text: anything the gate schedules against
     must be something a CDE can actually read.
     """
+    assert rp.HARD_EXTERNAL_DEADLINES, (
+        "HARD_EXTERNAL_DEADLINES is EMPTY. Everything below this line passes "
+        "on nothing: `missing` is [] over an empty tuple and the assertion "
+        "holds vacuously.\n\n"
+        "This is the anti-dodge gate, so emptying the tuple is precisely the "
+        "dodge it exists to catch, and without this line it is the ONE dodge "
+        "it could not see. A note that carries no hard external deadline at "
+        "all is not a passing state; it is a note with nothing to schedule "
+        "the re-check against."
+    )
     note = rp.round_provenance_note()
     missing = [
         f"{what}: {text!r}"
@@ -418,6 +428,68 @@ def test_every_hard_deadline_the_constants_carry_reaches_the_note():
         + "\n\nThe re-check horizon is scheduled against this tuple. A "
         "deadline that is in the tuple and not in the note is one the gate "
         "watches and the reader never sees."
+    )
+
+
+def test_no_federal_event_is_stated_as_having_happened_before_it_has():
+    """B3 (1.6.2). The note stated a FUTURE federal event in the past tense.
+
+    WHAT SHIPPED ON THE BRANCH. Paragraph 0 read "THE CY 2026 ROUND HAS
+    OPENED" and "the CY 2026 NOAA IS PUBLISHED" -- both in the present perfect
+    -- while naming a publication date of 15 Sep 2026 and stamping the
+    document ``LAST_VERIFIED = 2026-09-14``. On 14 Sep 2026 the package
+    asserted, in all four formats, that a thing scheduled for tomorrow had
+    already happened.
+
+    THE CALENDAR CLEARED IT AND THE CALENDAR IS NOT A GATE. By 15 Sep 2026 the
+    three sentences are true and can never be false again for THIS round. That
+    is exactly why this test is here: the defect was not the sentences, it was
+    that nothing in the suite compared a stated federal event against its own
+    date, so the next round will reproduce it the first time somebody writes
+    the note between the Federal Register FILING and its PUBLICATION -- which
+    is the natural moment to write it, because that is when the document
+    becomes readable.
+
+    THE DATE IS NOT WRITTEN IN THIS FILE. It is read from
+    ``NOAA_PUBLICATION_DATE`` and compared against the clock, so the gate
+    learns the next round's date instead of memorising this one's.
+
+    READ OFF THE RENDERED NOTE, NOT OFF THE BOOLEAN. ``round_provenance_
+    paragraphs`` states the round has opened in plain prose; no branch in it
+    reads ``UPCOMING_NOAA_PUBLISHED``, so a gate on the constant alone would
+    watch a variable the sentence does not consult.
+
+    THE OTHER DIRECTION IS DELIBERATELY NOT ASSERTED HERE. "The date has
+    passed and the package still says the NOAA has not published" is
+    understatement, not a false federal claim, and
+    ``test_the_round_state_is_pinned`` already fails when either constant
+    moves. One property per gate.
+
+    AND ``LAST_VERIFIED`` IS NOT COMPARED TO IT EITHER, ON PURPOSE. It is
+    2026-09-14, a day BEFORE the publication date -- and that is legitimate: a
+    Federal Register document is on public inspection from its FILING, which
+    the note itself states as 14 Sep 2026. Gating verification against
+    publication would red-flag the correct practice of reading the filed
+    document.
+    """
+    today = _dt.date.today()
+    published = _iso(rp.NOAA_PUBLICATION_DATE)
+    note = rp.round_provenance_note()
+
+    stated_as_done = sorted(
+        phrase for phrase in ("ROUND HAS OPENED", "NOAA IS PUBLISHED")
+        if phrase in note
+    )
+    assert not (stated_as_done and published > today), (
+        f"the note states {stated_as_done} -- the present perfect, a thing "
+        f"that has ALREADY happened -- while NOAA_PUBLICATION_DATE is "
+        f"{rp.NOAA_PUBLICATION_DATE} and today is {today.isoformat()}. The "
+        f"event is {(published - today).days} day(s) in the FUTURE.\n\n"
+        "A CDE reading this document today is told a federal round has opened "
+        "when it has not. Either the date is wrong, or the sentence is early "
+        "and must be written in the future tense until the date arrives. A "
+        "document filed for public inspection is not yet published; the note "
+        "already carries both dates and can say which one it means."
     )
 
 

@@ -78,6 +78,61 @@ direction or the other, and both wrongs mislead a CDE. So the constant is split
 in two, each half carries its own verified date, and the note now distinguishes
 the round OPENING from the arrival of the instrument this package ENCODES.
 
+WHAT THE NOTE SAYS ABOUT $5 BILLION, AND WHAT IT NO LONGER SAYS (1.6.2 FIX)
+
+Through the first cut of this release the sentence read "it makes $5 billion
+available, **half the prior round**". The arithmetic is right and the
+implication is false, and THIS REPOSITORY'S OWN SOURCE SAYS WHY.
+``data/historical_awards`` carries ``"double_round": True`` on CY 2024-2025 and
+the comment above it reads:
+
+    THE KEY IS "CY2024-2025", NOT "CY2024". The announcement states the awards
+    are "a double round, covering 2024 and 2025". Filing a double round under a
+    single year beside four single rounds is what made $10 billion look like an
+    error against its $5 billion neighbours.
+
+$10 billion over TWO allocation years against $5 billion for ONE is the same
+annual rate. A CDE reading "half the prior round" concludes the program was cut
+in half and that competition has doubled -- a decision-relevant, false
+conclusion, in all four formats, while the same document set says elsewhere
+that the prior round "does not compare like-for-like with the single rounds
+beside it."
+
+THE CLAUSE IS DELETED AND NOTHING REPLACES IT. An annual-rate comparison would
+be a NEW inference, and this package does not make those; the NOAA states an
+amount and does not compare it to anything. So the note states the amount.
+
+The clause had also fallen out of a gate's scope in the rewrite that carried it
+forward: it previously named "the CDFI Fund", which put it in
+``tests/attribution_allowlist.txt``; the 1.6.2 wording dropped the Fund and the
+entry went with it while the claim went on rendering. That is recorded here
+because the lesson is not about this clause -- a rewrite that drops a scanner's
+trigger word silently narrows the scanner.
+
+WHAT THE CERTIFICATION PARAGRAPH NO LONGER REASONS FOR THE READER (1.6.2 FIX)
+
+Two statements went past the NOAA and are gone:
+
+  * "it was the only way to become certified in time". The NOAA states TWO
+    eligibility routes. It does not state that AMIS is the only certification
+    channel.
+  * "which organizations meet the ... as-of date is already fixed". That the
+    qualifying set is closed is this package's inference, not the NOAA's
+    statement.
+
+What is left is arithmetic on two dates the NOAA does state: the AMIS window
+closed, and the as-of date has arrived.
+
+"and no cure" went for the same reason. The NOAA's cure language carries
+"except, if necessary and at the request of the CDFI Fund", and it governs
+missing materials inside a SUBMITTED application -- a different object from the
+certification eligibility this paragraph is about. The package's sentence was
+unattributed rather than contradicted, and it errs safe; it is still a claim
+this package cannot source, so it is narrowed to "There is no late filing"
+rather than attributed. Attributing it would mean quoting a Federal Register
+sentence that could not be retrieved from the environment this fix was built
+in, which is the worse of the two options offered.
+
 WHAT THIS RELEASE DELIBERATELY DOES NOT CHANGE
 
 ``RECHECK_ITEMS`` still names CY 2024-2025 figures and the note still says so.
@@ -312,7 +367,7 @@ def round_provenance_paragraphs() -> tuple:
         f"HAS OPENED, BUT ITS APPLICATION HAS NOT: the {UPCOMING_ROUND} NOAA "
         f"IS PUBLISHED — Federal Register document {NOAA_FR_DOCUMENT_NUMBER}, "
         f"publication date {_us_date(NOAA_PUBLICATION_DATE)} — and it makes "
-        f"{NOAA_ALLOCATION_AUTHORITY} available, half the prior round, with "
+        f"{NOAA_ALLOCATION_AUTHORITY} available, with "
         f"applications due {APPLICATION_DEADLINE_TEXT}. The "
         f"{UPCOMING_ROUND} Allocation Application and its Application "
         "Materials are NOT YET PUBLISHED, so the instrument encoded here is "
@@ -337,12 +392,11 @@ def round_provenance_paragraphs() -> tuple:
         f"{_us_date(NOAA_PUBLICATION_DATE)}, OR to have submitted its CDE "
         "Certification Application through AMIS by "
         f"{AMIS_CDE_CERTIFICATION_DEADLINE_TEXT}. Neither route is still "
-        "open. The AMIS window closed on "
-        f"{_us_date(AMIS_CDE_CERTIFICATION_DEADLINE)} and it was the only "
-        "way to become certified in time, so which organizations meet the "
-        f"{_us_date(NOAA_PUBLICATION_DATE)} as-of date is already fixed. An "
+        "open: the AMIS window closed on "
+        f"{_us_date(AMIS_CDE_CERTIFICATION_DEADLINE)}, and the as-of date "
+        f"the NOAA sets, {_us_date(NOAA_PUBLICATION_DATE)}, has arrived. An "
         f"organization that did neither CANNOT APPLY IN {UPCOMING_ROUND}. "
-        "There is no late filing and no cure; its next opportunity is a "
+        "There is no late filing; its next opportunity is a "
         "future round.",
 
         # THE THIRD OBLIGATION (1.5.0 F7). The Fund's section is headed
