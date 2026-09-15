@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.6.3] — UNRELEASED — DATE THIS LINE AT TAG TIME
+## [1.6.3] — 2026-09-15
 
 **PATCH. ONE FALSE SENTENCE AND ONE GATE.** No score formula, weight, band,
 threshold or grade moves, and no score moves. The only rendered text that
