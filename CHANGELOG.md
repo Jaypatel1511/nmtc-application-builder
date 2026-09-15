@@ -5,6 +5,153 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.6.3] — UNRELEASED — DATE THIS LINE AT TAG TIME
+
+**PATCH. ONE FALSE SENTENCE AND ONE GATE.** No score formula, weight, band,
+threshold or grade moves, and no score moves. The only rendered text that
+changes is the last sentence of the Question 25 basis note, on all four
+formats.
+
+> **6 insertions, 5 deletions** in `tests/rendered_baseline/`, measured
+> `e4a415e`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+
+### What happened
+
+1.6.2 was the release that corrected this package's round provenance. It
+rewrote `renderers/_round_provenance` to say the CY 2026 **NOAA is published**
+— Federal Register document **2026-18883**, publication date **15 Sep 2026** —
+while the CY 2026 **Allocation Application is not**.
+
+It left the opposite sentence live in a **different module**. The last sentence
+of `renderers/_question_25.Q25_BASIS_TEXT` still read:
+
+> *"(The **CY 2026 NOAA** is not yet published.)"*
+
+and in every format that sentence reaches the reader **before** the note that
+corrects it. Measured against the published 1.6.2 wheel:
+
+| format | the stale sentence | its own correction |
+|---|---|---|
+| PDF | page 8 of 27 | page 26 of 27 |
+| Excel | `Q25 Basis Note`!A9 | `Round Provenance`!A4 |
+| Word | table 7 of 17, row 8 | paragraph 149 of 149 |
+| Markdown | line 130 of 445 | line 443 of 445 |
+
+And `Round Provenance`!A2 claimed jurisdiction over exactly the sheet that
+contradicted it — *"This applies to every round-specific citation in this
+workbook, including the 'Q25 Basis Note' sheet."* It did not.
+
+A CDE working Section B, which is where the basis note lives and where it is
+meant to be read, reached the stale sentence 18 pages, 3 sheets or 313 lines
+before its correction and had no reason to keep going. The only conclusion
+available to that reader is *no round is open, there is no deadline yet*. The
+CY 2026 deadline is **5:00 p.m. ET on 10 Nov 2026** — 56 days after that
+document's own `Prepared:` date.
+
+Every gate stayed green. `tests/test_round_provenance.py` reads the note
+`_round_provenance` renders and nothing else, so a round-status sentence in
+another module was outside every scanner in the package. **A fact with copies,
+one copy updated, and nothing looking at the rest** — the enumeration failure
+of nmtc-mapper 0.6.0, in a new package.
+
+### F1 — the sentence is REPLACED, not deleted
+
+`renderers/_question_25.py:377-379`, the last sentence of `Q25_BASIS_TEXT`:
+
+| | |
+|---|---|
+| **before** | `(The CY 2026 NOAA is not yet published.)` |
+| **after** | `(Those area lists are the CY 2024-2025 Application's; the CY 2026 Allocation Application is not yet published.)` |
+
+The parenthetical was doing real work. The sentence before it tells the CDE to
+compute both shares *"against the Application's own area lists"*, and the
+parenthetical says **which Application's**. That intent is still valid; what
+changed on 15 Sep 2026 is that the **NOAA** published while the **Application**
+did not. So the replacement keeps the intent, agrees with
+`UPCOMING_APPLICATION_PUBLISHED` (`False`), and makes **no claim at all** about
+the NOAA, whose status belongs to `_round_provenance` and to nothing else.
+
+`_question_25.py`'s module docstring is deliberately untouched. Its *"the CY
+2026 **Application** is not yet published"* is TRUE and stays — which is why
+the gate below keys on **NOAA vs Application** rather than on the phrase "not
+yet published", which would flag both.
+
+### F2 — the gate: `tests/test_round_status_consistency.py`
+
+`UPCOMING_NOAA_PUBLISHED` and `UPCOMING_APPLICATION_PUBLISHED` are a fact with
+copies. This binds every copy to them, in two stages over one corpus: the four
+`tests/rendered_baseline/*.txt` projections and every string literal and
+docstring in `nmtcapp/` except `_round_provenance.py` itself, which is the
+authority.
+
+**Stage 1 — completeness, and it is the stage that catches the next one.**
+Whitespace is normalised (the corpus is hard-wrapped; a raw-line scan misses
+most of the note), the text is segmented into sentences, and every segment
+carrying **both** a publication-status word and a round word must appear in a
+module-level registry keyed on its **exact text**. An unregistered segment
+FAILS, quoting itself. This is not a list of approved spellings — that shape
+passes every sentence nobody thought of, which is the only kind that has caused
+a defect here, and it is the shape this portfolio has shipped eight times.
+
+**Stage 2 — correctness.** Each registered claim's polarity is asserted against
+the constant it is about. `("NOAA", False)` fails while `UPCOMING_NOAA_PUBLISHED`
+is `True`. This is the assertion that would have gone red on 1.6.2's tree.
+
+Anti-vacuity is asserted rather than assumed, because a scan that selects
+nothing and a scan that finds no violations are the same green: the selection
+floor, the corpus floor and the source-walk floor are all measured and written
+down (32 occurrences, 11 distinct segments, 70 modules, 9,110 corpus sentences
+on 15 Sep 2026); every registry key must still be found in the corpus, so a
+dead entry fails; each of the four rendered formats must contribute at least
+one claim; both subjects and both polarities must be represented; and the one
+escape hatch — classifying a segment as asserting nothing — costs a written
+reason and may not match the sentence shape of the defect itself.
+
+**Four mutations were run against it and each one's command and red count is
+in the 1.6.3 commit message.** A gate never seen to fail is not evidence.
+
+What the gate cannot see is written into its docstring rather than left to be
+discovered: it reads sentences, so a round-status claim expressed as a table
+cell, a bare date or a number is invisible to it; it reads string literals and
+docstrings via `ast`, not comments; the baselines are a fresh render on every
+run but of **one fixture**; and it proves the package agrees with itself, not
+that the package is right about the world. That second thing is
+`test_the_round_claim_has_not_expired`, and `RECHECK_AFTER` is still
+**2026-10-05**.
+
+### What else moved, and why
+
+* `tests/invariant_allowlist.txt` — the Q25 basis note is an invariant line, so
+  the sentence is pinned there **three times** in masked form. All three are
+  re-derived with the allowlist's own `_mask`; none is hand-typed.
+* `tests/rendered_baseline/` — regenerated. The diff is the Q25 sentence and
+  nothing else, in all four files; the PDF gains a line because the longer
+  sentence rewraps from two lines to three.
+* `CITATION.cff`, `streamlit_app/requirements.txt` — version, which the
+  1.5.1 audit put a gate on.
+* `README.md`, `CONTRIBUTING.md`, `streamlit_app/app.py` — the published test
+  count, 1,790 → **1,810**.
+* The **1.6.2** entry's baseline-delta blockquote was `268ab26`..`HEAD`. `HEAD`
+  is not a fixed point: the moment any later commit touches
+  `tests/rendered_baseline/`, that claim silently becomes a claim about a
+  different diff and
+  `test_the_changelogs_rendered_baseline_delta_matches_the_tree` goes red for a
+  release that is already tagged. It is pinned to `e4a415e`, the 1.6.2 merge
+  commit, which is the value it was measured at. **Pin the previous entry's
+  `HEAD` as part of cutting the next release.**
+
+### Deliberately NOT in this release
+
+Carried, each verified in the 1.6.2 settle read and recorded for 1.7.0: Excel's
+four derived money columns and the undisclosed `0.83` / `0.025` assumptions;
+the round note printing after everything it qualifies and `## Methodology Note`
+missing from the markdown TOC; the Executive Summary's uncaveated **87%**
+headline; literal `**` leaking into Word (3 paragraphs) and PDF (page 14); and
+adding 3.13/3.14 to the CI matrix, which touches branch-protection settings and
+is its own change.
+
+---
+
 ## [1.6.2] — 2026-09-15
 
 **PATCH. A CORRECTNESS RELEASE WITH A FEDERAL DEADLINE BEHIND IT. No score
@@ -16,7 +163,7 @@ package remains sourced from the **CY 2024-2025** Application, which the note
 still says.
 
 > **45 insertions, 31 deletions** in `tests/rendered_baseline/`, measured
-> `268ab26`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+> `268ab26`..`e4a415e`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
 
 ### What happened
 

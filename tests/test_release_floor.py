@@ -449,7 +449,16 @@ def test_max_sdist_skips_is_bounded_from_ABOVE_as_well(collected_count):
 #: FILTERED PARAMETRIZE (``DISAGREEING``) and not a ``pytest.skip``, because
 #: MAX_SDIST_SKIPS has zero headroom and a skipping case would breach a
 #: ceiling this repository has declined to raise four times.
-CLAIMED_NEW_TEST_MODULES = 32
+#:
+#: 32 -> 33 at 1.6.3: tests/test_round_status_consistency.py, which binds every
+#: round-status sentence in the rendered output and in nmtcapp/ to
+#: _round_provenance's two published-state constants. IT ADDS NO SKIPPING CASE
+#: EITHER, and for the same reason -- headroom is still zero. It needs no tree
+#: the tarball prunes: the baselines it reads are tests/rendered_baseline/*.txt,
+#: which `recursive-include tests *.txt` ships, and it locates the package
+#: source through `nmtcapp.__file__` rather than as `../nmtcapp`, so in the
+#: sdist job it scans the INSTALLED package instead of skipping.
+CLAIMED_NEW_TEST_MODULES = 33
 
 
 def test_the_module_count_in_this_comment_matches_the_tree():
