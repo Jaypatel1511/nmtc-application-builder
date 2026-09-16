@@ -1143,7 +1143,126 @@ jobs:
           # bounds the CONSTANT; nothing compares the MEASUREMENT above to it.
           # Still not added, and for the same reason as at 1.5.5 and 1.5.6 --
           # 57 against 57 leaves no room, so the gate would be RED ON ARRIVAL.
-          FLOOR=860
+          # RE-DERIVED FOR 1.6.3, AND THE GATE ANNOUNCED IT AGAIN -- the
+          # TENTH consecutive cycle in which this number was caught by a check
+          # rather than by somebody re-reading the comment beside it.
+          # test_release_floor_is_derived_from_the_current_suite went red on
+          # FLOOR=860 before this file was opened. 860 sat exactly on its
+          # band's lower bound (the 1.6.1 close said so), so the one gate 1.6.3
+          # adds pushed the bound past it, exactly as 1.6.1's did.
+          #
+          # Derived from a REAL SDIST BUILD with this job's exact invocation,
+          # on 3.10.12: a copy of the tree with no egg-info, `python -m build
+          # --sdist`, the tarball installed with [dev] into a fresh venv, ONLY
+          # tests/, streamlit_app/, README.md and pyproject.toml copied out of
+          # it into a directory with NO nmtcapp/, `import nmtcapp` confirmed to
+          # resolve to site-packages, and the breakdown read off the junit
+          # report rather than off the terminal:
+          #
+          #     collected under -m "not wheel" 1,809
+          #     skipped in the sdist             -57
+          #     EXECUTED                       1,752
+          #     half                             876
+          #     rounded down                     870
+          #
+          # The tarball ran CLEAN on that build: 1,752 passed, 57 skipped, 1
+          # deselected, zero failures. The resulting band is [870, 904].
+          #
+          # SKIP HEADROOM IS STILL EXACTLY ZERO, AND STILL NOT BOUGHT. The same
+          # run skipped exactly 57 -- the value MAX_SDIST_SKIPS already carries
+          # and the same 57 measured at 1.5.4, 1.5.5, 1.5.6, 1.6.0 and 1.6.1.
+          # THE ONE TEST MODULE 1.6.3 ADDS SKIPS NOTHING, and it was designed
+          # not to: tests/test_round_status_consistency.py reads
+          # tests/rendered_baseline/*.txt, which MANIFEST.in ships, and it
+          # finds the package source through `nmtcapp.__file__` rather than as
+          # `../nmtcapp` -- so in THIS environment, where there is deliberately
+          # no nmtcapp/ beside tests/, it scans the INSTALLED package instead
+          # of taking the "no source tree" skip nine other modules take here.
+          # Verified by reading the per-module breakdown the next step prints,
+          # not by trusting the total: that module appears nowhere in it, and
+          # every one of the 57 belongs to a module that already skipped at
+          # 1.6.1. The ceiling was not raised.
+          #
+          # AND STILL OPEN, RECORDED A SIXTH TIME: NOTHING MACHINE-ENFORCES
+          # THE MEASURED SKIP COUNT AGAINST THIS CONSTANT. test_small_claims
+          # bounds the CONSTANT; nothing compares the MEASUREMENT above to it.
+          # Still not added, and for the same reason as at 1.5.5, 1.5.6 and
+          # 1.6.1 -- 57 against 57 leaves no room, so the gate would be RED ON
+          # ARRIVAL.
+          # RE-DERIVED IN THE 1.6.3 FIX ROUND, AND THE GATE ANNOUNCED IT AN
+          # ELEVENTH TIME. test_release_floor_is_derived_from_the_current_suite
+          # went red on FLOOR=870 before this file was opened. 870 sat exactly
+          # on its band's lower bound (the block above says so), so the fix
+          # round's rewrite of tests/test_round_status_consistency.py -- which
+          # takes that module from 20 collected tests to 58 -- pushed the bound
+          # past it. 20 and 58 are both counts read off `pytest
+          # tests/test_round_status_consistency.py --collect-only -q`, and the
+          # difference, 38, is exactly the movement in the whole suite's
+          # collected total: 1,810 at the build round's tip, 1,848 here. (56
+          # and 36 at the first fix round; fix round 2 added two tests to that
+          # module -- test_the_assertion_shape_does_not_retype_the_status_
+          # vocabulary and one more _SHAPE_MUST_MATCH case -- and the sdist
+          # build below was REDONE rather than adjusted on paper.)
+          #
+          # Derived from a REAL SDIST BUILD with this job's exact invocation,
+          # on 3.10.12: a copy of the tree with no egg-info, `python -m build
+          # --sdist`, the tarball installed into a venv carrying [dev], ONLY
+          # tests/, streamlit_app/, README.md and pyproject.toml copied out of
+          # it into a directory with NO nmtcapp/, `import nmtcapp` confirmed to
+          # resolve to site-packages, and the breakdown read off the junit
+          # report rather than off the terminal:
+          #
+          #     collected under -m "not wheel" 1,847
+          #     skipped in the sdist             -57
+          #     EXECUTED                       1,790
+          #     half                             895
+          #     rounded down                     890
+          #
+          # The tarball ran CLEAN on that build: 1,790 passed, 57 skipped, 1
+          # deselected, zero failures. The resulting band is [890, 923].
+          #
+          # THE UPPER BOUND ABOVE WAS HAND-TYPED AS 924 BY THE FIRST FIX ROUND
+          # AND WAS WRONG, IN THE ONE FILE WHOSE SUBJECT IS HAND-TYPED NUMBERS
+          # GOING STALE. The rule is `upper = collected // 2` --
+          # test_release_floor_is_derived_from_the_current_suite computes it,
+          # and at the 1,845 that block recorded it is 922, not 924. FLOOR was
+          # inside the real band either way, so CI never said so. Every other
+          # band recorded in this file was re-checked against its OWN recorded
+          # collected count in the same pass, as collected/upper -- 1,590/795,
+          # 1,606/803, 1,608/804, 1,617/808, 1,782/891, 1,809/904 -- and all
+          # six are correct. This was the only wrong one. In particular the
+          # PREVIOUS entry, [870, 904], is RIGHT: it records 1,809 collected
+          # under -m "not wheel", not the 1,810 the whole suite collected, and
+          # 1809 // 2 is 904.
+          #
+          # AND FLOOR=890 SITS EXACTLY ON THE LOWER BOUND AGAIN, as 870 and 860
+          # did before it. It goes red at 1,857 collected -- ten more tests --
+          # because floor_to_ten((1857 - 57) // 2) is 900. That is not a
+          # defect; it is this gate working, and it is the reason the next
+          # person to add ten tests will be sent back here.
+          #
+          # SKIP HEADROOM IS STILL EXACTLY ZERO, AND STILL NOT BOUGHT. The same
+          # run skipped exactly 57 -- the value MAX_SDIST_SKIPS already carries
+          # and the same 57 measured at 1.5.4 through 1.6.3's build round.
+          # THE REWRITTEN GATE STILL SKIPS NOTHING HERE, AND IT NOW READS ONE
+          # MORE TREE. tests/test_round_status_consistency.py added
+          # streamlit_app/ to its corpus, resolved as `../streamlit_app` from
+          # the module -- which is exactly the resolution this environment
+          # supports, because the job copies streamlit_app/ out of the tarball
+          # beside tests/. (nmtcapp/ deliberately is NOT copied out, which is
+          # why that half of the corpus is still resolved through
+          # `nmtcapp.__file__`.) Verified by reading the per-module skip
+          # breakdown off the junit report: that module appears nowhere in it,
+          # and every one of the 57 belongs to a module that already skipped at
+          # the build round.
+          #
+          # AND STILL OPEN, RECORDED A SEVENTH TIME: NOTHING MACHINE-ENFORCES
+          # THE MEASURED SKIP COUNT AGAINST THIS CONSTANT. test_small_claims
+          # bounds the CONSTANT; nothing compares the MEASUREMENT above to it.
+          # Still not added, and for the same reason as at 1.5.5, 1.5.6, 1.6.1
+          # and 1.6.3's build round -- 57 against 57 leaves no room, so the
+          # gate would be RED ON ARRIVAL.
+          FLOOR=890
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()

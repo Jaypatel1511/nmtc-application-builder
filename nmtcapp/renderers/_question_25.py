@@ -374,5 +374,7 @@ def _q25_basis_note_text() -> str:
         "severe-distress share already includes the deep-distress share. The "
         "CDE must compute both QLICI-denominated shares from its own QLICI "
         "amounts, against the Application's own area lists, before stating "
-        "either commitment. (The CY 2026 NOAA is not yet published.)"
+        "either commitment. (Those area lists are the CY 2024-2025 "
+        "Application's; the CY 2026 Allocation Application is not yet "
+        "published.)"
     )

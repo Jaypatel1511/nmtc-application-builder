@@ -266,8 +266,9 @@ severe-distress share already includes the
 deep-distress share. The CDE must compute both
 QLICI-denominated shares from its own QLICI
 amounts, against the Application's own area lists,
-before stating either commitment. (The CY 2026
-NOAA is not yet published.)
+before stating either commitment. (Those area lists
+are the CY 2024-2025 Application's; the CY 2026
+Allocation Application is not yet published.)
 Community Need Documentation
 [CDE TO COMPLETE: Document unmet capital need in the markets this pipeline
 serves. Supply the underlying evidence and cite each source by name, publisher and
