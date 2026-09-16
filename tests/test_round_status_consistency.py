@@ -230,7 +230,8 @@ WHAT THIS GATE CANNOT SEE -- read this before trusting it
     somebody typed with a date on them, not measurements. This gate proves the
     package AGREES WITH ITSELF. Truth is a different gate and it already
     exists: ``tests/test_round_provenance.test_the_round_claim_has_not_expired``
-    makes the claim EXPIRE (``RECHECK_AFTER``, currently 2026-10-05).
+    makes the claim EXPIRE (``RECHECK_AFTER``, which is ``LAST_VERIFIED``
+    plus ``RECHECK_CADENCE_DAYS``).
 
 MUTATIONS THIS GATE HAS BEEN SEEN TO FAIL UNDER -- a gate never seen to fail is
 not evidence, so each is recorded with the command and the red count it
@@ -860,7 +861,7 @@ ROUND_STATUS_CLAIMS = {
         (),
 
     # nmtcapp/renderers/_round_provenance.py
-    'This tool encodes the {} NMTC Allocation Application, which is the most recent PUBLISHED Application and is {} (it opened 19 Nov 2024, closed 29 Jan 2025, and was awarded 23 Dec 2025 with $10 billion in allocation authority).':
+    'This tool encodes the {} NMTC Allocation Application, which is the most recent PUBLISHED Application and is {} (it opened {}, closed {}, and was awarded {} with $10 billion in allocation authority).':
         (),
 
     # nmtcapp/renderers/_round_provenance.py
@@ -1166,7 +1167,7 @@ NON_CLAIM_REASONS = {
         "2024-2025's publication is not either constant's subject.",
 
     # nmtcapp/renderers/_round_provenance.py
-    'This tool encodes the {} NMTC Allocation Application, which is the most recent PUBLISHED Application and is {} (it opened 19 Nov 2024, closed 29 Jan 2025, and was awarded 23 Dec 2025 with $10 billion in allocation authority).':
+    'This tool encodes the {} NMTC Allocation Application, which is the most recent PUBLISHED Application and is {} (it opened {}, closed {}, and was awarded {} with $10 billion in allocation authority).':
         'The source template of the rendered sentence above, asserting '
         'the same thing about the CITED round: it is the most recent '
         'PUBLISHED Application, and it is closed and awarded. Neither CY '

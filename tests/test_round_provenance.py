@@ -97,18 +97,27 @@ is the useful part:
   no opinion on whether the horizon lands before the thing it watches. 92 days
   passed it happily.
 
-SO THE THIRD GATE, AND WHY IT IS DERIVED
+SO THE THIRD GATE -- AND WHY IT IS GONE (1.6.4 fix round, R2)
 
-``test_the_horizon_lands_before_the_deadline_it_watches`` reads
-``_round_provenance.next_hard_deadline()`` -- the earliest deadline the NOTE
-ITSELF carries that has not yet passed -- and requires ``RECHECK_AFTER`` to
-precede it. The date is NOT typed into this file on purpose. A test that
-learned "2026-11-10" would pass the next round while pointing at a date from
-this one, which is the identical failure one level up.
+1.6.2 added ``test_the_horizon_lands_before_the_deadline_it_watches``: read
+``next_hard_deadline()`` and require ``RECHECK_AFTER`` to precede it. It was
+the right diagnosis of 1.6.1 and the wrong repair. Once 1.6.4 carried all of
+Table 1, "horizon >= today" and "horizon < next deadline" could not both hold
+on a deadline day, so the suite was UNSATISFIABLE on 22 Sep, 6 Oct, 3 Nov,
+6 Nov and 10 Nov 2026 -- enumerated, not inferred -- and every green window
+between them ended in a bump that moved ``LAST_VERIFIED`` across a boundary
+and regenerated four baselines and two registries. A regen that happens five
+times as calendar servicing is a regen nobody reads.
 
-It fails closed when every deadline has passed: a note whose dates are all
-behind it is describing a closed round, and that is a finding rather than a
-quiet green.
+The gate had fused two questions. "Has a human re-checked recently?" is a
+cadence: ``RECHECK_AFTER`` is now ``LAST_VERIFIED + RECHECK_CADENCE_DAYS``
+(``test_the_horizon_is_the_verification_plus_the_cadence``), and it does not
+read the deadline table. "Has a deadline passed?" is content: paragraphs 2-4
+of the note compute it on every generation and ``tests/test_noaa_table_1``
+binds the words to the table, live. What survives from the third gate is its
+``None`` half, ``test_the_round_is_not_over``: when every filing deadline is
+behind the Eastern date the note describes a closed round, and that is the
+one calendar event that means "rewrite", not "re-verify".
 
 AND THE CONJUNCTION
 
@@ -398,8 +407,13 @@ def test_the_round_claim_has_not_expired():
     This does not check whether CY 2026 published. It checks whether anybody
     has looked recently, which is a different and weaker claim -- and it is the
     one that failed. See this module's header.
+
+    READS THE EASTERN DATE (1.6.4 fix round, F8). Every sibling gate in this
+    module reads ``_eastern_date()``; this one read the runner's local
+    ``date.today()``, so on a UTC runner it fired at 20:00 ET the evening
+    before ``RECHECK_AFTER``. One clock for every date comparison.
     """
-    today = _dt.date.today()
+    today = _eastern_date()
     recheck = _iso(rp.RECHECK_AFTER)
     assert today <= recheck, (
         f"the {rp.UPCOMING_ROUND} round claim expired on {rp.RECHECK_AFTER} "
@@ -419,12 +433,9 @@ def test_the_round_claim_has_not_expired():
         "certification rule.\n\n"
         "Then EITHER set UPCOMING_APPLICATION_PUBLISHED = True and open the "
         "re-verification work in _round_provenance.RECHECK_ITEMS, OR bump "
-        "LAST_VERIFIED and RECHECK_AFTER.\n\n"
-        "RECHECK_AFTER MUST STILL LAND BEFORE "
-        f"{(rp.next_hard_deadline() or ('—', '', ''))[0]}, the next deadline "
-        "this note carries — a horizon past it is a re-check nobody can act "
-        "on, which is what 1.6.1 shipped.\n\n"
-        "Bumping the dates WITHOUT opening those two pages turns this into a "
+        "LAST_VERIFIED to the day you looked (RECHECK_AFTER follows it by "
+        f"RECHECK_CADENCE_DAYS = {rp.RECHECK_CADENCE_DAYS}).\n\n"
+        "Bumping the date WITHOUT opening those two pages turns this into a "
         "gate that cannot fail, which is the exact thing it was built to "
         "replace. `pytest -m network tests/test_round_provenance.py` does the "
         "check for you."
@@ -457,49 +468,67 @@ def test_the_horizon_is_not_pushed_out_of_reach():
 
 
 
-def test_the_horizon_lands_before_the_deadline_it_watches():
-    """THE GATE 1.6.1 DID NOT HAVE. A ceiling is not a landing point.
+def test_the_horizon_is_the_verification_plus_the_cadence():
+    """``RECHECK_AFTER`` is ``LAST_VERIFIED`` plus a FIXED cadence, and the
+    cadence is not read off the deadline table.
 
-    ``RECHECK_AFTER`` was 2026-11-20 and the application deadline it exists to
-    protect is 2026-11-10. Every gate in this module passed. The expiry would
-    have fired for the first time ten days after the last day anyone could
-    have acted on it -- correct about WHAT to check, ten days wrong about
-    WHEN, and therefore useless.
+    WHAT THIS REPLACES (1.6.4 fix round, R2). ``test_the_horizon_lands_
+    before_the_deadline_it_watches`` required ``RECHECK_AFTER`` to precede
+    ``next_hard_deadline()``. Together with ``today <= RECHECK_AFTER`` that
+    made the suite UNSATISFIABLE on every deadline day: on 22 Sep 2026 the
+    horizon had to be >= today and < today at once. Enumerated on the 1.6.4
+    tip: 22 Sep, 6 Oct, 3 Nov, 6 Nov and 10 Nov were impossible, and each
+    green window between them ended with a bump that moved ``LAST_VERIFIED``
+    across a boundary and regenerated four baselines, the invariant allowlist
+    and the status-claims registry. A gate that ratchets its own trigger off a
+    calendar fires until somebody learns to ignore it.
 
-    ``test_the_horizon_is_not_pushed_out_of_reach`` could not catch this and
-    was never meant to: 92 days is comfortably inside its 180-day ceiling. A
-    ceiling bounds how far out a horizon goes. It has no opinion on whether
-    the horizon arrives before the event.
+    The two questions were one gate. "Has a human re-checked recently?" is a
+    cadence and lives here. "Has a deadline passed?" is content: paragraph 4
+    computes and renders it on every generation, and ``tests/test_noaa_table_1``
+    binds the rendering to the table. The horizon no longer knows the table
+    exists.
 
-    THE DATE IS NOT WRITTEN IN THIS FILE, DELIBERATELY. It comes from
-    ``_round_provenance.next_hard_deadline()``, which reads the note's own
-    constants. A test that learned "2026-11-10" would go on passing into
-    CY 2027 while guarding a date from CY 2026 -- the same failure one level
-    up, which is the shape this whole module exists to refuse.
+    THE CADENCE IS A JUDGEMENT, NOT A DERIVATION. 30 days is the order of
+    magnitude at which "nobody has looked" becomes the defect this module's
+    header describes; the repo records no other basis. The 180-day ceiling
+    (``test_the_horizon_is_not_pushed_out_of_reach``) still bounds it.
 
-    FAILS CLOSED ON None. When every deadline the note carries has passed, the
-    note describes a closed round. That is a finding, not a quiet green.
+    Mutations that redden this: ``RECHECK_AFTER`` typed back to a literal
+    that is not ``LAST_VERIFIED + RECHECK_CADENCE_DAYS``; the cadence set to
+    0 or negative.
+    """
+    expected = _iso(rp.LAST_VERIFIED) + _dt.timedelta(days=rp.RECHECK_CADENCE_DAYS)
+    assert _iso(rp.RECHECK_AFTER) == expected, (
+        f"RECHECK_AFTER is {rp.RECHECK_AFTER}; LAST_VERIFIED "
+        f"{rp.LAST_VERIFIED} + RECHECK_CADENCE_DAYS {rp.RECHECK_CADENCE_DAYS} "
+        f"is {expected.isoformat()}. The horizon is DERIVED from the "
+        "verification date; do not type it."
+    )
+    assert 0 < rp.RECHECK_CADENCE_DAYS <= 180, rp.RECHECK_CADENCE_DAYS
+
+
+def test_the_round_is_not_over():
+    """FAILS CLOSED ON None. When every filing deadline the note carries has
+    passed, the note describes a closed round. That is a finding, not a quiet
+    green -- and it is the ONE calendar event that genuinely means the note
+    must be rewritten rather than re-verified.
+
+    This is the first half of what was ``test_the_horizon_lands_before_the_
+    deadline_it_watches``, kept exactly as built (1.6.4 fix round, R2). The
+    second half -- the horizon must precede ``next_hard_deadline()`` -- is
+    deleted; see ``test_the_horizon_is_the_verification_plus_the_cadence``.
+    ``next_hard_deadline()`` reads the Eastern date.
     """
     upcoming = rp.next_hard_deadline()
     assert upcoming is not None, (
         "every hard deadline in _round_provenance.HARD_EXTERNAL_DEADLINES is "
-        f"in the past (today is {_dt.date.today().isoformat()}). This note "
-        f"now describes a CLOSED {rp.UPCOMING_ROUND} round: the application "
-        "deadline has gone by and the package is still citing the round as "
-        "upcoming.\n\n"
+        f"in the past (today is {_eastern_date().isoformat()} Eastern). This "
+        f"note now describes a CLOSED {rp.UPCOMING_ROUND} round: the "
+        "application deadline has gone by and the package is still citing the "
+        "round as upcoming.\n\n"
         "This is not a date to bump. Re-check the Fund, then rewrite the note "
         "for whatever round is now next."
-    )
-    iso, text, what = upcoming
-    assert _iso(rp.RECHECK_AFTER) < _iso(iso), (
-        f"RECHECK_AFTER is {rp.RECHECK_AFTER}, which is NOT before {iso} — "
-        f"the next hard deadline this note carries ({what}, {text}).\n\n"
-        "A re-check scheduled after the deadline it protects cannot change "
-        "anything by the time it fires. That is exactly what 1.6.1 shipped: "
-        "RECHECK_AFTER 2026-11-20 against a 2026-11-10 deadline, with the "
-        "whole suite green.\n\n"
-        "Move RECHECK_AFTER inside the window. The round is live; weeks, not "
-        "months."
     )
 
 
@@ -857,6 +886,53 @@ def test_the_gate_reads_the_eastern_date_and_not_the_local_one():
     assert module._dt is real_dt
 
 
+def test_the_expiry_gate_reads_the_eastern_date_and_not_the_local_one():
+    """F8 (1.6.4 fix round): ``test_the_round_claim_has_not_expired`` read the
+    runner's ``date.today()`` while every sibling read Eastern, so on a UTC
+    runner it fired at 20:00 ET the evening before ``RECHECK_AFTER``.
+
+    Same technique as the future-event test above: the two clocks are forced
+    apart in opposite directions and the gate is asked which one it obeyed.
+    Eastern says it is still the horizon day (green); local says the day
+    after (red). A gate reading ET passes, a gate reading ``date.today()``
+    fails; then the clocks swap and the outcomes swap with them.
+
+    Mutation that reddens this: ``today = _eastern_date()`` reverted to
+    ``today = _dt.date.today()`` in the expiry gate.
+    """
+    import types
+
+    module = sys.modules[__name__]
+    horizon = _iso(rp.RECHECK_AFTER)
+    day_after = horizon + _dt.timedelta(days=1)
+
+    def _local_clock_frozen_at(frozen):
+        class _FrozenDate(_dt.date):
+            @classmethod
+            def today(cls):
+                return frozen
+
+        return types.SimpleNamespace(
+            date=_FrozenDate, datetime=_dt.datetime,
+            timezone=_dt.timezone, timedelta=_dt.timedelta)
+
+    gate = test_the_round_claim_has_not_expired
+    real_eastern, real_dt = module._eastern_date, module._dt
+    try:
+        module._eastern_date = lambda instant=None: horizon
+        module._dt = _local_clock_frozen_at(day_after)
+        gate()   # ET says the claim is still good; a gate reading ET passes
+
+        module._eastern_date = lambda instant=None: day_after
+        module._dt = _local_clock_frozen_at(horizon)
+        with pytest.raises(AssertionError):
+            gate()
+    finally:
+        module._eastern_date, module._dt = real_eastern, real_dt
+    assert module._eastern_date is real_eastern
+    assert module._dt is real_dt
+
+
 def test_the_deadline_lookup_is_eastern_time_too():
     """``next_hard_deadline()`` answers a FEDERAL question; same rule (1.6.2 R2).
 
@@ -869,9 +945,9 @@ def test_the_deadline_lookup_is_eastern_time_too():
     2026-11-11 04:59 UTC it is 23:59 EST on the 10th: the ET deadline has
     passed, but for the preceding five hours of that UTC day a CDE could still
     file and a caller east of ET was already being told the round was closed.
-    ``test_the_horizon_lands_before_the_deadline_it_watches`` fails closed on
-    ``None``, so it would have reported a CLOSED CY 2026 round up to a day
-    early, on the one day anybody is looking.
+    ``test_the_round_is_not_over`` fails closed on ``None``, so it would have
+    reported a CLOSED CY 2026 round up to a day early, on the one day anybody
+    is looking.
 
     Two properties, neither of which depends on what day it is when this runs:
     the boundary is placed in ET, and the answer does not move with ``TZ``.

@@ -633,8 +633,11 @@ def test_the_round_provenance_note_is_projected_as_of_its_verification_date(
     ``LAST_VERIFIED`` -- the day the note's facts were verified, which is the
     one day they are known to be true -- and this test proves the freeze
     holds against an outer patch to either side of the first deadline. It
-    also proves it is not a no-op: the note as of a day past the last filing
-    deadline must differ from the projected one.
+    also proves the freeze is not a normalisation that erased the claim:
+    ``round_provenance_note()`` as of the day after the last filing deadline
+    must differ from ``round_provenance_note()`` as of ``LAST_VERIFIED``. That
+    last check reads the note directly, not the projection -- the projection's
+    own date is asserted by the ``GENERATED, <LAST_VERIFIED>`` stamp above.
     """
     from nmtcapp.renderers import _round_provenance as rp
 
@@ -654,10 +657,16 @@ def test_the_round_provenance_note_is_projected_as_of_its_verification_date(
             "across the CDE certification deadline. _render_projections is "
             "not freezing the note's date."
         )
+    # THE GENERATION STAMP, AND ONLY THE STAMP (1.6.4 fix round, R4). This
+    # read ``... or verified in before[fmt]``, and the second disjunct was
+    # satisfied by paragraph 4's "was confirmed on September 16, 2026" -- the
+    # verification date, rendered on every day regardless of the freeze. With
+    # the freeze pointed at 2026-01-01 the test stayed green (mutation MC).
+    # Whitespace is collapsed because the PDF re-wraps the note across its
+    # column, so the stamp can straddle a line break there.
     verified = rp._us_date(rp.LAST_VERIFIED)
     for fmt in FORMATS:
-        assert f"GENERATED, {verified}" in before[fmt].replace("\n", " ") or \
-            verified in before[fmt], (
+        assert f"GENERATED, {verified}" in " ".join(before[fmt].split()), (
             f"the {fmt} projection does not carry the note as of "
             f"{verified} (LAST_VERIFIED)"
         )

@@ -178,19 +178,21 @@ That work is the NEXT release and its trigger is
 ``APPLICATION_SHA256`` also stays, and stays correct. It was never the defect;
 see ``tests/test_round_provenance`` on why a hash cannot fail on staleness.
 
-WHAT WAS SCHEDULED PAST THE EVENT
+WHAT WAS SCHEDULED PAST THE EVENT, AND WHAT REPLACED THE REPAIR
 
-``RECHECK_AFTER`` was 2026-11-20 -- **ten days after the application deadline
-it existed to protect**. The expiry would have fired for the first time on a
-day when the one thing a CDE could still have done was already impossible. The
-existing ceiling on the horizon (``test_the_horizon_is_not_pushed_out_of_reach``,
-180 days) bounds how LONG the span may be and says nothing about whether the
-horizon lands before the thing it watches. Both properties are now gated: see
-``next_hard_deadline`` below, which derives the answer from the note's own
-constants so the gate cannot learn one date and miss the next.
+``RECHECK_AFTER`` was 2026-11-20 in 1.6.1 -- ten days after the application
+deadline. 1.6.2 answered with a gate requiring the horizon to land before
+``next_hard_deadline()``. With all of Table 1 carried (1.6.4) that gate and the
+expiry itself could not both be green on a deadline day, so the coupling is
+gone (1.6.4 fix round, R2): ``RECHECK_AFTER`` is now ``LAST_VERIFIED`` plus
+``RECHECK_CADENCE_DAYS``, a cadence for human attention; whether a deadline
+has passed is content the note computes. ``next_hard_deadline`` survives for
+the one calendar event that does mean "rewrite the note": every filing
+deadline behind the Eastern date, on which the suite fails closed.
 """
 from __future__ import annotations
 
+import datetime as _datetime
 from typing import NamedTuple
 
 #: The round whose Application this package encodes.
@@ -200,6 +202,18 @@ CITED_ROUND = "CY 2024-2025"
 #: implicit version is what shipped: a hash pin that answers "is this the
 #: document we read?" and is silent on "is this the round the CDE files?".
 CITED_ROUND_STATUS = "closed and awarded"
+
+#: The cited round's own timeline, ISO, from the CDFI Fund's NMTC program
+#: page. Through the 1.6.4 tip these three dates were typed into paragraph 0
+#: as prose -- the one exception to the rule two lines down that ISO is the
+#: arithmetic form and the prose form is derived. Named so the gate that
+#: accounts for every year the note mentions (``tests/test_noaa_table_1``,
+#: direction 1) can read them instead of exempting the paragraph.
+CITED_ROUND_TIMELINE = {
+    "opened": "2024-11-19",
+    "closed": "2025-01-29",
+    "awarded": "2025-12-23",
+}
 
 #: The round a CDE reading this today is preparing for.
 UPCOMING_ROUND = "CY 2026"
@@ -223,6 +237,19 @@ def _us_date(iso: str) -> str:
     """
     year, month, day = (int(part) for part in iso.split("-"))
     return f"{_MONTH_NAMES[month - 1]} {day}, {year}"
+
+
+def _short_date(iso: str) -> str:
+    """``"2024-11-19"`` -> ``"19 Nov 2024"``: the closed round's history, in
+    the compact form paragraph 0 has always used for it. Derived, like
+    ``_us_date``, so the timeline constant and the prose cannot drift.
+
+    Example::
+
+        _short_date("2024-11-19")   # '19 Nov 2024'
+    """
+    year, month, day = (int(part) for part in iso.split("-"))
+    return f"{day} {_MONTH_NAMES[month - 1][:3]} {year}"
 
 
 #: WHETHER THE UPCOMING ROUND'S NOAA HAS PUBLISHED -- and, SEPARATELY, whether
@@ -445,17 +472,18 @@ def _eastern_today():
 def next_hard_deadline(today=None):
     """The earliest CY 2026 deadline that has NOT yet passed, or ``None``.
 
-    THE RE-CHECK HORIZON MUST LAND BEFORE THIS. 1.6.1 set ``RECHECK_AFTER`` to
-    2026-11-20, ten days past the application deadline, and every gate in the
-    suite passed: the 180-day ceiling bounds how FAR OUT a horizon goes and
-    says nothing about whether it arrives before the event it watches. This is
-    the missing half, and it is DERIVED rather than typed so the gate built on
-    it learns the next round's date instead of memorising this one's.
+    WHAT THIS IS FOR (1.6.4 fix round, R2). It was built so the re-check
+    horizon could be required to land before it; that coupling made the suite
+    unsatisfiable on every deadline day and is deleted -- ``RECHECK_AFTER`` is
+    a cadence now and does not read this. What remains is the ``None`` case,
+    and it is DERIVED rather than typed so the gate built on it learns the
+    next round's date instead of memorising this one's.
 
     Returns ``(iso, text, what)`` or ``None`` when every deadline has passed --
     which is itself a finding, not a quiet pass: a note whose every deadline is
-    behind it describes a closed round and needs rewriting, so the gate in
-    ``tests/test_round_provenance.py`` fails closed on ``None``.
+    behind it describes a closed round and needs rewriting, so
+    ``tests/test_round_provenance.test_the_round_is_not_over`` and
+    ``tests/test_noaa_table_1`` both fail closed on ``None``.
 
     "TODAY" DEFAULTS TO THE EASTERN DATE, NOT THE RUNNER'S (1.6.2 R2)
 
@@ -502,21 +530,33 @@ def next_hard_deadline(today=None):
 #: "verified against cdfifund.gov".
 LAST_VERIFIED = "2026-09-16"
 
-#: The date this claim goes stale and the suite goes red.
+#: How long a verification stays good for, in days. A CADENCE, NOT A
+#: DEADLINE (1.6.4 fix round, R2): the question the expiry asks is "has a
+#: human re-checked the Fund since ``LAST_VERIFIED``?", which is a question
+#: about attention and has nothing to do with when Table 1's rows fall.
 #:
-#: FIVE DAYS, BECAUSE THE NEXT DEADLINE IS SIX DAYS OUT. The rule in
-#: ``tests/test_round_provenance.test_the_horizon_lands_before_the_deadline_
-#: it_watches`` is that a re-check must fire while a CDE can still act on what
-#: it finds -- before ``next_hard_deadline()``, whatever that is. Through
-#: 1.6.3 the next deadline the note carried was 10 Nov and the horizon was
-#: 5 Oct. Table 1 restores 22 Sep as the next one, and the note now states in
-#: prose that the AMIS route is still ahead of it; a re-check scheduled after
-#: 22 Sep could not correct that sentence on the one day it matters. So the
-#: horizon is 21 Sep, the suite goes red on 22 Sep by design, and the bump
-#: that follows is a deliberate re-read of the NOAA, not a rote date edit.
-#: After 22 Sep the derived next deadline is 6 Oct (Application Registration)
-#: and the horizon can move inside THAT window.
-RECHECK_AFTER = "2026-09-21"
+#: WHAT THIS REPLACES. Through the 1.6.4 tip ``RECHECK_AFTER`` was typed, and
+#: a gate required it to land before ``next_hard_deadline()``. With the whole
+#: of Table 1 carried, that rule and ``today <= RECHECK_AFTER`` could not both
+#: hold on a deadline day -- the horizon had to be >= today and < today --
+#: so the suite was unsatisfiable on 22 Sep, 6 Oct, 3 Nov, 6 Nov and 10 Nov
+#: 2026, and every bump between them moved ``LAST_VERIFIED`` across a
+#: boundary and regenerated four baselines plus two registries. Whether a
+#: deadline has passed is CONTENT: paragraphs 2-4 compute it on every
+#: generation and ``tests/test_noaa_table_1`` binds them to the table. The
+#: horizon no longer reads the table at all.
+#:
+#: 30 is a judgement -- the order of magnitude at which "nobody has looked"
+#: becomes the defect this module's header describes -- and the repo records
+#: no other basis. ``tests/test_round_provenance`` bounds it at 180.
+RECHECK_CADENCE_DAYS = 30
+
+#: The date this claim goes stale and the suite goes red. DERIVED: bump
+#: ``LAST_VERIFIED`` to the day you looked and this follows.
+RECHECK_AFTER = (
+    _datetime.date(*(int(part) for part in LAST_VERIFIED.split("-")))
+    + _datetime.timedelta(days=RECHECK_CADENCE_DAYS)
+).isoformat()
 
 #: Sources, so a re-check does not start by hunting for the page.
 PROGRAM_PAGE_URL = (
@@ -759,7 +799,9 @@ def round_provenance_paragraphs(today=None) -> tuple:
         f"WHICH ROUND THIS IS BASED ON. This tool encodes the "
         f"{CITED_ROUND} NMTC Allocation Application, which is the most recent "
         f"PUBLISHED Application and is {CITED_ROUND_STATUS} (it opened "
-        "19 Nov 2024, closed 29 Jan 2025, and was awarded 23 Dec 2025 with "
+        f"{_short_date(CITED_ROUND_TIMELINE['opened'])}, closed "
+        f"{_short_date(CITED_ROUND_TIMELINE['closed'])}, and was awarded "
+        f"{_short_date(CITED_ROUND_TIMELINE['awarded'])} with "
         f"$10 billion in allocation authority). THE {UPCOMING_ROUND} ROUND "
         f"HAS OPENED, BUT ITS APPLICATION HAS NOT: the {UPCOMING_ROUND} NOAA "
         f"IS PUBLISHED — Federal Register document {NOAA_FR_DOCUMENT_NUMBER}, "

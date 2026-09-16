@@ -97,9 +97,13 @@ ineligible. `NOAA_TABLE_1.audience` records this as `"prior allocatee"` for
 those two rows and for the three Subsidiary-CDE / Allocation-Agreement rows;
 the other five are `"applicant"`.
 
-**No deadline lives outside Table 1.** The body text carries one other date,
-*January 30, 2025*, the start of a look-back window for a reporting-deadline
-scoring penalty — not something an applicant can miss.
+**No deadline lives outside Table 1.** The body text carries three other
+dates, none of them a deadline: *December 28, 2004* (the IRS's final
+regulations at 26 CFR 1.45D-1), *January 4, 2020* (Internal Revenue Bulletin
+2020-1), and *January 30, 2025* (the start of a look-back window for a
+reporting-deadline scoring penalty). This sentence said "one other date"
+until the hostile audit re-read the document; re-verified in the fix round
+against the same 73,488-byte raw text, SHA-256 `72b89b42…2aabdd`.
 
 ### F1 — Table 1 is CARRIED, not cited
 
@@ -114,12 +118,18 @@ copies of a date.
 window — every row on or before the application deadline, eight rows. Its
 docstring's reasoning survives (it holds deadlines a CDE can still miss, and
 `next_hard_deadline` schedules the re-check against it) and gains one
-paragraph on the derivation. The `(iso, text, what)` shape is unchanged, so
-`next_hard_deadline` is unchanged: it still returns `None` the day after 10
-Nov, exactly as `test_the_deadline_lookup_is_eastern_time_too` requires. The
-January rows are deadlines a prior Allocatee can miss, but not by anything it
-does while applying — after 10 Nov nothing in this package can help — so they
-do not extend the horizon.
+paragraph on the derivation. The `(iso, text, what)` shape is unchanged.
+**`next_hard_deadline` is not unchanged, and this entry said it was** until
+the hostile audit refuted it: with two rows it answered 10 Nov on every day
+from 1 Sep; with eight it answers 22 Sep, then 6 Oct, 3 Nov and 6 Nov — a
+different answer on **52 of the 56 days** from 16 Sep to 10 Nov 2026,
+measured in the fix round. That divergence *is* the fix: the function now
+sees the deadlines a CDE can actually miss. What is unchanged is the `None`
+case — the day after 10 Nov both versions return `None`, which is what
+`test_the_deadline_lookup_is_eastern_time_too` requires. The January rows are
+deadlines a prior Allocatee can miss, but not by anything it does while
+applying — after 10 Nov nothing in this package can help — so they do not
+extend the filing window.
 
 ### F2 — paragraphs 2, 3 and 4 are COMPUTED, and here they are
 
@@ -254,7 +264,17 @@ function of `today` so it can be run at frozen dates:
 4. **Fails closed**: when no filing deadline is ahead, the gate reports a
    closed round rather than passing on an empty list.
 5. The note **moves** across the certification boundary, with the generation
-   date masked before comparing.
+   date masked before comparing — and, since the fix round, **in the right
+   direction**: STILL AHEAD on 21 Sep, CLOSED on 23 Sep.
+6. **(Fix round, R1.)** ¶2's status words, ¶3's three-way status, ¶4's "N of
+   the M" count and every row's prior-Allocatee tag are asserted against the
+   predicate — computed in the test from the row's date — on the live Eastern
+   date and at the five frozen dates. See *The hostile audit* below for why.
+7. **(Fix round, R5.)** Direction 2 selects on the **year**: every year the
+   note mentions must be a round label, the document number, or a date in a
+   spelling the gate can parse that normalises to an allowed date; an
+   unparseable spelling fails closed. As first written it read `Month D,
+   YYYY` only, and *" Also due 31 Aug 2026."* walked past it.
 
 The live gate runs on the real Eastern date and at five frozen dates on
 either side of every boundary. Each mutation below was run against the tree
@@ -266,7 +286,7 @@ selected; 37 passed, 1 skipped on the unmutated tree):
 
 | Mutation | What was changed | Result | What reddened |
 |---|---|---|---|
-| M1 | `CDE_CERTIFICATION_ROW` back to `2026-08-31` | **8 failed** | the Federal Register comparison; the ascending-order check (31 Aug now precedes a 22 Sep row); the typed-date control (the mutated date is now *in* the table, so the control's foreign date is no longer foreign — the control's own premise failing, which is the correct red); the `AMIS_CDE_CERTIFICATION_DEADLINE_TEXT` and `CDE_CERTIFICATION_ROW` pins; all four rendered baselines |
+| M1 | `CDE_CERTIFICATION_ROW` back to `2026-08-31` | **8 failed** | the Federal Register comparison; the boundary-move test (with the row on 31 Aug, ¶2 reads the same on 21 and 23 Sep); the typed-date control (the mutated date is now *in* the table, so the control's foreign date is no longer foreign — the control's own premise failing, which is the correct red); the `AMIS_CDE_CERTIFICATION_DEADLINE_TEXT` and `CDE_CERTIFICATION_ROW` pins; all four rendered baselines. **This row first said the ascending-order check reddened. It did not** — the row is first in the tuple, so 31 Aug before 22 Sep is still ascending; `test_table_1_dates_are_iso_and_ascending` PASSED under M1. The eight was right and one of the names was wrong; re-run against `406d17f` in the fix round and corrected |
 | M2 | the 6 Oct Application Registration row deleted from `NOAA_TABLE_1` | **7 failed** | the Federal Register comparison (nine rows against ten); the filing-window derivation; the `APPLICATION_REGISTRATION_ROW` and `NOAA_TABLE_1` pins; all four baselines |
 | M3 | `" Also due August 31, 2026."` typed into ¶4 with the table correct | **10 failed** | the live gate and all five frozen-date gates, each reporting *"the note renders 'August 31, 2026', which is not a Table 1 date and not one of the note's own as-of dates. A typed date."*; all four baselines |
 | M4 | `_eastern_today()` frozen to `2026-11-11` (plugin, whole module) | **1 failed, 16 passed** | the live gate alone, with *"every filing deadline in Table 1 is behind 2026-11-11: the note describes a CLOSED round and must be rewritten, not rendered"* — the two January rows are still ahead on that day and are named, so a gate that only asked "is everything ahead named?" would have passed |
@@ -278,18 +298,60 @@ date stamp alone: the unmasked boundary test stayed green under M5 and only
 the per-row gates caught it. The boundary test now masks `As of <today>`
 before comparing, and the table above is from the run after that change.
 
-### F4 — the horizon moved, by the gate's own rule
+### F4 — the horizon is a cadence, and the gate that coupled it to the calendar is deleted
 
-`RECHECK_AFTER` was `2026-10-05`. `test_the_horizon_lands_before_the_deadline_
-it_watches` requires it to land before `next_hard_deadline()`, and with Table
-1 carried the next deadline is **22 Sep**, not 10 Nov. So `RECHECK_AFTER` is
-**`2026-09-21`** and `LAST_VERIFIED` is `2026-09-16`: a five-day horizon, and
-the suite goes red on 22 Sep by design. That is the rule working, not a
-defect — the note now states in prose that the AMIS route is still ahead of
-22 Sep, and a re-check scheduled after that date could not correct the
-sentence on the one day it matters. After 22 Sep the derived next deadline is
-6 Oct and the horizon can move inside that window; the bump is a deliberate
-re-read of the NOAA, not a rote date edit.
+As first cut, this section read *"`RECHECK_AFTER` is `2026-09-21` … a
+five-day horizon, and the suite goes red on 22 Sep by design. That is the rule
+working, not a defect."* **It was a defect.** The hostile audit enumerated the
+four horizon rules — `today ≤ RECHECK_AFTER`, `RECHECK_AFTER > LAST_VERIFIED`,
+`RECHECK_AFTER − LAST_VERIFIED ≤ 180`, and
+`test_the_horizon_lands_before_the_deadline_it_watches`'s
+`RECHECK_AFTER < next_hard_deadline(today)` — and found them **mutually
+unsatisfiable on five days**:
+
+```
+2026-09-22  IMPOSSIBLE (RA must be >= today and < next deadline = today)
+2026-10-06  IMPOSSIBLE
+2026-11-03  IMPOSSIBLE
+2026-11-06  IMPOSSIBLE
+2026-11-10  IMPOSSIBLE
+2026-11-11  FAILS CLOSED (None)
+```
+
+Reproduced in the fix round with the same enumeration. On each of those days
+no assignment of the two constants made the suite green, and every green
+window between them ended in a bump that moved `LAST_VERIFIED` across a
+boundary — which changes the frozen note, which regenerates four baselines,
+`invariant_allowlist.txt` and the `ROUND_STATUS_CLAIMS` registry. Five
+routine regens before 10 November is a regen nobody reads. And the question
+the expiry exists to ask — has the CY 2026 Application published? — has
+nothing to do with any of those five days.
+
+The gate had fused two questions. **"Has a human re-checked recently?"** is a
+cadence and belongs in CI: `RECHECK_AFTER` is now **derived**,
+`LAST_VERIFIED + RECHECK_CADENCE_DAYS`, with `RECHECK_CADENCE_DAYS = 30` — a
+judgement, the order of magnitude at which "nobody has looked" becomes the
+defect `tests/test_round_provenance.py`'s header describes; the repo records
+no other basis, and the 180-day ceiling still bounds it. It does not read
+`NOAA_TABLE_1`. **"Has a deadline passed?"** is content: ¶2–¶4 compute and
+render it on every generation and `tests/test_noaa_table_1` binds the words
+to the table, live. `test_the_horizon_lands_before_the_deadline_it_watches`
+is **deleted, not replaced with a warning**. Its `None` half — every filing
+deadline behind the Eastern date means the note describes a closed round and
+must be rewritten — is kept exactly as built, as `test_the_round_is_not_over`.
+
+Re-enumerated after the change, 16 Sep – 12 Nov 2026: **zero IMPOSSIBLE
+days**; 11 Nov and after fail closed on `None`, by design.
+
+Consumers of `RECHECK_AFTER` enumerated before the change: the three horizon
+gates in `test_round_provenance.py`, one docstring in
+`test_round_status_consistency.py` (which named a stale date, `2026-10-05`,
+and now names the derivation), and the module's own prose. Nothing renders
+it. **F8 folded in:** `test_the_round_claim_has_not_expired` read the runner's
+local `date.today()` while every sibling read Eastern, so on a UTC runner it
+fired at 20:00 ET the evening before; it reads `_eastern_date()` now, and
+`test_the_expiry_gate_reads_the_eastern_date_and_not_the_local_one` forces
+the two clocks apart and proves which one it obeys.
 
 ### F5 — the fixtures render the note as of `LAST_VERIFIED`
 
@@ -306,6 +368,18 @@ gate could never match. `test_the_round_provenance_note_is_projected_as_of_
 its_verification_date` proves the freeze holds against an outer patch to
 either side of 22 Sep and is not a normalisation that erased the claim.
 
+**Fix round, R4.** That test's date assertion read `f"GENERATED, {verified}"
+in … or verified in before[fmt]`, and the second disjunct was satisfied by
+¶4's *"was confirmed on September 16, 2026"* — the verification date, which
+renders whatever the freeze points at. With `provenance_note_as_verified`
+frozen to `2026-01-01` (mutation MC) the test passed; with the disjunct
+removed it fails. The disjunct is out; the stamp is matched with whitespace
+collapsed because the PDF re-wraps the note across its column. Its docstring
+also said the projection *"as of a day past the last filing deadline must
+differ from the projected one"*; the assertion compares two direct renders of
+`round_provenance_note()` and never touches the projection, and the docstring
+now says that.
+
 **The live gates do not use it.** `tests/test_noaa_table_1` and
 `tests/test_round_provenance` read the real Eastern date on purpose.
 
@@ -315,6 +389,111 @@ an Applicant that is not certified as a CDE."* It is true on both sides of
 the deadline, and `test_attributed_claims` rules attributions by exact clause,
 so a sentence rendered only while the route is ahead would leave a dead
 allowlist entry behind on 23 Sep.
+
+### The hostile audit, and the fix round
+
+The 1.6.4 tip (`406d17f`) went to a hostile audit before tagging and came back
+NO-GO. **The rendered note was correct on every date tested.** What was
+missing was the gate that keeps it that way, and what was broken was the
+schedule the horizon gate imposed. Everything in this section was fixed on
+the same branch before the tag; nothing above this line in the entry
+describes a state that shipped.
+
+**F1 — the status words had no live gate.** Four renderer mutations, each
+run against `tests/test_noaa_table_1.py`, `tests/test_round_provenance.py`
+and `tests/test_round_status_consistency.py` with every fixture-backed module
+deselected:
+
+| Mutation | What was changed | Before the fix round | After |
+|---|---|---|---|
+| MA | `if _is_ahead` → `if not _is_ahead` in `_certification_paragraph` — the 1.6.2 blocker verbatim in shape, date corrected: *"As of September 16, 2026 the AMIS route has CLOSED"* | **90 passed, 1 skipped** | **7 failed** (`test_noaa_table_1`: the live gate, the five frozen dates, the boundary-move test) |
+| MB | `len(ahead) - 1` in ¶4 — *"9 of the 10 … are still ahead"* above a list of ten | 90 passed | **6 failed** |
+| MD | ¶3's branch inverted | 90 passed | **6 failed** |
+| MG | the `[prior Allocatees]` tag dropped from `_row_item` | 90 passed | **6 failed** |
+| MI | `" Also due 31 Aug 2026."` appended to ¶4 | 90 passed | **6 failed** |
+
+Before the fix round every one of those reddened only the rendered baselines
+and the invariant allowlist — fixtures that a routine regen rewrites.
+`_note_problems` checked ¶4's *lists* and never ¶2, never ¶3, never the
+count; `test_the_note_moves_across_the_certification_deadline` asserted the
+two sides *differ*, and an inverted branch differs. Now `_note_problems`
+holds the predicate — computed in the test from the row's ISO date, not read
+back from `_is_ahead` — and a fixture of the status wording, and asserts
+their agreement on the live Eastern date and at five frozen dates
+(directions 3–6 in the module's header). The boundary test asserts which way
+the paragraph moved. Five controls, one per direction, show each fire inside
+the suite. The gate does not re-implement the paragraph; a gate that did
+would share its blind spot.
+
+**F3 — the horizon rules were unsatisfiable.** See F4 above, rewritten.
+Mutations that prove the replacement: MH, `RECHECK_AFTER` typed back to a
+literal — `test_the_horizon_is_the_verification_plus_the_cadence` **1
+failed**; MJ, `RECHECK_CADENCE_DAYS = 200` — that test and the 180-day
+ceiling, **2 failed**; MK, the expiry gate's `_eastern_date()` reverted to
+`_dt.date.today()` —
+`test_the_expiry_gate_reads_the_eastern_date_and_not_the_local_one` **1
+failed**.
+
+**F2 — three false statements about gates**, each corrected in place above:
+the M1 row's *"ascending-order check"* (it passed; the eighth red was the
+boundary-move test); *"one other date"* (three); the projection test's
+docstring (*"must differ from the projected one"* — it compares two direct
+renders). And the refuted *"`next_hard_deadline` is unchanged"* (52 of 56
+days differ; the `None` case is what is unchanged).
+
+**F4 — `assert A or B`.** The projection test's second disjunct is out; see
+F5 above. Mutation MC (the freeze pointed at `2026-01-01`): **1 passed**
+before, **1 failed** after.
+
+**F6 — the one-spelling gate.** Direction 1 now selects on the year; see
+F3's list above. Seven spellings are parametrised in
+`test_a_typed_date_in_any_spelling_is_caught`: five normalise to 31 Aug 2026
+and are refused for that; *"August 31st, 2026"* and *"in 2026"* are refused
+because the gate cannot parse them and says so. To make the whole note
+accountable, ¶0's three typed history dates — *19 Nov 2024, 29 Jan 2025,
+23 Dec 2025* — are `CITED_ROUND_TIMELINE` now, ISO, rendered through
+`_short_date` byte-for-byte as before, and pinned by hand (the sweep cannot
+see a derived spelling).
+
+**Cleared, and closed:** `ACS_VINTAGE`. The auditor downloaded
+`NMTC_LIC_Eligibility_Dataset_9_3_2026.xlsx` (10,290,864 bytes, SHA-256
+`e99f5114…d2ae0`); its NOTES sheet says *"based on 2016-2020 ACS data"* and
+its distress columns are O and P. Both constants hold. The "vintage question
+is open" sentence below is superseded by this one.
+
+**Hunted for and not found — the unknown unknown.** The audit's framing was
+"gates on a note"; the question it did not ask was whether any *other*
+surface carries a status claim guarded only by regenerating fixtures. Swept:
+every clock read in `nmtcapp/` and `streamlit_app/` outside
+`_round_provenance` is a *Prepared/Generated* stamp or `impact_adapter`'s
+loan-maturity input (`today.year + 7`); nothing else renders a claim computed
+against the date. Every typed round-status sentence — the Q25 basis note's,
+the two question modules' docstrings, `streamlit_app/utils.py`'s — is
+selected on its subject by `test_round_status_consistency` over the four
+projections, the package source and `streamlit_app/`, and bound to the two
+booleans, whose staleness the cadence bounds. The readiness banner and the
+distress labels are claims about documents, not dates, pinned by hand in
+`pinned_constants.txt` (a fixture nobody regenerates by script). F1's shape
+is confined to the provenance note. One stale citation noticed and left:
+the `ACS_VINTAGE` and `_ELIGIBILITY_SOURCE` pin rows name the old `.xlsb`
+filename; the claim they pin is true.
+
+**Carried, with dates:**
+
+* **The two-path seam, due before 2026-11-11.** From 11 Nov 2026 to 14 Jan
+  2027 ¶4 will say *"2 of the 10 deadlines in Table 1 are still ahead"* (the
+  January prior-Allocatee rows) while `next_hard_deadline()` returns `None`
+  and both fail-closed gates report a closed round. Not wrong today; the
+  note must be rewritten for that window before it arrives. Recorded in
+  `_note_problems` beside the fail-closed check.
+* **`release.yml`'s `test-wheel` job — F7 — checked and not reproduced.**
+  The audit read it as testing the checkout rather than the wheel. Probed
+  with the job's exact shape: `import nmtcapp` resolves to site-packages.
+  The record is in `release.yml` beside `FLOOR`.
+* **The Streamlit app is behind a sign-in.** `curl` → 303 →
+  `share.streamlit.io/-/auth/app` → `/-/login`; `/healthz` 200. A CDE
+  following the README link today gets a Streamlit sign-in. Whether by
+  setting or by outage needs a browser session; not this release.
 
 ### What this release deliberately does not change
 
@@ -331,32 +510,44 @@ the CY 2026 Application Materials remain unpublished as of 2026-09-16.
 
 `ACS_VINTAGE` was checked against this release's own scope and left alone:
 the file the package downloads is `NMTC_LIC_Eligibility_Dataset_9_3_2026
-.xlsx` and the vintage question is open in the finding, not answered here.
+.xlsx`. The vintage question was open in the finding; the hostile audit
+closed it (see above).
 
 ### Bookkeeping
 
 * `pyproject.toml` — `version = "1.6.4"`; `CITATION.cff` 1.6.4, released
   2026-09-16; `streamlit_app/requirements.txt` pin 1.6.4.
-* The suite collects **1,866** (was 1,848): 17 in `tests/test_noaa_table_1.py`
-  and 1 in `tests/test_rendered_output_baseline.py`. README, CONTRIBUTING and
-  the landing page state 1,866; `tests/test_test_count_claims` derives it.
+* The suite collects **1,880** (was 1,848): 29 in `tests/test_noaa_table_1.py`
+  (17 at the build round, 12 in the fix round), 1 in
+  `tests/test_rendered_output_baseline.py`, and a net 2 in
+  `tests/test_round_provenance.py` (one gate deleted, three added). README,
+  CONTRIBUTING and the landing page state 1,880;
+  `tests/test_test_count_claims` derives it.
 * `CLAIMED_NEW_TEST_MODULES` 33 → 34.
 * `tests/pinned_constants.txt`: the three round-provenance rows re-sourced to
   Table 1 (the AMIS row records that it pinned 31 Aug through 1.6.3); eleven
   rows added — `NOAA_TABLE_1` pinned on the 6 Oct row the 1.6.3 note lacked,
   and each of the ten row constants pinned on its rendered item; `_AMIS`
-  waived. 268 constants are swept.
+  waived. Fix round: `CITED_ROUND_TIMELINE` pinned by hand on its derived
+  spelling. 270 constants are swept.
 * `tests/test_round_status_consistency.py`: 19 dead keys removed, 29 added
   (114 keys; 4 non-claim reasons removed, 7 added). Re-derived: 114 distinct
   selected segments, 26 with claims, 88 asserting nothing; 187 occurrences;
-  13,285 corpus segments. Floors unchanged.
+  13,285 corpus segments. Floors unchanged. Fix round: the ¶0 source-template
+  key re-spelled for the three `{}` the timeline constants put in it; its
+  docstring no longer names a horizon date.
+* `tests/fund_attribution_allowlist.txt`: the `_round_provenance` module
+  docstring row re-keyed (fix round) for the rewritten horizon section.
 * `tests/invariant_allowlist.txt`: 20 dead 1.6.2 lines removed, 52 added
   under one 1.6.4 justification. `tests/attribution_allowlist.txt`: the 1.6.2
   ¶3 entry replaced by three cited to Table 1 and section III.A.
   `tests/fund_attribution_allowlist.txt`: the `_round_provenance` docstring
   entry re-keyed.
-* `release.yml` — `FLOOR` re-derived from a real sdist build; see the block
-  above it.
+* `release.yml` — `FLOOR` re-derived from a real sdist build at the build
+  round (900) and again in the fix round (**910**: 1,879 collected under
+  `-m "not wheel"`, 57 skipped, 1,822 executed, run from a directory with no
+  `nmtcapp/` with `import nmtcapp` resolving to site-packages); see the
+  block above it.
 
 ---
 
@@ -1767,12 +1958,14 @@ One filled scaffold, the same file both sides, `9a2d584` vs this tree:
 > `git diff --numstat 9a2d584 fc34af5 -- tests/rendered_baseline/` gives 53
 > insertions and 68 deletions, unchanged.*
 
-The rendered-string sweep is unchanged in shape, and 268 constants are swept
+The rendered-string sweep is unchanged in shape, and 270 constants are swept
 (237 at 1.5.7; this release adds
 `upload_handler.CDE_PROFILE_COLUMNS_FOR_REQUIRED_FIELD`, waived, for 238 as
 shipped — restated to 250 at 1.6.2, which splits the round-provenance
-published-status boolean into twelve net new constants, and to 268 at 1.6.4,
-which carries the NOAA's Table 1 as seventeen net new constants. The count is
+published-status boolean into twelve net new constants, to 268 at 1.6.4,
+which carries the NOAA's Table 1 as seventeen net new constants, and to 270
+in the 1.6.4 fix round, which adds `CITED_ROUND_TIMELINE` and
+`RECHECK_CADENCE_DAYS`. The count is
 gate-asserted against the CURRENT tree by
 `test_the_changelogs_sweep_figures_match_the_tree`, so it is maintained
 forward rather than frozen at what shipped).
@@ -7441,9 +7634,9 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 268 constants are swept
-where 49 were (238 as this release shipped; restated at 1.6.2 and again at
-1.6.4 — the count is gate-asserted against the current tree, see those
+colour". The rendered-string sweep demands **19**, and 270 constants are swept
+where 49 were (238 as this release shipped; restated at 1.6.2, at 1.6.4 and
+in the 1.6.4 fix round — the count is gate-asserted against the current tree, see those
 entries). *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
 round label, its status, the re-check list and the pinned-document facts; 1.5.2
 adds `readiness_score._COMPONENT_BASIS`, the withdrawal note's per-component
