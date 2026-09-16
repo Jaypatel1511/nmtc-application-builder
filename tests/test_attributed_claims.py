@@ -50,6 +50,8 @@ import re
 
 import pytest
 
+from tests.conftest import provenance_note_as_verified
+
 # Shares the rendering fixtures with the invariance gate rather than
 # duplicating four scenarios that would then drift apart.
 from tests.test_invariant_output import (  # noqa: E402
@@ -304,7 +306,11 @@ def attributed_clauses(tmp_path_factory) -> dict:
         out = tmp_path_factory.mktemp(f"attr{sid}")
         app = Application(cde=cde, requested_allocation=requested)
         app.add_pipeline(pipeline)
-        paths = app.generate(str(out), formats=list(FORMATS))
+        # Rendered as of LAST_VERIFIED (1.6.4): the note's deadline paragraphs
+        # are computed against the Eastern date, and this list rules clauses,
+        # not calendars. See tests/conftest.provenance_note_as_verified.
+        with provenance_note_as_verified():
+            paths = app.generate(str(out), formats=list(FORMATS))
         assert set(paths) == set(FORMATS), (
             f"scenario {sid} rendered {sorted(paths)}; a format that does not "
             "render is a format this gate is not scanning"

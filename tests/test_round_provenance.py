@@ -263,9 +263,17 @@ _PROVENANCE_FACTS = (
     ("NOAA IS PUBLISHED", "that the CY 2026 NOAA exists and governs the round"),
     ("Materials are NOT YET PUBLISHED",
      "that the Application a CDE will file still has no materials"),
-    ("November 10, 2026",
-     "the application deadline — the only CY 2026 date a CDE can still miss"),
-    ("August 31, 2026", "the AMIS CDE certification deadline, now closed"),
+    # THE TWO DATES ARE DERIVED, NOT TYPED (1.6.4). This tuple carried
+    # "August 31, 2026" as a literal, and the literal was the defect: it was
+    # the pre-announcement's date, the NOAA's Table 1 says 22 Sep, and a gate
+    # that types the date it checks for can only confirm the typo it shares
+    # with the source. tests/test_noaa_table_1 checks the constants against
+    # the Federal Register's own text; this gate checks that they RENDER.
+    (rp.APPLICATION_DEADLINE_TEXT,
+     "the application deadline, in full, on every surface"),
+    (rp.AMIS_CDE_CERTIFICATION_DEADLINE_TEXT,
+     "the AMIS CDE certification deadline, in full, on every surface -- "
+     "whether it is still ahead or has passed"),
     ("Subsidiary CDE", "the prior-Allocatee Subsidiary CDE obligation"),
 )
 
@@ -1000,6 +1008,14 @@ def test_the_disclosure_states_both_directions():
     window closed on 31 Aug 2026. The date a CDE can miss today is the
     APPLICATION DEADLINE, 10 Nov 2026 -- and it was in no part of the note.
 
+    AND THEN THE DATE ITSELF WENT FALSE (1.6.4). The AMIS window did not close
+    on 31 Aug 2026. That was the pre-announcement's date; Table 1 of the NOAA
+    says 22 Sep 2026, and this test asserted the literal "August 31, 2026"
+    against a note that rendered the same literal from the same wrong
+    constant. The dates below are now read from the constants -- this gate
+    checks that they RENDER, and tests/test_noaa_table_1 checks that the
+    constants match the Federal Register's own text.
+
     A test whose stated reasoning argues for something untrue is worse than a
     missing test: it is the next person's premise. Both the assertion and the
     reasoning are corrected here, together, because correcting only the
@@ -1023,13 +1039,13 @@ def test_the_disclosure_states_both_directions():
          "must say the cited instrument is still the right basis -- this is "
          "the overstating-uncertainty half, and it is the one a "
          "caution-shaped rewrite drops first"),
-        ("November 10, 2026",
-         "must carry the application deadline, which is the only CY 2026 date "
-         "a CDE can still miss"),
-        ("August 31, 2026",
-         "must carry the AMIS certification deadline -- NOT because it can "
-         "still be met, it cannot, but because a CDE that missed it needs to "
-         "know it is out of this round rather than discovering it in November"),
+        (rp.APPLICATION_DEADLINE_TEXT,
+         "must carry the application deadline"),
+        (rp.AMIS_CDE_CERTIFICATION_DEADLINE_TEXT,
+         "must carry the AMIS certification deadline on BOTH sides of it: "
+         "while it is ahead, because it is the route into this round; after, "
+         "because a CDE that missed it needs to know it is out of this round "
+         "rather than discovering it in November"),
         ("CANNOT APPLY",
          "must say plainly what missing both certification routes means. "
          "'May not be eligible' is a softening that costs a reader the "

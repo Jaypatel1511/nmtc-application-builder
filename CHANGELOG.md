@@ -5,6 +5,361 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.6.4] — 2026-09-16
+
+**PATCH. ONE FALSE FEDERAL DATE, THE TABLE IT CAME FROM, AND THE GATE THAT
+COULD NOT SEE IT.** No score formula, weight, band, threshold or grade moves,
+and no score moves. No renderer, table or section module is touched. The only
+rendered text that changes is paragraphs 2, 3 and 4 of the round-provenance
+note, on all four formats — and those three paragraphs are now COMPUTED
+against the Eastern date rather than typed.
+
+> **56 insertions, 26 deletions** in `tests/rendered_baseline/`, measured
+> `7ab6d9b`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+
+| Class | Lines | +/− | Surface |
+|---|---|---|---|
+| The note's paragraphs 2–4 — markdown and word render the whole notes block as ONE line each, so the change lands on one line per surface | 4 | +2 / −2 | markdown, word |
+| `Round Provenance` sheet — `A6`, `A7`, `A8` are the three rewritten paragraphs, one row each. No row added | 6 | +3 / −3 | excel |
+| The note itself, re-wrapped across the PDF column — three paragraphs of 616, 635 and 480 characters become three of 858, 1,018 and 1,958, all on pages 24–25 | 68 | +47 / −21 | pdf |
+| The new page's furniture — the longer note pushes the notes that follow it onto a page 25: one `@@PAGE` marker, one CONFIDENTIAL footer band, one `Page 25` line, one blank line | 4 | +4 / −0 | pdf |
+| `Item`/`Value` extraction rows — none; no table gained or lost a row | 0 | +0 / −0 | — |
+
+**82 lines, zero unexplained.**
+
+### What happened
+
+Through 1.6.3 `renderers/_round_provenance` carried the CY 2026 CDE
+certification deadline as **`2026-08-31`**, and the note said, in capitals
+and in all four formats:
+
+> *"Neither route is still open: the AMIS window closed on August 31, 2026
+> … An organization that did neither CANNOT APPLY IN CY 2026."*
+
+**The NOAA says September 22.** Federal Register document **2026-18883** —
+the document the package already cited by number, for the $5 billion and for
+the 10 Nov application deadline — sets the CDE Certification Application
+deadline at **11:59 p.m. ET on September 22, 2026** in its Table 1. From
+16 Sep, the day 1.6.3 shipped, until 22 Sep, the package told eligible
+applicants they were excluded from a window that was still open.
+
+**Where the date came from, confirmed rather than guessed.** The CDFI Fund's
+12 Aug 2026 pre-announcement, `cdfifund.gov/news/738` — the page this project
+cites for the $5 billion — says *"by 11:59 p.m. Eastern Time on August 31,
+2026"*. The NOAA superseded it on publication. The 1.6.2 and 1.6.3 cycles
+opened the NOAA three times and each time read exactly the field they went
+in for: that it exists, that it is $5 billion, that applications close 10 Nov.
+Nobody re-read Table 1.
+
+**Why every gate was green.** `tests/test_round_provenance.py` asserted the
+literal `"August 31, 2026"` against a note that rendered the same literal from
+the same constant — a check that shares its source's error confirms the error.
+And `HARD_EXTERNAL_DEADLINES` carried two of Table 1's ten rows, so the gate
+that binds the tuple to the note could only ever ask about those two: the
+Application Registration deadline of **6 Oct 2026** — miss it and AMIS will
+not accept the application at all — was in no part of the rendered note, and
+nothing could say so.
+
+### Table 1, re-retrieved
+
+Retrieved 2026-09-16 with `curl` from the Federal Register's raw-text endpoint
+(the `raw_text_url` field of
+`https://www.federalregister.gov/api/v1/documents/2026-18883.json`), SHA-256
+`72b89b421cbc9bbbfaf6be00e8ffcb98ae310d5c3bdca871627876dc3c2aabdd` over the
+73,488-byte file; lines 33–69 are carried byte for byte in
+`tests/noaa_2026_18883_table_1.txt`.
+
+| Table 1 row (the instrument's words) | Date | Time (ET) | Method |
+|---|---|---|---|
+| Community Development Entity (CDE) Certification Application deadline | September 22, 2026 | 11:59 p.m. | Electronically via AMIS |
+| Request to modify CDE certification service area | September 22, 2026 | 11:59 p.m. | Electronically via AMIS |
+| Subsidiary CDE Certification Application for meeting Qualified Equity Investment (QEI) issuance thresholds | September 22, 2026 | 11:59 p.m. | Electronically via AMIS |
+| CY 2026 Allocation Application Registration | October 6, 2026 | 5:00 p.m. | Electronically via AMIS |
+| Amendment request to add Subsidiary CDEs to Allocation Agreements for meeting QEI issuance thresholds | November 3, 2026 | 11:59 p.m. | Electronically via AMIS |
+| Amendment request to remove a Controlling Entity from Allocation Agreement(s) | November 3, 2026 | 11:59 p.m. | Electronically via AMIS |
+| Last day to contact CDFI Fund staff | November 6, 2026 | 5:00 p.m. | Electronically via AMIS |
+| CY 2026 Allocation Application deadline (including required Attachments) | November 10, 2026 | 5:00 p.m. | Electronically via AMIS |
+| QEI Issuance and Qualified Low Income Community Investments (QLICIs) requirements deadline | January 7, 2027 | 11:59 p.m. | Not Applicable |
+| Report QEIs and certify QLICIs deadline | January 14, 2027 | 11:59 p.m. | Electronically via AMIS |
+
+The eligibility rule, section III.A.1, verbatim: *"the CDFI Fund will only
+consider an Applicant as eligible for an NMTC Allocation in this round if (a)
+the Applicant is certified as a CDE as of the Federal Register publication
+date of the NOAA; or (b) the Applicant submits an application for
+certification as a CDE through AMIS by the deadline in Table 1."*
+
+**The two January 2027 rows are not post-award obligations.** Section
+III.A.6(a) makes them ELIGIBILITY conditions on a CY 2026 applicant that is a
+prior Allocatee (CY 2020 through CY 2024-2025 rounds): finalize the Table 2
+share of prior-round QEIs and make the QLICIs by 7 Jan 2027, report and
+certify them in AMIS by 14 Jan 2027, or the CY 2026 application is
+ineligible. `NOAA_TABLE_1.audience` records this as `"prior allocatee"` for
+those two rows and for the three Subsidiary-CDE / Allocation-Agreement rows;
+the other five are `"applicant"`.
+
+**No deadline lives outside Table 1.** The body text carries one other date,
+*January 30, 2025*, the start of a look-back window for a reporting-deadline
+scoring penalty — not something an applicant can miss.
+
+### F1 — Table 1 is CARRIED, not cited
+
+`NOAA_TABLE_1` holds every row as a `NoaaDeadline(iso, time_text,
+description, submission_method, audience)`, in the instrument's order, with
+the instrument's own descriptions. The two deadlines the note names by role
+are now LOOKUPS into it (`APPLICATION_DEADLINE = APPLICATION_DEADLINE_ROW.iso`,
+`AMIS_CDE_CERTIFICATION_DEADLINE = CDE_CERTIFICATION_ROW.iso`), not second
+copies of a date.
+
+`HARD_EXTERNAL_DEADLINES` is **derived** by filtering the table to the filing
+window — every row on or before the application deadline, eight rows. Its
+docstring's reasoning survives (it holds deadlines a CDE can still miss, and
+`next_hard_deadline` schedules the re-check against it) and gains one
+paragraph on the derivation. The `(iso, text, what)` shape is unchanged, so
+`next_hard_deadline` is unchanged: it still returns `None` the day after 10
+Nov, exactly as `test_the_deadline_lookup_is_eastern_time_too` requires. The
+January rows are deadlines a prior Allocatee can miss, but not by anything it
+does while applying — after 10 Nov nothing in this package can help — so they
+do not extend the horizon.
+
+### F2 — paragraphs 2, 3 and 4 are COMPUTED, and here they are
+
+`round_provenance_paragraphs(today=None)` and `round_provenance_note(today=
+None)` take the Eastern date, defaulting to `_eastern_today()` — the same
+clock `next_hard_deadline` reads, for the same reason. Whether a Table 1 row
+is still ahead is decided per row, day-level, the deadline day itself
+counting as ahead, which is the rule `next_hard_deadline` already applied.
+
+**¶2, as 1.6.3 rendered it:**
+
+> THE CY 2026 CDE CERTIFICATION CUTOFFS ARE SETTLED AND ONE OF THEM HAS
+> ALREADY CLOSED. To be eligible to apply in CY 2026 an organization had
+> EITHER to already be a certified CDE as of the NOAA's Federal Register
+> publication date, September 15, 2026, OR to have submitted its CDE
+> Certification Application through AMIS by 11:59 p.m. ET on August 31, 2026.
+> Neither route is still open: the AMIS window closed on August 31, 2026, and
+> the as-of date the NOAA sets, September 15, 2026, has arrived. An
+> organization that did neither CANNOT APPLY IN CY 2026. There is no late
+> filing; its next opportunity is a future round.
+
+**¶2, as 1.6.4 renders it on 16 Sep 2026** (on 23 Sep the middle sentence
+reads *"the AMIS route has CLOSED: the window shut at 11:59 p.m. ET on
+September 22, 2026, and the as-of date, September 15, 2026, has passed"*):
+
+> THE CY 2026 CDE CERTIFICATION RULE HAS TWO ROUTES, AND THE SECOND HAS A DATE
+> IN TABLE 1 OF THE NOAA. To be eligible to apply in CY 2026 an organization
+> must EITHER already be a certified CDE as of the NOAA's Federal Register
+> publication date, September 15, 2026, OR submit its CDE Certification
+> Application through AMIS by 11:59 p.m. ET on September 22, 2026. As of
+> September 16, 2026 the AMIS route is STILL AHEAD: an organization that is
+> not yet a certified CDE can still meet the rule by submitting its CDE
+> Certification Application through AMIS by 11:59 p.m. ET on September 22,
+> 2026. The NOAA adds that the CDFI Fund will not provide allocation authority
+> to an Applicant that is not certified as a CDE. An organization that does
+> neither CANNOT APPLY IN CY 2026. There is no late filing; its next
+> opportunity is a future round.
+
+**¶3, as 1.6.3 rendered it** — two Table 1 actions with two dates, put on one
+date that was neither:
+
+> AND IF YOU ARE A PRIOR ALLOCATEE, A THIRD OBLIGATION FELL ON THE SAME
+> CLOSED DATE: any prior Allocatee that required action by the CDFI Fund —
+> certifying a Subsidiary entity as a CDE, or adding a Subsidiary CDE to an
+> Allocation Agreement — in order to meet the Qualified Equity Investment
+> (QEI) issuance thresholds published in the CY 2026 NOAA had to submit a CDE
+> Certification Application for its Subsidiary CDE(s) through AMIS by 11:59
+> p.m. ET on August 31, 2026. That date has passed. The QEI issuance
+> thresholds themselves are in the NOAA, Federal Register document
+> 2026-18883; this tool neither computes them nor reproduces them.
+
+**¶3, as 1.6.4 renders it on 16 Sep 2026:**
+
+> AND IF YOU ARE A PRIOR ALLOCATEE, TABLE 1 BINDS YOU ON DATES OF ITS OWN: any
+> prior Allocatee that requires action by the CDFI Fund in order to meet the
+> Qualified Equity Investment (QEI) issuance thresholds published in the CY
+> 2026 NOAA must submit a CDE Certification Application for its Subsidiary
+> CDE(s) through AMIS by 11:59 p.m. ET on September 22, 2026, and any
+> Allocation Agreement amendment request to add Subsidiary CDEs by 11:59 p.m.
+> ET on November 3, 2026. As of September 16, 2026 both of those dates are
+> still ahead. The thresholds are eligibility conditions with their own
+> deadlines, both after the application deadline: the Table 2 share of prior-
+> round QEIs must be finalized, and the required share of them used to make
+> QLICIs, by 11:59 p.m. ET on January 7, 2027, and those QEIs reported and
+> QLICIs certified in AMIS by 11:59 p.m. ET on January 14, 2027. The QEI
+> issuance thresholds themselves are in Table 2 of the NOAA, Federal Register
+> document 2026-18883; this tool neither computes them nor reproduces them.
+
+**¶4, as 1.6.3 rendered it** — a typed sentence that was true on no day; on
+the day it shipped, eight of Table 1's ten rows were still ahead:
+
+> THE ONLY CY 2026 DEADLINE YOU CAN STILL MISS IS THE APPLICATION DEADLINE:
+> 5:00 p.m. ET on November 10, 2026. Every other CY 2026 date named above is
+> already determined. It is set by the NOAA, it is not a figure this tool
+> computes, and nothing in this document moves it. Provenance: the CY 2026
+> NOAA is Federal Register document 2026-18883, filed September 14, 2026 and
+> published September 15, 2026; the absence of CY 2026 Application Materials
+> was confirmed on September 14, 2026.
+
+**¶4, as 1.6.4 renders it on 16 Sep 2026** — the whole table, in the
+instrument's order; a row that passes moves to the *Already passed* list
+rather than disappearing:
+
+> THE CY 2026 DEADLINES STILL AHEAD, COMPUTED FROM TABLE 1 OF THE NOAA AGAINST
+> THE EASTERN DATE THIS DOCUMENT WAS GENERATED, September 16, 2026: 10 of the
+> 10 deadlines in Table 1 are still ahead — Community Development Entity (CDE)
+> Certification Application deadline — 11:59 p.m. ET on September 22, 2026
+> (Electronically via AMIS); Request to modify CDE certification service area
+> — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Subsidiary
+> CDE Certification Application for meeting Qualified Equity Investment (QEI)
+> issuance thresholds — 11:59 p.m. ET on September 22, 2026 (Electronically
+> via AMIS) [prior Allocatees]; CY 2026 Allocation Application Registration —
+> 5:00 p.m. ET on October 6, 2026 (Electronically via AMIS); Amendment request
+> to add Subsidiary CDEs to Allocation Agreements for meeting QEI issuance
+> thresholds — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS)
+> [prior Allocatees]; Amendment request to remove a Controlling Entity from
+> Allocation Agreement(s) — 11:59 p.m. ET on November 3, 2026 (Electronically
+> via AMIS) [prior Allocatees]; Last day to contact CDFI Fund staff — 5:00
+> p.m. ET on November 6, 2026 (Electronically via AMIS); CY 2026 Allocation
+> Application deadline (including required Attachments) — 5:00 p.m. ET on
+> November 10, 2026 (Electronically via AMIS); QEI Issuance and Qualified Low
+> Income Community Investments (QLICIs) requirements deadline — 11:59 p.m. ET
+> on January 7, 2027 (Not Applicable) [prior Allocatees]; Report QEIs and
+> certify QLICIs deadline — 11:59 p.m. ET on January 14, 2027 (Electronically
+> via AMIS) [prior Allocatees]. Already passed: none. Every one of these dates
+> is set by the NOAA, none is a figure this tool computes, and nothing in this
+> document moves them. Provenance: the CY 2026 NOAA is Federal Register
+> document 2026-18883, filed September 14, 2026 and published September 15,
+> 2026; the absence of CY 2026 Application Materials was confirmed on
+> September 16, 2026.
+
+Two sentences a reader might expect are deliberately absent. "The only
+deadline you can still miss" is gone rather than re-derived: on most days of
+the round more than one is ahead, and a sentence that is true on one day a
+year is worse than none. And the 1.6.2 sentence *"the as-of date the NOAA
+sets has arrived"* survives only in the CLOSED branch, where it is doing
+work; while the AMIS route is ahead the rule is stated as a rule.
+
+### F3 — the gate, and what it was seen to fail on
+
+`tests/test_noaa_table_1.py` (17 tests, new module) asserts, as a pure
+function of `today` so it can be run at frozen dates:
+
+1. `NOAA_TABLE_1` equals Table 1 **as the Federal Register prints it** — the
+   carried excerpt is parsed and compared row by row, all four fields.
+2. Every `Month D, YYYY` date the note renders is a Table 1 date or one of
+   the note's own as-of dates (publication, filing, verification,
+   generation); no ISO date reaches the prose.
+3. Every Table 1 row still ahead of `today` is named — description, time and
+   date — in the part of ¶4 that says it is still ahead, and no passed row is
+   named there. **This is the direction the 1.6.3 suite was blind to.**
+4. **Fails closed**: when no filing deadline is ahead, the gate reports a
+   closed round rather than passing on an empty list.
+5. The note **moves** across the certification boundary, with the generation
+   date masked before comparing.
+
+The live gate runs on the real Eastern date and at five frozen dates on
+either side of every boundary. Each mutation below was run against the tree
+and then reverted; the counts are what `pytest tests/test_noaa_table_1.py
+tests/test_round_provenance.py tests/test_pinned_constants.py::
+test_pinned_constants_render_verbatim tests/test_rendered_output_baseline.py::
+test_the_rendered_output_matches_the_reviewed_baseline` reported (38
+selected; 37 passed, 1 skipped on the unmutated tree):
+
+| Mutation | What was changed | Result | What reddened |
+|---|---|---|---|
+| M1 | `CDE_CERTIFICATION_ROW` back to `2026-08-31` | **8 failed** | the Federal Register comparison; the ascending-order check (31 Aug now precedes a 22 Sep row); the typed-date control (the mutated date is now *in* the table, so the control's foreign date is no longer foreign — the control's own premise failing, which is the correct red); the `AMIS_CDE_CERTIFICATION_DEADLINE_TEXT` and `CDE_CERTIFICATION_ROW` pins; all four rendered baselines |
+| M2 | the 6 Oct Application Registration row deleted from `NOAA_TABLE_1` | **7 failed** | the Federal Register comparison (nine rows against ten); the filing-window derivation; the `APPLICATION_REGISTRATION_ROW` and `NOAA_TABLE_1` pins; all four baselines |
+| M3 | `" Also due August 31, 2026."` typed into ¶4 with the table correct | **10 failed** | the live gate and all five frozen-date gates, each reporting *"the note renders 'August 31, 2026', which is not a Table 1 date and not one of the note's own as-of dates. A typed date."*; all four baselines |
+| M4 | `_eastern_today()` frozen to `2026-11-11` (plugin, whole module) | **1 failed, 16 passed** | the live gate alone, with *"every filing deadline in Table 1 is behind 2026-11-11: the note describes a CLOSED round and must be rewritten, not rendered"* — the two January rows are still ahead on that day and are named, so a gate that only asked "is everything ahead named?" would have passed |
+| M5 | `_is_ahead` forced to return `True` — ¶2–¶4 typed again, dates correct | **6 failed** (of 17 in the new module) | the three frozen-date gates past 22 Sep; the boundary test; the per-row ahead/passed test; the default-clock test |
+
+**M5 found a weakness in this release's own first cut.** With the generation
+date rendered into the prose, "21 Sep and 23 Sep differ" was satisfied by the
+date stamp alone: the unmasked boundary test stayed green under M5 and only
+the per-row gates caught it. The boundary test now masks `As of <today>`
+before comparing, and the table above is from the run after that change.
+
+### F4 — the horizon moved, by the gate's own rule
+
+`RECHECK_AFTER` was `2026-10-05`. `test_the_horizon_lands_before_the_deadline_
+it_watches` requires it to land before `next_hard_deadline()`, and with Table
+1 carried the next deadline is **22 Sep**, not 10 Nov. So `RECHECK_AFTER` is
+**`2026-09-21`** and `LAST_VERIFIED` is `2026-09-16`: a five-day horizon, and
+the suite goes red on 22 Sep by design. That is the rule working, not a
+defect — the note now states in prose that the AMIS route is still ahead of
+22 Sep, and a re-check scheduled after that date could not correct the
+sentence on the one day it matters. After 22 Sep the derived next deadline is
+6 Oct and the horizon can move inside that window; the bump is a deliberate
+re-read of the NOAA, not a rote date edit.
+
+### F5 — the fixtures render the note as of `LAST_VERIFIED`
+
+A computed note is a note that changes on the morning after every deadline.
+Three gates compare rendered documents to reviewed fixtures and would have
+gone red on 23 Sep, 7 Oct, 4 Nov, 7 Nov and 11 Nov with nothing in the
+package having changed: the rendered baseline, the invariant-output allowlist
+and the attribution allowlist. They ask questions about the document, not the
+calendar, so `tests/conftest.provenance_note_as_verified()` renders the note
+inside them as of `LAST_VERIFIED` — the one day its facts are known true —
+and `tests/regen_rendered_baseline.py` now goes through the same
+`_render_projections` the gate uses, so a regen cannot write a baseline the
+gate could never match. `test_the_round_provenance_note_is_projected_as_of_
+its_verification_date` proves the freeze holds against an outer patch to
+either side of 22 Sep and is not a normalisation that erased the claim.
+
+**The live gates do not use it.** `tests/test_noaa_table_1` and
+`tests/test_round_provenance` read the real Eastern date on purpose.
+
+The same reason puts one sentence in BOTH branches of ¶2 word for word —
+*"The NOAA adds that the CDFI Fund will not provide allocation authority to
+an Applicant that is not certified as a CDE."* It is true on both sides of
+the deadline, and `test_attributed_claims` rules attributions by exact clause,
+so a sentence rendered only while the route is ahead would leave a dead
+allowlist entry behind on 23 Sep.
+
+### What this release deliberately does not change
+
+Everything below is real, recorded in the 1.6.3 settle-read finding, and
+**not this release**: a scoped patch that corrects a false federal fact does
+not widen. Appendix D's `Cost per Job` TOTALS denominator
+(`tables/impact_table.py:81`); the four undisclosed Excel rate assumptions;
+the deal-economics basis shift; the alphabetical "primary geographic
+targets"; the persistent-poverty `None`-as-No aggregate; the Q25(b)(i)
+additivity gap; the literal `**` leaks; the dead markdown TOC anchors; the
+"33-column" claim; the Excel autofilter ranges; the docs-site defects.
+`RECHECK_ITEMS` still names CY 2024-2025 figures and the note still says so;
+the CY 2026 Application Materials remain unpublished as of 2026-09-16.
+
+`ACS_VINTAGE` was checked against this release's own scope and left alone:
+the file the package downloads is `NMTC_LIC_Eligibility_Dataset_9_3_2026
+.xlsx` and the vintage question is open in the finding, not answered here.
+
+### Bookkeeping
+
+* `pyproject.toml` — `version = "1.6.4"`; `CITATION.cff` 1.6.4, released
+  2026-09-16; `streamlit_app/requirements.txt` pin 1.6.4.
+* The suite collects **1,866** (was 1,848): 17 in `tests/test_noaa_table_1.py`
+  and 1 in `tests/test_rendered_output_baseline.py`. README, CONTRIBUTING and
+  the landing page state 1,866; `tests/test_test_count_claims` derives it.
+* `CLAIMED_NEW_TEST_MODULES` 33 → 34.
+* `tests/pinned_constants.txt`: the three round-provenance rows re-sourced to
+  Table 1 (the AMIS row records that it pinned 31 Aug through 1.6.3); eleven
+  rows added — `NOAA_TABLE_1` pinned on the 6 Oct row the 1.6.3 note lacked,
+  and each of the ten row constants pinned on its rendered item; `_AMIS`
+  waived. 268 constants are swept.
+* `tests/test_round_status_consistency.py`: 19 dead keys removed, 29 added
+  (114 keys; 4 non-claim reasons removed, 7 added). Re-derived: 114 distinct
+  selected segments, 26 with claims, 88 asserting nothing; 187 occurrences;
+  13,285 corpus segments. Floors unchanged.
+* `tests/invariant_allowlist.txt`: 20 dead 1.6.2 lines removed, 52 added
+  under one 1.6.4 justification. `tests/attribution_allowlist.txt`: the 1.6.2
+  ¶3 entry replaced by three cited to Table 1 and section III.A.
+  `tests/fund_attribution_allowlist.txt`: the `_round_provenance` docstring
+  entry re-keyed.
+* `release.yml` — `FLOOR` re-derived from a real sdist build; see the block
+  above it.
+
+---
+
 ## [1.6.3] — 2026-09-15
 
 **PATCH. ONE FALSE SENTENCE AND ONE GATE.** No score formula, weight, band,
@@ -13,7 +368,12 @@ changes is the last sentence of the Question 25 basis note, on all four
 formats.
 
 > **6 insertions, 5 deletions** in `tests/rendered_baseline/`, measured
-> `e4a415e`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+> `e4a415e`..`8dcb008`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+> *(Pinned at 1.6.4 from `HEAD` to the commit that ended this release's
+> movement, the way 1.6.2's claim was pinned to `e4a415e` when 1.6.3 moved the
+> baselines after it. Re-derived at the pin:
+> `git diff --numstat e4a415e 8dcb008 -- tests/rendered_baseline/` gives 6
+> insertions and 5 deletions, unchanged.)*
 
 ### What happened
 
@@ -1407,11 +1767,12 @@ One filled scaffold, the same file both sides, `9a2d584` vs this tree:
 > `git diff --numstat 9a2d584 fc34af5 -- tests/rendered_baseline/` gives 53
 > insertions and 68 deletions, unchanged.*
 
-The rendered-string sweep is unchanged in shape, and 251 constants are swept
+The rendered-string sweep is unchanged in shape, and 268 constants are swept
 (237 at 1.5.7; this release adds
 `upload_handler.CDE_PROFILE_COLUMNS_FOR_REQUIRED_FIELD`, waived, for 238 as
 shipped — restated to 250 at 1.6.2, which splits the round-provenance
-published-status boolean into twelve net new constants. The count is
+published-status boolean into twelve net new constants, and to 268 at 1.6.4,
+which carries the NOAA's Table 1 as seventeen net new constants. The count is
 gate-asserted against the CURRENT tree by
 `test_the_changelogs_sweep_figures_match_the_tree`, so it is maintained
 forward rather than frozen at what shipped).
@@ -7080,9 +7441,10 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 251 constants are swept
-where 49 were (238 as this release shipped; restated at 1.6.2 — the count is
-gate-asserted against the current tree, see that entry). *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
+colour". The rendered-string sweep demands **19**, and 268 constants are swept
+where 49 were (238 as this release shipped; restated at 1.6.2 and again at
+1.6.4 — the count is gate-asserted against the current tree, see those
+entries). *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
 round label, its status, the re-check list and the pinned-document facts; 1.5.2
 adds `readiness_score._COMPONENT_BASIS`, the withdrawal note's per-component
 basis labels, pinned on `markdown` and `cli_summary`. The 1.5.2 AUDIT ROUND

@@ -412,14 +412,27 @@ def _normalise(text: str, outdir: str) -> str:
 
 
 def _render_projections(outdir: str) -> dict:
-    """Render the fixture into outdir and return {format: normalised text}."""
-    app = Application(
-        cde=_cde(),
-        requested_allocation=REQUESTED_ALLOCATION,
-        application_round=APPLICATION_ROUND,
-    )
-    app.add_pipeline(_pipeline())
-    paths = app.generate(outdir, formats=list(FORMATS))
+    """Render the fixture into outdir and return {format: normalised text}.
+
+    THE ROUND-PROVENANCE NOTE IS RENDERED AS OF ``LAST_VERIFIED`` (1.6.4).
+    Paragraphs 2-4 of the note are computed against the Eastern date -- which
+    of the NOAA's Table 1 deadlines are still ahead -- so an unfrozen render
+    would move on every deadline boundary and this gate would go red on the
+    calendar. The freeze is a fixture input like REQUESTED_ALLOCATION, not a
+    normalisation: the date is pinned to the one day the note's facts were
+    verified true, and moving LAST_VERIFIED is a deliberate act that
+    regenerates the baseline in the same commit.
+    """
+    from tests.conftest import provenance_note_as_verified
+
+    with provenance_note_as_verified():
+        app = Application(
+            cde=_cde(),
+            requested_allocation=REQUESTED_ALLOCATION,
+            application_round=APPLICATION_ROUND,
+        )
+        app.add_pipeline(_pipeline())
+        paths = app.generate(outdir, formats=list(FORMATS))
 
     assert set(paths) == set(FORMATS), (
         f"rendered {sorted(paths)}, expected all of {sorted(FORMATS)}. A "
@@ -600,6 +613,60 @@ def test_the_projection_is_independent_of_the_run_date(tmp_path, monkeypatch):
             "Three identical renders prove nothing if the normaliser has "
             "erased the stamps along with everything else."
         )
+
+
+def test_the_round_provenance_note_is_projected_as_of_its_verification_date(
+        tmp_path, monkeypatch):
+    """The note is COMPUTED against the Eastern date (1.6.4); the projection
+    pins that date to ``LAST_VERIFIED`` so the baseline cannot go red on the
+    calendar.
+
+    ``round_provenance_paragraphs`` decides which of the NOAA's Table 1
+    deadlines are still ahead by reading ``_eastern_today()``. Left unfrozen,
+    the rendered note would change on 23 Sep 2026, 7 Oct, 4 Nov, 7 Nov and
+    11 Nov, and this gate would report a document regression on each of those
+    mornings with nothing in the package having changed. The three-date
+    proof above cannot see it: it freezes ``date.today()`` in the four
+    stamping modules, and ``_eastern_today`` reads a different clock.
+
+    So ``_render_projections`` freezes ``_eastern_today`` to
+    ``LAST_VERIFIED`` -- the day the note's facts were verified, which is the
+    one day they are known to be true -- and this test proves the freeze
+    holds against an outer patch to either side of the first deadline. It
+    also proves it is not a no-op: the note as of a day past the last filing
+    deadline must differ from the projected one.
+    """
+    from nmtcapp.renderers import _round_provenance as rp
+
+    def project(iso):
+        with monkeypatch.context() as outer:
+            outer.setattr(rp, "_eastern_today",
+                          lambda: datetime.date(*map(int, iso.split("-"))))
+            out = tmp_path / iso
+            out.mkdir()
+            return _render_projections(str(out))
+
+    before = project("2026-09-21")
+    after = project("2026-09-23")
+    for fmt in FORMATS:
+        assert before[fmt] == after[fmt], (
+            f"the {fmt} projection moved when only _eastern_today() moved "
+            "across the CDE certification deadline. _render_projections is "
+            "not freezing the note's date."
+        )
+    verified = rp._us_date(rp.LAST_VERIFIED)
+    for fmt in FORMATS:
+        assert f"GENERATED, {verified}" in before[fmt].replace("\n", " ") or \
+            verified in before[fmt], (
+            f"the {fmt} projection does not carry the note as of "
+            f"{verified} (LAST_VERIFIED)"
+        )
+    # The freeze is a freeze, not a normalisation that erased the claim.
+    closed = rp.round_provenance_note(
+        today=datetime.date(*map(int, rp.APPLICATION_DEADLINE.split("-")))
+        + datetime.timedelta(days=1))
+    assert closed != rp.round_provenance_note(
+        today=datetime.date(*map(int, rp.LAST_VERIFIED.split("-"))))
 
 
 # The fixture's dates must sit OUTSIDE any window a run could plausibly fall

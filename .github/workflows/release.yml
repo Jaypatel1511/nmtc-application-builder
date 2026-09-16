@@ -1262,7 +1262,55 @@ jobs:
           # Still not added, and for the same reason as at 1.5.5, 1.5.6, 1.6.1
           # and 1.6.3's build round -- 57 against 57 leaves no room, so the
           # gate would be RED ON ARRIVAL.
-          FLOOR=890
+          #
+          # RE-DERIVED FOR 1.6.4, AND THE GATE ANNOUNCED IT A TWELFTH TIME.
+          # test_release_floor_is_derived_from_the_current_suite went red on
+          # FLOOR=890 before this file was opened -- the block above said it
+          # would, at 1,857 collected, and 1.6.4 adds 18 tests: 17 in
+          # tests/test_noaa_table_1.py (the CY 2026 NOAA's Table 1, carried
+          # verbatim and compared to the Federal Register's own text; the
+          # note computed against it in both directions) and 1 in
+          # tests/test_rendered_output_baseline.py (the projection renders
+          # the note as of LAST_VERIFIED). 1,848 -> 1,866 collected.
+          #
+          # Derived from a REAL SDIST BUILD with this job's exact invocation,
+          # on 3.10 (uv-managed CPython 3.10): a copy of the TRACKED tree with
+          # no egg-info, `python -m build --sdist`, the tarball installed into
+          # a venv carrying [dev], ONLY tests/, streamlit_app/, README.md and
+          # pyproject.toml copied out of it into a directory with NO nmtcapp/,
+          # `import nmtcapp` confirmed to resolve to site-packages at 1.6.4,
+          # and the breakdown read off the junit report rather than off the
+          # terminal:
+          #
+          #     collected under -m "not wheel" 1,865
+          #     skipped in the sdist             -57
+          #     EXECUTED                       1,808
+          #     half                             904
+          #     rounded down                     900
+          #
+          # The tarball ran CLEAN on that build: 1,808 passed, 57 skipped, 1
+          # deselected, zero failures. The resulting band is [900, 932]
+          # (1865 // 2 is 932, re-checked as collected/upper the way the
+          # 1.6.3 fix round re-checked every band in this file).
+          #
+          # AND FLOOR=900 SITS EXACTLY ON THE LOWER BOUND AGAIN. It goes red
+          # at 1,877 collected -- twelve more tests -- because
+          # floor_to_ten((1877 - 57) // 2) is 910.
+          #
+          # SKIP HEADROOM IS STILL EXACTLY ZERO, AND STILL NOT BOUGHT. The same
+          # run skipped exactly 57, and the per-module breakdown the next step
+          # prints was read off this run's junit report: neither
+          # test_noaa_table_1 nor test_rendered_output_baseline appears in it,
+          # and every one of the 57 belongs to a module that already skipped
+          # at 1.6.3. test_noaa_table_1 reads tests/noaa_2026_18883_table_1
+          # .txt, which `recursive-include tests *.txt` ships, and the
+          # installed package -- nothing the tarball prunes -- and its
+          # fail-closed control is an assertion at a frozen date, not a skip.
+          #
+          # AND STILL OPEN, RECORDED AN EIGHTH TIME: NOTHING MACHINE-ENFORCES
+          # THE MEASURED SKIP COUNT AGAINST THIS CONSTANT. Same reason as
+          # every time before -- 57 against 57 leaves no room.
+          FLOOR=900
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()

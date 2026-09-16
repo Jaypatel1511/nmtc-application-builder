@@ -22,31 +22,28 @@ if _REPO_ROOT not in sys.path:
 
 import tempfile
 
-from nmtcapp.core.application import Application
+# THE SAME RENDER THE GATE PERFORMS, through the same function (1.6.4). This
+# used to build the Application and normalise here, in parallel with
+# _render_projections; the two agreed by inspection. _render_projections now
+# also freezes the round-provenance note's Eastern date to LAST_VERIFIED, and
+# a regen that did not would write a baseline the gate could never match.
 from tests.test_rendered_output_baseline import (
-    APPLICATION_ROUND, BASELINE_DIR, FORMATS, REQUESTED_ALLOCATION,
-    _cde, _extract, _normalise, _pipeline,
+    BASELINE_DIR, FORMATS, _render_projections,
 )
 
 
 def main() -> int:
     os.makedirs(BASELINE_DIR, exist_ok=True)
-    app = Application(
-        cde=_cde(),
-        requested_allocation=REQUESTED_ALLOCATION,
-        application_round=APPLICATION_ROUND,
-    )
-    app.add_pipeline(_pipeline())
 
     with tempfile.TemporaryDirectory() as out:
-        paths = app.generate(out, formats=list(FORMATS))
-        missing = set(FORMATS) - set(paths)
-        if missing:
-            print(f"REFUSING to write a partial baseline: {sorted(missing)} "
-                  "did not render. Install the [dev] extra.", file=sys.stderr)
+        try:
+            projected = _render_projections(out)
+        except AssertionError as exc:
+            print(f"REFUSING to write a partial baseline: {exc}",
+                  file=sys.stderr)
             return 1
         for fmt in FORMATS:
-            text = _normalise(_extract(fmt, paths[fmt]), out).rstrip("\n") + "\n"
+            text = projected[fmt]
             target = os.path.join(BASELINE_DIR, f"{fmt}.txt")
             with open(target, "w", encoding="utf-8") as fh:
                 fh.write(text)
