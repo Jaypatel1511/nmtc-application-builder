@@ -384,12 +384,18 @@ def _mask(line: str) -> str:
 @pytest.fixture(scope="module")
 def rendered_lines(tmp_path_factory) -> dict:
     """{scenario_id: set(masked prose lines)} across all four formats."""
+    from tests.conftest import provenance_note_as_verified
+
     per_scenario = {}
     for sid, (cde, pipeline, requested) in SCENARIOS.items():
         out = tmp_path_factory.mktemp(f"inv{sid}")
         app = Application(cde=cde, requested_allocation=requested)
         app.add_pipeline(pipeline)
-        paths = app.generate(str(out), formats=list(FORMATS))
+        # The note's deadline paragraphs are computed against the Eastern
+        # date (1.6.4); this gate asks what is invariant across CDEs, not
+        # across days, so the note is rendered as of LAST_VERIFIED.
+        with provenance_note_as_verified():
+            paths = app.generate(str(out), formats=list(FORMATS))
 
         assert set(paths) == set(FORMATS), (
             f"scenario {sid} rendered {sorted(paths)}, expected all of "

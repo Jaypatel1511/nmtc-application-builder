@@ -469,7 +469,16 @@ def test_max_sdist_skips_is_bounded_from_ABOVE_as_well(collected_count):
 #: Streamlit tree instead of skipping. Verified against a real sdist build in
 #: the 1.6.3 fix round: 1,845 collected, 57 skipped, and this module
 #: contributes none of the 57.
-CLAIMED_NEW_TEST_MODULES = 33
+#:
+#: 33 -> 34 at 1.6.4: tests/test_noaa_table_1.py, which parses the Federal
+#: Register's own typesetting of the CY 2026 NOAA's Table 1 (carried verbatim
+#: in tests/noaa_2026_18883_table_1.txt, shipped by `recursive-include tests
+#: *.txt`) and compares it row by row to _round_provenance.NOAA_TABLE_1, then
+#: binds the rendered note to that table in both directions against a frozen
+#: Eastern date. IT ADDS NO SKIPPING CASE: it needs the fixture text and the
+#: installed package, both of which the sdist job has, and its fail-closed
+#: control is an assertion at a frozen date rather than a skip.
+CLAIMED_NEW_TEST_MODULES = 34
 
 
 def test_the_module_count_in_this_comment_matches_the_tree():

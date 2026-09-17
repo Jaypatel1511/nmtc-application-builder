@@ -1,4 +1,5 @@
 """Shared test fixtures."""
+import contextlib
 import os
 
 import pytest
@@ -9,6 +10,41 @@ from nmtcapp.core.pipeline import Pipeline, PipelineProject
 from nmtcapp.intelligence.pipeline_analyzer import PipelineAnalysisResult
 from nmtcapp.validation.readiness_score import compute_readiness_score
 from nmtcapp.data.schema import ValidationResult
+
+
+@contextlib.contextmanager
+def provenance_note_as_verified():
+    """Render the round-provenance note as of ``LAST_VERIFIED`` (1.6.4).
+
+    Paragraphs 2-4 of ``_round_provenance.round_provenance_paragraphs`` are
+    COMPUTED against the Eastern date: which of the CY 2026 NOAA's Table 1
+    deadlines are still ahead, and which have passed. A gate that renders a
+    document and compares it to a reviewed fixture -- the rendered baseline,
+    the invariant-output allowlist, the attribution allowlists -- would
+    therefore go red on the morning after every deadline with nothing in the
+    package having changed. Those gates ask questions about the DOCUMENT
+    (did a line change? is a line invariant across CDEs? is a claim cited?),
+    not about the calendar, so inside this context the note is rendered as of
+    the day its facts were verified true. Moving ``LAST_VERIFIED`` past a
+    deadline is a deliberate act that regenerates those fixtures in the same
+    commit.
+
+    THE LIVE GATES DO NOT USE THIS. ``tests/test_noaa_table_1`` and
+    ``tests/test_round_provenance`` read the real Eastern date on purpose;
+    a freeze there would turn "is the note true today?" into "was it true on
+    the day somebody last looked?".
+    """
+    import datetime
+
+    from nmtcapp.renderers import _round_provenance as rp
+
+    verified = datetime.date(*(int(p) for p in rp.LAST_VERIFIED.split("-")))
+    real = rp._eastern_today
+    rp._eastern_today = lambda: verified
+    try:
+        yield verified
+    finally:
+        rp._eastern_today = real
 
 
 def templates_dir() -> str:

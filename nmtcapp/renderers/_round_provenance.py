@@ -58,10 +58,40 @@ through 1.6.1 this module carried ONE BOOLEAN for both of them.
 
   * The CY 2026 **NOAA** is **PUBLISHED** -- Federal Register document
     2026-18883, filed 14 Sep 2026 08:45 ET, publication date 15 Sep 2026. It
-    makes $5 billion in aggregate allocation authority available and sets an
-    application deadline of 5:00 p.m. ET on 10 Nov 2026.
+    makes $5 billion in aggregate allocation authority available and sets, in
+    its Table 1, ten deadlines from 22 Sep 2026 (CDE certification) through
+    10 Nov 2026 (the application) to 14 Jan 2027 -- carried whole in
+    ``NOAA_TABLE_1`` below.
   * The CY 2026 **Allocation Application** and its Application Materials are
-    **NOT published**. Confirmed by this package's maintainer on 2026-09-14.
+    **NOT published**. Confirmed by this package's maintainer on 2026-09-16.
+
+THE DATE THAT CAME FROM THE WRONG DOCUMENT -- THE 1.6.4 DEFECT
+
+Through 1.6.3 the CDE certification deadline was ``2026-08-31``, and the note
+said, in capitals and in all four formats, that an organization not certified
+by then CANNOT APPLY IN CY 2026. **The NOAA says 22 September.** August 31 was
+the date in the CDFI Fund's 12 Aug 2026 pre-announcement (``news/738``); the
+NOAA superseded it on publication, and for the six days from 16 Sep the package
+told eligible applicants they were excluded from a window that was still open.
+
+Two things let that ship. The NOAA was opened three times in the 1.6.2 and
+1.6.3 cycles and each time only the field being looked for was read -- that it
+exists, that it is $5 billion, that applications close 10 Nov. And the gate
+that "checked" the date asserted the literal ``"August 31, 2026"`` against a
+note rendering the same literal from the same constant: a check that shares
+its source's typo confirms the typo.
+
+So Table 1 is CARRIED, every row, as ``NOAA_TABLE_1``; the two deadlines the
+note names by role are lookups into it; ``HARD_EXTERNAL_DEADLINES`` is derived
+from it; paragraphs 2-4 of the note are COMPUTED against the Eastern date so
+"still ahead" and "has passed" are true on both sides of every row; and
+``tests/test_noaa_table_1`` compares the constant to the Federal Register's own
+typesetting of the table, carried verbatim in
+``tests/noaa_2026_18883_table_1.txt``, rather than to prose derived from the
+constant. The section below headed "what the certification paragraph no longer
+reasons for the reader" is 1.6.2's and still applies; its closing sentence,
+"the AMIS window closed, and the as-of date has arrived", was true of the
+wrong date and is now a computation rather than a sentence.
 
 Non-Metropolitan county designations under the CY 2026 NOAA follow OMB
 Bulletin 20-01, applied using 2020 census tracts. Recorded here because it is
@@ -148,18 +178,22 @@ That work is the NEXT release and its trigger is
 ``APPLICATION_SHA256`` also stays, and stays correct. It was never the defect;
 see ``tests/test_round_provenance`` on why a hash cannot fail on staleness.
 
-WHAT WAS SCHEDULED PAST THE EVENT
+WHAT WAS SCHEDULED PAST THE EVENT, AND WHAT REPLACED THE REPAIR
 
-``RECHECK_AFTER`` was 2026-11-20 -- **ten days after the application deadline
-it existed to protect**. The expiry would have fired for the first time on a
-day when the one thing a CDE could still have done was already impossible. The
-existing ceiling on the horizon (``test_the_horizon_is_not_pushed_out_of_reach``,
-180 days) bounds how LONG the span may be and says nothing about whether the
-horizon lands before the thing it watches. Both properties are now gated: see
-``next_hard_deadline`` below, which derives the answer from the note's own
-constants so the gate cannot learn one date and miss the next.
+``RECHECK_AFTER`` was 2026-11-20 in 1.6.1 -- ten days after the application
+deadline. 1.6.2 answered with a gate requiring the horizon to land before
+``next_hard_deadline()``. With all of Table 1 carried (1.6.4) that gate and the
+expiry itself could not both be green on a deadline day, so the coupling is
+gone (1.6.4 fix round, R2): ``RECHECK_AFTER`` is now ``LAST_VERIFIED`` plus
+``RECHECK_CADENCE_DAYS``, a cadence for human attention; whether a deadline
+has passed is content the note computes. ``next_hard_deadline`` survives for
+the one calendar event that does mean "rewrite the note": every filing
+deadline behind the Eastern date, on which the suite fails closed.
 """
 from __future__ import annotations
+
+import datetime as _datetime
+from typing import NamedTuple
 
 #: The round whose Application this package encodes.
 CITED_ROUND = "CY 2024-2025"
@@ -168,6 +202,18 @@ CITED_ROUND = "CY 2024-2025"
 #: implicit version is what shipped: a hash pin that answers "is this the
 #: document we read?" and is silent on "is this the round the CDE files?".
 CITED_ROUND_STATUS = "closed and awarded"
+
+#: The cited round's own timeline, ISO, from the CDFI Fund's NMTC program
+#: page. Through the 1.6.4 tip these three dates were typed into paragraph 0
+#: as prose -- the one exception to the rule two lines down that ISO is the
+#: arithmetic form and the prose form is derived. Named so the gate that
+#: accounts for every year the note mentions (``tests/test_noaa_table_1``,
+#: direction 1) can read them instead of exempting the paragraph.
+CITED_ROUND_TIMELINE = {
+    "opened": "2024-11-19",
+    "closed": "2025-01-29",
+    "awarded": "2025-12-23",
+}
 
 #: The round a CDE reading this today is preparing for.
 UPCOMING_ROUND = "CY 2026"
@@ -191,6 +237,19 @@ def _us_date(iso: str) -> str:
     """
     year, month, day = (int(part) for part in iso.split("-"))
     return f"{_MONTH_NAMES[month - 1]} {day}, {year}"
+
+
+def _short_date(iso: str) -> str:
+    """``"2024-11-19"`` -> ``"19 Nov 2024"``: the closed round's history, in
+    the compact form paragraph 0 has always used for it. Derived, like
+    ``_us_date``, so the timeline constant and the prose cannot drift.
+
+    Example::
+
+        _short_date("2024-11-19")   # '19 Nov 2024'
+    """
+    year, month, day = (int(part) for part in iso.split("-"))
+    return f"{day} {_MONTH_NAMES[month - 1][:3]} {year}"
 
 
 #: WHETHER THE UPCOMING ROUND'S NOAA HAS PUBLISHED -- and, SEPARATELY, whether
@@ -223,16 +282,140 @@ NOAA_URL = "https://www.federalregister.gov/d/2026-18883"
 #: package is still CY 2024-2025 and ``RECHECK_ITEMS`` still says so.
 NOAA_ALLOCATION_AUTHORITY = "$5 billion"
 
-#: HARD EXTERNAL DATES THE NOTE CARRIES. Set by the CDFI Fund, not computed
-#: here, and nothing in this document moves them.
-APPLICATION_DEADLINE = "2026-11-10"
-APPLICATION_DEADLINE_TEXT = (
-    f"5:00 p.m. ET on {_us_date(APPLICATION_DEADLINE)}"
+#: WHO A TABLE 1 ROW BINDS. Every row is addressed to an applicant -- the
+#: table is headed "Critical Deadlines for Applicants" -- but five of the ten
+#: bind only an applicant that is a PRIOR ALLOCATEE: the Subsidiary CDE and
+#: Allocation Agreement rows, and the two January 2027 rows, which section
+#: III.A.6(a) of the NOAA makes ELIGIBILITY conditions on such an applicant
+#: (finalize the Table 2 share of prior-round QEIs and make the QLICIs by 7
+#: Jan 2027, report and certify them in AMIS by 14 Jan 2027, or the CY 2026
+#: application is ineligible). They are NOT post-award obligations of the
+#: CY 2026 round, and the note must not present them as nobody's.
+AUDIENCE_APPLICANT = "applicant"
+AUDIENCE_PRIOR_ALLOCATEE = "prior allocatee"
+
+
+class NoaaDeadline(NamedTuple):
+    """One row of Table 1, as the Federal Register prints it.
+
+    ``iso`` is the arithmetic form of the date; the prose form is derived by
+    ``deadline_text``. ``description`` and ``submission_method`` are the
+    instrument's own words, whitespace-normalised and without the trailing
+    full stop, so ``tests/test_noaa_table_1`` can compare them to the
+    carried excerpt of the Federal Register text.
+    """
+    iso: str
+    time_text: str
+    description: str
+    submission_method: str
+    audience: str
+
+
+_AMIS = "Electronically via AMIS"
+
+#: TABLE 1 OF THE CY 2026 NOAA, EVERY ROW, IN THE INSTRUMENT'S ORDER (1.6.4).
+#:
+#: THE DEFECT THIS REPLACES. Through 1.6.3 this module carried TWO of these
+#: ten dates, and the CDE certification one was 2026-08-31 -- the date in the
+#: CDFI Fund's 12 Aug 2026 PRE-ANNOUNCEMENT (cdfifund.gov/news/738), which the
+#: NOAA superseded with 2026-09-22 on the day it published. The note then said,
+#: in capitals and in all four formats, that an organization not certified by
+#: 31 Aug CANNOT APPLY IN CY 2026, for the six days between 16 Sep and the
+#: window's actual close. The NOAA had been opened three times in the 1.6.2
+#: and 1.6.3 cycles, and each time only the field being looked for was read.
+#:
+#: SO THE TABLE IS CARRIED, NOT CITED. Every row, every field, in the
+#: instrument's order, and ``tests/noaa_2026_18883_table_1.txt`` holds the
+#: Federal Register's own typesetting of it (retrieval URL and SHA-256 in its
+#: header) so that ``tests/test_noaa_table_1`` checks this constant against
+#: the instrument rather than against prose derived from this constant.
+#: Everything below that names a CY 2026 deadline is derived from here.
+CDE_CERTIFICATION_ROW = NoaaDeadline(
+    "2026-09-22", "11:59 p.m. ET",
+    "Community Development Entity (CDE) Certification Application deadline",
+    _AMIS, AUDIENCE_APPLICANT,
 )
-AMIS_CDE_CERTIFICATION_DEADLINE = "2026-08-31"
-AMIS_CDE_CERTIFICATION_DEADLINE_TEXT = (
-    f"11:59 p.m. ET on {_us_date(AMIS_CDE_CERTIFICATION_DEADLINE)}"
+SERVICE_AREA_ROW = NoaaDeadline(
+    "2026-09-22", "11:59 p.m. ET",
+    "Request to modify CDE certification service area",
+    _AMIS, AUDIENCE_APPLICANT,
 )
+SUBSIDIARY_CDE_CERTIFICATION_ROW = NoaaDeadline(
+    "2026-09-22", "11:59 p.m. ET",
+    "Subsidiary CDE Certification Application for meeting Qualified Equity "
+    "Investment (QEI) issuance thresholds",
+    _AMIS, AUDIENCE_PRIOR_ALLOCATEE,
+)
+APPLICATION_REGISTRATION_ROW = NoaaDeadline(
+    "2026-10-06", "5:00 p.m. ET",
+    f"{UPCOMING_ROUND} Allocation Application Registration",
+    _AMIS, AUDIENCE_APPLICANT,
+)
+ADD_SUBSIDIARY_CDES_ROW = NoaaDeadline(
+    "2026-11-03", "11:59 p.m. ET",
+    "Amendment request to add Subsidiary CDEs to Allocation Agreements for "
+    "meeting QEI issuance thresholds",
+    _AMIS, AUDIENCE_PRIOR_ALLOCATEE,
+)
+REMOVE_CONTROLLING_ENTITY_ROW = NoaaDeadline(
+    "2026-11-03", "11:59 p.m. ET",
+    "Amendment request to remove a Controlling Entity from Allocation "
+    "Agreement(s)",
+    _AMIS, AUDIENCE_PRIOR_ALLOCATEE,
+)
+LAST_CONTACT_ROW = NoaaDeadline(
+    "2026-11-06", "5:00 p.m. ET",
+    "Last day to contact CDFI Fund staff",
+    _AMIS, AUDIENCE_APPLICANT,
+)
+APPLICATION_DEADLINE_ROW = NoaaDeadline(
+    "2026-11-10", "5:00 p.m. ET",
+    f"{UPCOMING_ROUND} Allocation Application deadline (including required "
+    "Attachments)",
+    _AMIS, AUDIENCE_APPLICANT,
+)
+QEI_ISSUANCE_ROW = NoaaDeadline(
+    "2027-01-07", "11:59 p.m. ET",
+    "QEI Issuance and Qualified Low Income Community Investments (QLICIs) "
+    "requirements deadline",
+    "Not Applicable", AUDIENCE_PRIOR_ALLOCATEE,
+)
+REPORT_QEIS_ROW = NoaaDeadline(
+    "2027-01-14", "11:59 p.m. ET",
+    "Report QEIs and certify QLICIs deadline",
+    _AMIS, AUDIENCE_PRIOR_ALLOCATEE,
+)
+NOAA_TABLE_1 = (
+    CDE_CERTIFICATION_ROW,
+    SERVICE_AREA_ROW,
+    SUBSIDIARY_CDE_CERTIFICATION_ROW,
+    APPLICATION_REGISTRATION_ROW,
+    ADD_SUBSIDIARY_CDES_ROW,
+    REMOVE_CONTROLLING_ENTITY_ROW,
+    LAST_CONTACT_ROW,
+    APPLICATION_DEADLINE_ROW,
+    QEI_ISSUANCE_ROW,
+    REPORT_QEIS_ROW,
+)
+
+
+def deadline_text(row: NoaaDeadline) -> str:
+    """``"11:59 p.m. ET on September 22, 2026"`` -- ONE spelling, derived.
+
+    Example::
+
+        deadline_text(CDE_CERTIFICATION_ROW)  # '11:59 p.m. ET on September 22, 2026'
+    """
+    return f"{row.time_text} on {_us_date(row.iso)}"
+
+
+#: THE TWO DEADLINES THE NOTE NAMES BY ROLE. Lookups into the table above, not
+#: second copies of a date: through 1.6.3 these were typed here, and one of
+#: them was typed from the wrong document.
+APPLICATION_DEADLINE = APPLICATION_DEADLINE_ROW.iso
+APPLICATION_DEADLINE_TEXT = deadline_text(APPLICATION_DEADLINE_ROW)
+AMIS_CDE_CERTIFICATION_DEADLINE = CDE_CERTIFICATION_ROW.iso
+AMIS_CDE_CERTIFICATION_DEADLINE_TEXT = deadline_text(CDE_CERTIFICATION_ROW)
 
 #: THE DEADLINES A CDE CAN MISS, which is a narrower set than "dates this note
 #: names" and the distinction is load-bearing. ``NOAA_PUBLICATION_DATE`` is an
@@ -240,11 +423,18 @@ AMIS_CDE_CERTIFICATION_DEADLINE_TEXT = (
 #: on the day. A deadline is something you can still be on the wrong side of by
 #: failing to act. Only deadlines belong here, because this tuple is what
 #: ``next_hard_deadline`` schedules the re-check against.
-HARD_EXTERNAL_DEADLINES = (
-    (AMIS_CDE_CERTIFICATION_DEADLINE, AMIS_CDE_CERTIFICATION_DEADLINE_TEXT,
-     "CY 2026 CDE Certification Application submitted through AMIS"),
-    (APPLICATION_DEADLINE, APPLICATION_DEADLINE_TEXT,
-     "CY 2026 Allocation Application submitted to the CDFI Fund"),
+#:
+#: DERIVED FROM ``NOAA_TABLE_1`` SINCE 1.6.4, by filtering to the FILING
+#: WINDOW: every row on or before the application deadline. The two January
+#: 2027 rows are deadlines a prior Allocatee can miss, but not by anything it
+#: does while applying -- after 10 Nov nothing in this package can help -- so
+#: they do not extend the horizon, and ``next_hard_deadline`` still returns
+#: ``None`` the day after the application deadline exactly as it did before.
+#: The ``(iso, text, what)`` shape is unchanged.
+HARD_EXTERNAL_DEADLINES = tuple(
+    (row.iso, deadline_text(row), row.description)
+    for row in NOAA_TABLE_1
+    if row.iso <= APPLICATION_DEADLINE
 )
 
 
@@ -282,17 +472,18 @@ def _eastern_today():
 def next_hard_deadline(today=None):
     """The earliest CY 2026 deadline that has NOT yet passed, or ``None``.
 
-    THE RE-CHECK HORIZON MUST LAND BEFORE THIS. 1.6.1 set ``RECHECK_AFTER`` to
-    2026-11-20, ten days past the application deadline, and every gate in the
-    suite passed: the 180-day ceiling bounds how FAR OUT a horizon goes and
-    says nothing about whether it arrives before the event it watches. This is
-    the missing half, and it is DERIVED rather than typed so the gate built on
-    it learns the next round's date instead of memorising this one's.
+    WHAT THIS IS FOR (1.6.4 fix round, R2). It was built so the re-check
+    horizon could be required to land before it; that coupling made the suite
+    unsatisfiable on every deadline day and is deleted -- ``RECHECK_AFTER`` is
+    a cadence now and does not read this. What remains is the ``None`` case,
+    and it is DERIVED rather than typed so the gate built on it learns the
+    next round's date instead of memorising this one's.
 
     Returns ``(iso, text, what)`` or ``None`` when every deadline has passed --
     which is itself a finding, not a quiet pass: a note whose every deadline is
-    behind it describes a closed round and needs rewriting, so the gate in
-    ``tests/test_round_provenance.py`` fails closed on ``None``.
+    behind it describes a closed round and needs rewriting, so
+    ``tests/test_round_provenance.test_the_round_is_not_over`` and
+    ``tests/test_noaa_table_1`` both fail closed on ``None``.
 
     "TODAY" DEFAULTS TO THE EASTERN DATE, NOT THE RUNNER'S (1.6.2 R2)
 
@@ -331,21 +522,41 @@ def next_hard_deadline(today=None):
 
 
 #: When the facts above were last verified, ISO-8601. The NOAA is verified
-#: against the Federal Register document named above; the ABSENCE of CY 2026
-#: Application Materials was confirmed by this package's maintainer on this
-#: date. Those are two different kinds of evidence and the note says which is
-#: which rather than collapsing both into "verified against cdfifund.gov".
-LAST_VERIFIED = "2026-09-14"
+#: against the Federal Register document named above -- on 2026-09-16 from its
+#: raw-text endpoint, every Table 1 row, which is how the 31 Aug date was
+#: found; the ABSENCE of CY 2026 Application Materials was confirmed by this
+#: package's maintainer on the same date. Those are two different kinds of
+#: evidence and the note says which is which rather than collapsing both into
+#: "verified against cdfifund.gov".
+LAST_VERIFIED = "2026-09-16"
 
-#: The date this claim goes stale and the suite goes red.
+#: How long a verification stays good for, in days. A CADENCE, NOT A
+#: DEADLINE (1.6.4 fix round, R2): the question the expiry asks is "has a
+#: human re-checked the Fund since ``LAST_VERIFIED``?", which is a question
+#: about attention and has nothing to do with when Table 1's rows fall.
 #:
-#: THREE WEEKS, AND THE SHORTNESS IS THE POINT. The round is OPEN and the
-#: Application Materials can drop on any business day between now and the
-#: deadline; a horizon measured in months cannot catch that inside a window
-#: that is itself only eight weeks long. At 2026-10-05 the expiry fires with
-#: 36 days of runway left before the application deadline -- enough for a CDE
-#: to act on what a re-check finds, which is the only reason to look at all.
-RECHECK_AFTER = "2026-10-05"
+#: WHAT THIS REPLACES. Through the 1.6.4 tip ``RECHECK_AFTER`` was typed, and
+#: a gate required it to land before ``next_hard_deadline()``. With the whole
+#: of Table 1 carried, that rule and ``today <= RECHECK_AFTER`` could not both
+#: hold on a deadline day -- the horizon had to be >= today and < today --
+#: so the suite was unsatisfiable on 22 Sep, 6 Oct, 3 Nov, 6 Nov and 10 Nov
+#: 2026, and every bump between them moved ``LAST_VERIFIED`` across a
+#: boundary and regenerated four baselines plus two registries. Whether a
+#: deadline has passed is CONTENT: paragraphs 2-4 compute it on every
+#: generation and ``tests/test_noaa_table_1`` binds them to the table. The
+#: horizon no longer reads the table at all.
+#:
+#: 30 is a judgement -- the order of magnitude at which "nobody has looked"
+#: becomes the defect this module's header describes -- and the repo records
+#: no other basis. ``tests/test_round_provenance`` bounds it at 180.
+RECHECK_CADENCE_DAYS = 30
+
+#: The date this claim goes stale and the suite goes red. DERIVED: bump
+#: ``LAST_VERIFIED`` to the day you looked and this follows.
+RECHECK_AFTER = (
+    _datetime.date(*(int(part) for part in LAST_VERIFIED.split("-")))
+    + _datetime.timedelta(days=RECHECK_CADENCE_DAYS)
+).isoformat()
 
 #: Sources, so a re-check does not start by hunting for the page.
 PROGRAM_PAGE_URL = (
@@ -389,7 +600,174 @@ RECHECK_ITEMS = (
 )
 
 
-def round_provenance_paragraphs() -> tuple:
+#: Where each computed paragraph sits in ``round_provenance_paragraphs()``.
+#: Named so a gate can read "the certification paragraph" without counting.
+CERTIFICATION_PARAGRAPH_INDEX = 2
+PRIOR_ALLOCATEE_PARAGRAPH_INDEX = 3
+DEADLINES_PARAGRAPH_INDEX = 4
+
+
+def _date(iso: str):
+    import datetime as _datetime
+    return _datetime.date(*(int(part) for part in iso.split("-")))
+
+
+def _is_ahead(row: NoaaDeadline, today) -> bool:
+    """Day-level, the same rule as ``next_hard_deadline``: the deadline day
+    itself is still ahead; the day after, it has passed."""
+    return _date(row.iso) >= today
+
+
+def _row_item(row: NoaaDeadline) -> str:
+    """One Table 1 row as a list item: what, when, how, and for whom."""
+    item = f"{row.description} — {deadline_text(row)} ({row.submission_method})"
+    if row.audience == AUDIENCE_PRIOR_ALLOCATEE:
+        item += " [prior Allocatees]"
+    return item
+
+
+def _certification_paragraph(today) -> str:
+    """Paragraph 2: the two eligibility routes, the second's status computed.
+
+    THE 1.6.3 VERSION WAS TYPED, AND TYPED FROM THE WRONG DOCUMENT. It said
+    "Neither route is still open ... An organization that did neither CANNOT
+    APPLY" against a 31 Aug date the pre-announcement carried and the NOAA
+    superseded. Whether the AMIS route is still ahead is now read off Table 1
+    against the Eastern date, so the sentence is true on both sides of the
+    deadline instead of on neither.
+    """
+    row = CDE_CERTIFICATION_ROW
+    rule = (
+        f"THE {UPCOMING_ROUND} CDE CERTIFICATION RULE HAS TWO ROUTES, AND THE "
+        "SECOND HAS A DATE IN TABLE 1 OF THE NOAA. To be eligible to apply in "
+        f"{UPCOMING_ROUND} an organization must EITHER already be a certified "
+        "CDE as of the NOAA's Federal Register publication date, "
+        f"{_us_date(NOAA_PUBLICATION_DATE)}, OR submit its CDE Certification "
+        f"Application through AMIS by {deadline_text(row)}."
+    )
+    # ONE SENTENCE IN BOTH BRANCHES, WORD FOR WORD. It is true on both sides
+    # of the deadline, and tests/test_attributed_claims rules attributions by
+    # exact clause: a sentence that renders only while the route is ahead
+    # would leave a dead allowlist entry behind on 23 Sep.
+    fund = (
+        "The NOAA adds that the CDFI Fund will not provide allocation "
+        "authority to an Applicant that is not certified as a CDE."
+    )
+    if _is_ahead(row, today):
+        status = (
+            f"As of {_us_date(today.isoformat())} the AMIS route is STILL "
+            "AHEAD: an organization that is not yet a certified CDE can still "
+            "meet the rule by submitting its CDE Certification Application "
+            f"through AMIS by {deadline_text(row)}. {fund} An organization "
+            f"that does neither CANNOT APPLY IN {UPCOMING_ROUND}."
+        )
+    else:
+        status = (
+            f"As of {_us_date(today.isoformat())} the AMIS route has CLOSED: "
+            f"the window shut at {deadline_text(row)}, and the as-of date, "
+            f"{_us_date(NOAA_PUBLICATION_DATE)}, has passed. {fund} An "
+            f"organization that did neither CANNOT APPLY IN {UPCOMING_ROUND}."
+        )
+    return (
+        f"{rule} {status} There is no late filing; its next opportunity is a "
+        "future round."
+    )
+
+
+def _prior_allocatee_paragraph(today) -> str:
+    """Paragraph 3: the rows that bind a prior Allocatee, each with ITS date.
+
+    THE 1.6.3 VERSION GAVE TWO ACTIONS ONE DATE. Certifying a Subsidiary CDE
+    and adding it to an Allocation Agreement are two Table 1 rows with two
+    dates -- 22 Sep and 3 Nov -- and the note put both on 31 Aug and called it
+    closed. And it stopped there: the QEI issuance thresholds those actions
+    exist to meet are ELIGIBILITY conditions on a prior Allocatee's CY 2026
+    application with two more Table 1 dates of their own, both in January
+    2027, both after the application deadline. Section III.A.6(a) of the NOAA.
+    """
+    cert, add = SUBSIDIARY_CDE_CERTIFICATION_ROW, ADD_SUBSIDIARY_CDES_ROW
+    issue, report = QEI_ISSUANCE_ROW, REPORT_QEIS_ROW
+    when = _us_date(today.isoformat())
+    if _is_ahead(cert, today):
+        status = f"As of {when} both of those dates are still ahead."
+    elif _is_ahead(add, today):
+        status = (
+            f"As of {when} the Subsidiary CDE certification date has passed "
+            "and the amendment date is still ahead."
+        )
+    else:
+        status = f"As of {when} both of those dates have passed."
+    return (
+        "AND IF YOU ARE A PRIOR ALLOCATEE, TABLE 1 BINDS YOU ON DATES OF ITS "
+        "OWN: any prior Allocatee that requires action by the CDFI Fund in "
+        "order to meet the Qualified Equity Investment (QEI) issuance "
+        f"thresholds published in the {UPCOMING_ROUND} NOAA must submit a CDE "
+        "Certification Application for its Subsidiary CDE(s) through AMIS by "
+        f"{deadline_text(cert)}, and any Allocation Agreement amendment "
+        f"request to add Subsidiary CDEs by {deadline_text(add)}. {status} "
+        "The thresholds are eligibility conditions with their own deadlines, "
+        "both after the application deadline: the Table 2 share of "
+        "prior-round QEIs must be finalized, and the required share of them "
+        f"used to make QLICIs, by {deadline_text(issue)}, and those QEIs "
+        f"reported and QLICIs certified in AMIS by {deadline_text(report)}. "
+        "The QEI issuance "
+        "thresholds themselves are in Table 2 of the NOAA, Federal Register "
+        f"document {NOAA_FR_DOCUMENT_NUMBER}; this tool neither computes them "
+        "nor reproduces them."
+    )
+
+
+def _deadlines_paragraph(today) -> str:
+    """Paragraph 4: what is still ahead, COMPUTED, and what has passed.
+
+    "THE ONLY CY 2026 DEADLINE YOU CAN STILL MISS IS THE APPLICATION
+    DEADLINE" was a typed sentence through 1.6.3, and it was true on no day:
+    on the day it shipped, eight of Table 1's ten rows were still ahead. So
+    the set is derived from the table against the Eastern date and rendered
+    whole, in the instrument's order; a row that has passed moves to the
+    second list rather than disappearing. When nothing is ahead the paragraph
+    says so, and ``tests/test_noaa_table_1`` fails closed on that state --
+    a note whose every date is behind it describes a closed round.
+    """
+    when = _us_date(today.isoformat())
+    ahead = [row for row in NOAA_TABLE_1 if _is_ahead(row, today)]
+    passed = [row for row in NOAA_TABLE_1 if not _is_ahead(row, today)]
+    total = len(NOAA_TABLE_1)
+    provenance = (
+        "Every one of these dates is set by the NOAA, none is a figure this "
+        "tool computes, and nothing in this document moves them. Provenance: "
+        f"the {UPCOMING_ROUND} NOAA is Federal Register document "
+        f"{NOAA_FR_DOCUMENT_NUMBER}, filed {_us_date(NOAA_FILED_DATE)} and "
+        f"published {_us_date(NOAA_PUBLICATION_DATE)}; the absence of "
+        f"{UPCOMING_ROUND} Application Materials was confirmed on "
+        f"{_us_date(LAST_VERIFIED)}."
+    )
+    if ahead:
+        verb = "is" if len(ahead) == 1 else "are"
+        lead = (
+            f"THE {UPCOMING_ROUND} DEADLINES STILL AHEAD, COMPUTED FROM TABLE "
+            "1 OF THE NOAA AGAINST THE EASTERN DATE THIS DOCUMENT WAS "
+            f"GENERATED, {when}: {len(ahead)} of the {total} deadlines in "
+            f"Table 1 {verb} still ahead — "
+            + "; ".join(_row_item(row) for row in ahead) + "."
+        )
+        if passed:
+            gone = (
+                "Already passed: "
+                + "; ".join(_row_item(row) for row in passed) + "."
+            )
+        else:
+            gone = "Already passed: none."
+        return f"{lead} {gone} {provenance}"
+    return (
+        f"EVERY {UPCOMING_ROUND} DEADLINE IN TABLE 1 OF THE NOAA HAS PASSED "
+        f"AS OF THE EASTERN DATE THIS DOCUMENT WAS GENERATED, {when}. Already "
+        "passed: " + "; ".join(_row_item(row) for row in passed) + ". "
+        f"{provenance}"
+    )
+
+
+def round_provenance_paragraphs(today=None) -> tuple:
     """``round_provenance_note()`` split into paragraphs, same text.
 
     WHY THIS EXISTS (1.5.0 B1). Markdown, Word and PDF each render the note as
@@ -404,15 +782,26 @@ def round_provenance_paragraphs() -> tuple:
     ``tests/test_round_provenance.py`` asserts the join is exactly the note, so
     the two views cannot diverge even in principle.
 
+    PARAGRAPHS 2, 3 AND 4 ARE COMPUTED AGAINST ``today`` (1.6.4), which
+    defaults to the Eastern date -- the same clock ``next_hard_deadline``
+    reads, for the same reason. Which of Table 1's deadlines are still ahead
+    is a claim about the day the document is generated, and through 1.6.3 it
+    was a typed sentence. ``today`` is accepted so a caller (and the rendered
+    baseline) can ask about a fixed date.
+
     Example::
 
         paras = round_provenance_paragraphs()
     """
+    if today is None:
+        today = _eastern_today()
     return (
         f"WHICH ROUND THIS IS BASED ON. This tool encodes the "
         f"{CITED_ROUND} NMTC Allocation Application, which is the most recent "
         f"PUBLISHED Application and is {CITED_ROUND_STATUS} (it opened "
-        "19 Nov 2024, closed 29 Jan 2025, and was awarded 23 Dec 2025 with "
+        f"{_short_date(CITED_ROUND_TIMELINE['opened'])}, closed "
+        f"{_short_date(CITED_ROUND_TIMELINE['closed'])}, and was awarded "
+        f"{_short_date(CITED_ROUND_TIMELINE['awarded'])} with "
         f"$10 billion in allocation authority). THE {UPCOMING_ROUND} ROUND "
         f"HAS OPENED, BUT ITS APPLICATION HAS NOT: the {UPCOMING_ROUND} NOAA "
         f"IS PUBLISHED — Federal Register document {NOAA_FR_DOCUMENT_NUMBER}, "
@@ -431,57 +820,13 @@ def round_provenance_paragraphs() -> tuple:
         f"the {UPCOMING_ROUND} Application Materials on the day the Fund "
         f"releases them — specifically: {'; '.join(RECHECK_ITEMS)}.",
 
-        # THE ROUTE CLOSED (1.6.2). Until this release this paragraph offered
-        # a reader two options in the future conditional, on a date that had
-        # already passed. Every variable in it is now settled, so it is
-        # written as settled.
-        f"THE {UPCOMING_ROUND} CDE CERTIFICATION CUTOFFS ARE SETTLED AND ONE "
-        "OF THEM HAS ALREADY CLOSED. To be eligible to apply in "
-        f"{UPCOMING_ROUND} an organization had EITHER to already be a "
-        "certified CDE as of the NOAA's Federal Register publication date, "
-        f"{_us_date(NOAA_PUBLICATION_DATE)}, OR to have submitted its CDE "
-        "Certification Application through AMIS by "
-        f"{AMIS_CDE_CERTIFICATION_DEADLINE_TEXT}. Neither route is still "
-        "open: the AMIS window closed on "
-        f"{_us_date(AMIS_CDE_CERTIFICATION_DEADLINE)}, and the as-of date "
-        f"the NOAA sets, {_us_date(NOAA_PUBLICATION_DATE)}, has arrived. An "
-        f"organization that did neither CANNOT APPLY IN {UPCOMING_ROUND}. "
-        "There is no late filing; its next opportunity is a "
-        "future round.",
-
-        # THE THIRD OBLIGATION (1.5.0 F7). The Fund's section is headed
-        # "Important Deadlines for CDE Certification AND Subsidiary CDE
-        # Certification", and until 1.5.0 this note read only the first half
-        # of it. The second half binds PRIOR ALLOCATEES -- which is this
-        # tool's audience, not an edge case -- on the same date, and that
-        # date has now passed too.
-        "AND IF YOU ARE A PRIOR ALLOCATEE, A THIRD OBLIGATION FELL ON THE "
-        "SAME CLOSED DATE: any prior Allocatee that required action by the "
-        "CDFI Fund — certifying a Subsidiary entity as a CDE, or adding a "
-        "Subsidiary CDE to an Allocation Agreement — in order to meet the "
-        "Qualified Equity Investment (QEI) issuance thresholds published in "
-        f"the {UPCOMING_ROUND} NOAA had to submit a CDE Certification "
-        "Application for its Subsidiary CDE(s) through AMIS by "
-        f"{AMIS_CDE_CERTIFICATION_DEADLINE_TEXT}. That date has passed. The "
-        "QEI issuance thresholds themselves are in the NOAA, Federal Register "
-        f"document {NOAA_FR_DOCUMENT_NUMBER}; this tool neither computes them "
-        "nor reproduces them.",
-
-        # THE ONE THAT IS STILL AHEAD (1.6.2). It was absent from this note
-        # entirely, while three dates nobody can act on were in it.
-        f"THE ONLY {UPCOMING_ROUND} DEADLINE YOU CAN STILL MISS IS THE "
-        f"APPLICATION DEADLINE: {APPLICATION_DEADLINE_TEXT}. Every other "
-        f"{UPCOMING_ROUND} date named above is already determined. It is set "
-        "by the NOAA, it is not a figure this tool computes, and nothing in "
-        f"this document moves it. Provenance: the {UPCOMING_ROUND} NOAA is "
-        f"Federal Register document {NOAA_FR_DOCUMENT_NUMBER}, filed "
-        f"{_us_date(NOAA_FILED_DATE)} and published "
-        f"{_us_date(NOAA_PUBLICATION_DATE)}; the absence of {UPCOMING_ROUND} "
-        f"Application Materials was confirmed on {_us_date(LAST_VERIFIED)}.",
+        _certification_paragraph(today),
+        _prior_allocatee_paragraph(today),
+        _deadlines_paragraph(today),
     )
 
 
-def round_provenance_note() -> str:
+def round_provenance_note(today=None) -> str:
     """The round-provenance disclosure, in the package's own voice.
 
     ONE STRING, READ EVERYWHERE. The round caveat was previously three
@@ -500,4 +845,4 @@ def round_provenance_note() -> str:
 
         note = round_provenance_note()
     """
-    return " ".join(round_provenance_paragraphs())
+    return " ".join(round_provenance_paragraphs(today=today))

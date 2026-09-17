@@ -1,0 +1,71 @@
+# TABLE 1 OF THE CY 2026 NMTC NOAA, VERBATIM FROM THE FEDERAL REGISTER.
+#
+# Federal Register document 2026-18883, 91 FR 58526, publication date
+# 2026-09-15. "Funding Opportunity; Notice of Allocation Availability Inviting
+# Applications for the Calendar Years 2026 Allocation Round of the New Markets
+# Tax Credit Program."
+#
+# SOURCE, retrieved 2026-09-16 with curl, uncached, from the Federal
+# Register's raw-text endpoint (the `raw_text_url` field of
+# https://www.federalregister.gov/api/v1/documents/2026-18883.json):
+#
+#   https://www.federalregister.gov/documents/full_text/text/2026/09/15/2026-18883.txt
+#
+# SHA-256 of the full 73,488-byte retrieval:
+#   72b89b421cbc9bbbfaf6be00e8ffcb98ae310d5c3bdca871627876dc3c2aabdd
+#
+# Everything below the header is lines 33-69 of that file, byte for byte,
+# including the GPO's dot leaders and hanging indents. tests/test_noaa_table_1
+# PARSES this excerpt and compares it row by row to
+# nmtcapp.renderers._round_provenance.NOAA_TABLE_1, so the package's copy of
+# the instrument is checked against the instrument and not against itself.
+#
+# WHY THIS FILE EXISTS. Through 1.6.3 the package carried the CDE
+# certification deadline as 2026-08-31, the date in the CDFI Fund's 12 Aug
+# 2026 PRE-ANNOUNCEMENT (cdfifund.gov/news/738). The NOAA superseded it with
+# 2026-09-22, and the package told a CDE it CANNOT APPLY six days before the
+# window it described as shut actually shut. The NOAA was opened three times
+# in the 1.6.2 and 1.6.3 cycles and each time only the field being looked for
+# was read. A cited date is a date somebody typed; a carried table is one the
+# suite can re-read.
+#
+# DO NOT EDIT THE EXCERPT. If the CDFI Fund amends the NOAA, retrieve the
+# amended document, replace the excerpt, update the SHA-256 and the line
+# range above, and let the gate tell you which rows moved.
+                Table 1--CY 2026 Allocation Round NMTC Program Critical Deadlines for Applicants
+----------------------------------------------------------------------------------------------------------------
+                                                            Time  (eastern time--
+         Description                     Deadline                    ET)                 Submission method
+----------------------------------------------------------------------------------------------------------------
+Community Development Entity   September 22, 2026.........  11:59 p.m. ET.......  Electronically via AMIS.
+ (CDE) Certification
+ Application deadline.
+Request to modify CDE          September 22, 2026.........  11:59 p.m. ET.......  Electronically via AMIS.
+ certification service area.
+Subsidiary CDE Certification   September 22, 2026.........  11:59 p.m. ET.......  Electronically via AMIS.
+ Application for meeting
+ Qualified Equity Investment
+ (QEI) issuance thresholds.
+CY 2026 Allocation             October 6, 2026............  5:00 p.m. ET........  Electronically via AMIS.
+ Application Registration.
+Amendment request to add       November 3, 2026...........  11:59 p.m. ET.......  Electronically via AMIS.
+ Subsidiary CDEs to
+ Allocation Agreements for
+ meeting QEI issuance
+ thresholds.
+Amendment request to remove a  November 3, 2026...........  11:59 p.m. ET.......  Electronically via AMIS.
+ Controlling Entity from
+ Allocation Agreement(s).
+Last day to contact CDFI Fund  November 6, 2026...........  5:00 p.m. ET........  Electronically via AMIS.
+ staff.
+CY 2026 Allocation             November 10, 2026..........  5:00 p.m. ET........  Electronically via AMIS.
+ Application deadline
+ (including required
+ Attachments).
+QEI Issuance and Qualified     January 7, 2027............  11:59 p.m. ET.......  Not Applicable.
+ Low Income Community
+ Investments (QLICIs)
+ requirements deadline.
+Report QEIs and certify        January 14, 2027...........  11:59 p.m. ET.......  Electronically via AMIS.
+ QLICIs deadline.
+----------------------------------------------------------------------------------------------------------------
