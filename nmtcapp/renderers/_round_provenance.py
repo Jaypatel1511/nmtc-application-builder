@@ -346,6 +346,16 @@ UPCOMING_APPLICATION_PUBLISHED = True
 #: resource. The PDF path is carried as SECONDARY provenance of what was
 #: retrieved on the verification date, and no gate depends on it resolving.
 UPCOMING_APPLICATION_PUBLICATION_DATE = "2026-09-17"
+#: The day THIS TOOL retrieved the CY 2026 Application PDF and read its title
+#: page and OMB control number -- the date paragraph 0's "confirmed the
+#: Application itself on" clause renders (1.6.5 audit F5). Its own constant,
+#: not ``LAST_VERIFIED``: the cadence re-check (see the expiry gate's runbook
+#: in ``tests/test_round_provenance``) reads the program page and bumps
+#: ``LAST_VERIFIED``; it does not re-retrieve the document, so a clause that
+#: derived the retrieval date from ``LAST_VERIFIED`` would re-date a retrieval
+#: that did not happen. Paragraph 4's "confirmed ... on" still follows
+#: ``LAST_VERIFIED``, because that clause is about the looking, not the file.
+UPCOMING_APPLICATION_RETRIEVED_DATE = "2026-09-17"
 UPCOMING_APPLICATION_ANNOUNCEMENT_URL = "https://www.cdfifund.gov/news/741"
 UPCOMING_APPLICATION_PAGE_URL = (
     "https://www.cdfifund.gov/programs-training/programs/"
@@ -792,7 +802,8 @@ def _application_publication_clauses() -> tuple:
             f"{_us_date(UPCOMING_APPLICATION_PUBLICATION_DATE)} "
             f"({UPCOMING_APPLICATION_ANNOUNCEMENT_URL}), and this tool "
             f"confirmed the Application itself on "
-            f"{_us_date(LAST_VERIFIED)}. THIS TOOL STILL ENCODES THE "
+            f"{_us_date(UPCOMING_APPLICATION_RETRIEVED_DATE)}. THIS TOOL "
+            "STILL ENCODES THE "
             f"{CITED_ROUND} INSTRUMENT, which is now a proxy for a document "
             "that exists and can be read.",
 

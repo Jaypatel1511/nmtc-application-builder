@@ -1040,6 +1040,10 @@ ROUND_STATUS_CLAIMS = {
         (('APPLICATION', True),),
 
     # nmtcapp/renderers/_round_provenance.py [#]
+    'The day THIS TOOL retrieved the CY 2026 Application PDF and read its title page and OMB control number -- the date paragraph 0\'s "confirmed the Application itself on" clause renders (1.6.5 audit F5).':
+        (),
+
+    # nmtcapp/renderers/_round_provenance.py [#]
     "The obvious repair -- shrink the number and call it derived -- was considered against the one piece of evidence the repo holds, the intervals between this issuer's own CY 2026 announcements: 2026-08-12 pre-announcement (news/738) -> 34 days -> 2026-09-15 NOAA, Federal Register 2026-18883 -> 2 days -> 2026-09-17 Allocation Application (news/741) -> 19 days -> 2026-10-06 Application Registration deadline -> 35 days -> 2026-11-10 Application deadline Those intervals are 34, 2, 19 and 35 days: no cadence derivable from them is both short enough to have caught the 2-day gap and long enough not to fire as ritual across the 35-day ones.":
         (),
 
@@ -1113,6 +1117,13 @@ ROUND_STATUS_CLAIMS = {
 #: above, and read by
 #: ``test_a_non_claim_that_carries_status_vocabulary_is_argued_in_writing``.
 NON_CLAIM_REASONS = {
+    # nmtcapp/renderers/_round_provenance.py [#]
+    'The day THIS TOOL retrieved the CY 2026 Application PDF and read its title page and OMB control number -- the date paragraph 0\'s "confirmed the Application itself on" clause renders (1.6.5 audit F5).':
+        "The comment on UPCOMING_APPLICATION_RETRIEVED_DATE (1.6.5 audit F5). It "
+        "dates this tool's own retrieval of the document and says which clause "
+        "renders that date; it asserts nothing about whether the Fund has published "
+        "anything -- the publication claim is paragraph 0's, registered above.",
+
     # nmtcapp/renderers/_round_provenance.py
     '**The CY 2024-2025 Application is not unreliable.** It is a real federal instrument, retrieved and hash-verified, and it is the best available basis for preparing a CY 2026 application.':
         "About the CITED round's reliability, not about publication. "
