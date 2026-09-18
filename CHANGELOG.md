@@ -5,6 +5,359 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.6.5] — 2026-09-17
+
+**PATCH. THE CY 2026 ALLOCATION APPLICATION PUBLISHED, AND THE NOTE SAID IT
+HAD NOT.** No score formula, weight, band, threshold or grade moves, and no
+score moves. No renderer, table or section module is touched. The rendered
+text that changes is paragraphs 0, 1 and 4 of the round-provenance note and
+the closing sentence of the Question 25 basis note, on all four formats —
+and every sentence that changed was a **perishable negative** replaced by a
+**monotone positive**.
+
+> **41 insertions, 36 deletions** in `tests/rendered_baseline/`, measured
+> `f4c7925`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+
+| Class | Lines | +/− | Surface |
+|---|---|---|---|
+| The note's ¶0 and ¶1, rewritten — markdown and word render the whole notes block as ONE line each (those two lines carry ¶2–¶4's changes too); excel one row per paragraph (`Round Provenance!A4`, `A5`) | 8 | +4 / −4 | markdown, word, excel |
+| The note's ¶2, ¶3 and ¶4 — the `As of` date moves 16 → 17 Sep because `LAST_VERIFIED` did, and ¶4's provenance clause is rewritten; one excel row each (`A6`–`A8`); the markdown and word lines above carry them too | 6 | +3 / −3 | excel (the other two are inside the rows counted above) |
+| The Q25 basis note's closing sentence — one line each: markdown line 130, word `T6\|R7`, excel `Q25 Basis Note!A9` | 6 | +3 / −3 | markdown, word, excel |
+| ¶0 and ¶1 re-wrapped across the PDF column, page 23 | 31 | +17 / −14 | pdf |
+| ¶2, ¶3, ¶4 `As of` dates, one wrapped line each | 6 | +3 / −3 | pdf |
+| ¶4's provenance clause, two wrapped lines | 4 | +2 / −2 | pdf |
+| Page furniture: the longer ¶0–¶1 push three lines of ¶2 from page 23 onto page 24 and two lines of the DEAL ECONOMICS note from page 24 onto page 25 | 10 | +5 / −5 | pdf |
+| The Q25 closing sentence, page 8: one wrapped line becomes three, and the `Long-Term Community Impact Strategy` heading moves from page 8 to page 9 | 6 | +4 / −2 | pdf |
+| `Item`/`Value` extraction rows — none; no table gained or lost a row | 0 | +0 / −0 | — |
+
+**77 lines, zero unexplained.**
+
+### What happened
+
+**On 17 September 2026 the CDFI Fund opened the CY 2026 NMTC round and
+published the Allocation Application** — `cdfifund.gov/news/741`, *"CDFI
+Fund Opens CY 2026 Round of New Markets Tax Credit Program"*, dated
+`2026-09-17T12:00:00Z` on the page. The Application, the Application FAQs,
+the Application Roadmap Presentation and the AMIS Navigation Guide are all
+linked from the program's *Step 2: Apply* page.
+
+Verified by retrieving the document itself, not a page that describes it:
+`CY_2026_NMTC_Program_Allocation_Application.pdf`, 1,576,691 bytes, 137
+pages, SHA-256 `b5c36c715ddfc5f09c44ddf1fdac2b69182c2212104d06fbb2f63f66b84db07d`.
+Page 1: *"NEW MARKETS TAX CREDIT PROGRAM 2026 APPLICATION"*. Page 2: *"OMB
+Approval No. 1559-0016"*. Running footer: *"CY 2026 NMTC Allocation
+Application"*.
+
+Through 1.6.4 the note said, in capitals and in all four formats:
+
+> *"THE CY 2026 ROUND HAS OPENED, BUT ITS APPLICATION HAS NOT … The CY 2026
+> Allocation Application and its Application Materials are NOT YET PUBLISHED
+> … must be re-verified against the CY 2026 Application Materials on the day
+> the Fund releases them."*
+
+and, in ¶4: *"the absence of CY 2026 Application Materials was confirmed on
+September 16, 2026"*; and the Question 25 basis note closed with *"the CY
+2026 Allocation Application is not yet published."* A CDE reading any of
+that concluded there was nothing yet to prepare against, while the
+Application was downloadable and **Application Registration is due
+6 October 2026**.
+
+**It went false one day after `LAST_VERIFIED`.** 1.6.4 set that to
+2026-09-16 with a 30-day cadence; nothing in the package could have
+complained before 16 October, ten days after the Registration deadline the
+note exists to protect. And the suite REQUIRED the false sentence:
+`tests/test_recommendation_surface_disclosures.py:120` asserted the literal
+`"NOT YET PUBLISHED"`, `tests/test_round_provenance.py` pinned it twice, and
+`tests/test_round_status_consistency.py` adjudicated fifteen registered
+negatives against a constant that was `False`. Correcting the fact meant
+editing the gates that guarded it.
+
+### The rule: monotone claims only
+
+**This package may assert that something HAS happened. It may not assert
+that something HAS NOT.** *"X is published"* is monotone — once true it
+stays true, and a stale copy of it is still correct. *"X is not published"*
+decays — true only until it isn't, and nothing inside an installed package,
+read months later, can notice the moment it turns. Every round-provenance
+defect in this package's history is a perishable claim: 1.6.2's
+`UPCOMING_MATERIALS_PUBLISHED = False` (a negative over two facts), 1.6.3's
+deadline pinned to a superseded pre-announcement, 1.6.4's
+`UPCOMING_APPLICATION_PUBLISHED = False` (the surviving half of the pair).
+
+The second-order trap was avoided on purpose: *"the CY 2026 Application IS
+published"* is safe; *"which is the most recent PUBLISHED Application"* —
+which ¶0 also said, and which went false on the same day — is a superlative
+over a set the world keeps adding to, and it is **deleted**, not re-based.
+Nothing in the note says "most recent", "no further materials" or "nothing
+has superseded this".
+
+**A test may assert that a disclosure is present. It may not assert a
+perishable federal fact as a string literal.** A suite that pins `"NOT YET
+PUBLISHED"` converts staleness into a green run.
+
+### R1 — ¶0 states only durable facts
+
+> **WHICH ROUND THIS IS BASED ON.** This tool encodes the CY 2024-2025 NMTC
+> Allocation Application, which is closed and awarded (it opened 19 Nov 2024,
+> closed 29 Jan 2025, and was awarded 23 Dec 2025 with $10 billion in
+> allocation authority). THE CY 2026 ROUND HAS OPENED: the CY 2026 NOAA IS
+> PUBLISHED — Federal Register document 2026-18883, publication date
+> September 15, 2026 — and it makes $5 billion available, with applications
+> due 5:00 p.m. ET on November 10, 2026. THE CY 2026 ALLOCATION APPLICATION
+> AND ITS APPLICATION MATERIALS ARE PUBLISHED: the CDFI Fund released them on
+> September 17, 2026 (https://www.cdfifund.gov/news/741), and this tool
+> confirmed the Application itself on September 17, 2026. THIS TOOL STILL
+> ENCODES THE CY 2024-2025 INSTRUMENT, which is now a proxy for a document
+> that exists and can be read.
+
+The NOAA citation is unchanged. The last sentence is the one that matters to
+a CDE, and it got stronger: the warning moved from "re-check when they
+appear" to "re-check against a document that is available now".
+
+### R2 — ¶1 points at a live source, and it is the program page
+
+> **USE THIS, AND THEN RE-CHECK IT.** The CY 2024-2025 Application is a real
+> federal instrument and nothing here is unreliable. But it is a PROXY for the
+> CY 2026 instrument, not that instrument, and that instrument is AVAILABLE
+> NOW: every round-specific figure in this document must be re-verified
+> against the CY 2026 Application Materials, which the CDFI Fund publishes at
+> https://www.cdfifund.gov/programs-training/programs/new-markets-tax-credit/apply-step
+> — specifically: the allocation authority and the number of awards
+> available; the CDE certification deadline for eligibility; Question 25's
+> QLICI-denominated commitment levels, its area-type lists and its ladder;
+> Question 22's QLICI-denominated Non-Metropolitan minimum and maximum;
+> Question 15's product-flexibility ladder; the scoring thresholds in the
+> Review Process.
+
+`RECHECK_ITEMS` is unchanged — the six items are still owed. *"is the right
+basis to prepare against today"* is gone from ¶1: with the real instrument
+published it is no longer the claim to make, and "nothing here is
+unreliable" — the overstating-uncertainty guard — stays.
+
+**The URL is the program page, not the `system/files/2026-09/…` PDF path.**
+A `system/files` path is a versioned upload location; this portfolio has
+already lost a cycle to one moving (nmtc-mapper 0.6.1). The PDF path is
+carried as `UPCOMING_APPLICATION_PDF_URL`, secondary provenance of what was
+retrieved on 2026-09-17, and **no gate depends on it resolving**. The PDF
+renderer hard-splits the 82-character URL across two lines
+(`…cdfifund.gov/pro` / `grams-training/…`); the reader still has it, one line
+down, and `tests/test_round_provenance` checks the PDF for it
+whitespace-insensitively rather than touching the renderer.
+
+### R3(a) — the constant now governs the sentence, both ways
+
+`UPCOMING_APPLICATION_PUBLISHED` was declared at `_round_provenance.py:270`
+and **read by nothing in the module**. Flipping it to `True` on 17 September
+would have changed no rendered word — a declaration shaped like a gate,
+governing nothing, beside a sentence saying the opposite.
+
+**Option (a) was taken.** The constant is `True`, and ¶0's Application
+sentence, ¶1's re-check framing and ¶4's provenance clause are all derived
+from it through one function, `_application_publication_clauses()`, so the
+three cannot disagree with the constant or with each other. The `False`
+branch exists because a constant governs something only if both of its
+values render differently — and it is written the only way a negative may be
+written here: as a dated fact about **this tool's own looking** (*"As of
+September 17, 2026 this tool had not confirmed publication of …"*), which
+stays true after the world moves, where "NOT YET PUBLISHED" did not.
+
+`tests/test_round_provenance.test_flipping_the_application_constant_flips_the_note`
+is the **two-sided mutation**: it renders the note under both values,
+asserts ¶0, ¶1 and ¶4 each differ, that ¶2 and ¶3 do not, that `True`
+renders the published fact and the program URL, that `False` renders the
+dated as-of sentence, and that **neither branch** renders any of six
+perishable negatives this package has shipped and retracted. Run against a
+copy of the tree with the derivation removed it fails on "paragraph 0
+renders the same text whether … True or False".
+
+**Flipping the constant changed no threshold.** The package still encodes
+CY 2024-2025; see *What this release deliberately does not change*.
+
+### R4 — the tests that pinned the false sentences
+
+Enumerated by `grep`, not from the runbook, which named nine files and was
+short by two:
+
+* `nmtcapp/renderers/_round_provenance.py` — ¶0, ¶1, and ¶4's provenance
+  clause (the runbook did not list ¶4, which rendered *"the absence of CY
+  2026 Application Materials was confirmed on …"* in all four formats).
+* `nmtcapp/renderers/_question_25.py` — **not in the runbook**: the rendered
+  basis note closed with *"the CY 2026 Allocation Application is not yet
+  published"* on all four surfaces and was registered as an
+  `("APPLICATION", False)` claim. Now: *"(Those area lists are the CY
+  2024-2025 Application's; the CY 2026 Allocation Application's own lists
+  must be read from that document — see the round-provenance note for where
+  it is.)"* — whose lists these are and where the other document is, and
+  nothing about what it contains.
+* Docstrings and comments in `_question_22.py`, `sections/base.py`,
+  `core/application_round.py` and `_round_provenance.py` that stated the
+  negative, each reworded to the published fact or to a dated historical
+  statement; `_methodology.py`'s past-tense record of 1.5.0 is unchanged and
+  stays in `QUOTED_HISTORY`.
+* `tests/test_recommendation_surface_disclosures.py:120` — **the sharpest
+  one.** It required `"NOT YET PUBLISHED"`. Re-pointed at the durable halves
+  of ¶0 — `STILL ENCODES THE CY 2024-2025 INSTRUMENT`, `ARE PUBLISHED`,
+  `proxy` — read off the note the surface must carry verbatim, plus an
+  assertion that the literal is **absent**. The runbook asked for "must be
+  re-verified" too; that is ¶1's sentence and the recommendations surface
+  renders ¶0 alone by a documented decision (`RecommendationEngine.summary`),
+  so it is not pinned there rather than widening that surface in a patch.
+* `tests/test_round_provenance.py` — `_PROVENANCE_FACTS` and
+  `test_the_disclosure_states_both_directions` re-pointed at durable phrases
+  (`ROUND HAS OPENED`, `ARE PUBLISHED`, `STILL ENCODES THE … INSTRUMENT`,
+  the program URL, `real federal instrument`); `test_the_round_state_is_pinned`
+  asserts `True` and names the open reconciliation work; the expiry's
+  failure message asks "has the Fund posted anything newer?" instead of "have
+  the materials appeared?"; a new gate checks the Application's present
+  perfect against **its** date the way the NOAA's has been checked since
+  1.6.2; and `test_the_note_renders_no_perishable_negative` is acceptance
+  criterion 2 as a gate. `test_live_cdfi_fund_check` asserted the materials'
+  absence — the one assertion that could have told the truth on the 17th,
+  and did not run — and is re-pointed at the positive: the *Step 2: Apply*
+  page is reachable and links a CY 2026 Allocation Application. Still a
+  tool, not a gate.
+* `tests/test_round_status_consistency.py` — 24 dead keys removed (every
+  registered `("APPLICATION", False)` claim among them), 40 added, 3 non-claim
+  reasons removed and 10 added. `test_both_subjects_and_both_polarities_are_
+  represented` asserted both polarities on the premise that "the two
+  constants disagree with each other right now"; it is
+  `test_both_subjects_are_represented_and_no_claim_is_a_negative` — the
+  monotone rule as a gate. Re-derived: 130 distinct selected segments, 27
+  with claims, 103 asserting nothing; 202 occurrences; 13,367 corpus
+  segments. Floors unchanged.
+* `tests/invariant_allowlist.txt` — the runbook said four rows; the 1.6.2
+  and 1.6.4 provenance groups held 62, and their justification read *"That
+  CY 2026 Allocation Application materials had not been released was
+  confirmed 2026-09-16"*. All 62 re-ruled under one 1.6.5 justification that
+  records what the note now claims and what sourced it; 18 dead rows removed
+  (the 1.6.2 group's PDF fragments of ¶0/¶1/¶4 and the whole-line carriers of
+  the note and the Q25 basis note); 8 whole-line rows re-added; the 41 new
+  PDF fragments are absorbed by N-WRAP, as the gate's own design intends,
+  rather than filed.
+* `tests/attribution_allowlist.txt` — two CITED rows for the clauses that
+  name the CDFI Fund as the publisher of the Application (¶0) and of the
+  Application Materials at the program page (¶1). `tests/fund_attribution_
+  allowlist.txt` — four docstring rows re-keyed; the `_round_provenance` row's
+  citation re-ruled from "had NOT been released as of 2026-09-14" to the
+  published fact.
+* `tests/test_streamlit_markdown_survival.py:366` — **left as is.** It is the
+  anchor fixture for the markdown-math model: the exact 1.6.1-era text that
+  rendered *"10 billion in allocation authority"* in Chrome on 2026-08-22,
+  which the model must call broken or it proves nothing. It is the test's
+  input, not a claim about current output, and rewording it would detach the
+  fixture from the observation it records.
+
+`grep -rn "NOT YET PUBLISHED\|APPLICATION HAS NOT"` over the tree now returns
+CHANGELOG entries, module-history docstrings and quotations of the retracted
+wording, and that fixture. No rendered output and no live assertion.
+
+### R5 — `LAST_VERIFIED`, and the cadence ruling
+
+`LAST_VERIFIED = "2026-09-17"`, the day the Application was retrieved and
+read; `RECHECK_AFTER` follows it to 2026-10-17.
+
+**`RECHECK_CADENCE_DAYS` stays at 30, and it stays a judgement.** The 1.6.4
+runbook recorded *"the 30-day cadence is a judgement, not a derivation"*;
+then the fact changed one day after `LAST_VERIFIED`. The obvious repair —
+shrink the number and call it derived — was considered against the one
+piece of evidence the repository holds, the intervals between this issuer's
+own CY 2026 announcements:
+
+| From | To | Days |
+|---|---|---|
+| 2026-08-12 pre-announcement (`news/738`) | 2026-09-15 NOAA (FR 2026-18883) | 34 |
+| 2026-09-15 NOAA | 2026-09-17 Allocation Application (`news/741`) | 2 |
+| 2026-09-17 Application | 2026-10-06 Application Registration deadline | 19 |
+| 2026-10-06 Registration | 2026-11-10 Application deadline | 35 |
+
+No cadence derivable from 34, 2, 19 and 35 is both short enough to have
+caught the 2-day gap and long enough not to fire as ritual across the 35-day
+ones. A cadence catches "nobody has looked in a while"; it cannot catch "the
+world moved yesterday", and no value of this constant would have. What does
+catch that is the event table the note already carries — every Table 1 date
+is a scheduled moment at which a human is already looking at this module,
+and the next is 6 October — and the rule above: ship only monotone claims,
+so that a missed re-check leaves the note **understated** rather than
+**false**. An undefended number relabelled as defended is worse than an
+undefended number; this one is undefended and says so, in
+`_round_provenance.py` beside the constant.
+
+### What this release deliberately does not change
+
+**Reconciling the package's encoded content against the CY 2026
+Application.** `RECHECK_ITEMS` names six things — the allocation authority
+and award count, the certification deadline, Question 25's commitment ladder
+and area-type lists, Question 22's non-metro bounds, Question 15's
+product-flexibility ladder, the Review Process thresholds — and every one of
+them is the package's substantive underwriting content. That is a
+methodology cycle with its own hostile audit, not a patch. Reading the CY
+2026 Application to confirm it exists is this release. Reading it to change
+a threshold is not, and it was not read for that: the retrieval opened its
+title page, page ii and the running footer.
+
+**One thing was seen without looking for it, and is reported here rather
+than acted on.** `cdfifund.gov/news/741` highlights, under *Program Updates*,
+two revisions to the CY 2026 Application Instructions: a homeownership QLICI
+commitment added as an Innovative Investment in **Q19**, and **"Homeownership
+Cost Burden added in Q25(b)"**, targeting areas with high housing costs.
+Q25(b)'s area-type list is a `RECHECK_ITEMS` entry and the package's basis
+note already says its lists are the CY 2024-2025 Application's; this is a
+difference the disclosure covers, not a contradiction of a claim the package
+makes, and it is the first concrete item for the reconciliation cycle. Not
+verified against the Application text here — the announcement is the source
+of the sentence.
+
+Everything the 1.6.4 entry listed under this heading is still real and still
+not this release.
+
+### Timing
+
+`LAST_VERIFIED` is 2026-09-17, five days before the 22 September CDE
+certification deadline. `tests/conftest.provenance_note_as_verified` freezes
+the fixtures to that date, so ¶2 still reads *"the AMIS route is STILL
+AHEAD"* and ¶4 still counts 10 of 10 ahead; this is one change, not two. The
+first re-check that lands on or after the 23rd re-rules ¶2 and ¶4 and their
+allowlist rows on top of whatever it finds.
+
+### Bookkeeping
+
+* `pyproject.toml` — `version = "1.6.5"`; `CITATION.cff` 1.6.5, released
+  2026-09-17; `streamlit_app/requirements.txt` pin 1.6.5.
+* The suite collects **1,881** (was 1,880): +3 in
+  `tests/test_round_provenance.py` (the mutation test, the no-perishable-
+  negative gate, the Application-date gate) and −2 in
+  `tests/test_round_status_consistency.py` (stage 2 parametrises over 29
+  registered claims, was 31). README, CONTRIBUTING and the landing page state
+  1,881; `tests/test_test_count_claims` derives it. `CLAIMED_NEW_TEST_MODULES`
+  unchanged at 34 — no module added.
+* `tests/pinned_constants.txt`: `CITED_ROUND` re-pinned on *"which is closed
+  and awarded"* (the superlative is gone); `RECHECK_ITEMS` re-sourced; three
+  rows added (`UPCOMING_APPLICATION_PAGE_URL`, `…_ANNOUNCEMENT_URL`,
+  `…_PUBLICATION_DATE`, the last pinned by hand on its `_us_date` spelling);
+  four waived (`PROGRAM_PAGE_URL`, a prefix of the rendered page URL and
+  itself unrendered; `UPCOMING_APPLICATION_PDF_URL`, `…_OMB_NUMBER`,
+  `…_SHA256`, retrieval evidence that reaches no surface). 279 constants are
+  swept (was 270: the nine `UPCOMING_APPLICATION_*` pins, including
+  `…_RETRIEVED_DATE`, below).
+* **Audit F5 — paragraph 0's retrieval date is its own constant.**
+  `UPCOMING_APPLICATION_RETRIEVED_DATE = "2026-09-17"` now feeds the clause
+  *"this tool confirmed the Application itself on …"*; through the audit tip
+  it read `LAST_VERIFIED`, and the expiry runbook bumps `LAST_VERIFIED` after
+  reading the program page without re-retrieving the PDF, so the next cadence
+  bump would have re-dated a retrieval that did not happen. Paragraph 4's
+  *"confirmed published on …"* still follows `LAST_VERIFIED` — that clause is
+  about the looking. Both dates are 2026-09-17, so the baselines are
+  byte-identical: `tests.regen_rendered_baseline` on the change, zero diff.
+  One registry key and one hand pin added for the new constant.
+* The 1.6.4 entry's baseline-delta claim is pinned from `HEAD` to `f4c7925`,
+  the way 1.6.3's and 1.6.2's were; re-derived at the pin, 56/26, unchanged.
+  The three historical "constants are swept" sentences read 279, as that
+  gate requires.
+* Verified on Python 3.9.x and 3.12.13, `pytest -m "not wheel"`: 1,879
+  passed, 1 skipped (`network`), 1 deselected (`wheel`).
+
+---
+
 ## [1.6.4] — 2026-09-16
 
 **PATCH. ONE FALSE FEDERAL DATE, THE TABLE IT CAME FROM, AND THE GATE THAT
@@ -15,7 +368,9 @@ note, on all four formats — and those three paragraphs are now COMPUTED
 against the Eastern date rather than typed.
 
 > **56 insertions, 26 deletions** in `tests/rendered_baseline/`, measured
-> `7ab6d9b`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+> `7ab6d9b`..`f4c7925`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+> *(Pinned at 1.6.5 from `HEAD` to the commit that ended this release, the
+> v1.6.4 merge; the figure is unchanged.)*
 
 | Class | Lines | +/− | Surface |
 |---|---|---|---|
@@ -529,7 +884,7 @@ closed it (see above).
   rows added — `NOAA_TABLE_1` pinned on the 6 Oct row the 1.6.3 note lacked,
   and each of the ten row constants pinned on its rendered item; `_AMIS`
   waived. Fix round: `CITED_ROUND_TIMELINE` pinned by hand on its derived
-  spelling. 270 constants are swept.
+  spelling. 279 constants are swept.
 * `tests/test_round_status_consistency.py`: 19 dead keys removed, 29 added
   (114 keys; 4 non-claim reasons removed, 7 added). Re-derived: 114 distinct
   selected segments, 26 with claims, 88 asserting nothing; 187 occurrences;
@@ -1958,7 +2313,7 @@ One filled scaffold, the same file both sides, `9a2d584` vs this tree:
 > `git diff --numstat 9a2d584 fc34af5 -- tests/rendered_baseline/` gives 53
 > insertions and 68 deletions, unchanged.*
 
-The rendered-string sweep is unchanged in shape, and 270 constants are swept
+The rendered-string sweep is unchanged in shape, and 279 constants are swept
 (237 at 1.5.7; this release adds
 `upload_handler.CDE_PROFILE_COLUMNS_FOR_REQUIRED_FIELD`, waived, for 238 as
 shipped — restated to 250 at 1.6.2, which splits the round-provenance
@@ -7634,7 +7989,7 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 270 constants are swept
+colour". The rendered-string sweep demands **19**, and 279 constants are swept
 where 49 were (238 as this release shipped; restated at 1.6.2, at 1.6.4 and
 in the 1.6.4 fix round — the count is gate-asserted against the current tree, see those
 entries). *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the

@@ -14,13 +14,20 @@ and it was awarded on 23 Dec 2025. Nothing in this package said so.
 
 WHAT THE PACKAGE IS ACTUALLY DOING, STATED PLAINLY
 
-Using the most recent PUBLISHED Application as a proxy for one that does not
-exist yet. **That is the correct engineering choice.** There is no other
-defensible one: the CY 2026 Application is unpublished, and a tool that
-declined to encode any instrument until it appeared would be useless during
-exactly the window a CDE needs it. The defect was never the choice. It was that
-the choice was never disclosed, so a reader had no way to distinguish "this is
-the governing instrument" from "this is the nearest available stand-in".
+Through 1.6.4: using the most recent published Application as a proxy for one
+that did not exist yet. **That was the correct engineering choice.** There was
+no other defensible one, and a tool that declined to encode any instrument
+until the CY 2026 one appeared would have been useless during exactly the
+window a CDE needed it. The defect was never the choice. It was that the
+choice was never disclosed, so a reader had no way to distinguish "this is the
+governing instrument" from "this is the nearest available stand-in".
+
+Since 1.6.5: the CY 2026 Application EXISTS (published 17 Sep 2026) and this
+package STILL encodes CY 2024-2025, now as a disclosed proxy for a document a
+CDE can go and read. Reconciling the encoded figures against it is
+``RECHECK_ITEMS`` -- a methodology cycle with its own audit, not a patch --
+and until that cycle ships, the note's job is to say so and to point at the
+document.
 
 BOTH DIRECTIONS OF ERROR, AND THE SECOND IS EASIER TO CAUSE
 
@@ -37,8 +44,9 @@ thing. A disclosure that drives a CDE to prepare against NOTHING is worse than
 the stale citation it replaces -- it converts a small provenance error into an
 unprepared applicant.
 
-So the text below tells a CDE **what to re-check when CY 2026 publishes**, not
-that it cannot rely on anything. It is a re-check list, not a warning label.
+So the text below tells a CDE **what to re-check against the CY 2026
+Application**, and where it is, not that it cannot rely on anything. It is a
+re-check list, not a warning label.
 
 WHAT IS NOT CLAIMED HERE, AND WHY
 
@@ -53,8 +61,9 @@ package keeps producing. Nothing below says it.
 
 THE CY 2026 FACTS, AND WHERE THEY CAME FROM
 
-THE ROUND HAS OPENED. THE INSTRUMENT HAS NOT ARRIVED. Those are two facts and
-through 1.6.1 this module carried ONE BOOLEAN for both of them.
+THE ROUND HAS OPENED AND THE INSTRUMENT HAS ARRIVED. Those are two facts, two
+days apart, and through 1.6.1 this module carried ONE BOOLEAN for both of
+them.
 
   * The CY 2026 **NOAA** is **PUBLISHED** -- Federal Register document
     2026-18883, filed 14 Sep 2026 08:45 ET, publication date 15 Sep 2026. It
@@ -63,7 +72,37 @@ through 1.6.1 this module carried ONE BOOLEAN for both of them.
     10 Nov 2026 (the application) to 14 Jan 2027 -- carried whole in
     ``NOAA_TABLE_1`` below.
   * The CY 2026 **Allocation Application** and its Application Materials are
-    **NOT published**. Confirmed by this package's maintainer on 2026-09-16.
+    **PUBLISHED** -- released by the CDFI Fund on 17 Sep 2026
+    (cdfifund.gov/news/741) together with the Application FAQs, the
+    Application Roadmap Presentation and the AMIS Navigation Guide, all
+    linked from the program's "Step 2: Apply" page. Verified on 2026-09-17 by
+    retrieving the Application PDF itself: title page "NEW MARKETS TAX CREDIT
+    PROGRAM 2026 APPLICATION", running footer "CY 2026 NMTC Allocation
+    Application", OMB Approval No. 1559-0016, 137 pages -- pinned in the
+    ``UPCOMING_APPLICATION_*`` constants below.
+
+MONOTONE CLAIMS ONLY -- THE 1.6.5 RULE
+
+Every round-provenance defect in this module's history is a PERISHABLE claim:
+1.6.2's ``UPCOMING_MATERIALS_PUBLISHED = False``, a negative over two facts;
+1.6.3's deadline pinned to a superseded pre-announcement; 1.6.4's
+``UPCOMING_APPLICATION_PUBLISHED = False``, the surviving half of the pair,
+which went false one day after ``LAST_VERIFIED`` and would have stood for
+thirty. "X is published" is monotone: once true it stays true, and a stale
+copy of it is still correct. "X is not published" decays, and nothing inside
+an installed package can notice the moment it turns.
+
+So this package may assert that something HAS happened. It may not assert
+that something HAS NOT. Paragraph 0 states that the CY 2026 Application IS
+published and that this tool STILL encodes CY 2024-2025; paragraph 1 points
+at where the CY 2026 materials are; paragraph 4's provenance says when the
+publication was confirmed. None of the three says "most recent", "no further
+materials", or "nothing has superseded this" -- each of those is a decaying
+claim wearing a positive sentence. The one negative-shaped branch left in
+the module, the ``False`` arm of ``_application_publication_clauses``, is a
+dated statement about this tool's own looking and not about the world; it
+exists so that the constant governs the sentence in both directions, and
+``tests/test_round_provenance`` proves that it does.
 
 THE DATE THAT CAME FROM THE WRONG DOCUMENT -- THE 1.6.4 DEFECT
 
@@ -163,17 +202,20 @@ rather than attributed. Attributing it would mean quoting a Federal Register
 sentence that could not be retrieved from the environment this fix was built
 in, which is the worse of the two options offered.
 
-WHAT THIS RELEASE DELIBERATELY DOES NOT CHANGE
+WHAT 1.6.2 THROUGH 1.6.5 DELIBERATELY DO NOT CHANGE
 
 ``RECHECK_ITEMS`` still names CY 2024-2025 figures and the note still says so.
 The NOAA carries the allocation authority, the application deadline and the
 certification rule; it does NOT carry Question 25's ladder, Question 22's
 Non-Metropolitan bounds, Question 15's product-flexibility ladder or the
-Review Process thresholds. Those live in the Application Materials, which do
-not exist yet. Re-working the round-specific figures now would be invention
-dressed as an update -- the exact failure mode this module was written to stop.
-That work is the NEXT release and its trigger is
-``tests/test_round_provenance.test_live_cdfi_fund_check``.
+Review Process thresholds. Those live in the Application Materials, which as
+of 1.6.5 exist and have NOT been reconciled against this package. Re-working
+the round-specific figures inside a provenance patch would leave a release
+that cannot be audited as either a correction or a methodology change. That
+work is the NEXT release. (Its trigger used to be
+``tests/test_round_provenance.test_live_cdfi_fund_check`` asserting the
+materials' absence; that assertion was a perishable negative and is gone --
+the trigger fired, on 2026-09-17, and this release is its first consequence.)
 
 ``APPLICATION_SHA256`` also stays, and stays correct. It was never the defect;
 see ``tests/test_round_provenance`` on why a hash cannot fail on staleness.
@@ -255,19 +297,85 @@ def _short_date(iso: str) -> str:
 #: WHETHER THE UPCOMING ROUND'S NOAA HAS PUBLISHED -- and, SEPARATELY, whether
 #: the Allocation Application has. Through 1.6.1 this was one boolean named
 #: ``UPCOMING_MATERIALS_PUBLISHED`` covering both, and the pair came apart on
-#: 2026-09-15: the NOAA published, the Application did not. A conjunction
-#: cannot be half-true in code, so it is two constants now.
+#: 2026-09-15: the NOAA published two days before the Application. A
+#: conjunction cannot be half-true in code, so it is two constants now.
 #:
 #: THESE ARE ASSERTIONS WITH DATES ON THEM, NOT MEASUREMENTS. No offline test
-#: can distinguish "the Application has not published" from "nobody has looked
+#: can distinguish "the Application has published" from "nobody has looked
 #: since September". ``tests/test_round_provenance.py`` does not pretend
 #: otherwise: it makes the claim EXPIRE, so the failure it can produce is the
 #: honest one -- staleness of the LOOKING, not of the fact.
+#:
+#: BOTH ARE TRUE NOW, AND TRUE IS THE ONLY VALUE EITHER CAN HOLD FROM HERE
+#: (1.6.5). "X is published" is MONOTONE: once true it stays true, and a
+#: stale copy of it is still correct. "X is not published" DECAYS, and
+#: nothing inside an installed package can notice the moment it turns -- which
+#: is the whole history of this module's defects (1.6.2, 1.6.3, 1.6.4). So
+#: the note derives its Application-status sentences from the constant below
+#: (``_application_publication_clauses``), and the branch it takes while the
+#: constant is False states a dated fact about THIS TOOL'S OWN LOOKING, never
+#: a negative about the world.
 UPCOMING_NOAA_PUBLISHED = True
 
-#: The instrument THIS PACKAGE ENCODES. Still absent, and this is the one whose
-#: flip to True obliges a rewrite of every round-specific citation.
-UPCOMING_APPLICATION_PUBLISHED = False
+#: The instrument THIS PACKAGE ENCODES, in its CY 2026 edition: PUBLISHED. The CDFI
+#: Fund opened the CY 2026 round and released the Allocation Application on
+#: 2026-09-17 (``UPCOMING_APPLICATION_ANNOUNCEMENT_URL``); the PDF was
+#: retrieved the same day and its title page ("NEW MARKETS TAX CREDIT PROGRAM
+#: 2026 APPLICATION", "CY 2026 NMTC Allocation Application") and OMB control
+#: number read -- see the ``UPCOMING_APPLICATION_*`` pins below.
+#:
+#: READ, NOT MERELY DECLARED (1.6.5 R3). Through 1.6.4 this constant was
+#: declared here and read by NOTHING in the module -- a declaration shaped
+#: like a gate that governed nothing, whose flip to True would have changed
+#: no rendered word. Paragraphs 0, 1 and 4 of the note now derive their
+#: Application-status clauses from it, so the constant and the sentences
+#: cannot disagree, and ``tests/test_round_provenance`` proves the mutation
+#: in both directions.
+#:
+#: FLIPPING IT CHANGED NO THRESHOLD. This package still encodes CY 2024-2025;
+#: reconciling its figures against the CY 2026 Application is
+#: ``RECHECK_ITEMS``, and that is a methodology cycle with its own audit,
+#: not a patch.
+UPCOMING_APPLICATION_PUBLISHED = True
+
+#: The CY 2026 Allocation Application, pinned to the day the CDFI Fund
+#: announced it and to the PROGRAM PAGE that links it -- not to the upload
+#: path. ``system/files/<yyyy>-<mm>/...`` is a versioned upload location and
+#: this portfolio has already lost a cycle to one moving (nmtc-mapper 0.6.1,
+#: the LIC eligibility workbook); the "Step 2: Apply" page is the addressable
+#: resource. The PDF path is carried as SECONDARY provenance of what was
+#: retrieved on the verification date, and no gate depends on it resolving.
+UPCOMING_APPLICATION_PUBLICATION_DATE = "2026-09-17"
+#: The day THIS TOOL retrieved the CY 2026 Application PDF and read its title
+#: page and OMB control number -- the date paragraph 0's "confirmed the
+#: Application itself on" clause renders (1.6.5 audit F5). Its own constant,
+#: not ``LAST_VERIFIED``: the cadence re-check (see the expiry gate's runbook
+#: in ``tests/test_round_provenance``) reads the program page and bumps
+#: ``LAST_VERIFIED``; it does not re-retrieve the document, so a clause that
+#: derived the retrieval date from ``LAST_VERIFIED`` would re-date a retrieval
+#: that did not happen. Paragraph 4's "confirmed ... on" still follows
+#: ``LAST_VERIFIED``, because that clause is about the looking, not the file.
+UPCOMING_APPLICATION_RETRIEVED_DATE = "2026-09-17"
+UPCOMING_APPLICATION_ANNOUNCEMENT_URL = "https://www.cdfifund.gov/news/741"
+UPCOMING_APPLICATION_PAGE_URL = (
+    "https://www.cdfifund.gov/programs-training/programs/"
+    "new-markets-tax-credit/apply-step"
+)
+UPCOMING_APPLICATION_PDF_URL = (
+    "https://www.cdfifund.gov/system/files/2026-09/"
+    "CY_2026_NMTC_Program_Allocation_Application.pdf"
+)
+#: What was retrieved on 2026-09-17 from the path above: OMB control number
+#: from its page ii, byte count, page count and SHA-256 of the file. These
+#: are RETRIEVAL EVIDENCE for the publication claim, not a citation this
+#: package reads figures from -- ``APPLICATION_SHA256`` below is still the
+#: instrument the figures come from, and it is still CY 2024-2025's.
+UPCOMING_APPLICATION_OMB_NUMBER = "1559-0016"
+UPCOMING_APPLICATION_SHA256 = (
+    "b5c36c715ddfc5f09c44ddf1fdac2b69182c2212104d06fbb2f63f66b84db07d"
+)
+UPCOMING_APPLICATION_BYTES = 1_576_691
+UPCOMING_APPLICATION_PAGES = 137
 
 #: The CY 2026 NOAA, pinned to its Federal Register identity rather than to a
 #: page that can be re-edited underneath a citation.
@@ -524,11 +632,22 @@ def next_hard_deadline(today=None):
 #: When the facts above were last verified, ISO-8601. The NOAA is verified
 #: against the Federal Register document named above -- on 2026-09-16 from its
 #: raw-text endpoint, every Table 1 row, which is how the 31 Aug date was
-#: found; the ABSENCE of CY 2026 Application Materials was confirmed by this
-#: package's maintainer on the same date. Those are two different kinds of
-#: evidence and the note says which is which rather than collapsing both into
-#: "verified against cdfifund.gov".
-LAST_VERIFIED = "2026-09-16"
+#: found. The CY 2026 Allocation Application was verified on 2026-09-17 by
+#: RETRIEVING THE DOCUMENT ITSELF from ``UPCOMING_APPLICATION_PDF_URL`` and
+#: reading its title page and OMB control number, and by reading the
+#: announcement at ``UPCOMING_APPLICATION_ANNOUNCEMENT_URL`` and the
+#: "Step 2: Apply" page that links the Application, the Application FAQs,
+#: the Application Roadmap Presentation and the AMIS Navigation Guide. Those
+#: are different kinds of evidence and the note says which is which rather
+#: than collapsing them into "verified against cdfifund.gov".
+#:
+#: THE FACT THIS RELEASE CORRECTS CHANGED ONE DAY AFTER THE PREVIOUS VALUE
+#: HERE. 1.6.4 set this to 2026-09-16; the Application published on
+#: 2026-09-17; and with ``RECHECK_CADENCE_DAYS = 30`` nothing in the package
+#: could have complained before 2026-10-16 -- ten days after the Application
+#: Registration deadline the note exists to protect. See the cadence note
+#: below and the 1.6.5 CHANGELOG entry for what was and was not done about it.
+LAST_VERIFIED = "2026-09-17"
 
 #: How long a verification stays good for, in days. A CADENCE, NOT A
 #: DEADLINE (1.6.4 fix round, R2): the question the expiry asks is "has a
@@ -546,9 +665,32 @@ LAST_VERIFIED = "2026-09-16"
 #: generation and ``tests/test_noaa_table_1`` binds them to the table. The
 #: horizon no longer reads the table at all.
 #:
-#: 30 is a judgement -- the order of magnitude at which "nobody has looked"
-#: becomes the defect this module's header describes -- and the repo records
-#: no other basis. ``tests/test_round_provenance`` bounds it at 180.
+#: 30 WAS A JUDGEMENT, AND IT STAYS ONE (1.6.5 R5) -- re-ruled, not relabelled.
+#: The 1.6.4 runbook recorded "the 30-day cadence is a judgement, not a
+#: derivation", and then the Application published one day after
+#: ``LAST_VERIFIED`` and the cadence would have fired ten days after the
+#: Registration deadline. The obvious repair -- shrink the number and call it
+#: derived -- was considered against the one piece of evidence the repo
+#: holds, the intervals between this issuer's own CY 2026 announcements:
+#:
+#:     2026-08-12  pre-announcement (news/738)        -> 34 days ->
+#:     2026-09-15  NOAA, Federal Register 2026-18883  ->  2 days ->
+#:     2026-09-17  Allocation Application (news/741)  -> 19 days ->
+#:     2026-10-06  Application Registration deadline  -> 35 days ->
+#:     2026-11-10  Application deadline
+#:
+#: Those intervals are 34, 2, 19 and 35 days: no cadence derivable from them
+#: is both short enough to have caught the 2-day gap and long enough not to
+#: fire as ritual across the 35-day ones. A cadence catches "nobody has
+#: looked in a while"; it cannot catch "the world moved yesterday", and no
+#: value of this constant would have. What DOES catch that is the event
+#: table the note already carries: every Table 1 date is a scheduled moment
+#: at which a human is already looking at this module, and the next one is
+#: 2026-10-06. So the number is unchanged, its basis is stated plainly as a
+#: judgement, and the defence against the next 2-day gap is the rule two
+#: constants up -- ship only monotone claims, so that a missed re-check
+#: leaves the note UNDERSTATED rather than FALSE. ``tests/test_round_provenance``
+#: bounds it at 180.
 RECHECK_CADENCE_DAYS = 30
 
 #: The date this claim goes stale and the suite goes red. DERIVED: bump
@@ -558,7 +700,10 @@ RECHECK_AFTER = (
     + _datetime.timedelta(days=RECHECK_CADENCE_DAYS)
 ).isoformat()
 
-#: Sources, so a re-check does not start by hunting for the page.
+#: Sources, so a re-check does not start by hunting for the page. The
+#: 12 Aug 2026 pre-announcement is kept because 1.6.4's history cites it as
+#: the document the wrong certification date came from; the Application's
+#: own announcement is ``UPCOMING_APPLICATION_ANNOUNCEMENT_URL`` above.
 PROGRAM_PAGE_URL = (
     "https://www.cdfifund.gov/programs-training/programs/new-markets-tax-credit"
 )
@@ -586,9 +731,12 @@ APPLICATION_URL = (
     "CY_2024-2025_NMTC_Program_Allocation_Application.pdf"
 )
 
-#: What a CDE must re-verify when CY 2026 materials appear. Written as a
-#: re-check list on purpose -- see this module's header on the second direction
-#: of error.
+#: What a CDE must re-verify against the CY 2026 Application Materials, which
+#: are available at ``UPCOMING_APPLICATION_PAGE_URL``. Written as a re-check
+#: list on purpose -- see this module's header on the second direction of
+#: error. THE SIX ITEMS ARE UNCHANGED BY 1.6.5 AND STILL OWED: reading the
+#: CY 2026 Application to confirm it exists is what 1.6.5 did; reading it to
+#: move a threshold is the next methodology cycle.
 RECHECK_ITEMS = (
     "the allocation authority and the number of awards available",
     "the CDE certification deadline for eligibility",
@@ -624,6 +772,62 @@ def _row_item(row: NoaaDeadline) -> str:
     if row.audience == AUDIENCE_PRIOR_ALLOCATEE:
         item += " [prior Allocatees]"
     return item
+
+
+def _application_publication_clauses() -> tuple:
+    """The three places the note speaks to the CY 2026 Application's status,
+    DERIVED from ``UPCOMING_APPLICATION_PUBLISHED`` so they cannot disagree
+    with it or with each other (1.6.5 R3a).
+
+    Returns ``(paragraph_0_sentences, paragraph_1_framing, paragraph_4_clause)``.
+
+    WHY A BRANCH AT ALL, GIVEN THE RULE THAT THIS PACKAGE SHIPS ONLY MONOTONE
+    CLAIMS. Because a constant that governs nothing is the defect (through
+    1.6.4 the constant was declared and read nowhere), and a constant governs
+    something only if both of its values render differently. So the False
+    branch exists, ``tests/test_round_provenance`` proves it renders when the
+    constant is False, and it is written the only way a negative may be
+    written here: as a DATED FACT ABOUT THIS TOOL'S OWN LOOKING -- "as of
+    <date> this tool had not confirmed ..." -- which stays true after the
+    world moves, where "NOT YET PUBLISHED" (1.6.2 through 1.6.4) did not.
+
+    Example::
+
+        p0, p1, p4 = _application_publication_clauses()
+    """
+    if UPCOMING_APPLICATION_PUBLISHED:
+        return (
+            f"THE {UPCOMING_ROUND} ALLOCATION APPLICATION AND ITS APPLICATION "
+            "MATERIALS ARE PUBLISHED: the CDFI Fund released them on "
+            f"{_us_date(UPCOMING_APPLICATION_PUBLICATION_DATE)} "
+            f"({UPCOMING_APPLICATION_ANNOUNCEMENT_URL}), and this tool "
+            f"confirmed the Application itself on "
+            f"{_us_date(UPCOMING_APPLICATION_RETRIEVED_DATE)}. THIS TOOL "
+            "STILL ENCODES THE "
+            f"{CITED_ROUND} INSTRUMENT, which is now a proxy for a document "
+            "that exists and can be read.",
+
+            "and that instrument is AVAILABLE NOW: every round-specific "
+            "figure in this document must be re-verified against the "
+            f"{UPCOMING_ROUND} Application Materials, which the CDFI Fund "
+            f"publishes at {UPCOMING_APPLICATION_PAGE_URL}",
+
+            f"the {UPCOMING_ROUND} Application Materials were confirmed "
+            f"published on {_us_date(LAST_VERIFIED)}",
+        )
+    return (
+        f"As of {_us_date(LAST_VERIFIED)} this tool had not confirmed "
+        f"publication of the {UPCOMING_ROUND} Allocation Application or its "
+        f"Application Materials, so the instrument encoded here is still the "
+        f"{CITED_ROUND} one.",
+
+        "so every round-specific figure in this document must be re-verified "
+        f"against the {UPCOMING_ROUND} Application Materials, which the CDFI "
+        f"Fund will publish at {UPCOMING_APPLICATION_PAGE_URL}",
+
+        f"publication of the {UPCOMING_ROUND} Application Materials had not "
+        f"been confirmed by this tool as of {_us_date(LAST_VERIFIED)}",
+    )
 
 
 def _certification_paragraph(today) -> str:
@@ -738,9 +942,8 @@ def _deadlines_paragraph(today) -> str:
         "tool computes, and nothing in this document moves them. Provenance: "
         f"the {UPCOMING_ROUND} NOAA is Federal Register document "
         f"{NOAA_FR_DOCUMENT_NUMBER}, filed {_us_date(NOAA_FILED_DATE)} and "
-        f"published {_us_date(NOAA_PUBLICATION_DATE)}; the absence of "
-        f"{UPCOMING_ROUND} Application Materials was confirmed on "
-        f"{_us_date(LAST_VERIFIED)}."
+        f"published {_us_date(NOAA_PUBLICATION_DATE)}; "
+        f"{_application_publication_clauses()[2]}."
     )
     if ahead:
         verb = "is" if len(ahead) == 1 else "are"
@@ -795,30 +998,32 @@ def round_provenance_paragraphs(today=None) -> tuple:
     """
     if today is None:
         today = _eastern_today()
+    application_status, recheck_framing, _provenance = (
+        _application_publication_clauses()
+    )
+    # "WHICH IS THE MOST RECENT PUBLISHED APPLICATION" IS GONE (1.6.5). It
+    # went false on 2026-09-17 and it is exactly the shape the monotone rule
+    # forbids: a superlative over a set the world keeps adding to. What the
+    # cited round IS -- a real federal instrument, closed and awarded -- is
+    # stated; where it stands in a sequence is not.
     return (
         f"WHICH ROUND THIS IS BASED ON. This tool encodes the "
-        f"{CITED_ROUND} NMTC Allocation Application, which is the most recent "
-        f"PUBLISHED Application and is {CITED_ROUND_STATUS} (it opened "
+        f"{CITED_ROUND} NMTC Allocation Application, which is "
+        f"{CITED_ROUND_STATUS} (it opened "
         f"{_short_date(CITED_ROUND_TIMELINE['opened'])}, closed "
         f"{_short_date(CITED_ROUND_TIMELINE['closed'])}, and was awarded "
         f"{_short_date(CITED_ROUND_TIMELINE['awarded'])} with "
         f"$10 billion in allocation authority). THE {UPCOMING_ROUND} ROUND "
-        f"HAS OPENED, BUT ITS APPLICATION HAS NOT: the {UPCOMING_ROUND} NOAA "
+        f"HAS OPENED: the {UPCOMING_ROUND} NOAA "
         f"IS PUBLISHED — Federal Register document {NOAA_FR_DOCUMENT_NUMBER}, "
         f"publication date {_us_date(NOAA_PUBLICATION_DATE)} — and it makes "
         f"{NOAA_ALLOCATION_AUTHORITY} available, with "
-        f"applications due {APPLICATION_DEADLINE_TEXT}. The "
-        f"{UPCOMING_ROUND} Allocation Application and its Application "
-        "Materials are NOT YET PUBLISHED, so the instrument encoded here is "
-        f"still the {CITED_ROUND} one.",
+        f"applications due {APPLICATION_DEADLINE_TEXT}. {application_status}",
 
         f"USE THIS, AND THEN RE-CHECK IT. The {CITED_ROUND} Application is a "
-        "real federal instrument and is the right basis to prepare against "
-        f"today; nothing here is unreliable. But it is a PROXY for the "
-        f"{UPCOMING_ROUND} instrument, not that instrument, so every "
-        f"round-specific figure in this document must be re-verified against "
-        f"the {UPCOMING_ROUND} Application Materials on the day the Fund "
-        f"releases them — specifically: {'; '.join(RECHECK_ITEMS)}.",
+        "real federal instrument and nothing here is unreliable. But it is a "
+        f"PROXY for the {UPCOMING_ROUND} instrument, not that instrument, "
+        f"{recheck_framing} — specifically: {'; '.join(RECHECK_ITEMS)}.",
 
         _certification_paragraph(today),
         _prior_allocatee_paragraph(today),

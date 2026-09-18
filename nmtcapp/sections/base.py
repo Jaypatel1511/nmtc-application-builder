@@ -21,9 +21,9 @@ logger = logging.getLogger(__name__)
 #
 # They were also the wrong unit: the CY 2024-2025 application enforces a
 # CHARACTER limit per question, not a word limit per section. This tool does
-# not encode the real limits — the CY 2026 Application Materials are
-# unpublished — so it must not state one. A CDE writing to an invented budget
-# over-writes and is truncated at submission.
+# not encode the real limits — it has never read them from the CY 2026
+# Application Materials — so it must not state one. A CDE writing to an
+# invented budget over-writes and is truncated at submission.
 _PLACEHOLDER = (
     "\n\n[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific "
     "information. CDFI Fund reviewers score on specificity, evidence, and "

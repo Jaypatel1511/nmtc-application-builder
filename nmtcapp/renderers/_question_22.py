@@ -76,8 +76,8 @@ URL and SHA-256 are stated ONCE, in ``renderers/_round_provenance``. Until
 64-character hashes, which is provenance that nobody can proofread; the two
 happened to agree, exactly as ``Q25_QEI_BASIS_CLAUSE``'s three copies did. One
 constant now, read by both. CY 2024-2025 is a CLOSED round being used as a
-proxy for the CY 2026 Allocation Application, which is not yet published;
-see ``_round_provenance``.
+proxy for the CY 2026 Allocation Application, which published on 17 Sep 2026
+and has not been reconciled against this module; see ``_round_provenance``.
 Question 22's NOTE block is printed p. 31 (PDF page 58); the question table is
 printed p. 32 (PDF page 59).
 """

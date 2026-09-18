@@ -268,7 +268,9 @@ QLICI-denominated shares from its own QLICI
 amounts, against the Application's own area lists,
 before stating either commitment. (Those area lists
 are the CY 2024-2025 Application's; the CY 2026
-Allocation Application is not yet published.)
+Allocation Application's own lists must be read from
+that document — see the round-provenance note
+for where it is.)
 Community Need Documentation
 [CDE TO COMPLETE: Document unmet capital need in the markets this pipeline
 serves. Supply the underlying evidence and cite each source by name, publisher and
@@ -285,11 +287,11 @@ form for this question, which this tool does not encode — check the form, not 
 draft.]
 Per-Project Impact Detail
 (See Attachment: Impact Projections Table)
-Long-Term Community Impact Strategy
 
 @@PAGE 9
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
 Page 9
+Long-Term Community Impact Strategy
 [NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific
 information. CDFI Fund reviewers score on specificity, evidence, and alignment with
 community need. Length is governed by the limit printed on the published application
@@ -1129,44 +1131,47 @@ criteria are the workbook's own, with spacing normalised for legibility): Severe
 AND (Poverty>40%; MFI<=40%; Unemployment>=2.5). The semicolons are ORs;
 both tiers additionally require the tract to be a Low-Income Community. WHICH
 ROUND THIS IS BASED ON. This tool encodes the CY 2024-2025 NMTC Allocation
-Application, which is the most recent PUBLISHED Application and is closed and
-awarded (it opened 19 Nov 2024, closed 29 Jan 2025, and was awarded 23 Dec 2025
-with $10 billion in allocation authority). THE CY 2026 ROUND HAS OPENED, BUT
-ITS APPLICATION HAS NOT: the CY 2026 NOAA IS PUBLISHED — Federal
-Register document 2026-18883, publication date September 15, 2026 — and it makes
-$5 billion available, with applications due 5:00 p.m. ET on November 10, 2026. The
-CY 2026 Allocation Application and its Application Materials are NOT YET
-PUBLISHED, so the instrument encoded here is still the CY 2024-2025 one. USE
+Application, which is closed and awarded (it opened 19 Nov 2024, closed 29 Jan
+2025, and was awarded 23 Dec 2025 with $10 billion in allocation authority). THE CY
+2026 ROUND HAS OPENED: the CY 2026 NOAA IS PUBLISHED — Federal Register
+document 2026-18883, publication date September 15, 2026 — and it makes $5
+billion available, with applications due 5:00 p.m. ET on November 10, 2026. THE CY
+2026 ALLOCATION APPLICATION AND ITS APPLICATION MATERIALS ARE
+PUBLISHED: the CDFI Fund released them on September 17, 2026
+(https://www.cdfifund.gov/news/741), and this tool confirmed the Application itself on
+September 17, 2026. THIS TOOL STILL ENCODES THE CY 2024-2025
+INSTRUMENT, which is now a proxy for a document that exists and can be read. USE
 THIS, AND THEN RE-CHECK IT. The CY 2024-2025 Application is a real federal
-instrument and is the right basis to prepare against today; nothing here is unreliable.
-But it is a PROXY for the CY 2026 instrument, not that instrument, so every
+instrument and nothing here is unreliable. But it is a PROXY for the CY 2026
+instrument, not that instrument, and that instrument is AVAILABLE NOW: every
 round-specific figure in this document must be re-verified against the CY 2026
-Application Materials on the day the Fund releases them — specifically: the allocation
-authority and the number of awards available; the CDE certification deadline for
-eligibility; Question 25's QLICI-denominated commitment levels, its area-type lists and
-its ladder; Question 22's QLICI-denominated Non-Metropolitan minimum and
+Application Materials, which the CDFI Fund publishes at https://www.cdfifund.gov/pro
+grams-training/programs/new-markets-tax-credit/apply-step — specifically: the
+allocation authority and the number of awards available; the CDE certification deadline
+for eligibility; Question 25's QLICI-denominated commitment levels, its area-type lists
+and its ladder; Question 22's QLICI-denominated Non-Metropolitan minimum and
 maximum; Question 15's product-flexibility ladder; the scoring thresholds in the
 Review Process. THE CY 2026 CDE CERTIFICATION RULE HAS TWO ROUTES,
 AND THE SECOND HAS A DATE IN TABLE 1 OF THE NOAA. To be eligible to apply
 in CY 2026 an organization must EITHER already be a certified CDE as of the NOAA's
 Federal Register publication date, September 15, 2026, OR submit its CDE
 Certification Application through AMIS by 11:59 p.m. ET on September 22, 2026. As of
-September 16, 2026 the AMIS route is STILL AHEAD: an organization that is not yet a
+September 17, 2026 the AMIS route is STILL AHEAD: an organization that is not yet a
 certified CDE can still meet the rule by submitting its CDE Certification Application
 through AMIS by 11:59 p.m. ET on September 22, 2026. The NOAA adds that the
-CDFI Fund will not provide allocation authority to an Applicant that is not certified as a
-CDE. An organization that does neither CANNOT APPLY IN CY 2026. There is no late
-filing; its next opportunity is a future round. AND IF YOU ARE A PRIOR ALLOCATEE,
 
 @@PAGE 24
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
 Page 24
+CDFI Fund will not provide allocation authority to an Applicant that is not certified as a
+CDE. An organization that does neither CANNOT APPLY IN CY 2026. There is no late
+filing; its next opportunity is a future round. AND IF YOU ARE A PRIOR ALLOCATEE,
 TABLE 1 BINDS YOU ON DATES OF ITS OWN: any prior Allocatee that requires
 action by the CDFI Fund in order to meet the Qualified Equity Investment (QEI)
 issuance thresholds published in the CY 2026 NOAA must submit a CDE Certification
 Application for its Subsidiary CDE(s) through AMIS by 11:59 p.m. ET on September
 22, 2026, and any Allocation Agreement amendment request to add Subsidiary CDEs
-by 11:59 p.m. ET on November 3, 2026. As of September 16, 2026 both of those
+by 11:59 p.m. ET on November 3, 2026. As of September 17, 2026 both of those
 dates are still ahead. The thresholds are eligibility conditions with their own deadlines,
 both after the application deadline: the Table 2 share of prior-round QEIs must be
 finalized, and the required share of them used to make QLICIs, by 11:59 p.m. ET on
@@ -1175,7 +1180,7 @@ ET on January 14, 2027. The QEI issuance thresholds themselves are in Table 2 of
 the NOAA, Federal Register document 2026-18883; this tool neither computes them
 nor reproduces them. THE CY 2026 DEADLINES STILL AHEAD, COMPUTED FROM
 TABLE 1 OF THE NOAA AGAINST THE EASTERN DATE THIS DOCUMENT WAS
-GENERATED, September 16, 2026: 10 of the 10 deadlines in Table 1 are still ahead
+GENERATED, September 17, 2026: 10 of the 10 deadlines in Table 1 are still ahead
 — Community Development Entity (CDE) Certification Application deadline — 11:59
 p.m. ET on September 22, 2026 (Electronically via AMIS); Request to modify CDE
 certification service area — 11:59 p.m. ET on September 22, 2026 (Electronically via
@@ -1197,14 +1202,14 @@ p.m. ET on January 14, 2027 (Electronically via AMIS) [prior Allocatees]. Alread
 passed: none. Every one of these dates is set by the NOAA, none is a figure this tool
 computes, and nothing in this document moves them. Provenance: the CY 2026
 NOAA is Federal Register document 2026-18883, filed September 14, 2026 and
-published September 15, 2026; the absence of CY 2026 Application Materials was
-confirmed on September 16, 2026.
-DEAL ECONOMICS: computed using the nmtc-calc library, standard leveraged NMTC
-structure. Statutory credit rate 39% of QEI over 7 years (IRC §45D(a)(2): 5% of the
+published September 15, 2026; the CY 2026 Application Materials were confirmed
+published on September 17, 2026.
 
 @@PAGE 25
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
 Page 25
+DEAL ECONOMICS: computed using the nmtc-calc library, standard leveraged NMTC
+structure. Statutory credit rate 39% of QEI over 7 years (IRC §45D(a)(2): 5% of the
 QEI on each of the first three credit allowance dates and 6% on each of the remaining
 four). Assumed credit price $0.83/credit and CDE fee 2.5% of QEI are market
 assumptions of this model, not CDFI Fund parameters. The leverage loan is the

@@ -15,7 +15,7 @@ THE DEFECT (1.5.5 T1). ``Application.__init__`` defaulted this to the string
 ``"CY2025"``. The CDFI Fund has never run a round by that name: the encoded
 instrument is CY **2024-2025** (closed 29 Jan 2025, awarded 23 Dec 2025 at
 $10 billion) and the upcoming one is CY **2026** (announced 12 Aug 2026 at
-$5 billion, not yet open). ``data/historical_awards.NMTC_AWARD_ROUNDS`` —
+$5 billion; its round had not yet opened when 1.5.5 shipped). ``data/historical_awards.NMTC_AWARD_ROUNDS`` —
 this package's own record of rounds that happened — has no CY2025 key. So a
 CDE who never touched the field got a generated application document
 asserting a round that does not exist, on the title page, in the running
