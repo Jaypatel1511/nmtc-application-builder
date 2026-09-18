@@ -539,8 +539,8 @@ def scan() -> list:
 # selects on the SUBJECT — a segment that names the upcoming round is read,
 # whatever it says — so the registry holds every sentence in the rendered
 # output, the package source and the Streamlit app that mentions the round.
-# Measured here (re-derived 2026-09-16 for 1.6.4): 114 segments, of which 26
-# carry claims and 88 assert nothing. The alternative, requiring a publication word
+# Measured here (re-derived 2026-09-17 for 1.6.5): 130 segments, of which 27
+# carry claims and 103 assert nothing. The alternative, requiring a publication word
 # before a sentence is looked at, is what shipped in the build round and it
 # was blind to four sentences in this tree on the day it was written.
 #
@@ -559,17 +559,6 @@ def scan() -> list:
 # ---------------------------------------------------------------------------
 
 ROUND_STATUS_CLAIMS = {
-    # nmtcapp/renderers/_question_25.py
-    # rendered_baseline/excel.txt
-    # rendered_baseline/markdown.txt
-    # rendered_baseline/pdf.txt
-    # rendered_baseline/word.txt
-    "(Those area lists are the CY 2024-2025 Application's; the CY 2026 Allocation Application is not yet published.)":
-        (("APPLICATION", False),),
-
-    # nmtcapp/renderers/_round_provenance.py
-    '* The CY 2026 **Allocation Application** and its Application Materials are **NOT published**.':
-        (("APPLICATION", False),),
 
     # nmtcapp/renderers/_round_provenance.py
     '* The CY 2026 **NOAA** is **PUBLISHED** -- Federal Register document 2026-18883, filed 14 Sep 2026 08:45 ET, publication date 15 Sep 2026.':
@@ -578,10 +567,6 @@ ROUND_STATUS_CLAIMS = {
     # rendered_baseline/markdown.txt
     '**QEI in Deep Distress Tracts (a share of QEI, not of QLICIs — see the basis note below):** 52.2% **QEI in Severely Distressed Tracts, Deep Distress included (a share of QEI, not of QLICIs — see the basis note below):** 85.3% **— of which severely distressed but not also deep:** 33.1% **QEI in LIC (Standard Eligible) Tracts:** 14.7% **QEI in NMTC Native Areas (CDE-declared, not verified by this tool):** 5.9% **QEI in High Migration Rural (HMR) Tracts:** 12.7% **BASIS NOTE — the CDFI Fund\'s two distress commitments are measured on QLICIs, not on QEI:** Question 25 of the CY 2024-2025 NMTC Allocation Application (printed pp. 38-41) sets both commitments, and both are measured on QLICIs — specifically on QLICIs "in terms of aggregate dollar amounts", tested for each QLICI.':
         (),
-
-    # nmtcapp/renderers/_round_provenance.py
-    '**That is the correct engineering choice.** There is no other defensible one: the CY 2026 Application is unpublished, and a tool that declined to encode any instrument until it appeared would be useless during exactly the window a CDE needs it.':
-        (("APPLICATION", False),),
 
     # nmtcapp/renderers/_round_provenance.py
     '**The CY 2024-2025 Application is not unreliable.** It is a real federal instrument, retrieved and hash-verified, and it is the best available basis for preparing a CY 2026 application.':
@@ -620,17 +605,6 @@ ROUND_STATUS_CLAIMS = {
         (),
 
     # rendered_baseline/excel.txt
-    # rendered_baseline/markdown.txt
-    # rendered_baseline/pdf.txt
-    # rendered_baseline/word.txt
-    "But it is a PROXY for the CY 2026 instrument, not that instrument, so every round-specific figure in this document must be re-verified against the CY 2026 Application Materials on the day the Fund releases them — specifically: the allocation authority and the number of awards available; the CDE certification deadline for eligibility; Question 25's QLICI-denominated commitment levels, its area-type lists and its ladder; Question 22's QLICI-denominated Non-Metropolitan minimum and maximum; Question 15's product-flexibility ladder; the scoring thresholds in the Review Process.":
-        (("APPLICATION", False),),
-
-    # nmtcapp/renderers/_round_provenance.py
-    'But it is a PROXY for the {} instrument, not that instrument, so every round-specific figure in this document must be re-verified against the {} Application Materials on the day the Fund releases them — specifically: {}.':
-        (("APPLICATION", False),),
-
-    # rendered_baseline/excel.txt
     'CONFIDENTIAL — Great Lakes Regional Capital CDE, LLC — NMTC CY 2026 — Generated <RUNDATE>':
         (),
 
@@ -641,14 +615,6 @@ ROUND_STATUS_CLAIMS = {
     # nmtcapp/renderers/_question_25.py
     'CY 2024-2025 NMTC Program Allocation Application, retrieved 2026-08-17 and text-extracted LOCALLY with pypdf — not fetched through a summarising model, which is the provenance failure this whole cycle exists to correct.':
         (),
-
-    # nmtcapp/renderers/_question_25.py
-    'CY 2024-2025 is CLOSED — it was awarded 23 Dec 2025 — and the CY 2026 Application is not yet published.':
-        (("APPLICATION", False),),
-
-    # nmtcapp/renderers/_question_22.py
-    'CY 2024-2025 is a CLOSED round being used as a proxy for the CY 2026 Allocation Application, which is not yet published; see ``_round_provenance``.':
-        (("APPLICATION", False),),
 
     # nmtcapp/renderers/_round_provenance.py
     'CY 2026':
@@ -723,10 +689,6 @@ ROUND_STATUS_CLAIMS = {
     'Non-Metropolitan county designations under the CY 2026 NOAA follow OMB Bulletin 20-01, applied using 2020 census tracts.':
         (),
 
-    # nmtcapp/renderers/_round_provenance.py
-    'Provenance: the {} NOAA is Federal Register document {}, filed {} and published {}; the absence of {} Application Materials was confirmed on {}.':
-        (("NOAA", True), ("APPLICATION", False)),
-
     # rendered_baseline/excel.txt
     'Question 25 of the CY 2024-2025 NMTC Allocation Application (printed pp. 38-41) sets both commitments, and both are measured on QLICIs — specifically on QLICIs "in terms of aggregate dollar amounts", tested for each QLICI.':
         (),
@@ -744,30 +706,11 @@ ROUND_STATUS_CLAIMS = {
         (),
 
     # nmtcapp/renderers/_round_provenance.py
-    'So the text below tells a CDE **what to re-check when CY 2026 publishes**, not that it cannot rely on anything.':
-        (("APPLICATION", False),),
-
-    # nmtcapp/renderers/_round_provenance.py
     'THE CY 2026 FACTS, AND WHERE THEY CAME FROM':
         (),
 
-    # rendered_baseline/excel.txt
-    # rendered_baseline/markdown.txt
-    # rendered_baseline/pdf.txt
-    # rendered_baseline/word.txt
-    'THE CY 2026 ROUND HAS OPENED, BUT ITS APPLICATION HAS NOT: the CY 2026 NOAA IS PUBLISHED — Federal Register document 2026-18883, publication date September 15, 2026 — and it makes $5 billion available, with applications due 5:00 p.m. ET on November 10, 2026.':
-        (("NOAA", True), ("APPLICATION", False)),
-
-    # nmtcapp/renderers/_round_provenance.py
-    'THE {} ROUND HAS OPENED, BUT ITS APPLICATION HAS NOT: the {} NOAA IS PUBLISHED — Federal Register document {}, publication date {} — and it makes {} available, with applications due {}.':
-        (("NOAA", True), ("APPLICATION", False)),
-
     # nmtcapp/data/historical_awards.py
     'THIS IS A RECORD, NOT A FORECAST: neither the CDFI Fund nor this tool publishes an expected acceptance rate for any future round, and CY 2026 is a $5 billion single round.':
-        (),
-
-    # nmtcapp/renderers/_question_25.py
-    'That is the right call and it is not the same as the instrument being current; see ``renderers/_round_provenance`` for the disclosure and for what a CDE must re-check when CY 2026 lands.':
         (),
 
     # nmtcapp/renderers/_round_provenance.py
@@ -785,13 +728,6 @@ ROUND_STATUS_CLAIMS = {
     # streamlit_app/pages/4_About_and_Methodology.py
     'The CDFI Fund publishes no such criterion and no bonus points for it.** The CY 2024-2025 NOAA (89 FR 92283, 21 Nov 2024), section V.B(b), sets out the complete set of additional points under IRC §45D(f)(2): *"the CDFI Fund will ascribe additional points to entities that meet one or both of the statutory priorities"* — a DBC track record (up to five points) and Investments in Unrelated Entities (five points) — *"Thus, Applicants that meet the requirements of both priority categories can receive up to a total of ten additional points."* Two priorities, ten points, and both are scored separately under Priority Points below.':
         (),
-
-    # rendered_baseline/excel.txt
-    # rendered_baseline/markdown.txt
-    # rendered_baseline/pdf.txt
-    # rendered_baseline/word.txt
-    'The CY 2026 Allocation Application and its Application Materials are NOT YET PUBLISHED, so the instrument encoded here is still the CY 2024-2025 one.':
-        (("APPLICATION", False),),
 
     # nmtcapp/renderers/_round_provenance.py [#]
     'The CY 2026 NOAA, pinned to its Federal Register identity rather than to a page that can be re-edited underneath a citation.':
@@ -829,10 +765,6 @@ ROUND_STATUS_CLAIMS = {
     'The published CY 2024-2025 bar for full Community Outcomes credit is 85% of QLICIs in areas of higher distress (Allocation Application, Question 25(a)) — **a share of QLICIs, while the bars above are shares of QEI**.':
         (),
 
-    # nmtcapp/renderers/_round_provenance.py
-    'The {} Allocation Application and its Application Materials are NOT YET PUBLISHED, so the instrument encoded here is still the {} one.':
-        (("APPLICATION", False),),
-
     # nmtcapp/renderers/_question_25.py
     'They are also a summary, and the summary loses two things the **instrument** — the Allocation Application itself, Question 25 at printed pp. 38-41 — states plainly:':
         (),
@@ -849,39 +781,12 @@ ROUND_STATUS_CLAIMS = {
     'This surface cited the CY 2024-2025 Review Process thirteen times on a single run and said nothing about that round being closed and awarded, or about CY 2026 at all.':
         (),
 
-    # nmtcapp/sections/base.py [#]
-    'This tool does not encode the real limits — the CY 2026 Application Materials are unpublished — so it must not state one.':
-        (("APPLICATION", False),),
-
-    # rendered_baseline/excel.txt
-    # rendered_baseline/markdown.txt
-    # rendered_baseline/pdf.txt
-    # rendered_baseline/word.txt
-    'This tool encodes the CY 2024-2025 NMTC Allocation Application, which is the most recent PUBLISHED Application and is closed and awarded (it opened 19 Nov 2024, closed 29 Jan 2025, and was awarded 23 Dec 2025 with $10 billion in allocation authority).':
-        (),
-
-    # nmtcapp/renderers/_round_provenance.py
-    'This tool encodes the {} NMTC Allocation Application, which is the most recent PUBLISHED Application and is {} (it opened {}, closed {}, and was awarded {} with $10 billion in allocation authority).':
-        (),
-
-    # nmtcapp/renderers/_round_provenance.py
-    'Those live in the Application Materials, which do not exist yet.':
-        (),
-
-    # nmtcapp/renderers/_round_provenance.py [#]
-    'Through 1.6.1 this was one boolean named ``UPCOMING_MATERIALS_PUBLISHED`` covering both, and the pair came apart on 2026-09-15: the NOAA published, the Application did not.':
-        (("NOAA", True), ("APPLICATION", False)),
-
     # nmtcapp/renderers/_round_provenance.py
     'Two statements went past the NOAA and are gone:':
         (),
 
     # nmtcapp/renderers/_round_provenance.py [#]
     "WHETHER THE UPCOMING ROUND'S NOAA HAS PUBLISHED -- and, SEPARATELY, whether the Allocation Application has.":
-        (),
-
-    # nmtcapp/renderers/_round_provenance.py [#]
-    'What a CDE must re-verify when CY 2026 materials appear.':
         (),
 
     # nmtcapp/renderers/_round_provenance.py
@@ -958,20 +863,9 @@ ROUND_STATUS_CLAIMS = {
     'Everything below that names a CY 2026 deadline is derived from here.':
         (),
 
-    # rendered_baseline/excel.txt
-    # rendered_baseline/markdown.txt
-    # rendered_baseline/pdf.txt
-    # rendered_baseline/word.txt
-    'Provenance: the CY 2026 NOAA is Federal Register document 2026-18883, filed September 14, 2026 and published September 15, 2026; the absence of CY 2026 Application Materials was confirmed on September 16, 2026.':
-        (('NOAA', True), ('APPLICATION', False)),
-
     # nmtcapp/renderers/_round_provenance.py
     'Section III.A.6(a) of the NOAA.':
         (),
-
-    # rendered_baseline/pdf.txt
-    'TABLE 1 BINDS YOU ON DATES OF ITS OWN: any prior Allocatee that requires action by the CDFI Fund in order to meet the Qualified Equity Investment (QEI) issuance thresholds published in the CY 2026 NOAA must submit a CDE Certification Application for its Subsidiary CDE(s) through AMIS by 11:59 p.m. ET on September 22, 2026, and any Allocation Agreement amendment request to add Subsidiary CDEs by 11:59 p.m. ET on November 3, 2026.':
-        (('NOAA', True),),
 
     # nmtcapp/renderers/_round_provenance.py [#]
     "TABLE 1 OF THE CY 2026 NOAA, EVERY ROW, IN THE INSTRUMENT'S ORDER (1.6.4).":
@@ -984,20 +878,9 @@ ROUND_STATUS_CLAIMS = {
     'THE CY 2026 CDE CERTIFICATION RULE HAS TWO ROUTES, AND THE SECOND HAS A DATE IN TABLE 1 OF THE NOAA.':
         (),
 
-    # rendered_baseline/excel.txt
-    # rendered_baseline/markdown.txt
-    # rendered_baseline/pdf.txt
-    # rendered_baseline/word.txt
-    'THE CY 2026 DEADLINES STILL AHEAD, COMPUTED FROM TABLE 1 OF THE NOAA AGAINST THE EASTERN DATE THIS DOCUMENT WAS GENERATED, September 16, 2026: 10 of the 10 deadlines in Table 1 are still ahead — Community Development Entity (CDE) Certification Application deadline — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Request to modify CDE certification service area — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Subsidiary CDE Certification Application for meeting Qualified Equity Investment (QEI) issuance thresholds — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS) [prior Allocatees]; CY 2026 Allocation Application Registration — 5:00 p.m. ET on October 6, 2026 (Electronically via AMIS); Amendment request to add Subsidiary CDEs to Allocation Agreements for meeting QEI issuance thresholds — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Amendment request to remove a Controlling Entity from Allocation Agreement(s) — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Last day to contact CDFI Fund staff — 5:00 p.m. ET on November 6, 2026 (Electronically via AMIS); CY 2026 Allocation Application deadline (including required Attachments) — 5:00 p.m. ET on November 10, 2026 (Electronically via AMIS); QEI Issuance and Qualified Low Income Community Investments (QLICIs) requirements deadline — 11:59 p.m. ET on January 7, 2027 (Not Applicable) [prior Allocatees]; Report QEIs and certify QLICIs deadline — 11:59 p.m. ET on January 14, 2027 (Electronically via AMIS) [prior Allocatees].':
-        (),
-
     # nmtcapp/renderers/_round_provenance.py [#]
     'The NOAA had been opened three times in the 1.6.2 and 1.6.3 cycles, and each time only the field being looked for was read.':
         (),
-
-    # nmtcapp/renderers/_round_provenance.py [#]
-    "The NOAA is verified against the Federal Register document named above -- on 2026-09-16 from its raw-text endpoint, every Table 1 row, which is how the 31 Aug date was found; the ABSENCE of CY 2026 Application Materials was confirmed by this package's maintainer on the same date.":
-        (('APPLICATION', False),),
 
     # rendered_baseline/excel.txt
     # rendered_baseline/markdown.txt
@@ -1060,6 +943,169 @@ ROUND_STATUS_CLAIMS = {
     'Through 1.6.3 the CDE certification deadline was ``2026-08-31``, and the note said, in capitals and in all four formats, that an organization not certified by then CANNOT APPLY IN CY 2026.':
         (),
 
+
+    # ---- 1.6.5: the Application published; monotone claims only ----
+
+    # nmtcapp/renderers/_question_25.py
+    # rendered_baseline/excel.txt / markdown.txt / pdf.txt / word.txt
+    "(Those area lists are the CY 2024-2025 Application's; the CY 2026 Allocation Application's own lists must be read from that document — see the round-provenance note for where it is.)":
+        (),
+
+    # nmtcapp/renderers/_round_provenance.py
+    '* The CY 2026 **Allocation Application** and its Application Materials are **PUBLISHED** -- released by the CDFI Fund on 17 Sep 2026 (cdfifund.gov/news/741) together with the Application FAQs, the Application Roadmap Presentation and the AMIS Navigation Guide, all linked from the program\'s "Step 2: Apply" page.':
+        (('APPLICATION', True),),
+
+    # nmtcapp/renderers/_round_provenance.py
+    '**That was the correct engineering choice.** There was no other defensible one, and a tool that declined to encode any instrument until the CY 2026 one appeared would have been useless during exactly the window a CDE needed it.':
+        (),
+
+    # nmtcapp/renderers/_round_provenance.py
+    'As of {} this tool had not confirmed publication of the {} Allocation Application or its Application Materials, so the instrument encoded here is still the {} one.':
+        (),
+
+    # rendered_baseline/excel.txt / markdown.txt / word.txt
+    "But it is a PROXY for the CY 2026 instrument, not that instrument, and that instrument is AVAILABLE NOW: every round-specific figure in this document must be re-verified against the CY 2026 Application Materials, which the CDFI Fund publishes at https://www.cdfifund.gov/programs-training/programs/new-markets-tax-credit/apply-step — specifically: the allocation authority and the number of awards available; the CDE certification deadline for eligibility; Question 25's QLICI-denominated commitment levels, its area-type lists and its ladder; Question 22's QLICI-denominated Non-Metropolitan minimum and maximum; Question 15's product-flexibility ladder; the scoring thresholds in the Review Process.":
+        (('APPLICATION', True),),
+
+    # rendered_baseline/pdf.txt (the 82-character URL is hard-split by the PDF renderer; same sentence)
+    "But it is a PROXY for the CY 2026 instrument, not that instrument, and that instrument is AVAILABLE NOW: every round-specific figure in this document must be re-verified against the CY 2026 Application Materials, which the CDFI Fund publishes at https://www.cdfifund.gov/pro grams-training/programs/new-markets-tax-credit/apply-step — specifically: the allocation authority and the number of awards available; the CDE certification deadline for eligibility; Question 25's QLICI-denominated commitment levels, its area-type lists and its ladder; Question 22's QLICI-denominated Non-Metropolitan minimum and maximum; Question 15's product-flexibility ladder; the scoring thresholds in the Review Process.":
+        (('APPLICATION', True),),
+
+    # nmtcapp/renderers/_question_25.py
+    'CY 2024-2025 is CLOSED — it was awarded 23 Dec 2025 — and the CY 2026 Application published on 17 Sep 2026 (1.6.5).':
+        (('APPLICATION', True),),
+
+    # nmtcapp/renderers/_question_22.py
+    'CY 2024-2025 is a CLOSED round being used as a proxy for the CY 2026 Allocation Application, which published on 17 Sep 2026 and has not been reconciled against this module; see ``_round_provenance``.':
+        (('APPLICATION', True),),
+
+    # nmtcapp/renderers/_round_provenance.py
+    "Paragraph 0 states that the CY 2026 Application IS published and that this tool STILL encodes CY 2024-2025; paragraph 1 points at where the CY 2026 materials are; paragraph 4's provenance says when the publication was confirmed.":
+        (('APPLICATION', True),),
+
+    # rendered_baseline/excel.txt / markdown.txt / pdf.txt / word.txt
+    'Provenance: the CY 2026 NOAA is Federal Register document 2026-18883, filed September 14, 2026 and published September 15, 2026; the CY 2026 Application Materials were confirmed published on September 17, 2026.':
+        (('NOAA', True), ('APPLICATION', True)),
+
+    # nmtcapp/renderers/_round_provenance.py
+    'Provenance: the {} NOAA is Federal Register document {}, filed {} and published {}; {}.':
+        (('NOAA', True),),
+
+    # nmtcapp/renderers/_round_provenance.py
+    'Since 1.6.5: the CY 2026 Application EXISTS (published 17 Sep 2026) and this package STILL encodes CY 2024-2025, now as a disclosed proxy for a document a CDE can go and read.':
+        (('APPLICATION', True),),
+
+    # nmtcapp/renderers/_round_provenance.py
+    'So the text below tells a CDE **what to re-check against the CY 2026 Application**, and where it is, not that it cannot rely on anything.':
+        (),
+
+    # rendered_baseline/excel.txt / markdown.txt / pdf.txt / word.txt
+    'THE CY 2026 ALLOCATION APPLICATION AND ITS APPLICATION MATERIALS ARE PUBLISHED: the CDFI Fund released them on September 17, 2026 (https://www.cdfifund.gov/news/741), and this tool confirmed the Application itself on September 17, 2026.':
+        (('APPLICATION', True),),
+
+    # rendered_baseline/excel.txt / markdown.txt / pdf.txt / word.txt
+    'THE CY 2026 ROUND HAS OPENED: the CY 2026 NOAA IS PUBLISHED — Federal Register document 2026-18883, publication date September 15, 2026 — and it makes $5 billion available, with applications due 5:00 p.m. ET on November 10, 2026.':
+        (('NOAA', True),),
+
+    # nmtcapp/renderers/_round_provenance.py [#]
+    'THE SIX ITEMS ARE UNCHANGED BY 1.6.5 AND STILL OWED: reading the CY 2026 Application to confirm it exists is what 1.6.5 did; reading it to move a threshold is the next methodology cycle.':
+        (),
+
+    # nmtcapp/renderers/_round_provenance.py
+    'THE {} ROUND HAS OPENED: the {} NOAA IS PUBLISHED — Federal Register document {}, publication date {} — and it makes {} available, with applications due {}.':
+        (('NOAA', True),),
+
+    # nmtcapp/renderers/_round_provenance.py [#]
+    'The CDFI Fund opened the CY 2026 round and released the Allocation Application on 2026-09-17 (``UPCOMING_APPLICATION_ANNOUNCEMENT_URL``); the PDF was retrieved the same day and its title page ("NEW MARKETS TAX CREDIT PROGRAM 2026 APPLICATION", "CY 2026 NMTC Allocation Application") and OMB control number read -- see the ``UPCOMING_APPLICATION_*`` pins below.':
+        (('APPLICATION', True),),
+
+    # nmtcapp/renderers/_round_provenance.py [#]
+    'The CY 2026 Allocation Application was verified on 2026-09-17 by RETRIEVING THE DOCUMENT ITSELF from ``UPCOMING_APPLICATION_PDF_URL`` and reading its title page and OMB control number, and by reading the announcement at ``UPCOMING_APPLICATION_ANNOUNCEMENT_URL`` and the "Step 2: Apply" page that links the Application, the Application FAQs, the Application Roadmap Presentation and the AMIS Navigation Guide.':
+        (('APPLICATION', True),),
+
+    # nmtcapp/renderers/_round_provenance.py [#]
+    'The CY 2026 Allocation Application, pinned to the day the CDFI Fund announced it and to the PROGRAM PAGE that links it -- not to the upload path.':
+        (('APPLICATION', True),),
+
+    # rendered_baseline/pdf.txt -- a PDF page-break fragment: paragraph 2 now breaks across pages 23-24 mid-sentence, and the page furniture is a block boundary. The whole sentence is registered below from the other three surfaces.
+    'The NOAA adds that the':
+        (),
+
+    # nmtcapp/renderers/_round_provenance.py [#]
+    'The NOAA is verified against the Federal Register document named above -- on 2026-09-16 from its raw-text endpoint, every Table 1 row, which is how the 31 Aug date was found.':
+        (),
+
+    # nmtcapp/renderers/_round_provenance.py [#]
+    'The instrument THIS PACKAGE ENCODES, in its CY 2026 edition: PUBLISHED.':
+        (('APPLICATION', True),),
+
+    # nmtcapp/renderers/_round_provenance.py [#]
+    "The obvious repair -- shrink the number and call it derived -- was considered against the one piece of evidence the repo holds, the intervals between this issuer's own CY 2026 announcements: 2026-08-12 pre-announcement (news/738) -> 34 days -> 2026-09-15 NOAA, Federal Register 2026-18883 -> 2 days -> 2026-09-17 Allocation Application (news/741) -> 19 days -> 2026-10-06 Application Registration deadline -> 35 days -> 2026-11-10 Application deadline Those intervals are 34, 2, 19 and 35 days: no cadence derivable from them is both short enough to have caught the 2-day gap and long enough not to fire as ritual across the 35-day ones.":
+        (),
+
+    # nmtcapp/renderers/_question_25.py
+    "The rendered note's closing sentence therefore says whose lists these are and where the CY 2026 document is, and nothing about what that document does or does not contain; see ``renderers/_round_provenance`` for the disclosure and the re-check list.":
+        (),
+
+    # nmtcapp/renderers/_round_provenance.py
+    "The three places the note speaks to the CY 2026 Application's status, DERIVED from ``UPCOMING_APPLICATION_PUBLISHED`` so they cannot disagree with it or with each other (1.6.5 R3a).":
+        (),
+
+    # nmtcapp/renderers/_question_25.py
+    'This module still encodes the CY 2024-2025 instrument as a proxy for the CY 2026 one, and has NOT been reconciled against it: that is a methodology cycle with its own audit, not a patch.':
+        (),
+
+    # nmtcapp/renderers/_round_provenance.py [#]
+    'This package still encodes CY 2024-2025; reconciling its figures against the CY 2026 Application is ``RECHECK_ITEMS``, and that is a methodology cycle with its own audit, not a patch.':
+        (),
+
+    # nmtcapp/sections/base.py [#]
+    'This tool does not encode the real limits — it has never read them from the CY 2026 Application Materials — so it must not state one.':
+        (),
+
+    # rendered_baseline/excel.txt / markdown.txt / pdf.txt / word.txt
+    'This tool encodes the CY 2024-2025 NMTC Allocation Application, which is closed and awarded (it opened 19 Nov 2024, closed 29 Jan 2025, and was awarded 23 Dec 2025 with $10 billion in allocation authority).':
+        (),
+
+    # nmtcapp/renderers/_round_provenance.py
+    'This tool encodes the {} NMTC Allocation Application, which is {} (it opened {}, closed {}, and was awarded {} with $10 billion in allocation authority).':
+        (),
+
+    # nmtcapp/renderers/_round_provenance.py
+    'Those live in the Application Materials, which as of 1.6.5 exist and have NOT been reconciled against this package.':
+        (),
+
+    # nmtcapp/renderers/_round_provenance.py [#]
+    'Through 1.6.1 this was one boolean named ``UPCOMING_MATERIALS_PUBLISHED`` covering both, and the pair came apart on 2026-09-15: the NOAA published two days before the Application.':
+        (('NOAA', True), ('APPLICATION', True)),
+
+    # nmtcapp/renderers/_round_provenance.py
+    'Verified on 2026-09-17 by retrieving the Application PDF itself: title page "NEW MARKETS TAX CREDIT PROGRAM 2026 APPLICATION", running footer "CY 2026 NMTC Allocation Application", OMB Approval No. 1559-0016, 137 pages -- pinned in the ``UPCOMING_APPLICATION_*`` constants below.':
+        (('APPLICATION', True),),
+
+    # nmtcapp/renderers/_round_provenance.py [#]
+    'What a CDE must re-verify against the CY 2026 Application Materials, which are available at ``UPCOMING_APPLICATION_PAGE_URL``.':
+        (('APPLICATION', True),),
+
+    # nmtcapp/renderers/_round_provenance.py
+    'and that instrument is AVAILABLE NOW: every round-specific figure in this document must be re-verified against the {} Application Materials, which the CDFI Fund publishes at {}':
+        (),
+
+    # nmtcapp/renderers/_round_provenance.py
+    'publication of the {} Application Materials had not been confirmed by this tool as of {}':
+        (),
+
+    # nmtcapp/renderers/_round_provenance.py
+    'so every round-specific figure in this document must be re-verified against the {} Application Materials, which the CDFI Fund will publish at {}':
+        (),
+
+    # nmtcapp/renderers/_round_provenance.py
+    'the {} Application Materials were confirmed published on {}':
+        (),
+
+    # rendered_baseline/excel.txt / markdown.txt / pdf.txt / word.txt
+    'THE CY 2026 DEADLINES STILL AHEAD, COMPUTED FROM TABLE 1 OF THE NOAA AGAINST THE EASTERN DATE THIS DOCUMENT WAS GENERATED, September 17, 2026: 10 of the 10 deadlines in Table 1 are still ahead — Community Development Entity (CDE) Certification Application deadline — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Request to modify CDE certification service area — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Subsidiary CDE Certification Application for meeting Qualified Equity Investment (QEI) issuance thresholds — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS) [prior Allocatees]; CY 2026 Allocation Application Registration — 5:00 p.m. ET on October 6, 2026 (Electronically via AMIS); Amendment request to add Subsidiary CDEs to Allocation Agreements for meeting QEI issuance thresholds — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Amendment request to remove a Controlling Entity from Allocation Agreement(s) — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Last day to contact CDFI Fund staff — 5:00 p.m. ET on November 6, 2026 (Electronically via AMIS); CY 2026 Allocation Application deadline (including required Attachments) — 5:00 p.m. ET on November 10, 2026 (Electronically via AMIS); QEI Issuance and Qualified Low Income Community Investments (QLICIs) requirements deadline — 11:59 p.m. ET on January 7, 2027 (Not Applicable) [prior Allocatees]; Report QEIs and certify QLICIs deadline — 11:59 p.m. ET on January 14, 2027 (Electronically via AMIS) [prior Allocatees].':
+        (),
 }
 
 #: Why a selected segment that DOES carry publication-status vocabulary still
@@ -1156,23 +1202,6 @@ NON_CLAIM_REASONS = {
         "25(a) sets; the sentence's point is the QLICI/QEI denominator "
         'difference.',
 
-    # rendered_baseline/excel.txt
-    # rendered_baseline/markdown.txt
-    # rendered_baseline/pdf.txt
-    # rendered_baseline/word.txt
-    'This tool encodes the CY 2024-2025 NMTC Allocation Application, which is the most recent PUBLISHED Application and is closed and awarded (it opened 19 Nov 2024, closed 29 Jan 2025, and was awarded 23 Dec 2025 with $10 billion in allocation authority).':
-        'About the CITED round, not the upcoming one: it says the '
-        'instrument this package encodes is the most recent PUBLISHED '
-        'Application and that its round is closed and awarded. CY '
-        "2024-2025's publication is not either constant's subject.",
-
-    # nmtcapp/renderers/_round_provenance.py
-    'This tool encodes the {} NMTC Allocation Application, which is the most recent PUBLISHED Application and is {} (it opened {}, closed {}, and was awarded {} with $10 billion in allocation authority).':
-        'The source template of the rendered sentence above, asserting '
-        'the same thing about the CITED round: it is the most recent '
-        'PUBLISHED Application, and it is closed and awarded. Neither CY '
-        '2026 constant is addressed.',
-
     # nmtcapp/renderers/_round_provenance.py [#]
     "WHETHER THE UPCOMING ROUND'S NOAA HAS PUBLISHED -- and, SEPARATELY, whether the Allocation Application has.":
         'Names what the two constants below RECORD — one for the NOAA, '
@@ -1199,13 +1228,6 @@ NON_CLAIM_REASONS = {
     "And it stopped there: the QEI issuance thresholds those actions exist to meet are ELIGIBILITY conditions on a prior Allocatee's CY 2026 application with two more Table 1 dates of their own, both in January 2027, both after the application deadline.":
         "A docstring on the 1.6.3 defect. 'issuance' belongs to 'QEI issuance thresholds', the Table 2 requirement the sentence is about; no CY 2026 instrument is said to have published or not.",
 
-    # rendered_baseline/excel.txt
-    # rendered_baseline/markdown.txt
-    # rendered_baseline/pdf.txt
-    # rendered_baseline/word.txt
-    'THE CY 2026 DEADLINES STILL AHEAD, COMPUTED FROM TABLE 1 OF THE NOAA AGAINST THE EASTERN DATE THIS DOCUMENT WAS GENERATED, September 16, 2026: 10 of the 10 deadlines in Table 1 are still ahead — Community Development Entity (CDE) Certification Application deadline — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Request to modify CDE certification service area — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Subsidiary CDE Certification Application for meeting Qualified Equity Investment (QEI) issuance thresholds — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS) [prior Allocatees]; CY 2026 Allocation Application Registration — 5:00 p.m. ET on October 6, 2026 (Electronically via AMIS); Amendment request to add Subsidiary CDEs to Allocation Agreements for meeting QEI issuance thresholds — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Amendment request to remove a Controlling Entity from Allocation Agreement(s) — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Last day to contact CDFI Fund staff — 5:00 p.m. ET on November 6, 2026 (Electronically via AMIS); CY 2026 Allocation Application deadline (including required Attachments) — 5:00 p.m. ET on November 10, 2026 (Electronically via AMIS); QEI Issuance and Qualified Low Income Community Investments (QLICIs) requirements deadline — 11:59 p.m. ET on January 7, 2027 (Not Applicable) [prior Allocatees]; Report QEIs and certify QLICIs deadline — 11:59 p.m. ET on January 14, 2027 (Electronically via AMIS) [prior Allocatees].':
-        "The rendered Table 1 list. 'Issuance' is the instrument's own row title, 'QEI Issuance and ... requirements deadline'; the sentence states which deadlines are ahead of the generation date and asserts nothing about whether the NOAA or the Application has published.",
-
     # nmtcapp/renderers/_round_provenance.py [#]
     'The NOAA had been opened three times in the 1.6.2 and 1.6.3 cycles, and each time only the field being looked for was read.':
         "'opened' here is a person opening the document to read it -- the 1.6.2 and 1.6.3 cycles read the NOAA three times and re-read Table 1 never. Not the NOAA becoming available; it was already published.",
@@ -1229,6 +1251,48 @@ NON_CLAIM_REASONS = {
     'The NOAA was opened three times in the 1.6.2 and 1.6.3 cycles and each time only the field being looked for was read -- that it exists, that it is $5 billion, that applications close 10 Nov.':
         "'opened' here is a person opening the document to read it -- three reads of the NOAA, none of them of Table 1. Not the NOAA becoming available; the docstring states its publication separately.",
 
+
+    # ---- 1.6.5 ----
+
+    # nmtcapp/renderers/_round_provenance.py
+    'As of {} this tool had not confirmed publication of the {} Allocation Application or its Application Materials, so the instrument encoded here is still the {} one.':
+        "The FALSE branch of _round_provenance._application_publication_clauses, rendered only while UPCOMING_APPLICATION_PUBLISHED is False and never on the shipped tree (the constant is True). Its polarity is bound by the conditional it sits in, not by the sentence; tests/test_round_provenance.test_flipping_the_application_constant_flips_the_note proves it renders under False and not under True. It states a dated fact about this tool's own looking, not a negative about the world.",
+
+    # nmtcapp/renderers/_round_provenance.py [#]
+    "The obvious repair -- shrink the number and call it derived -- was considered against the one piece of evidence the repo holds, the intervals between this issuer's own CY 2026 announcements: 2026-08-12 pre-announcement (news/738) -> 34 days -> 2026-09-15 NOAA, Federal Register 2026-18883 -> 2 days -> 2026-09-17 Allocation Application (news/741) -> 19 days -> 2026-10-06 Application Registration deadline -> 35 days -> 2026-11-10 Application deadline Those intervals are 34, 2, 19 and 35 days: no cadence derivable from them is both short enough to have caught the 2-day gap and long enough not to fire as ritual across the 35-day ones.":
+        "The cadence ruling (1.6.5 R5). 'issuer' is the CDFI Fund as the source of its own announcements, and the sentence lists dated events to measure the intervals between them; it asserts nothing about whether either instrument has published -- the NOAA and the Application appear as dated rows of a table, and the one ruled on is the cadence constant.",
+
+    # nmtcapp/renderers/_round_provenance.py
+    "The three places the note speaks to the CY 2026 Application's status, DERIVED from ``UPCOMING_APPLICATION_PUBLISHED`` so they cannot disagree with it or with each other (1.6.5 R3a).":
+        "'PUBLISHED' appears only inside the constant's own name. The docstring says WHERE the derivation lives and that the three clauses cannot disagree; it states no polarity for either instrument.",
+
+    # rendered_baseline/excel.txt / markdown.txt / pdf.txt / word.txt
+    'This tool encodes the CY 2024-2025 NMTC Allocation Application, which is closed and awarded (it opened 19 Nov 2024, closed 29 Jan 2025, and was awarded 23 Dec 2025 with $10 billion in allocation authority).':
+        "About the CITED round, not the upcoming one: it says the instrument this package encodes is closed and awarded, and 'opened' is that round's own opening date. 'Most recent PUBLISHED Application' is gone from this sentence (1.6.5): it went false on 2026-09-17 and was a superlative over a set the world keeps adding to. CY 2024-2025's publication is not either constant's subject.",
+
+    # nmtcapp/renderers/_round_provenance.py
+    'This tool encodes the {} NMTC Allocation Application, which is {} (it opened {}, closed {}, and was awarded {} with $10 billion in allocation authority).':
+        'The source template of the rendered sentence above, asserting the same thing about the CITED round: closed and awarded, with its own opening date. Neither CY 2026 constant is addressed.',
+
+    # nmtcapp/renderers/_round_provenance.py
+    'and that instrument is AVAILABLE NOW: every round-specific figure in this document must be re-verified against the {} Application Materials, which the CDFI Fund publishes at {}':
+        "The TRUE branch of _application_publication_clauses, paragraph 1's framing. The rendered sentence it produces is registered above as an APPLICATION-published claim and adjudicated against the constant; the template's own polarity is bound by the conditional it sits in, which the two-sided mutation test in tests/test_round_provenance proves.",
+
+    # nmtcapp/renderers/_round_provenance.py
+    'publication of the {} Application Materials had not been confirmed by this tool as of {}':
+        "The FALSE branch of _application_publication_clauses, paragraph 4's provenance clause: rendered only while UPCOMING_APPLICATION_PUBLISHED is False, never on the shipped tree, and a dated fact about this tool's own looking rather than a claim about the world. Polarity bound by the conditional; proven by the mutation test.",
+
+    # nmtcapp/renderers/_round_provenance.py
+    'so every round-specific figure in this document must be re-verified against the {} Application Materials, which the CDFI Fund will publish at {}':
+        "The FALSE branch of _application_publication_clauses, paragraph 1's framing: rendered only while UPCOMING_APPLICATION_PUBLISHED is False, never on the shipped tree. It points at where the materials will be and asserts nothing about the world's state; polarity bound by the conditional and proven by the mutation test.",
+
+    # nmtcapp/renderers/_round_provenance.py
+    'the {} Application Materials were confirmed published on {}':
+        "The TRUE branch of _application_publication_clauses, paragraph 4's provenance clause. Its rendered form is registered above as an APPLICATION-published claim; the template's polarity is bound by the conditional, proven by the mutation test.",
+
+    # rendered_baseline/excel.txt / markdown.txt / pdf.txt / word.txt
+    'THE CY 2026 DEADLINES STILL AHEAD, COMPUTED FROM TABLE 1 OF THE NOAA AGAINST THE EASTERN DATE THIS DOCUMENT WAS GENERATED, September 17, 2026: 10 of the 10 deadlines in Table 1 are still ahead — Community Development Entity (CDE) Certification Application deadline — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Request to modify CDE certification service area — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Subsidiary CDE Certification Application for meeting Qualified Equity Investment (QEI) issuance thresholds — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS) [prior Allocatees]; CY 2026 Allocation Application Registration — 5:00 p.m. ET on October 6, 2026 (Electronically via AMIS); Amendment request to add Subsidiary CDEs to Allocation Agreements for meeting QEI issuance thresholds — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Amendment request to remove a Controlling Entity from Allocation Agreement(s) — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Last day to contact CDFI Fund staff — 5:00 p.m. ET on November 6, 2026 (Electronically via AMIS); CY 2026 Allocation Application deadline (including required Attachments) — 5:00 p.m. ET on November 10, 2026 (Electronically via AMIS); QEI Issuance and Qualified Low Income Community Investments (QLICIs) requirements deadline — 11:59 p.m. ET on January 7, 2027 (Not Applicable) [prior Allocatees]; Report QEIs and certify QLICIs deadline — 11:59 p.m. ET on January 14, 2027 (Electronically via AMIS) [prior Allocatees].':
+        "The rendered Table 1 list. 'Issuance' is the instrument's own row title, 'QEI Issuance and ... requirements deadline'; the sentence states which deadlines are ahead of the generation date and asserts nothing about whether the NOAA or the Application has published.",
 }
 
 #: See ``_MAX_QUOTED_HISTORY`` below. Segments that match the hard
@@ -1244,12 +1308,12 @@ QUOTED_HISTORY = (
 # ---------------------------------------------------------------------------
 # THE FLOORS, MEASURED -- NOT GUESSED
 #
-# Measured on 2026-09-16 against this tree (1.6.4), by running ``selected()``:
+# Measured on 2026-09-17 against this tree (1.6.5), by running ``selected()``:
 #
-#     187 selected occurrences
-#     114 distinct segments
+#     202 selected occurrences
+#     130 distinct segments
 #     79 modules scanned (nmtcapp + streamlit_app, nothing excluded)
-#     13,285 segments in the corpus in total
+#     13,367 segments in the corpus in total
 #
 # Each floor sits BELOW its measurement so that deleting a sentence or two is
 # not automatically red, and FAR above zero so that an empty corpus, a broken
@@ -1258,10 +1322,10 @@ QUOTED_HISTORY = (
 # looked at" are the same green.
 # ---------------------------------------------------------------------------
 
-_MIN_SELECTED_OCCURRENCES = 130        # measured 187
-_MIN_SELECTED_SEGMENTS = 75     # measured 114
+_MIN_SELECTED_OCCURRENCES = 130        # measured 202
+_MIN_SELECTED_SEGMENTS = 75     # measured 130
 _MIN_SOURCE_FILES = 55             # measured 79
-_MIN_CORPUS_SEGMENTS = 9500           # measured 13,285
+_MIN_CORPUS_SEGMENTS = 9500           # measured 13,367
 
 #: THE HARD BACKSTOP ON THE ``()`` CLASSIFICATION. ``()`` means "this segment
 #: asserts nothing about either constant", and it is the one way a human could
@@ -1849,12 +1913,28 @@ def test_every_baseline_format_contributes_a_claim(scan):
         )
 
 
-def test_both_subjects_and_both_polarities_are_represented():
-    """NOAA and APPLICATION, published and not.
+def test_both_subjects_are_represented_and_no_claim_is_a_negative():
+    """NOAA and APPLICATION both bound -- and every registered claim POSITIVE.
 
-    The two constants disagree with each other right now — that is the whole
-    reason 1.6.2 split them — so a registry carrying only one subject, or only
-    one polarity, is one that cannot tell them apart.
+    THROUGH 1.6.4 THIS ASSERTED BOTH POLARITIES, on the premise that "the two
+    constants disagree with each other right now". They agreed from
+    2026-09-17, and the premise was never the point: the registry must bind
+    BOTH SUBJECTS so neither constant is a declaration nothing reads.
+
+    THE POLARITY HALF IS INVERTED (1.6.5), NOT DROPPED. This package may
+    assert that something HAS happened and may not assert that something HAS
+    NOT: "published" is monotone and a stale copy of it is still correct;
+    "not published" decays and nothing offline can see it turn. Every
+    round-provenance defect in this package's history was a registered
+    negative that went false on a day nobody was looking. So a claim with
+    ``asserts_published=False`` anywhere in shipped source or rendered output
+    is now the finding, whatever the constant says -- and since both
+    constants are True, stage 2 would fail it too. This test names the rule
+    so the failure reads as the rule and not as a polarity mismatch.
+
+    A flipped constant still fails: True -> False fails every registered
+    claim about that subject, which is the only direction a monotone
+    constant can be flipped in error.
     """
     subjects = {subject for _s, subject, _a in _CLAIM_ITEMS}
     assert subjects == set(SUBJECT_CONSTANTS), (
@@ -1862,11 +1942,16 @@ def test_both_subjects_and_both_polarities_are_represented():
         f"{sorted(SUBJECT_CONSTANTS)}. A subject with no registered claim is "
         "a constant nothing is bound to."
     )
-    polarities = {asserts for _s, _subject, asserts in _CLAIM_ITEMS}
-    assert polarities == {True, False}, (
-        f"every registered claim has asserts_published={polarities}. One "
-        "polarity means a flipped constant could only ever fail in one "
-        "direction."
+    negatives = sorted(
+        segment for segment, _subject, asserts in _CLAIM_ITEMS if not asserts
+    )
+    assert not negatives, (
+        f"{len(negatives)} registered claim(s) assert that a "
+        f"{rp.UPCOMING_ROUND} instrument is NOT published. A negative "
+        "existence claim about a federal event decays, and this package "
+        "ships to disk and is read months later. State what HAS happened, "
+        "dated, or say nothing:\n\n"
+        + "\n".join(f"  {segment!r}" for segment in negatives)
     )
 
 

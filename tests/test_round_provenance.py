@@ -123,10 +123,43 @@ AND THE CONJUNCTION
 
 ``UPCOMING_MATERIALS_PUBLISHED`` was ONE boolean over TWO facts, so the false
 sentence could not be half-corrected. It is now
-``UPCOMING_NOAA_PUBLISHED`` (True) and ``UPCOMING_APPLICATION_PUBLISHED``
-(False), and ``test_the_round_state_is_pinned`` -- the rewrite of what used to
-be ``test_upcoming_materials_are_still_unpublished`` -- breaks when EITHER
+``UPCOMING_NOAA_PUBLISHED`` and ``UPCOMING_APPLICATION_PUBLISHED``, and
+``test_the_round_state_is_pinned`` -- the rewrite of what used to be
+``test_upcoming_materials_are_still_unpublished`` -- breaks when EITHER
 moves. It is still deliberately weak and still not evidence about the world.
+
+IT HAPPENED AGAIN. 2026-09-17, ONE DAY AFTER ``LAST_VERIFIED`` (1.6.5)
+
+The CY 2026 Allocation Application published. ``LAST_VERIFIED`` was
+2026-09-16, the cadence was 30 days, and the expiry would have fired on
+2026-10-16 -- ten days after the Application Registration deadline. The
+sentence "Materials are NOT YET PUBLISHED" was false in all four formats for
+as long as nobody happened to look, and THIS FILE REQUIRED IT: two entries in
+``_PROVENANCE_FACTS`` and one in ``test_the_disclosure_states_both_directions``
+asserted the false string as a literal, so correcting the fact meant editing
+the gate that guarded it.
+
+TWO RULES CAME OUT OF IT, AND THIS FILE IS WRITTEN TO BOTH:
+
+  THE PACKAGE MAY ASSERT THAT SOMETHING HAS HAPPENED, NEVER THAT SOMETHING
+  HAS NOT. "Published" is monotone; a stale copy of it is still correct.
+  "Not published" decays and nothing offline can see it turn. So the
+  constant is True, the note derives its Application-status sentences from
+  it, and ``test_flipping_the_application_constant_flips_the_note`` proves
+  the derivation in BOTH directions -- a constant that governs nothing is
+  what 1.6.4 shipped.
+
+  A TEST MAY ASSERT THAT A DISCLOSURE IS PRESENT. IT MAY NOT PIN A PERISHABLE
+  FEDERAL FACT AS A STRING LITERAL. The phrases this file looks for in the
+  rendered note are the durable halves of the disclosure -- which instrument
+  is encoded, that the CY 2026 one is published, that figures must be
+  re-verified -- and none of them can go false by the calendar alone.
+
+``test_live_cdfi_fund_check`` asserted the materials' ABSENCE. That was the
+one assertion in the suite that could have told the truth on 2026-09-17,
+and it would have -- but only when run, and it is opt-in. It is re-pointed
+at the positive: the program's application page is reachable and links the
+CY 2026 Allocation Application. It is still a tool, not a gate.
 
 """
 from __future__ import annotations
@@ -235,13 +268,26 @@ def _federal_events_stated_as_done(note: str) -> list:
 
 
 def _claims_an_unhappened_event(note: str, published: _dt.date,
-                                today: _dt.date) -> list:
+                                today: _dt.date,
+                                claims=_PRESENT_PERFECT_FEDERAL_CLAIMS) -> list:
     """The gate's property, as a pure function of the three things it reads.
 
     Returns the offending phrases, or ``[]`` when the note is honest.
+    ``claims`` is the set of present-perfect phrases whose date ``published``
+    is; the NOAA's by default, the Application's for the 1.6.5 gate.
     """
-    stated = _federal_events_stated_as_done(note)
+    stated = sorted(phrase for phrase in claims if phrase in note)
     return stated if (stated and published > today) else []
+
+
+#: The same property for the Application's own date (1.6.5). Paragraph 0 now
+#: states the CY 2026 Allocation Application IS PUBLISHED; that is a present
+#: perfect with a date, and the gate that watches the NOAA's must watch this
+#: one too or the next round will reproduce 1.6.2's defect on the second
+#: instrument instead of the first.
+_APPLICATION_PRESENT_PERFECT_CLAIMS = (
+    "ALLOCATION APPLICATION AND ITS APPLICATION MATERIALS ARE PUBLISHED",
+)
 
 
 #: Every format the application renders to. The gate below asserts the round
@@ -253,10 +299,13 @@ _ALL_FORMATS = ("markdown", "word", "excel", "pdf")
 #: Phrases that must survive into every rendered artifact. Each one is a
 #: DISTINCT fact a reader loses if it is missing, not a restatement:
 #:   - which round this encodes, and that it is over
-#:   - that the CY 2026 round has OPENED while its Application has not arrived
-#:     (one sentence used to carry both halves and went half-false on
-#:     2026-09-15; these are two entries now for the same reason the source
-#:     constant is two booleans)
+#:   - that the CY 2026 round has OPENED, that its Application IS PUBLISHED,
+#:     and that this tool STILL encodes CY 2024-2025 (one sentence used to
+#:     carry the first two as a conjunction and went half-false on
+#:     2026-09-15; then the two entries pinned "NOT YET PUBLISHED" as a
+#:     literal and went false on 2026-09-17. Every phrase here is now the
+#:     DURABLE half of a disclosure -- nothing in this tuple can be falsified
+#:     by the calendar alone)
 #:   - the deadline a CDE can still miss, which was absent entirely through
 #:     1.6.1 while three dates nobody could act on were present
 #:   - the AMIS certification deadline, which is external, hard and closed
@@ -267,11 +316,15 @@ _ALL_FORMATS = ("markdown", "word", "excel", "pdf")
 #: and survives longest.
 _PROVENANCE_FACTS = (
     ("closed and awarded", "which round this encodes, and that it is closed"),
-    ("ROUND HAS OPENED, BUT ITS APPLICATION HAS NOT",
-     "that the round is open while the instrument this tool encodes is not"),
+    ("ROUND HAS OPENED", "that the CY 2026 round is open"),
     ("NOAA IS PUBLISHED", "that the CY 2026 NOAA exists and governs the round"),
-    ("Materials are NOT YET PUBLISHED",
-     "that the Application a CDE will file still has no materials"),
+    ("ALLOCATION APPLICATION AND ITS APPLICATION MATERIALS ARE PUBLISHED",
+     "that the Application a CDE will file exists and can be read"),
+    (f"STILL ENCODES THE {rp.CITED_ROUND} INSTRUMENT",
+     "that what this tool encodes is the proxy, not the CY 2026 instrument"),
+    (rp.UPCOMING_APPLICATION_PAGE_URL,
+     "where the CY 2026 Application Materials are -- the program page, not "
+     "the upload path"),
     # THE TWO DATES ARE DERIVED, NOT TYPED (1.6.4). This tuple carried
     # "August 31, 2026" as a literal, and the literal was the defect: it was
     # the pre-announcement's date, the NOAA's Table 1 says 22 Sep, and a gate
@@ -360,11 +413,20 @@ def test_the_round_provenance_reaches_all_four_formats(tmp_path):
     """
     rendered = _render_all_formats(tmp_path)
 
+    # WHITESPACE-INSENSITIVE (1.6.5). _render_all_formats already collapses
+    # runs of whitespace to one space; the PDF additionally hard-splits a
+    # token longer than the remaining line -- the 82-character program URL in
+    # paragraph 1 comes out as "...cdfifund.gov/pro grams-training/..." after
+    # that collapse. The reader still has the URL, one line down; the
+    # renderer is not this release's to change.
+    def _squash(text):
+        return re.sub(r"\s+", "", text)
+
     missing = [
         (fmt, phrase, why)
         for fmt, text in rendered.items()
         for phrase, why in _PROVENANCE_FACTS
-        if phrase not in text
+        if phrase not in text and _squash(phrase) not in _squash(text)
     ]
     assert not missing, (
         "round provenance is missing from rendered output:\n\n"
@@ -420,21 +482,24 @@ def test_the_round_claim_has_not_expired():
         f"(today is {today.isoformat()}). Nobody has verified it since "
         f"{rp.LAST_VERIFIED}.\n\n"
         "THIS IS NOT A FAILING BUILD, IT IS A SCHEDULED RE-CHECK. Do it now:\n\n"
-        f"  1. {rp.PROGRAM_PAGE_URL}\n"
-        "     -- have the CY 2026 ALLOCATION APPLICATION MATERIALS appeared? "
-        "That is the question now. The NOAA published on "
-        f"{rp.NOAA_PUBLICATION_DATE} (Federal Register "
-        f"{rp.NOAA_FR_DOCUMENT_NUMBER}); the Application had not as of "
-        f"{rp.LAST_VERIFIED}.\n"
-        f"  2. {rp.CY2026_ANNOUNCEMENT_URL}\n"
-        "     -- is there a newer release than the 12 Aug 2026 one?\n"
+        f"  1. {rp.UPCOMING_APPLICATION_PAGE_URL}\n"
+        "     -- the CY 2026 Application Materials published on "
+        f"{rp.UPCOMING_APPLICATION_PUBLICATION_DATE}. Has the Fund posted "
+        "anything NEWER there -- an amended Application, revised FAQs, a "
+        "correction notice? That is the question now.\n"
+        f"  2. {rp.PROGRAM_PAGE_URL}\n"
+        "     -- the program page and its news items: is there a release "
+        f"newer than {rp.UPCOMING_APPLICATION_ANNOUNCEMENT_URL}?\n"
         f"  3. {rp.NOAA_URL}\n"
-        "     -- the NOAA itself, for the authority, the deadline and the "
-        "certification rule.\n\n"
-        "Then EITHER set UPCOMING_APPLICATION_PUBLISHED = True and open the "
-        "re-verification work in _round_provenance.RECHECK_ITEMS, OR bump "
-        "LAST_VERIFIED to the day you looked (RECHECK_AFTER follows it by "
-        f"RECHECK_CADENCE_DAYS = {rp.RECHECK_CADENCE_DAYS}).\n\n"
+        "     -- the NOAA itself: has a correction or amendment moved any "
+        "Table 1 date?\n\n"
+        "Then bump LAST_VERIFIED to the day you looked (RECHECK_AFTER follows "
+        f"it by RECHECK_CADENCE_DAYS = {rp.RECHECK_CADENCE_DAYS}). If "
+        "anything moved, the note is content, not a date: fix the constant "
+        "it came from and regenerate the baselines in the same commit. The "
+        "reconciliation of this package's figures against the CY 2026 "
+        "Application (_round_provenance.RECHECK_ITEMS) is a separate, open "
+        "methodology cycle; a re-check does not close it.\n\n"
         "Bumping the date WITHOUT opening those two pages turns this into a "
         "gate that cannot fail, which is the exact thing it was built to "
         "replace. `pytest -m network tests/test_round_provenance.py` does the "
@@ -1101,15 +1166,22 @@ def test_the_disclosure_states_both_directions():
     note = rp.round_provenance_note()
 
     for phrase, why in (
-        ("Materials are NOT YET PUBLISHED",
-         "must say the CY 2026 APPLICATION materials do not exist -- and must "
-         "say it of the Application specifically, since the NOAA now does"),
+        ("ALLOCATION APPLICATION AND ITS APPLICATION MATERIALS ARE PUBLISHED",
+         "must say the CY 2026 Application exists and can be read -- the "
+         "durable half of the disclosure. Through 1.6.4 this entry pinned "
+         "'Materials are NOT YET PUBLISHED', a perishable federal fact as a "
+         "string literal, and REQUIRED the note to be false from 2026-09-17"),
+        (f"STILL ENCODES THE {rp.CITED_ROUND} INSTRUMENT",
+         "must say that what this document is built on is the proxy, now "
+         "that the real instrument exists to be confused with it"),
         ("NOAA IS PUBLISHED",
          "must say the CY 2026 round has opened; a note that still reads as "
          "'nothing has happened yet' sends a CDE to the wrong conclusion in "
          "the other direction"),
-        ("most recent PUBLISHED Application",
-         "must say what the cited round IS, not only what it is not"),
+        ("real federal instrument",
+         "must say what the cited round IS, not only what it is not. Through "
+         "1.6.4 this entry was 'most recent PUBLISHED Application', a "
+         "superlative that went false the day the CY 2026 one published"),
         ("re-verified", "must tell the CDE what to do, not just what is wrong"),
         ("nothing here is unreliable",
          "must say the cited instrument is still the right basis -- this is "
@@ -1174,17 +1246,166 @@ def test_the_round_state_is_pinned():
         f"deadline ({rp.APPLICATION_DEADLINE}) and the CDE certification rule "
         "all come from it, and the note states them."
     )
-    assert rp.UPCOMING_APPLICATION_PUBLISHED is False, (
-        "UPCOMING_APPLICATION_PUBLISHED is True, so the CY 2026 ALLOCATION "
-        "APPLICATION has been published and this package still encodes "
-        f"{rp.CITED_ROUND}.\n\n"
-        "THIS IS THE FLIP THAT OBLIGES THE CITATION REWRITE. Work the list in "
-        "_round_provenance.RECHECK_ITEMS against the new documents -- "
-        "Question 25's ladder, Question 22's Non-Metropolitan bounds, "
-        "Question 15's product-flexibility ladder, the Review Process "
-        "thresholds -- then update the citations, APPLICATION_SHA256, "
-        "APPLICATION_URL and this test together."
+    assert rp.UPCOMING_APPLICATION_PUBLISHED is True, (
+        "UPCOMING_APPLICATION_PUBLISHED is False, so the CY 2026 ALLOCATION "
+        "APPLICATION has been un-published -- which does not happen -- or "
+        "this constant was reverted.\n\n"
+        "It published on "
+        f"{rp.UPCOMING_APPLICATION_PUBLICATION_DATE} "
+        f"({rp.UPCOMING_APPLICATION_ANNOUNCEMENT_URL}); the PDF retrieved "
+        f"that day is {rp.UPCOMING_APPLICATION_PAGES} pages, "
+        f"{rp.UPCOMING_APPLICATION_BYTES:,} bytes, OMB "
+        f"{rp.UPCOMING_APPLICATION_OMB_NUMBER}, SHA-256 "
+        f"{rp.UPCOMING_APPLICATION_SHA256[:12]}.... Setting this back to "
+        "False makes the note say, in a dated sentence, that this tool had "
+        "not confirmed it -- a claim about the tool that is simply untrue.\n\n"
+        "THE FLIP HAPPENED IN 1.6.5 AND THE WORK IT OBLIGES IS STILL OPEN: "
+        "_round_provenance.RECHECK_ITEMS against the CY 2026 Application -- "
+        "Question 25's ladder and area-type lists, Question 22's "
+        "Non-Metropolitan bounds, Question 15's product-flexibility ladder, "
+        "the Review Process thresholds -- then CITED_ROUND, "
+        "APPLICATION_SHA256, APPLICATION_URL and this test together. That is "
+        "a methodology cycle, not a patch."
     )
+
+
+def test_the_application_publication_is_not_stated_before_its_date():
+    """The Application's present perfect is checked against ITS date (1.6.5).
+
+    Same property as ``test_no_federal_event_is_stated_as_having_happened_
+    before_it_has``, second instrument. ``UPCOMING_APPLICATION_PUBLICATION_
+    DATE`` is 2026-09-17 and today is at or after it, so this is green by the
+    calendar; it is here so that the NEXT round's note, written the day the
+    Fund announces and the day before the page goes live, goes red.
+    """
+    today = _eastern_date()
+    published = _iso(rp.UPCOMING_APPLICATION_PUBLICATION_DATE)
+    note = rp.round_provenance_note()
+    stated = _claims_an_unhappened_event(
+        note, published, today, claims=_APPLICATION_PRESENT_PERFECT_CLAIMS
+    )
+    assert not stated, (
+        f"the note states {stated} while "
+        f"UPCOMING_APPLICATION_PUBLICATION_DATE is "
+        f"{rp.UPCOMING_APPLICATION_PUBLICATION_DATE} and today in "
+        f"{_FEDERAL_TZ} is {today.isoformat()}: the event is "
+        f"{(published - today).days} day(s) in the future."
+    )
+    # And the gate is not vacuous: the phrase it watches for is in the note.
+    assert any(phrase in note for phrase in _APPLICATION_PRESENT_PERFECT_CLAIMS), (
+        "the note no longer states the Application is published in the words "
+        "this gate watches for; re-point _APPLICATION_PRESENT_PERFECT_CLAIMS "
+        "at the sentence that now carries the claim, or the gate is dead."
+    )
+
+
+#: Words the note may NEVER render, in either branch of the derivation. Each
+#: is a perishable negative this package has shipped and had to retract.
+_PERISHABLE_NEGATIVES = (
+    "NOT YET PUBLISHED",
+    "APPLICATION HAS NOT",
+    "NOT published",
+    "unpublished",
+    "on the day the Fund releases them",
+    "most recent PUBLISHED",
+)
+
+
+def test_flipping_the_application_constant_flips_the_note(monkeypatch):
+    """R3(a), TWO-SIDED: the constant governs the sentence, in both directions.
+
+    THE DEFECT THIS PINS. Through 1.6.4 ``UPCOMING_APPLICATION_PUBLISHED``
+    was declared in ``_round_provenance`` and read by nothing in it. Flipping
+    it to True on 2026-09-17 would have changed no rendered word: a
+    declaration shaped like a gate, governing nothing, beside a sentence that
+    said the opposite of the constant's new value. The 1.6.4 gate on the
+    constant (``test_the_round_state_is_pinned``) asserted the module agreed
+    with itself and could not see that the note did not read the module.
+
+    So this is not a presence check. It renders the note under BOTH values
+    of the constant and asserts that paragraphs 0, 1 and 4 each say something
+    different, that each value renders the sentence that value means, and
+    that NEITHER branch renders a perishable negative -- the False branch
+    speaks about this tool's own looking, dated, never about the world.
+
+    ``monkeypatch.setattr`` on the module attribute is the right instrument:
+    ``round_provenance_paragraphs`` reads the module global at call time, so
+    the patched value is the one the sentence is derived from. If somebody
+    re-plumbs the derivation through a default argument or an import-time
+    copy, the False branch stops rendering and this fails -- which is the
+    point.
+    """
+    frozen = _dt.date(2026, 9, 17)
+
+    def render(value):
+        monkeypatch.setattr(rp, "UPCOMING_APPLICATION_PUBLISHED", value)
+        return rp.round_provenance_paragraphs(today=frozen)
+
+    published = render(True)
+    unconfirmed = render(False)
+
+    # Both directions: every paragraph the derivation feeds moved.
+    for index in (0, 1, rp.DEADLINES_PARAGRAPH_INDEX):
+        assert published[index] != unconfirmed[index], (
+            f"paragraph {index} renders the same text whether "
+            "UPCOMING_APPLICATION_PUBLISHED is True or False. The constant "
+            "governs nothing there, which is the 1.6.4 shape exactly."
+        )
+    # The paragraphs the derivation does NOT feed are untouched by the flip.
+    for index in (rp.CERTIFICATION_PARAGRAPH_INDEX,
+                  rp.PRIOR_ALLOCATEE_PARAGRAPH_INDEX):
+        assert published[index] == unconfirmed[index], (
+            f"paragraph {index} changed with UPCOMING_APPLICATION_PUBLISHED, "
+            "and it is not about the Application at all"
+        )
+
+    # True renders the published fact, and where the materials are.
+    assert "ALLOCATION APPLICATION AND ITS APPLICATION MATERIALS ARE PUBLISHED" \
+        in published[0]
+    assert rp.UPCOMING_APPLICATION_ANNOUNCEMENT_URL in published[0]
+    assert "AVAILABLE NOW" in published[1]
+    assert rp.UPCOMING_APPLICATION_PAGE_URL in published[1]
+    assert "were confirmed published on" in published[rp.DEADLINES_PARAGRAPH_INDEX]
+    assert "had not confirmed" not in " ".join(published)
+
+    # False renders a DATED statement about this tool's own looking -- and
+    # still points at where the materials will be -- never a negative about
+    # the world.
+    assert "had not confirmed publication" in unconfirmed[0]
+    assert rp._us_date(rp.LAST_VERIFIED) in unconfirmed[0]
+    assert rp.UPCOMING_APPLICATION_PAGE_URL in unconfirmed[1]
+    assert "had not been confirmed by this tool" \
+        in unconfirmed[rp.DEADLINES_PARAGRAPH_INDEX]
+    assert "ARE PUBLISHED" not in " ".join(unconfirmed)
+    assert "AVAILABLE NOW" not in " ".join(unconfirmed)
+
+    # Neither branch may say the thing this package keeps having to retract.
+    for branch_name, branch in (("True", published), ("False", unconfirmed)):
+        joined = " ".join(branch)
+        for phrase in _PERISHABLE_NEGATIVES:
+            assert phrase not in joined, (
+                f"with UPCOMING_APPLICATION_PUBLISHED = {branch_name} the note "
+                f"renders {phrase!r}. This package may assert that something "
+                "HAS happened; it may not assert that something has NOT."
+            )
+
+    # And the shipped value is the one whose sentence is true.
+    monkeypatch.undo()
+    assert rp.UPCOMING_APPLICATION_PUBLISHED is True
+    assert rp.round_provenance_paragraphs(today=frozen) == published
+
+
+def test_the_note_renders_no_perishable_negative():
+    """Acceptance 2, as a gate rather than a grep: no rendered surface of the
+    note asserts a perishable negative. Read off the live note so the check
+    is on what ships, and off the constant's False branch in the test above
+    so the derivation cannot smuggle one back in."""
+    note = rp.round_provenance_note()
+    for phrase in _PERISHABLE_NEGATIVES:
+        assert phrase not in note, (
+            f"round_provenance_note() renders {phrase!r}, a claim that can "
+            "only go stale."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -1206,24 +1427,27 @@ def test_live_cdfi_fund_check():
     people learn to ignore -- which is a worse outcome than an opt-in tool
     people run deliberately.
 
-    THAT REASONING IS NOT WHAT FAILED IN 1.6.1 AND IS UNCHANGED. What failed
-    was the SCHEDULE that sends someone here (see the module header). This
-    test was the only one in the module that could ever have told the truth,
-    and on 2026-09-14 it would have: it asserted the CY 2024-2025 timeline was
-    still on the page and CY 2026 was not named, and the CY 2026 NOAA had
-    published. It was RIGHT TO GO RED. That is the instrument working, and it
-    is re-pointed here rather than quietly relaxed.
+    RE-POINTED TWICE, AND BOTH TIMES IT HAD BEEN RIGHT TO GO RED. On
+    2026-09-14 it asserted CY 2026 was not named on the program page; the
+    NOAA published. Through 1.6.4 it asserted the Allocation Application
+    Materials were ABSENT; they published on 2026-09-17, one day after the
+    last check. Each time the assertion was a perishable negative, and each
+    time it was the only sentence in the suite that could have told the
+    truth -- when run.
 
-    RE-POINTED AT THE NEXT TRANSITION. The NOAA is behind us, so CY 2026 being
-    named is now the EXPECTED state, not the alarm. The alarm is the
-    ALLOCATION APPLICATION MATERIALS appearing -- that is the event that
-    obliges the citation rewrite in ``RECHECK_ITEMS`` and the flip of
-    ``UPCOMING_APPLICATION_PUBLISHED``.
+    WHAT IT ASSERTS NOW IS POSITIVE AND MONOTONE: the program's "Step 2:
+    Apply" page is reachable and links a CY 2026 Allocation Application. That
+    is the fact paragraph 0 states and paragraph 1 points at, and it cannot
+    go false by the calendar. It reads the PROGRAM PAGE, not the
+    ``system/files`` upload path: nothing here depends on that path resolving
+    (see ``UPCOMING_APPLICATION_PAGE_URL``). The "what has changed" question
+    -- an amended Application, a moved deadline -- is a human's, and the
+    expiry's failure message asks it.
     """
     import urllib.request
 
     request = urllib.request.Request(
-        rp.PROGRAM_PAGE_URL, headers={"User-Agent": "Mozilla/5.0"}
+        rp.UPCOMING_APPLICATION_PAGE_URL, headers={"User-Agent": "Mozilla/5.0"}
     )
     try:
         with urllib.request.urlopen(request, timeout=45) as response:
@@ -1231,51 +1455,28 @@ def test_live_cdfi_fund_check():
     except Exception as exc:                      # pragma: no cover - network
         pytest.skip(f"cdfifund.gov unreachable ({exc}); no conclusion drawn")
 
-    assert len(body) > 5_000, "program page returned too little to read"
+    assert len(body) > 5_000, "application page returned too little to read"
 
     names_new_round = bool(re.search(r"CY\s*2026", body))
-
-    # THE TRIGGER. Not "is CY 2026 mentioned" -- it is, the NOAA published --
-    # but "is the INSTRUMENT THIS PACKAGE ENCODES available for CY 2026". An
-    # Application PDF, an application-materials link, or the Q&A that ships
-    # with them.
-    application_materials = bool(
-        re.search(r"CY[\s_-]*2026[^<]{0,120}Allocation Application", body, re.I)
-        or re.search(r"2026[-_]\s*NMTC[_-]", body)
-        or re.search(r"Allocation Application[^<]{0,40}"
-                     r"(Materials|Q\s*&\s*A|Instructions)", body, re.I)
+    links_application = bool(
+        re.search(r"CY[\s_%-]*2026[^<]{0,160}Allocation[\s_%-]*Application",
+                  body, re.I)
     )
 
     assert names_new_round, (
-        "cdfifund.gov's NMTC program page does not name "
-        f"{rp.UPCOMING_ROUND} at all.\n\n"
-        f"The {rp.UPCOMING_ROUND} NOAA published on "
-        f"{rp.NOAA_PUBLICATION_DATE} (Federal Register "
-        f"{rp.NOAA_FR_DOCUMENT_NUMBER}), so by now the program page should. "
-        "Two possibilities and they need different responses:\n"
-        "  - the page lags the Federal Register, which is normal and is not a "
-        "reason to change anything here; confirm against the NOAA itself at "
-        f"{rp.NOAA_URL}\n"
-        "  - the CY 2026 facts in _round_provenance are wrong, in which case "
-        "the note is asserting a round that did not open."
+        f"the CDFI Fund's NMTC application page does not name "
+        f"{rp.UPCOMING_ROUND} at all. Either the page moved -- check "
+        f"{rp.PROGRAM_PAGE_URL} for where 'Step 2: Apply' went and update "
+        "UPCOMING_APPLICATION_PAGE_URL -- or the site is serving something "
+        "other than the program page."
     )
-
-    assert not application_materials, (
-        f"THE {rp.UPCOMING_ROUND} ALLOCATION APPLICATION MATERIALS HAVE "
-        "APPEARED on cdfifund.gov.\n\n"
-        "This is the transition this tool exists to catch, and it is the "
-        "trigger for the next release of this package. Do, in order:\n\n"
-        "  1. Retrieve the Application; record its SHA-256, byte count and "
-        "page count.\n"
-        "  2. Work every item in _round_provenance.RECHECK_ITEMS against it "
-        "-- Question 25's ladder and area-type lists, Question 22's "
-        "Non-Metropolitan bounds, Question 15's product-flexibility ladder, "
-        "the Review Process thresholds, the award count.\n"
-        "  3. Update APPLICATION_SHA256, APPLICATION_BYTES, APPLICATION_PAGES "
-        "and APPLICATION_URL, set UPCOMING_APPLICATION_PUBLISHED = True, and "
-        "update CITED_ROUND / CITED_ROUND_STATUS.\n"
-        "  4. Rewrite the note: it currently tells a CDE the materials do not "
-        "exist.\n\n"
-        f"The application deadline is {rp.APPLICATION_DEADLINE_TEXT}. Whatever "
-        "is left of that window is the time a CDE has to act on this."
+    assert links_application, (
+        f"the application page names {rp.UPCOMING_ROUND} but does not link a "
+        f"{rp.UPCOMING_ROUND} Allocation Application. The note states that "
+        f"it published on {rp.UPCOMING_APPLICATION_PUBLICATION_DATE} "
+        f"({rp.UPCOMING_APPLICATION_ANNOUNCEMENT_URL}), and a published "
+        "federal document does not become unpublished -- so the page has "
+        "been restructured or the link text changed. Read the page, find "
+        "the Application, and update the constants and this pattern; do NOT "
+        "flip UPCOMING_APPLICATION_PUBLISHED."
     )

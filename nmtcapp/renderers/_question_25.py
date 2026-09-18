@@ -58,11 +58,13 @@ and nobody proofreads 64 hex characters. Re-downloaded and re-verified
 2026-08-20: byte count and hash both unchanged.
 
 WHICH ROUND THIS IS, AND WHY THAT MATTERS HERE. CY 2024-2025 is CLOSED — it was
-awarded 23 Dec 2025 — and the CY 2026 Application is not yet published. This
-module therefore encodes the most recent PUBLISHED instrument as a proxy for
-one that does not exist. That is the right call and it is not the same as the
-instrument being current; see ``renderers/_round_provenance`` for the
-disclosure and for what a CDE must re-check when CY 2026 lands.
+awarded 23 Dec 2025 — and the CY 2026 Application published on 17 Sep 2026
+(1.6.5). This module still encodes the CY 2024-2025 instrument as a proxy for
+the CY 2026 one, and has NOT been reconciled against it: that is a methodology
+cycle with its own audit, not a patch. The rendered note's closing sentence
+therefore says whose lists these are and where the CY 2026 document is, and
+nothing about what that document does or does not contain; see
+``renderers/_round_provenance`` for the disclosure and the re-check list.
 Question 25 spans printed pp. 38-41 (PDF pages 65-68); Question 25(b)'s four
 area types run to printed p. 42 (PDF page 69).
 """
@@ -375,6 +377,7 @@ def _q25_basis_note_text() -> str:
         "CDE must compute both QLICI-denominated shares from its own QLICI "
         "amounts, against the Application's own area lists, before stating "
         "either commitment. (Those area lists are the CY 2024-2025 "
-        "Application's; the CY 2026 Allocation Application is not yet "
-        "published.)"
+        "Application's; the CY 2026 Allocation Application's own lists "
+        "must be read from that document — see the round-provenance note "
+        "for where it is.)"
     )

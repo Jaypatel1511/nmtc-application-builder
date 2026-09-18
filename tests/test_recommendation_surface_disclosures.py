@@ -117,8 +117,35 @@ def test_the_recommendations_summary_states_which_round_it_scores():
         f"the surface never names {rp.UPCOMING_ROUND}, which is the round a "
         "CDE reading it today is preparing for."
     )
-    assert "NOT YET PUBLISHED" in summary, (
-        "the surface does not say the CY 2026 materials do not exist yet."
+    # THE PROXY DISCLOSURE, BY ITS DURABLE HALF (1.6.5). Through 1.6.4 this
+    # asserted the literal "NOT YET PUBLISHED" -- a perishable federal fact
+    # pinned as a string, which REQUIRED the surface to be false from
+    # 2026-09-17 and made correcting the fact mean editing the gate that
+    # guarded it. The question this assertion exists to ask is unchanged: does
+    # the recommendations surface tell a CDE that what it scores against is
+    # the CY 2024-2025 instrument standing in as a PROXY for the CY 2026 one,
+    # which exists? None of those can go false by the calendar. The re-check
+    # instruction itself is paragraph 1's, and this surface renders paragraph
+    # 0 alone by a documented decision (RecommendationEngine.summary); the
+    # phrases below are paragraph 0's, which the test after this one requires
+    # the surface to carry verbatim, so they cannot drift from the note.
+    proxy = rp.round_provenance_paragraphs()[0]
+    for phrase, why in (
+        (f"STILL ENCODES THE {rp.CITED_ROUND} INSTRUMENT",
+         f"that what it scores against is the {rp.CITED_ROUND} instrument"),
+        ("ALLOCATION APPLICATION AND ITS APPLICATION MATERIALS ARE PUBLISHED",
+         f"that the {rp.UPCOMING_ROUND} instrument exists and can be read"),
+        ("proxy", "that the encoded instrument stands in for the real one"),
+    ):
+        assert phrase in proxy, (
+            f"precondition: paragraph 0 no longer says {phrase!r}; re-point "
+            "this gate at the sentence that now carries the disclosure"
+        )
+        assert phrase in summary, f"the surface does not say {why}."
+    assert "NOT YET PUBLISHED" not in summary, (
+        "the surface asserts a perishable federal negative. This package may "
+        "say that something HAS happened; it may not say that something has "
+        "NOT -- see _round_provenance's 1.6.5 header."
     )
 
 
