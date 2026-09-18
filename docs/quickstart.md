@@ -74,26 +74,45 @@ print(score.summary())
 Sample output:
 
 ```
-====================================================================
-  APPLICATION ALIGNMENT SCORE (vs. Historical NMTC Winners)
-  Composite Score:    71.4 / 100
-  Competitive Tier:   COMPETITIVE
-  Acceptance Baseline:34.5% (recent 4-round average)
-====================================================================
+======================================================================
+  NMTC APPLICATION SCORE  (CDFI Fund CY 2024-2025 Framework)
+  Aggregate Base Score:    88 / 100
+  With Priority Points:    97 / 110
+  Tier:                    HIGHLY QUALIFIED
+======================================================================
 
-  Dimensional Scores:
-  Distress Concentration         82.0  ████████████
-  Geographic Diversity           65.0  ████████░░░░
-  Impact Intensity               74.0  █████████░░░
-  Sector Diversity               71.0  ████████░░░░
-  Pipeline Quality               85.0  ██████████░░
+  BUSINESS STRATEGY:  43 / 50
+    Product Flexibility       10 / 10
+    Pipeline Credibility      12 / 15
+    Track Record Strength     12 / 15
+    Track Record Alignment     9 / 10
 
-  Assessment: Competitive alignment — above threshold in key dimensions.
-====================================================================
+  COMMUNITY OUTCOMES: 45 / 50
+    Higher Distress Targeting 15 / 15
+    Deep Distress Commitment  10 / 10
+    Special Targeting          1 /  5
+    Community Outcomes Quality 9 / 10
+    Community Accountability  10 / 10
+
+  PRIORITY POINTS:     9 / 10
+    DBC Track Record           4 /  5
+    Unrelated Entities         5 /  5
+
+  Assessment: [...] — a paragraph naming each section's total against
+  the published minimums, elided here.
+
+  *** METHODOLOGY NOTE ***
+  IMPORTANT: This score assesses alignment with the CDFI Fund's published CY 2024-2025 Review Process criteria (Business Strategy 50 pts + Community Outcomes 50 pts + Priority Points 10 pts). It is a self-assessment tool, not a guarantee of selection. TIER NAMES: "Highly Qualified" is the CDFI Fund's own gate. "Top Tier" is this tool's own label for an application well clear of that gate — the CDFI Fund publishes no tier above Highly Qualified, and the 95/45 cut points behind the label are an unsourced house heuristic, not a federal figure. Sub-score weights within sections are this tool's interpretation — the CDFI Fund does not publish exact point values for individual sub-criteria. Phase 2 factors (Management Capacity, Capitalization Strategy) and past reporting compliance deductions are not modeled here. Source: CY_2024_25_NMTC_Program_Review_Process.pdf
+======================================================================
 ```
 
 !!! warning "This is not a win probability"
-    The composite score measures alignment with historical winner patterns (CY2020–CY2024), not probability of funding. See [Win Alignment Scoring](workflow/win-alignment.md) for the full methodology explanation.
+    This score measures alignment with the CDFI Fund's **published CY 2024-2025
+    Review Process criteria**, not probability of funding. The CDFI Fund does not
+    publish non-winner data, so a true probability of selection cannot be computed.
+    `Highly Qualified` is the CDFI Fund's own gate; `Top Tier` is this tool's own
+    label, and its cut points are an unsourced house heuristic. See
+    [Win Alignment Scoring](workflow/win-alignment.md) for the full methodology.
 
 ---
 

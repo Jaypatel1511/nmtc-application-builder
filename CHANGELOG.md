@@ -6884,7 +6884,7 @@ and the value-only projection that hid B-3's number formats.
 > source for what the Applicant is asked to COMMIT TO, because the thing the
 > Applicant fills in is the Application.**
 
-**112 mentions across 108 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
+**114 mentions across 110 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
 `README.md`. *(75 across 71 when 1.3.0 shipped; 77 across 73 at 1.5.0, which
 added one in `renderers/_round_provenance`'s re-check list. 1.5.1's first round
 added ten more across ten lines — the T1 withdrawal string and its two
@@ -6901,7 +6901,7 @@ dashed line is restored to the published Highly Qualified gate it was always
 drawing; and the geographic deduction notice, which names the Review Process as
 the place a CDE should look instead. None of the twenty-three cites the Review
 Process for a substantive claim: every one either names it to DENY a bar or
-points a reader at it as the document with the published referent.)* **13 cite the Review Process for a substantive claim** — a
+points a reader at it as the document with the published referent. **The 1.6.5 docs-surface round adds two more across two lines** — `quickstart.md`'s Step 4, which was still publishing the scoring vocabulary retired in 1.1.1: its admonition now names the Review Process as what the score measures against, and the captured sample output carries the engine's own methodology note. The assessment paragraph, which states the section minimums, is ELIDED from that sample rather than adjudicated — the six rulings for that bar were made against the primary source, and the round that pasted the sample had not opened it.)* **13 cite the Review Process for a substantive claim** — a
 percentage, a commitment, or a list of areas. Of those 13:
 
 > **Corrected in 1.3.0 B1.** This paragraph shipped as *"72 mentions across 68

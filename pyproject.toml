@@ -273,9 +273,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://jaypatel1511.github.io/cdfi-superpowers/"
+Homepage = "https://jaypatel1511.github.io/nmtc-application-builder/"
 Repository = "https://github.com/Jaypatel1511/nmtc-application-builder"
-Documentation = "https://github.com/Jaypatel1511/nmtc-application-builder#readme"
+Documentation = "https://jaypatel1511.github.io/nmtc-application-builder/"
 Issues = "https://github.com/Jaypatel1511/nmtc-application-builder/issues"
 Changelog = "https://github.com/Jaypatel1511/nmtc-application-builder/blob/main/CHANGELOG.md"
 

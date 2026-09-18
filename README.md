@@ -4,11 +4,11 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/nmtc-application-builder.svg)](https://pypi.org/project/nmtc-application-builder/)
 [![Python](https://img.shields.io/pypi/pyversions/nmtc-application-builder.svg)](https://pypi.org/project/nmtc-application-builder/)
-[![Tests](https://img.shields.io/badge/tests-658%20passing-brightgreen.svg)](https://github.com/Jaypatel1511/nmtc-application-builder/actions)
+[![Tests](https://img.shields.io/badge/tests-1881%20passing-brightgreen.svg)](https://github.com/Jaypatel1511/nmtc-application-builder/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://jaypatel1511.github.io/nmtc-application-builder/)
 
-**[Documentation](https://jaypatel1511.github.io/nmtc-application-builder/) · [Streamlit Demo](https://nmtc-application-builder.streamlit.app) · [Examples](examples/) · [PyPI](https://pypi.org/project/nmtc-application-builder/)**
+**[Documentation](https://jaypatel1511.github.io/nmtc-application-builder/) · [Streamlit Demo](https://nmtc-application-builder.streamlit.app) · [Examples](https://github.com/Jaypatel1511/nmtc-application-builder/blob/main/examples) · [PyPI](https://pypi.org/project/nmtc-application-builder/)**
 
 ---
 
@@ -160,9 +160,9 @@ The three example notebooks tell a complete story:
 
 | Notebook | What it demonstrates |
 |---|---|
-| [01_quickstart.ipynb](examples/01_quickstart.ipynb) | End-to-end workflow in 10 minutes |
-| [02_full_application_walkthrough.ipynb](examples/02_full_application_walkthrough.ipynb) | Complete document generation |
-| [03_intelligence_and_optimization.ipynb](examples/03_intelligence_and_optimization.ipynb) | **16 → 90 → 96/100** — Not Qualified → Highly Qualified → Top Tier |
+| [01_quickstart.ipynb](https://github.com/Jaypatel1511/nmtc-application-builder/blob/main/examples/01_quickstart.ipynb) | End-to-end workflow in 10 minutes |
+| [02_full_application_walkthrough.ipynb](https://github.com/Jaypatel1511/nmtc-application-builder/blob/main/examples/02_full_application_walkthrough.ipynb) | Complete document generation |
+| [03_intelligence_and_optimization.ipynb](https://github.com/Jaypatel1511/nmtc-application-builder/blob/main/examples/03_intelligence_and_optimization.ipynb) | **16 → 90 → 96/100** — Not Qualified → Highly Qualified → Top Tier |
 
 ---
 
@@ -214,7 +214,7 @@ This library integrates six companion libraries built for the CDFI space:
 ## Limitations & Honest Disclosures
 
 - **Not a win probability model.** Alignment score ≠ probability of receiving an allocation. The CDFI Fund does not publish rejected application data, so a calibrated probability model cannot be built from public information alone.
-- **Historical patterns, not current NOFA.** Benchmarks derive from CY2020–2024 award data. CDFI Fund priorities shift — always check the current NOFA for updated criteria.
+- **Historical patterns, not the current NOAA.** Benchmarks derive from CY2020–2024 award data. CDFI Fund priorities shift — always check the current NOAA for updated criteria.
 - **Approximate geographic data.** Pipeline maps use state centroids, not actual project addresses. Eligibility enrichment uses `nmtc-mapper` (live CDFI Fund data only — see *Degraded mode* below; there is no offline fallback).
 - **Not a substitute for expert review.** Always have a qualified CDFI practitioner or attorney review application materials before submission.
 - **No investor or underwriting analysis.** This library covers competitive positioning, not deal structuring, investor sourcing, or legal compliance.
@@ -223,8 +223,7 @@ This library integrates six companion libraries built for the CDFI space:
 
 ## Degraded mode & partial scores
 
-Eligibility enrichment uses live CDFI Fund data via `nmtc-mapper`. As of 1.1.5 there
-is **no offline fallback** — if that data cannot be loaded, the run degrades
+Eligibility enrichment uses live CDFI Fund data via `nmtc-mapper`. There is **no offline fallback** — if that data cannot be loaded, the run degrades
 explicitly instead of substituting anything:
 
 - The pipeline is marked `eligibility_data_status = "unavailable"` (the underlying
@@ -291,13 +290,13 @@ pip install -e ".[dev]"
 PYTHONPATH=. pytest tests/ -v          # 1,881 tests, should all pass
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on pull requests, code style, and issue reporting.
+See [CONTRIBUTING.md](https://github.com/Jaypatel1511/nmtc-application-builder/blob/main/CONTRIBUTING.md) for guidelines on pull requests, code style, and issue reporting.
 
 ---
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT License — see [LICENSE](https://github.com/Jaypatel1511/nmtc-application-builder/blob/main/LICENSE) for details.
 
 ---
 
