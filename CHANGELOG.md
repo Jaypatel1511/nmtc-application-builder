@@ -336,11 +336,22 @@ allowlist rows on top of whatever it finds.
   `…_PUBLICATION_DATE`, the last pinned by hand on its `_us_date` spelling);
   four waived (`PROGRAM_PAGE_URL`, a prefix of the rendered page URL and
   itself unrendered; `UPCOMING_APPLICATION_PDF_URL`, `…_OMB_NUMBER`,
-  `…_SHA256`, retrieval evidence that reaches no surface). 278 constants are
-  swept (was 270: the eight `UPCOMING_APPLICATION_*` pins).
+  `…_SHA256`, retrieval evidence that reaches no surface). 279 constants are
+  swept (was 270: the nine `UPCOMING_APPLICATION_*` pins, including
+  `…_RETRIEVED_DATE`, below).
+* **Audit F5 — paragraph 0's retrieval date is its own constant.**
+  `UPCOMING_APPLICATION_RETRIEVED_DATE = "2026-09-17"` now feeds the clause
+  *"this tool confirmed the Application itself on …"*; through the audit tip
+  it read `LAST_VERIFIED`, and the expiry runbook bumps `LAST_VERIFIED` after
+  reading the program page without re-retrieving the PDF, so the next cadence
+  bump would have re-dated a retrieval that did not happen. Paragraph 4's
+  *"confirmed published on …"* still follows `LAST_VERIFIED` — that clause is
+  about the looking. Both dates are 2026-09-17, so the baselines are
+  byte-identical: `tests.regen_rendered_baseline` on the change, zero diff.
+  One registry key and one hand pin added for the new constant.
 * The 1.6.4 entry's baseline-delta claim is pinned from `HEAD` to `f4c7925`,
   the way 1.6.3's and 1.6.2's were; re-derived at the pin, 56/26, unchanged.
-  The three historical "constants are swept" sentences read 278, as that
+  The three historical "constants are swept" sentences read 279, as that
   gate requires.
 * Verified on Python 3.9.x and 3.12.13, `pytest -m "not wheel"`: 1,879
   passed, 1 skipped (`network`), 1 deselected (`wheel`).
@@ -873,7 +884,7 @@ closed it (see above).
   rows added — `NOAA_TABLE_1` pinned on the 6 Oct row the 1.6.3 note lacked,
   and each of the ten row constants pinned on its rendered item; `_AMIS`
   waived. Fix round: `CITED_ROUND_TIMELINE` pinned by hand on its derived
-  spelling. 278 constants are swept.
+  spelling. 279 constants are swept.
 * `tests/test_round_status_consistency.py`: 19 dead keys removed, 29 added
   (114 keys; 4 non-claim reasons removed, 7 added). Re-derived: 114 distinct
   selected segments, 26 with claims, 88 asserting nothing; 187 occurrences;
@@ -2302,7 +2313,7 @@ One filled scaffold, the same file both sides, `9a2d584` vs this tree:
 > `git diff --numstat 9a2d584 fc34af5 -- tests/rendered_baseline/` gives 53
 > insertions and 68 deletions, unchanged.*
 
-The rendered-string sweep is unchanged in shape, and 278 constants are swept
+The rendered-string sweep is unchanged in shape, and 279 constants are swept
 (237 at 1.5.7; this release adds
 `upload_handler.CDE_PROFILE_COLUMNS_FOR_REQUIRED_FIELD`, waived, for 238 as
 shipped — restated to 250 at 1.6.2, which splits the round-provenance
@@ -7978,7 +7989,7 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 278 constants are swept
+colour". The rendered-string sweep demands **19**, and 279 constants are swept
 where 49 were (238 as this release shipped; restated at 1.6.2, at 1.6.4 and
 in the 1.6.4 fix round — the count is gate-asserted against the current tree, see those
 entries). *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
