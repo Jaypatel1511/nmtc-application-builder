@@ -98,7 +98,8 @@ Sample output:
     DBC Track Record           4 /  5
     Unrelated Entities         5 /  5
 
-  Assessment: Highly Qualified (88/100). Both sections meet the 40-point minimum: Business Strategy 43/50, 3 points above it; Community Outcomes 45/50, 5 points above it. Priority Points: 9/10. Phase 2 review of Management Capacity and Capitalization Strategy will determine final ranking.
+  Assessment: [...] — a paragraph naming each section's total against
+  the published minimums, elided here.
 
   *** METHODOLOGY NOTE ***
   IMPORTANT: This score assesses alignment with the CDFI Fund's published CY 2024-2025 Review Process criteria (Business Strategy 50 pts + Community Outcomes 50 pts + Priority Points 10 pts). It is a self-assessment tool, not a guarantee of selection. TIER NAMES: "Highly Qualified" is the CDFI Fund's own gate. "Top Tier" is this tool's own label for an application well clear of that gate — the CDFI Fund publishes no tier above Highly Qualified, and the 95/45 cut points behind the label are an unsourced house heuristic, not a federal figure. Sub-score weights within sections are this tool's interpretation — the CDFI Fund does not publish exact point values for individual sub-criteria. Phase 2 factors (Management Capacity, Capitalization Strategy) and past reporting compliance deductions are not modeled here. Source: CY_2024_25_NMTC_Program_Review_Process.pdf
