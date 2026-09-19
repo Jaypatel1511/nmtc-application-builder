@@ -2056,9 +2056,12 @@
 </tbody>
 </table>
 <p><strong>BASIS NOTE — the Fund's two distress commitments are measured on QLICIs, this
-tool's sub-scores are measured on QEI.</strong> Question 25 of the <em>CY 2024-2025 NMTC
-Allocation Application</em> (printed pp. 38-41) sets both, and both are denominated
-in QLICIs <em>"in terms of aggregate dollar amounts"</em>, tested <strong>for each QLICI</strong>.</p>
+tool's sub-scores are measured on QEI.</strong> Question 25 of the <em>CY 2026 NMTC
+Allocation Application</em> (printed pp. 36-40; PDF pp. 63-67) sets both, and both
+are denominated in QLICIs <em>"in terms of aggregate dollar amounts"</em>, tested
+<strong>for each QLICI</strong>. (Re-read against the CY 2026 Application on 2026-09-18;
+the 85%, the ladder and the twelve items of 25(a) are character-identical to
+the CY 2024-2025 Application's, printed pp. 38-41.)</p>
 <p><strong>Question 25(a)</strong> asks for at least 85% of QLICIs in areas characterized by at
 least <strong>one</strong> of items 1-5 — Severe Distress; NMTC Native Areas; U.S. Island
 Areas; Non-Metropolitan Counties; Targeted Populations — <strong>or</strong> by at least
@@ -2069,32 +2072,54 @@ Supermarkets. <em>"Multiple indicia of distress"</em> — the phrase the Review 
 summarises items 6-12 with — is that <strong>two-of-seven</strong> test, per QLICI.</p>
 <p><strong>Question 25(b)(i) is not a 20% bar.</strong> It is a selectable commitment level —
 <strong>0 / 5 / 10 / 15 / 20</strong> — and selecting 20 opens a field for any figure from
-20% to 100%. It covers <strong>four</strong> area types: Deep Distress, NMTC Native Areas,
-High Migration Rural Counties, U.S. Island Areas. A CDE that can honestly commit
-10% selects 10 and has failed nothing. The Application adds that <em>"A QLICI that
-meets this commitment will also automatically meet the commitment made in
-Question 25(a)."</em></p>
+20% to 100%. It covers <strong>five</strong> area types in CY 2026: Deep Distress, NMTC
+Native Areas, High Migration Rural Counties, U.S. Island Areas and — new in CY
+2026 — Homeownership Cost Burden (four through CY 2024-2025). The fifth is
+<strong>conditional</strong>: a CHAS-designated Homeownership Cost Burden tract qualifies
+only <em>"to the extent that Applicant's projected QLICI activities will finance
+the development or rehabilitation of affordable homeownership units in those
+tracts"</em> (printed p. 40), and this package determines neither the CHAS
+designation nor whether a project's activity meets that condition. A CDE that
+can honestly commit 10% selects 10 and has failed nothing. The Application adds
+that <em>"A QLICI that meets this commitment will also automatically meet the
+commitment made in Question 25(a)."</em></p>
 <p>Every distress share this package computes is a share of <strong>QEI</strong>
 (<code>intelligence/distress_analysis.py</code>); <code>qlici_amount</code> is read only to print it
 in Appendix A and to check that it does not exceed its project's QEI, and feeds
 no percentage, no score and no bar. The two sub-scores above are therefore
 QEI-based <em>proxies</em>, not computations of the Fund's commitments, and no figure
 this tool renders answers either one. This package carries a per-project field
-for <strong>five of the fourteen</strong> distinct area types Question 25 lists — a
-tool-verified distress level covering Severe and Deep Distress, and
-CDE-declared, tool-unverified flags for NMTC Native Areas, High Migration Rural
-Counties and U.S. territory. It carries nothing for Non-Metropolitan Counties,
-nothing for Targeted Populations, and nothing for any of items 6-12; it computes
-no multi-indicia measure at all. <strong>Holding those fields is not a partial answer
+for <strong>six of the fifteen</strong> distinct area types Question 25 lists, and they do
+not share one provenance. Severe Distress and Deep Distress: <strong>tool-verified</strong>
+— the distress level is read from the CDFI Fund eligibility table for the
+tract this package geocoded. Non-Metropolitan Counties: <strong>tool-verified and
+tri-state</strong> — the OMB designation is read for the same geocoded tract, and a
+project the lookup could not resolve is recorded as undetermined rather than
+as metropolitan. High Migration Rural Counties: <strong>CDE-declared and
+tool-verified</strong> — enrichment overwrites the CDE's declaration whenever
+nmtc-mapper returns a determination for the tract. NMTC Native Areas and U.S.
+territory: <strong>CDE-declared and tool-unverified</strong> — nothing in this package
+checks either one. It carries nothing for Targeted Populations, nothing for
+Homeownership Cost Burden (Question 25(b)'s fifth area type, new in CY 2026
+and conditional on the QLICI financing affordable homeownership units in the
+tract), and nothing for any of items 6-12; it computes no multi-indicia
+measure at all. <strong>Holding those fields is not a partial answer
 to Question 25</strong>: the commitment is a share of QLICI <em>dollars</em>, this package
 weights nothing by QLICI dollars, and a flag that enters no denominator
 contributes nothing to a share.</p>
+<p><em>The count and the provenance of each field above are stated by
+<code>renderers/_question_25</code> and interpolated into every generated document; this
+page is hand-typed against them, and <code>tests/test_q25_modelled_surfaces.py</code>
+fails if it drifts — as it did from 1.4.0 to 1.7.0, when this page said "five"
+and "nothing for Non-Metropolitan Counties" for three releases after the sixth
+field landed.</em></p>
 <blockquote>
 <p><strong>Corrected in 1.3.0 (S1).</strong> Through 1.2.2 this note was written against the
 <em>CY 2024-2025 NMTC Program Review Process</em> — a seven-page <strong>summary</strong> of how
 the Fund scores an application. Both sentences it quoted are real and both
-were quoted correctly, and the summary still omitted the ladder and three of
-Question 25(b)'s four area types. The rendered document therefore told a CDE
+were quoted correctly, and the summary still omitted the ladder and all but
+one of Question 25(b)'s area types (four in CY 2024-2025; five in CY 2026,
+which adds Homeownership Cost Burden). The rendered document therefore told a CDE
 to compute one Deep Distress share and compare it to 20%, which is a
 pass/fail threshold that does not exist, and to leave Native Area, High
 Migration Rural and Island Area QLICIs out of a numerator they belong in.
@@ -2337,7 +2362,8 @@ proportion, so no such split exists to compute); an absent <code>pct_deep</code>
 zero. The 0.20 is <strong>the top rung of Question 25(b)(i)'s selectable ladder</strong>
 (0 / 5 / 10 / 15 / 20) used as this tool's scale factor — not a bar the CDE
 either clears or misses — and the Fund measures it on QLICIs in aggregate
-dollar amounts, over <strong>four</strong> area types of which this package computes one.
+dollar amounts, over <strong>five</strong> area types (CY 2026; four through CY 2024-2025)
+of which this package computes one.
 Scoring a CDE that honestly commits 10% at half credit is this tool's
 judgement, not the Fund's. See the basis note above.</p>
 <h3 id="special-targeting-05-pts">Special Targeting (0–5 pts)<a class="headerlink" href="#special-targeting-05-pts" title="Permanent link">&para;</a></h3>
