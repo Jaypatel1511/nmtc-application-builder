@@ -55,9 +55,6 @@ _TYPED_COUNT_IN_SOURCE = re.compile(
     re.IGNORECASE,
 )
 
-_REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-
 @pytest.fixture(scope="module")
 def rendered(tmp_path_factory) -> dict:
     """The baseline fixture rendered to Word, PDF and Excel, once."""
@@ -127,17 +124,27 @@ def test_the_prose_states_the_workbooks_count_exactly_once(rendered, fmt):
 
 
 def test_no_source_file_types_the_appendix_a_column_count():
-    """A typed count is the defect; docstrings are source files too."""
+    """A typed count is the defect; docstrings are source files too.
+
+    Walks the INSTALLED package, not ``<repo>/nmtcapp``: inside the sdist
+    job the tests run from a directory with no ``nmtcapp/``, and a walk of a
+    missing directory finds no offenders and passes on nothing.
+    """
+    import nmtcapp
+    package_root = os.path.dirname(os.path.abspath(nmtcapp.__file__))
     offenders = []
-    for dirpath, _dirs, files in os.walk(os.path.join(_REPO, "nmtcapp")):
+    walked = 0
+    for dirpath, _dirs, files in os.walk(package_root):
         for name in sorted(files):
             if not name.endswith(".py"):
                 continue
             path = os.path.join(dirpath, name)
+            walked += 1
             with open(path, encoding="utf-8") as fh:
                 for lineno, line in enumerate(fh, 1):
                     if _TYPED_COUNT_IN_SOURCE.search(line):
-                        offenders.append(f"{os.path.relpath(path, _REPO)}:{lineno}: {line.strip()}")
+                        offenders.append(f"{os.path.relpath(path, package_root)}:{lineno}: {line.strip()}")
+    assert walked >= 40, f"walked only {walked} modules under {package_root}; the sweep read nothing"
     assert not offenders, (
         "a column count for Appendix A is typed in source; interpolate "
         "PIPELINE_COLUMN_COUNT or name _PIPELINE_COLUMNS instead:\n  "

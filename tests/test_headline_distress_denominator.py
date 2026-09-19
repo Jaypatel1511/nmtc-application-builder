@@ -126,14 +126,20 @@ def test_the_partial_unverified_branch_states_it_too(tmp_path):
 def test_the_clause_is_read_from_the_constant_not_retyped():
     """No renderer carries its own copy of the clause (three once agreed by luck)."""
     import os
-    root = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "nmtcapp")
+    import nmtcapp
+    # The installed package, not <repo>/nmtcapp: the sdist job runs from a
+    # directory with no nmtcapp/, where a walk would find nothing and pass.
+    root = os.path.dirname(os.path.abspath(nmtcapp.__file__))
     copies = []
+    walked = 0
     for dirpath, _d, files in os.walk(root):
         for name in files:
             if not name.endswith(".py") or name == "_question_25.py":
                 continue
             path = os.path.join(dirpath, name)
+            walked += 1
             for lineno, line in enumerate(open(path, encoding="utf-8"), 1):
                 if Q25_QEI_BASIS_CLAUSE in line and not line.lstrip().startswith("#"):
                     copies.append(f"{os.path.relpath(path, root)}:{lineno}")
+    assert walked >= 40, f"walked only {walked} modules; the sweep read nothing"
     assert not copies, f"the basis clause is retyped at: {copies}"

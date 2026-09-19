@@ -1428,3 +1428,26 @@ jobs:
           path: dist/
       - name: Publish to PyPI (trusted publishing — no API token)
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # v1.14.0
+
+  # THE DOCS ARE PART OF THE RELEASE (1.7.1 R1). Two consecutive releases
+  # shipped federal-fact corrections to PyPI that never reached the website,
+  # because gh-pages was a manual `mkdocs gh-deploy` after the tag -- 1.6.5's
+  # stale sample carried dead deadlines, 1.7.0's a live false negative about
+  # a federal question. See .github/workflows/docs-deploy.yml for the job;
+  # this is only its place in the sequence.
+  #
+  # AFTER publish, not beside it. The docs build renders the sample from the
+  # checkout and does not depend on PyPI, but a site advertising a version
+  # PyPI does not yet serve is the deployment-pin failure mode in a new place.
+  # A docs failure here leaves PyPI published and the run red, which is the
+  # honest state: rerun docs-deploy.yml by hand with deploy=true.
+  #
+  # contents: write is scoped to this job. The workflow keeps contents: read.
+  docs:
+    name: Deploy docs to gh-pages
+    needs: publish
+    permissions:
+      contents: write
+    uses: ./.github/workflows/docs-deploy.yml
+    with:
+      deploy: true

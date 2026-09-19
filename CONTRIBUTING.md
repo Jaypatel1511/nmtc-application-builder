@@ -18,8 +18,20 @@ python -m mkdocs build --strict
 The `[docs]` extra covers `mkdocs`, `mkdocs-material` and the output libraries
 the docs build needs — the build renders the full sample application in all four
 formats, and the hook that does so fails the build if any format is missing.
-CI builds the docs on every pull request, but does **not** deploy them:
-publishing to `gh-pages` is still a manual `python -m mkdocs gh-deploy`.
+CI builds the docs on every pull request, but does **not** deploy them.
+Deploying is part of the release: `release.yml`'s `docs` job calls
+`.github/workflows/docs-deploy.yml` after the PyPI publish succeeds. The same
+workflow can be run by hand from the Actions tab or with
+
+```bash
+gh workflow run docs-deploy.yml --ref main              # dry run: build, commit locally, push --dry-run
+gh workflow run docs-deploy.yml --ref main -f deploy=true   # publish main's docs now
+```
+
+The dry run is how the job is proved before a tag depends on it; it exercises
+everything up to the final ref write and touches nothing. Do not run
+`mkdocs gh-deploy` from a laptop — a deploy that is manual is a surface that
+is stale.
 
 ## Running Tests
 

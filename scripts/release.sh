@@ -9,7 +9,12 @@
 #      CHANGELOG.md, commit.
 #   2. Merge to main (ff-only).
 #   3. git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin main && git push origin vX.Y.Z
-#   4. CI builds, wheel-tests, and publishes.
+#   4. CI builds, wheel-tests, publishes, and then deploys the docs to
+#      gh-pages (release.yml's `docs` job -> docs-deploy.yml). Before step 3,
+#      prove that job on the merged main without touching the site:
+#          gh workflow run docs-deploy.yml --ref main      # dry run
+#      and watch it go green. A release job that has never run is the shape
+#      this repository keeps getting burned by.
 #   5. THE PUBLIC STREAMLIT APP IS DOWN FROM STEP 2 UNTIL STEP 4 FINISHES, and
 #      needs a manual reboot afterwards. Read the next paragraph before you
 #      start, because the window is in this procedure and not in anyone's
