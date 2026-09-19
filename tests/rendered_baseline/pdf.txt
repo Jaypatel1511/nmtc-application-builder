@@ -590,7 +590,7 @@ TOTALS
 $88,500,000
 $125,450,00
 0
-Full 33-column pipeline detail (deal economics, QLICI structure, timeline) is provided in the accompanying
+Full 29-column pipeline detail (deal economics, QLICI structure, timeline) is provided in the accompanying
 Excel workbook, Pipeline Detail tab.
 
 @@PAGE 17

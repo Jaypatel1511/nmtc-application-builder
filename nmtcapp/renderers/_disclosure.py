@@ -98,7 +98,7 @@ def qlici_not_supplied_note(pipeline) -> str:
     WHY WORD AND PDF NEED A SENTENCE AND NOT A CELL (1.3.0 S3).
 
     ``tables/pipeline_table``'s "Total QLICI ($)" column reaches only TWO
-    surfaces, not four: markdown renders the full 33-column table and Excel
+    surfaces, not four: markdown renders the full ``_PIPELINE_COLUMNS`` table and Excel
     writes it to the Pipeline Detail sheet, while Word and PDF print the
     six-column ``build_pipeline_summary_table`` in portrait and Word's landscape
     continuation names twelve columns of which QLICI is not one. So the

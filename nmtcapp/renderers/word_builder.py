@@ -34,7 +34,9 @@ from nmtcapp.tables.impact_table import build_impact_table, build_impact_summary
 from nmtcapp.tables.investor_table import (
     build_investor_identification_table, build_investor_commitment_table,
 )
-from nmtcapp.tables.pipeline_table import build_pipeline_table, build_pipeline_summary_table
+from nmtcapp.tables.pipeline_table import (
+    PIPELINE_COLUMN_COUNT, build_pipeline_table, build_pipeline_summary_table,
+)
 from nmtcapp.tables.track_record_table import build_track_record_table
 from nmtcapp.core.application_round import (
     allocation_round_clause, nmtc_round_phrase, round_label,
@@ -385,8 +387,12 @@ class WordApplicationBuilder:
         _write_df_to_doc(doc, summary_df)
 
         # Note pointing to Excel for full detail
+        # The count is PIPELINE_COLUMN_COUNT, never a literal (1.7.1 R2): this
+        # sentence sends the reader to the workbook, and through 1.7.0 it said
+        # 33 of a tab that has 29.
         p = doc.add_paragraph(
-            "Full 33-column pipeline detail (deal economics, QLICI structure, timeline) "
+            f"Full {PIPELINE_COLUMN_COUNT}-column pipeline detail (deal economics, "
+            "QLICI structure, timeline) "
             "is provided in the accompanying Excel workbook, Pipeline Detail tab. "
             "The landscape pages below contain key pipeline fields for reference."
         )

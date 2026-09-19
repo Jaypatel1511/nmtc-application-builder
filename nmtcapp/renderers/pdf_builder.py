@@ -25,7 +25,7 @@ from nmtcapp.sections import ALL_SECTIONS
 from nmtcapp.tables.distress_table import build_distress_table, build_distress_summary_table
 from nmtcapp.tables.geographic_table import build_geographic_table
 from nmtcapp.tables.impact_table import build_impact_summary_table
-from nmtcapp.tables.pipeline_table import build_pipeline_summary_table
+from nmtcapp.tables.pipeline_table import PIPELINE_COLUMN_COUNT, build_pipeline_summary_table
 from nmtcapp.tables.track_record_table import build_track_record_table
 from nmtcapp.core.application_round import (
     allocation_round_clause, nmtc_round_phrase, round_label,
@@ -735,8 +735,12 @@ class PDFApplicationBuilder:
         summary_df = build_pipeline_summary_table(self.application.pipeline)
         flowables += _df_to_rl_table(summary_df, styles, totals_last=True)
         flowables.append(Spacer(1, 6))
+        # The count is PIPELINE_COLUMN_COUNT, never a literal (1.7.1 R2): this
+        # sentence sends the reader to the workbook, and through 1.7.0 it said
+        # 33 of a tab that has 29.
         flowables.append(Paragraph(
-            "<i>Full 33-column pipeline detail (deal economics, QLICI structure, timeline) "
+            f"<i>Full {PIPELINE_COLUMN_COUNT}-column pipeline detail (deal economics, "
+            "QLICI structure, timeline) "
             "is provided in the accompanying Excel workbook, Pipeline Detail tab.</i>",
             styles["caption"],
         ))

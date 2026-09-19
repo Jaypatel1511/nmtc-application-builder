@@ -92,7 +92,7 @@ P|Heading 2|Outcomes and Impact Achieved
 P|Normal|Outcomes across all 3 prior awards:
 P|Normal|[NARRATIVE PLACEHOLDER — Replace this text with your CDE's specific information. CDFI Fund reviewers score on specificity, evidence, and alignment with community need. Length is governed by the limit printed on the published application form for this question, which this tool does not encode — check the form, not this draft.]
 P|Heading 1|Appendix A: Pipeline Detail
-P|Normal|Full 33-column pipeline detail (deal economics, QLICI structure, timeline) is provided in the accompanying Excel workbook, Pipeline Detail tab. The landscape pages below contain key pipeline fields for reference.
+P|Normal|Full 29-column pipeline detail (deal economics, QLICI structure, timeline) is provided in the accompanying Excel workbook, Pipeline Detail tab. The landscape pages below contain key pipeline fields for reference.
 P|Heading 2|Appendix A (continued): Pipeline Detail — Full View
 P|Heading 1|Appendix B: Distress Documentation
 P|Heading 1|Appendix C: Geographic Targeting
