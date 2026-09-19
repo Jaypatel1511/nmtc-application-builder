@@ -2798,7 +2798,7 @@ One filled scaffold, the same file both sides, `9a2d584` vs this tree:
 > `git diff --numstat 9a2d584 fc34af5 -- tests/rendered_baseline/` gives 53
 > insertions and 68 deletions, unchanged.*
 
-The rendered-string sweep is unchanged in shape, and 283 constants are swept
+The rendered-string sweep is unchanged in shape, and 288 constants are swept
 (279 as this entry shipped, restated at 1.7.0 for the R1 constants; 237 at 1.5.7; this release adds
 `upload_handler.CDE_PROFILE_COLUMNS_FOR_REQUIRED_FIELD`, waived, for 238 as
 shipped — restated to 250 at 1.6.2, which splits the round-provenance
@@ -8474,7 +8474,7 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 283 constants are swept
+colour". The rendered-string sweep demands **19**, and 288 constants are swept
 where 49 were (238 as this release shipped; restated at 1.6.2, at 1.6.4,
 in the 1.6.4 fix round and at 1.7.0 — the count is gate-asserted against the current tree, see those
 entries). *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
