@@ -540,7 +540,7 @@ def scan() -> list:
 # whatever it says — so the registry holds every sentence in the rendered
 # output, the package source and the Streamlit app that mentions the round.
 # Measured here (re-derived 2026-09-18 for R1; 2026-09-17 for 1.6.5 gave
-# 130 / 27 / 103): 165 segments, of which 27 carry claims and 138 assert
+# 130 / 27 / 103): 166 segments, of which 27 carry claims and 139 assert
 # nothing. The alternative, requiring a publication word
 # before a sentence is looked at, is what shipped in the build round and it
 # was blind to four sentences in this tree on the day it was written.
@@ -1233,10 +1233,6 @@ ROUND_STATUS_CLAIMS = {
     'They are also a summary, and the summary loses two things the **instrument** — the Allocation Application itself, Question 25 at printed pp. 36-40 of the CY 2026 edition (pp. 38-41 of the CY 2024-2025 edition 1.3.0 read) — states plainly:':
         (),
 
-    # streamlit_app/pages/4_About_and_Methodology.py
-    "This package carries a per-project field for **five of the fifteen** distinct area types Question 25 lists — a tool-verified distress level covering Severe and Deep Distress, plus CDE-declared and unverified flags for NMTC Native Areas, High Migration Rural Counties and U.S. territory — and nothing for Non-Metropolitan Counties, nothing for Targeted Populations, nothing for Homeownership Cost Burden (Question 25(b)'s fifth area type, new in CY 2026 and conditional on the QLICI financing affordable homeownership units in the tract), and nothing for any of items 6-12.":
-        (),
-
     # nmtcapp/renderers/_question_22.py
     'Through 1.6.5 this module read the CY 2024-2025 Application as a proxy; every sentence quoted above was re-read in the CY 2026 document and is character-identical apart from the 22(c)/22(d) correction recorded above.':
         (),
@@ -1251,6 +1247,10 @@ ROUND_STATUS_CLAIMS = {
 
     # nmtcapp/renderers/_round_provenance.py [#]
     "What IS verified: the NOAA's Table 1 runs to 14 Jan 2027 and schedules no award announcement, and applications are due 10 Nov 2026.":
+        (),
+
+    # streamlit_app/pages/4_About_and_Methodology.py
+    "It carries nothing for Targeted Populations, nothing for Homeownership Cost Burden (Question 25(b)'s fifth area type, new in CY 2026 and conditional on the QLICI financing affordable homeownership units in the tract), and nothing for any of items 6-12.":
         (),
 }
 
@@ -1479,10 +1479,10 @@ QUOTED_HISTORY = (
 # Measured on 2026-09-18 against this tree (R1; the 1.6.5 measurement of
 # 2026-09-17 was 202 / 130 / 79 / 13,367), by running ``selected()``:
 #
-#     238 selected occurrences
-#     165 distinct segments
+#     239 selected occurrences
+#     166 distinct segments
 #     79 modules scanned (nmtcapp + streamlit_app, nothing excluded)
-#     13,426 segments in the corpus in total
+#     13,443 segments in the corpus in total
 #
 # Each floor sits BELOW its measurement so that deleting a sentence or two is
 # not automatically red, and FAR above zero so that an empty corpus, a broken
@@ -1491,10 +1491,10 @@ QUOTED_HISTORY = (
 # looked at" are the same green.
 # ---------------------------------------------------------------------------
 
-_MIN_SELECTED_OCCURRENCES = 130        # measured 238 (R1); 202 at 1.6.5
-_MIN_SELECTED_SEGMENTS = 75     # measured 165 (R1); 130 at 1.6.5
+_MIN_SELECTED_OCCURRENCES = 130        # measured 239 (R1); 202 at 1.6.5
+_MIN_SELECTED_SEGMENTS = 75     # measured 166 (R1); 130 at 1.6.5
 _MIN_SOURCE_FILES = 55             # measured 79
-_MIN_CORPUS_SEGMENTS = 9500           # measured 13,426 (R1); 13,367 at 1.6.5
+_MIN_CORPUS_SEGMENTS = 9500           # measured 13,443 (R1); 13,367 at 1.6.5
 
 #: THE HARD BACKSTOP ON THE ``()`` CLASSIFICATION. ``()`` means "this segment
 #: asserts nothing about either constant", and it is the one way a human could

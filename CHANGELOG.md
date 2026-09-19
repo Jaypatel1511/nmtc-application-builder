@@ -270,15 +270,53 @@ exactly those with `has_quantified_outcomes` and
 `bs_total ≥ 40` with aggregate ≥ 84 — from Not Qualified to Highly
 Qualified, which is the intended effect and the thing to scrutinise.
 
+### R1 addendum 2 — the docs surfaces contradicted the generated documents
+
+R1's first commit changed *fourteen → fifteen* on `docs/reference/methodology.md`
+and the Streamlit About page and left the sentence's numerator, so a CDE
+reading the docs site and the generated Word document got two different
+counts of what this tool models: the docs said **"five of the fifteen"**, the
+renderer interpolates **6 of the 15**. Verified against the branch, and it
+was three discrepancies on both surfaces, not one — the docs also said
+*"nothing for Non-Metropolitan Counties"* where the renderer says
+TOOL-VERIFIED AND TRI-STATE, and filed High Migration Rural Counties as
+*tool-unverified* where the renderer says CDE-DECLARED AND TOOL-VERIFIED.
+All three understate the package. **This is the defect 1.4.0 fixed once**:
+`_question_25`'s own docstring records that landing
+`PipelineProject.is_non_metro` made "It carries NOTHING for Non-Metropolitan
+Counties" false on four rendered surfaces; the renderer was corrected then
+and the two public surfaces were not, and carried the false sentence for
+three releases.
+
+Both paragraphs now say six, list Non-Metropolitan Counties among the
+modelled fields as tool-verified and tri-state, and state High Migration
+Rural Counties as CDE-declared and tool-verified, using the renderer's own
+per-field vocabulary; the Homeownership Cost Burden clause and its limb are
+kept. **Why it drifted, and what stops it:** the renderer interpolates
+`Q25_AREA_TYPES_MODELLED` and `Q25_DISTINCT_AREA_TYPES`; both surfaces
+hand-typed them and nothing compared the two. The About page is Python and
+now **imports and interpolates both constants**. `docs/` is mkdocs markdown
+with no prose interpolation (the only hook, `docs/hooks/generate_sample_output.py`,
+renders the sample package and touches no page text), so the docs paragraph
+stays hand-typed and a new gate, **`tests/test_q25_modelled_surfaces.py`**,
+holds it: it locates the modelled-fields paragraph on three surfaces — the
+renderer's own note (the authority, so the parser is proven against it
+rather than assumed), the docs page, and the About page *as rendered
+through Streamlit's `AppTest`* (the f-string evaluated, so the interpolated
+count is checked as a value) — and asserts the `<n> of the <m>` ratio equals
+the constants, that Non-Metropolitan Counties is modelled and tool-verified
+and not in the "nothing for" list, that High Migration Rural Counties is
+tool-verified and outside the unverified group, and that the "nothing for"
+enumeration is the renderer's (Targeted Populations, Homeownership Cost
+Burden, items 6-12). Mutating the docs numerator back to "five" fails it;
+it also failed on a first draft of this entry's own historical note, which
+quoted the old false sentence inside the gated paragraph, so the note now
+sits after it. No third surface carries the drift: a sweep for `five of the
+(fifteen|fourteen)`, `nothing for Non-Metropolitan` and `unverified flags
+for` finds only the two paragraphs and the history that records them.
+
 ### Out of scope, found, and NOT fixed
 
-* `docs/reference/methodology.md` and the Streamlit About page both say the
-  package carries a field for **"five of the fifteen"** area types and
-  "nothing for Non-Metropolitan Counties". The renderer has said six, with
-  Non-Metropolitan Counties TOOL-VERIFIED, since 1.4.0 landed
-  `PipelineProject.is_non_metro`. R1 corrected the denominator (fourteen →
-  fifteen) and added Homeownership Cost Burden to the enumeration, and left
-  the stale numerator alone.
 * `_round_provenance`'s ¶0 still says *"THIS TOOL STILL ENCODES THE CY
   2024-2025 INSTRUMENT"* and item 3 of the re-check list still asks a CDE to
   re-verify Question 25's area-type lists. Both are now conservative rather
@@ -326,7 +364,7 @@ Qualified, which is the intended effect and the thing to scrutinise.
 * The swept-constant census is 282 (was 279: the three new `_question_25`
   names, less the deleted factor); the Review Process corpus count is
   118 / 113. Both restated below where the gates read them.
-* Verified on Python 3.14.6 (one interpreter; the 3.9-3.12 matrix is CI's): 1,882 passed, 1 skipped (`network`), after
+* Verified on Python 3.14.6 (one interpreter; the 3.9-3.12 matrix is CI's): 1,895 passed, 1 skipped (`network`), after
   `pip install -e ".[output,viz]" streamlit plotly nbformat nbconvert
   ipykernel` — three notebook tests and six Streamlit/chart modules need those
   extras and fail on collection without them, and `nmtcapp.__version__`

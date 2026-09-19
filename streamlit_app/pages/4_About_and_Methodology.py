@@ -11,6 +11,16 @@ import streamlit as st
 from nmtcapp.data.historical_awards import NMTC_AWARD_ROUNDS, APPLICATION_VOLUME_TRENDS
 from nmtcapp.renderers._methodology import readiness_inline_qualifier
 from nmtcapp.renderers._round_provenance import round_provenance_paragraphs
+# THE COUNT IS INTERPOLATED, NOT TYPED (1.7.0, R1 addendum 2). This page said
+# "five of the fourteen" and "nothing for Non-Metropolitan Counties" from 1.4.0
+# — when PipelineProject.is_non_metro made both false on the generated
+# documents and the renderer was corrected — through 1.6.5. The renderer
+# interpolates these two constants; this page typed them, and nothing compared
+# the two. Now it reads the same names, and tests/test_q25_modelled_surfaces
+# holds the enumeration beside them to the renderer's per-field provenance.
+from nmtcapp.renderers._question_25 import (
+    Q25_AREA_TYPES_MODELLED, Q25_DISTINCT_AREA_TYPES,
+)
 from nmtcapp.data.benchmark_thresholds import (
     HIGHLY_QUALIFIED_AGGREGATE_MIN, HIGHLY_QUALIFIED_SECTION_MIN,
     HOUSE_TOP_TIER_AGGREGATE_MIN, HOUSE_TOP_TIER_SECTION_MIN,
@@ -194,15 +204,22 @@ Every distress share this tool computes is a share of **QEI**; `qlici_amount` is
 read only to print it in Appendix A and to check it does not exceed its
 project's QEI, and feeds no percentage, no score and no bar. The two sub-scores
 above are QEI-based *proxies*, and no figure this tool renders answers either
-commitment. This package carries a per-project field for **five of the fifteen**
-distinct area types Question 25 lists — a tool-verified distress level covering
-Severe and Deep Distress, plus CDE-declared and unverified flags for NMTC Native
-Areas, High Migration Rural Counties and U.S. territory — and nothing for
-Non-Metropolitan Counties, nothing for Targeted Populations, nothing for
-Homeownership Cost Burden (Question 25(b)'s fifth area type, new in CY 2026 and
-conditional on the QLICI financing affordable homeownership units in the
-tract), and nothing for any of items 6-12. **Holding those fields is not a
-partial answer to Question 25**:
+commitment. This package carries a per-project field for
+**{Q25_AREA_TYPES_MODELLED} of the {Q25_DISTINCT_AREA_TYPES}** distinct area
+types Question 25 lists, and they do not share one provenance. Severe Distress
+and Deep Distress: **tool-verified** — the distress level is read from the CDFI
+Fund eligibility table for the tract this tool geocoded. Non-Metropolitan
+Counties: **tool-verified and tri-state** — the OMB designation is read for the
+same geocoded tract, and a project the lookup could not resolve is recorded as
+undetermined rather than as metropolitan. High Migration Rural Counties:
+**CDE-declared and tool-verified** — enrichment overwrites the CDE's
+declaration whenever nmtc-mapper returns a determination for the tract. NMTC
+Native Areas and U.S. territory: **CDE-declared and tool-unverified** — nothing
+in this tool checks either one. It carries nothing for Targeted Populations,
+nothing for Homeownership Cost Burden (Question 25(b)'s fifth area type, new in
+CY 2026 and conditional on the QLICI financing affordable homeownership units
+in the tract), and nothing for any of items 6-12. **Holding those fields is not
+a partial answer to Question 25**:
 the commitment is a share of QLICI *dollars* and this tool weights nothing by
 QLICI dollars.
 

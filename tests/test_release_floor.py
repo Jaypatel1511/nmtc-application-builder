@@ -478,7 +478,15 @@ def test_max_sdist_skips_is_bounded_from_ABOVE_as_well(collected_count):
 #: Eastern date. IT ADDS NO SKIPPING CASE: it needs the fixture text and the
 #: installed package, both of which the sdist job has, and its fail-closed
 #: control is an assertion at a frozen date rather than a skip.
-CLAIMED_NEW_TEST_MODULES = 34
+#:
+#: 34 -> 35 at 1.7.0 (R1 addendum 2): tests/test_q25_modelled_surfaces.py,
+#: which holds the docs page and the About page to the renderer's count and
+#: per-field provenance of the Question 25 area types this package models. It
+#: SKIPS in the sdist job on the docs surface only (an unpacked sdist prunes
+#: docs/, the same rule test_the_changelogs_review_process_sweep_matches_the_tree
+#: already applies) and importorskips streamlit for the About page, which the
+#: sdist job's copied-out Streamlit tree satisfies.
+CLAIMED_NEW_TEST_MODULES = 35
 
 
 def test_the_module_count_in_this_comment_matches_the_tree():

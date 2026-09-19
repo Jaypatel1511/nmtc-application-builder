@@ -111,17 +111,31 @@ in Appendix A and to check that it does not exceed its project's QEI, and feeds
 no percentage, no score and no bar. The two sub-scores above are therefore
 QEI-based *proxies*, not computations of the Fund's commitments, and no figure
 this tool renders answers either one. This package carries a per-project field
-for **five of the fifteen** distinct area types Question 25 lists — a
-tool-verified distress level covering Severe and Deep Distress, and
-CDE-declared, tool-unverified flags for NMTC Native Areas, High Migration Rural
-Counties and U.S. territory. It carries nothing for Non-Metropolitan Counties,
-nothing for Targeted Populations, nothing for Homeownership Cost Burden
-(Question 25(b)'s fifth area type, new in CY 2026 and conditional on the QLICI
-financing affordable homeownership units in the tract), and nothing for any of
-items 6-12; it computes no multi-indicia measure at all. **Holding those fields is not a partial answer
+for **six of the fifteen** distinct area types Question 25 lists, and they do
+not share one provenance. Severe Distress and Deep Distress: **tool-verified**
+— the distress level is read from the CDFI Fund eligibility table for the
+tract this package geocoded. Non-Metropolitan Counties: **tool-verified and
+tri-state** — the OMB designation is read for the same geocoded tract, and a
+project the lookup could not resolve is recorded as undetermined rather than
+as metropolitan. High Migration Rural Counties: **CDE-declared and
+tool-verified** — enrichment overwrites the CDE's declaration whenever
+nmtc-mapper returns a determination for the tract. NMTC Native Areas and U.S.
+territory: **CDE-declared and tool-unverified** — nothing in this package
+checks either one. It carries nothing for Targeted Populations, nothing for
+Homeownership Cost Burden (Question 25(b)'s fifth area type, new in CY 2026
+and conditional on the QLICI financing affordable homeownership units in the
+tract), and nothing for any of items 6-12; it computes no multi-indicia
+measure at all. **Holding those fields is not a partial answer
 to Question 25**: the commitment is a share of QLICI *dollars*, this package
 weights nothing by QLICI dollars, and a flag that enters no denominator
 contributes nothing to a share.
+
+*The count and the provenance of each field above are stated by
+`renderers/_question_25` and interpolated into every generated document; this
+page is hand-typed against them, and `tests/test_q25_modelled_surfaces.py`
+fails if it drifts — as it did from 1.4.0 to 1.7.0, when this page said "five"
+and "nothing for Non-Metropolitan Counties" for three releases after the sixth
+field landed.*
 
 > **Corrected in 1.3.0 (S1).** Through 1.2.2 this note was written against the
 > *CY 2024-2025 NMTC Program Review Process* — a seven-page **summary** of how
