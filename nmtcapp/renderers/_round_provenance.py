@@ -734,9 +734,32 @@ APPLICATION_URL = (
 #: What a CDE must re-verify against the CY 2026 Application Materials, which
 #: are available at ``UPCOMING_APPLICATION_PAGE_URL``. Written as a re-check
 #: list on purpose -- see this module's header on the second direction of
-#: error. THE SIX ITEMS ARE UNCHANGED BY 1.6.5 AND STILL OWED: reading the
-#: CY 2026 Application to confirm it exists is what 1.6.5 did; reading it to
-#: move a threshold is the next methodology cycle.
+#: error. Reading the CY 2026 Application to confirm it exists is what 1.6.5
+#: did; R1 (2026-09-18) read it for Question 25's area-type lists and page
+#: citations and Question 22's citations -- see ``renderers/_question_25``
+#: and ``renderers/_question_22`` -- and the items stay on this list because
+#: a re-check instruction does not go false when the tool has done its own.
+#:
+#: ITEM 6 IS A DATED POSITIVE, NOT AN INSTRUCTION TO CONSULT A DOCUMENT THAT
+#: DOES NOT EXIST (R1). Through 1.6.5 it read "the scoring thresholds in the
+#: Review Process". The NMTC Review Process is an AWARD document, published
+#: with the award announcement: the one date this package carries itself is
+#: ``CITED_ROUND_TIMELINE["awarded"]`` (CY 2024-2025, 23 Dec 2025); the R1
+#: build prompt reports the same same-day pattern for CY 2022 (22 Sep 2023)
+#: and CY 2023 (19 Sep 2024) from the CDFI Fund's Step 3 | Award Announcement
+#: page, and reports the Fund's stated CY 2026 award timing as "Summer 2027"
+#: -- neither re-verified by this tool, and that phrase is in NEITHER the
+#: NOAA's Federal Register text NOR news/741 (both searched 2026-09-18). What
+#: IS verified: the NOAA's Table 1 runs to 14 Jan 2027 and schedules no award
+#: announcement, and applications are due 10 Nov 2026. So for the whole
+#: filing window the old wording told a CDE to re-check thresholds against a
+#: document that did not exist, with no indication that it did not.
+#: The rewrite states a fact about THIS TOOL'S OWN LOOKING, dated to
+#: ``LAST_VERIFIED`` through ``_us_date`` (the only date spelling the
+#: year-accounting gate in ``tests/test_noaa_table_1`` admits), so it survives
+#: the Fund publishing a Review Process later and asserts nothing about the
+#: world; the thresholds it names are the CY 2024-2025 ones this package
+#: still encodes.
 RECHECK_ITEMS = (
     "the allocation authority and the number of awards available",
     "the CDE certification deadline for eligibility",
@@ -744,7 +767,10 @@ RECHECK_ITEMS = (
     "and its ladder",
     "Question 22's QLICI-denominated Non-Metropolitan minimum and maximum",
     "Question 15's product-flexibility ladder",
-    "the scoring thresholds in the Review Process",
+    f"the scoring thresholds — as of {_us_date(LAST_VERIFIED)} this tool had "
+    f"not found a published {UPCOMING_ROUND} Review Process, and the "
+    f"thresholds this document applies are the {CITED_ROUND} Review "
+    "Process's",
 )
 
 

@@ -113,8 +113,9 @@ MIN_MATCHES = 25
 #: was retrieved for the same question and two CITED entries turned out to be
 #: correct quotations of an incomplete source: the 85% is denominated in
 #: aggregate QLICI DOLLARS over a one-of-five / two-of-seven area test, and the
-#: 20% is not a bar at all but the top rung of a 0/5/10/15/20 ladder over four
-#: area types. Both errors instructed a CDE to UNDERSTATE its own qualifying
+#: 20% is not a bar at all but the top rung of a 0/5/10/15/20 ladder over the
+#: Question 25(b) area types (four in CY 2024-2025, five in CY 2026). Both
+#: errors instructed a CDE to UNDERSTATE its own qualifying
 #: share to a federal agency, and both sat under a green gate reading zero.
 #:
 #: Neither was re-tagged DEFECT, because DEFECT means "the authority does not

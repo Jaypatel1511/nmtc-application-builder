@@ -183,8 +183,15 @@ class WinProbabilityScore:
         pp = self.priority_points
 
         def _pts(section: dict, key: str) -> str:
+            # A 3-wide value field, mirroring the ``{MAX:3d}`` denominator on
+            # the other side of the slash. Through 1.7.0's F15 commit this was
+            # ``{val:2d}``: the labels below are hand-padded to 26 characters,
+            # "Community Outcomes Quality" is exactly 26, and the 2-wide
+            # field's leading space was the only thing separating that label
+            # from its value — until F15 made the value 10. The column must
+            # not depend on the digit count of what lands in it.
             val = section.get(key, 0)
-            return "n/a" if val is None else f"{val:2d} "
+            return " n/a" if val is None else f"{val:3d} "
 
         # The .get() defaults are the constants, not literals. A default that
         # is a typed number is a silent second copy of the constant which fires
@@ -557,12 +564,27 @@ class WinProbabilityModel:
         return _to_int(min(5.0, partial))
 
     def _score_outcomes_quality(self, attrs: dict) -> int:
+        # THE TOP RUNG PAYS THE DECLARED MAXIMUM (1.7.0, F15). Through 1.6.5
+        # this returned 2 / 6 / 9 against a declared
+        # COMMUNITY_OUTCOMES_QUALITY_MAX of 10, so Community Outcomes capped at
+        # 49 of a printed 50, the aggregate at 99 of 100, and the degraded
+        # branch at 24 of 25. The missing point sat directly on the 40-point
+        # section gate: a CDE whose other four sub-scores summed to 30 was
+        # shown 39 and Not Qualified where the documented maximum gives 40 and
+        # Highly Qualified — reproduced, not hypothetical. Every other
+        # sub-scorer reaches its declared maximum exactly (probed 2026-09-18;
+        # see the 1.7.0 CHANGELOG entry), so this was an off-by-one, not a
+        # design choice. The top rung already represents the strongest state
+        # the model recognises — quantified outcomes AND third-party
+        # validation — so paying the declared maximum invents no criterion;
+        # it is read from the constant so the rung cannot fall below the
+        # denominator printed beside it again.
         has_quantified = attrs.get("has_quantified_outcomes", True)
         has_third_party = attrs.get("has_third_party_validation", False)
         if not has_quantified:
             return 2
         if has_third_party:
-            return 9
+            return COMMUNITY_OUTCOMES_QUALITY_MAX
         return 6
 
     def _score_community_accountability(self, attrs: dict) -> int:

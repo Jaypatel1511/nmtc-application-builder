@@ -539,8 +539,9 @@ def scan() -> list:
 # selects on the SUBJECT — a segment that names the upcoming round is read,
 # whatever it says — so the registry holds every sentence in the rendered
 # output, the package source and the Streamlit app that mentions the round.
-# Measured here (re-derived 2026-09-17 for 1.6.5): 130 segments, of which 27
-# carry claims and 103 assert nothing. The alternative, requiring a publication word
+# Measured here (re-derived 2026-09-18 for R1; 2026-09-17 for 1.6.5 gave
+# 130 / 27 / 103): 166 segments, of which 27 carry claims and 139 assert
+# nothing. The alternative, requiring a publication word
 # before a sentence is looked at, is what shipped in the build round and it
 # was blind to four sentences in this tree on the day it was written.
 #
@@ -564,20 +565,12 @@ ROUND_STATUS_CLAIMS = {
     '* The CY 2026 **NOAA** is **PUBLISHED** -- Federal Register document 2026-18883, filed 14 Sep 2026 08:45 ET, publication date 15 Sep 2026.':
         (("NOAA", True),),
 
-    # rendered_baseline/markdown.txt
-    '**QEI in Deep Distress Tracts (a share of QEI, not of QLICIs — see the basis note below):** 52.2% **QEI in Severely Distressed Tracts, Deep Distress included (a share of QEI, not of QLICIs — see the basis note below):** 85.3% **— of which severely distressed but not also deep:** 33.1% **QEI in LIC (Standard Eligible) Tracts:** 14.7% **QEI in NMTC Native Areas (CDE-declared, not verified by this tool):** 5.9% **QEI in High Migration Rural (HMR) Tracts:** 12.7% **BASIS NOTE — the CDFI Fund\'s two distress commitments are measured on QLICIs, not on QEI:** Question 25 of the CY 2024-2025 NMTC Allocation Application (printed pp. 38-41) sets both commitments, and both are measured on QLICIs — specifically on QLICIs "in terms of aggregate dollar amounts", tested for each QLICI.':
-        (),
-
     # nmtcapp/renderers/_round_provenance.py
     '**The CY 2024-2025 Application is not unreliable.** It is a real federal instrument, retrieved and hash-verified, and it is the best available basis for preparing a CY 2026 application.':
         (),
 
     # streamlit_app/pages/4_About_and_Methodology.py
     '*Both instruments re-opened and text-extracted locally with pypdf on 2026-08-22 for the two citations added above — Review Process, 7pp, 187,497 bytes, SHA-256 `ad0dc777eab0dc8cf437d970418bcdbea8403eb99b79dd1662f4ce94eab98749`; Allocation Application, 142pp, 1,525,626 bytes, SHA-256 `0280c6bc7b35f6015e2c2b1be4b1c07b3864f2dcbaeadfbbbf8bded8de12834f`.':
-        (),
-
-    # nmtcapp/renderers/_question_22.py
-    '31, verbatim: "Question 22 will not be evaluated and scored in Phase I of Allocation Application reviews.':
         (),
 
     # nmtcapp/renderers/_round_provenance.py [#]
@@ -600,20 +593,8 @@ ROUND_STATUS_CLAIMS = {
     'Application Round:|CY 2026':
         (),
 
-    # rendered_baseline/word.txt
-    'BASIS NOTE — the CDFI Fund\'s two distress commitments are measured on QLICIs, not on QEI|Question 25 of the CY 2024-2025 NMTC Allocation Application (printed pp. 38-41) sets both commitments, and both are measured on QLICIs — specifically on QLICIs "in terms of aggregate dollar amounts", tested for each QLICI.':
-        (),
-
     # rendered_baseline/excel.txt
     'CONFIDENTIAL — Great Lakes Regional Capital CDE, LLC — NMTC CY 2026 — Generated <RUNDATE>':
-        (),
-
-    # nmtcapp/renderers/_question_22.py
-    'CY 2024-2025 NMTC Program Allocation Application, re-downloaded, re-hashed and text-extracted LOCALLY with pypdf.':
-        (),
-
-    # nmtcapp/renderers/_question_25.py
-    'CY 2024-2025 NMTC Program Allocation Application, retrieved 2026-08-17 and text-extracted LOCALLY with pypdf — not fetched through a summarising model, which is the provenance failure this whole cycle exists to correct.':
         (),
 
     # nmtcapp/renderers/_round_provenance.py
@@ -630,10 +611,6 @@ ROUND_STATUS_CLAIMS = {
 
     # nmtcapp/renderers/_round_provenance.py [#]
     'Carried as the rendered string because the note states it as prose, and it is the one CY 2026 figure the NOAA settles; every OTHER round-specific figure in this package is still CY 2024-2025 and ``RECHECK_ITEMS`` still says so.':
-        (),
-
-    # rendered_baseline/pdf.txt
-    'Distress Level Commitments Item Value QEI in Deep Distress Tracts (a share of QEI, not of QLICIs — see the basis note below) 52.2% QEI in Severely Distressed Tracts, Deep Distress included (a share of QEI, not of QLICIs — see the basis note below) 85.3% — of which severely distressed but not also deep 33.1% QEI in LIC (Standard Eligible) Tracts 14.7% QEI in NMTC Native Areas (CDE-declared, not verified by this tool) 5.9% QEI in High Migration Rural (HMR) Tracts 12.7% BASIS NOTE — the CDFI Fund\'s two distress commitments are measured on QLICIs, not on QEI Question 25 of the CY 2024-2025 NMTC Allocation Application (printed pp. 38-41) sets both commitments, and both are measured on QLICIs — specifically on QLICIs "in terms of aggregate dollar amounts", tested for each QLICI.':
         (),
 
     # rendered_baseline/pdf.txt
@@ -687,10 +664,6 @@ ROUND_STATUS_CLAIMS = {
 
     # nmtcapp/renderers/_round_provenance.py
     'Non-Metropolitan county designations under the CY 2026 NOAA follow OMB Bulletin 20-01, applied using 2020 census tracts.':
-        (),
-
-    # rendered_baseline/excel.txt
-    'Question 25 of the CY 2024-2025 NMTC Allocation Application (printed pp. 38-41) sets both commitments, and both are measured on QLICIs — specifically on QLICIs "in terms of aggregate dollar amounts", tested for each QLICI.':
         (),
 
     # nmtcapp/renderers/_round_provenance.py
@@ -763,10 +736,6 @@ ROUND_STATUS_CLAIMS = {
 
     # streamlit_app/pages/1_Pipeline_Analyzer.py
     'The published CY 2024-2025 bar for full Community Outcomes credit is 85% of QLICIs in areas of higher distress (Allocation Application, Question 25(a)) — **a share of QLICIs, while the bars above are shares of QEI**.':
-        (),
-
-    # nmtcapp/renderers/_question_25.py
-    'They are also a summary, and the summary loses two things the **instrument** — the Allocation Application itself, Question 25 at printed pp. 38-41 — states plainly:':
         (),
 
     # streamlit_app/utils.py [#]
@@ -946,11 +915,6 @@ ROUND_STATUS_CLAIMS = {
 
     # ---- 1.6.5: the Application published; monotone claims only ----
 
-    # nmtcapp/renderers/_question_25.py
-    # rendered_baseline/excel.txt / markdown.txt / pdf.txt / word.txt
-    "(Those area lists are the CY 2024-2025 Application's; the CY 2026 Allocation Application's own lists must be read from that document — see the round-provenance note for where it is.)":
-        (),
-
     # nmtcapp/renderers/_round_provenance.py
     '* The CY 2026 **Allocation Application** and its Application Materials are **PUBLISHED** -- released by the CDFI Fund on 17 Sep 2026 (cdfifund.gov/news/741) together with the Application FAQs, the Application Roadmap Presentation and the AMIS Navigation Guide, all linked from the program\'s "Step 2: Apply" page.':
         (('APPLICATION', True),),
@@ -963,20 +927,8 @@ ROUND_STATUS_CLAIMS = {
     'As of {} this tool had not confirmed publication of the {} Allocation Application or its Application Materials, so the instrument encoded here is still the {} one.':
         (),
 
-    # rendered_baseline/excel.txt / markdown.txt / word.txt
-    "But it is a PROXY for the CY 2026 instrument, not that instrument, and that instrument is AVAILABLE NOW: every round-specific figure in this document must be re-verified against the CY 2026 Application Materials, which the CDFI Fund publishes at https://www.cdfifund.gov/programs-training/programs/new-markets-tax-credit/apply-step — specifically: the allocation authority and the number of awards available; the CDE certification deadline for eligibility; Question 25's QLICI-denominated commitment levels, its area-type lists and its ladder; Question 22's QLICI-denominated Non-Metropolitan minimum and maximum; Question 15's product-flexibility ladder; the scoring thresholds in the Review Process.":
-        (('APPLICATION', True),),
-
-    # rendered_baseline/pdf.txt (the 82-character URL is hard-split by the PDF renderer; same sentence)
-    "But it is a PROXY for the CY 2026 instrument, not that instrument, and that instrument is AVAILABLE NOW: every round-specific figure in this document must be re-verified against the CY 2026 Application Materials, which the CDFI Fund publishes at https://www.cdfifund.gov/pro grams-training/programs/new-markets-tax-credit/apply-step — specifically: the allocation authority and the number of awards available; the CDE certification deadline for eligibility; Question 25's QLICI-denominated commitment levels, its area-type lists and its ladder; Question 22's QLICI-denominated Non-Metropolitan minimum and maximum; Question 15's product-flexibility ladder; the scoring thresholds in the Review Process.":
-        (('APPLICATION', True),),
-
     # nmtcapp/renderers/_question_25.py
     'CY 2024-2025 is CLOSED — it was awarded 23 Dec 2025 — and the CY 2026 Application published on 17 Sep 2026 (1.6.5).':
-        (('APPLICATION', True),),
-
-    # nmtcapp/renderers/_question_22.py
-    'CY 2024-2025 is a CLOSED round being used as a proxy for the CY 2026 Allocation Application, which published on 17 Sep 2026 and has not been reconciled against this module; see ``_round_provenance``.':
         (('APPLICATION', True),),
 
     # nmtcapp/renderers/_round_provenance.py
@@ -1007,10 +959,6 @@ ROUND_STATUS_CLAIMS = {
     'THE CY 2026 ROUND HAS OPENED: the CY 2026 NOAA IS PUBLISHED — Federal Register document 2026-18883, publication date September 15, 2026 — and it makes $5 billion available, with applications due 5:00 p.m. ET on November 10, 2026.':
         (('NOAA', True),),
 
-    # nmtcapp/renderers/_round_provenance.py [#]
-    'THE SIX ITEMS ARE UNCHANGED BY 1.6.5 AND STILL OWED: reading the CY 2026 Application to confirm it exists is what 1.6.5 did; reading it to move a threshold is the next methodology cycle.':
-        (),
-
     # nmtcapp/renderers/_round_provenance.py
     'THE {} ROUND HAS OPENED: the {} NOAA IS PUBLISHED — Federal Register document {}, publication date {} — and it makes {} available, with applications due {}.':
         (('NOAA', True),),
@@ -1026,10 +974,6 @@ ROUND_STATUS_CLAIMS = {
     # nmtcapp/renderers/_round_provenance.py [#]
     'The CY 2026 Allocation Application, pinned to the day the CDFI Fund announced it and to the PROGRAM PAGE that links it -- not to the upload path.':
         (('APPLICATION', True),),
-
-    # rendered_baseline/pdf.txt -- a PDF page-break fragment: paragraph 2 now breaks across pages 23-24 mid-sentence, and the page furniture is a block boundary. The whole sentence is registered below from the other three surfaces.
-    'The NOAA adds that the':
-        (),
 
     # nmtcapp/renderers/_round_provenance.py [#]
     'The NOAA is verified against the Federal Register document named above -- on 2026-09-16 from its raw-text endpoint, every Table 1 row, which is how the 31 Aug date was found.':
@@ -1047,16 +991,8 @@ ROUND_STATUS_CLAIMS = {
     "The obvious repair -- shrink the number and call it derived -- was considered against the one piece of evidence the repo holds, the intervals between this issuer's own CY 2026 announcements: 2026-08-12 pre-announcement (news/738) -> 34 days -> 2026-09-15 NOAA, Federal Register 2026-18883 -> 2 days -> 2026-09-17 Allocation Application (news/741) -> 19 days -> 2026-10-06 Application Registration deadline -> 35 days -> 2026-11-10 Application deadline Those intervals are 34, 2, 19 and 35 days: no cadence derivable from them is both short enough to have caught the 2-day gap and long enough not to fire as ritual across the 35-day ones.":
         (),
 
-    # nmtcapp/renderers/_question_25.py
-    "The rendered note's closing sentence therefore says whose lists these are and where the CY 2026 document is, and nothing about what that document does or does not contain; see ``renderers/_round_provenance`` for the disclosure and the re-check list.":
-        (),
-
     # nmtcapp/renderers/_round_provenance.py
     "The three places the note speaks to the CY 2026 Application's status, DERIVED from ``UPCOMING_APPLICATION_PUBLISHED`` so they cannot disagree with it or with each other (1.6.5 R3a).":
-        (),
-
-    # nmtcapp/renderers/_question_25.py
-    'This module still encodes the CY 2024-2025 instrument as a proxy for the CY 2026 one, and has NOT been reconciled against it: that is a methodology cycle with its own audit, not a patch.':
         (),
 
     # nmtcapp/renderers/_round_provenance.py [#]
@@ -1109,6 +1045,216 @@ ROUND_STATUS_CLAIMS = {
 
     # rendered_baseline/excel.txt / markdown.txt / pdf.txt / word.txt
     'THE CY 2026 DEADLINES STILL AHEAD, COMPUTED FROM TABLE 1 OF THE NOAA AGAINST THE EASTERN DATE THIS DOCUMENT WAS GENERATED, September 17, 2026: 10 of the 10 deadlines in Table 1 are still ahead — Community Development Entity (CDE) Certification Application deadline — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Request to modify CDE certification service area — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Subsidiary CDE Certification Application for meeting Qualified Equity Investment (QEI) issuance thresholds — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS) [prior Allocatees]; CY 2026 Allocation Application Registration — 5:00 p.m. ET on October 6, 2026 (Electronically via AMIS); Amendment request to add Subsidiary CDEs to Allocation Agreements for meeting QEI issuance thresholds — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Amendment request to remove a Controlling Entity from Allocation Agreement(s) — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Last day to contact CDFI Fund staff — 5:00 p.m. ET on November 6, 2026 (Electronically via AMIS); CY 2026 Allocation Application deadline (including required Attachments) — 5:00 p.m. ET on November 10, 2026 (Electronically via AMIS); QEI Issuance and Qualified Low Income Community Investments (QLICIs) requirements deadline — 11:59 p.m. ET on January 7, 2027 (Not Applicable) [prior Allocatees]; Report QEIs and certify QLICIs deadline — 11:59 p.m. ET on January 14, 2027 (Electronically via AMIS) [prior Allocatees].':
+        (),
+
+    # --- R1 (2026-09-18): CY 2026 Question 25(b) fifth area type; CY 2026 page citations; RECHECK_ITEMS item 6 ---
+
+    # streamlit_app/pages/4_About_and_Methodology.py
+    "(Re-read against the CY 2026 Application on 2026-09-18; the 85%, the ladder and the twelve items of 25(a) are character-identical to the CY 2024-2025 Application's.)":
+        (),
+
+    # nmtcapp/renderers/_question_25.py / rendered_baseline/excel.txt / rendered_baseline/markdown.txt / rendered_baseline/pdf.txt / rendered_baseline/word.txt
+    "(The area lists above are the CY 2026 Allocation Application's, read from that document; see the round-provenance note for where it is and for which figures in this document are still the CY 2024-2025 Application's.)":
+        (),
+
+    # streamlit_app/pages/4_About_and_Methodology.py
+    '**Basis note — the Fund\'s two distress commitments are measured on QLICIs, these sub-scores are measured on QEI.** Question 25 of the CY 2026 **Allocation Application** (printed pp. 36-40) sets both, denominated in QLICIs *"in terms of aggregate dollar amounts"* and tested **for each QLICI**.':
+        (),
+
+    # rendered_baseline/markdown.txt
+    '**QEI in Deep Distress Tracts (a share of QEI, not of QLICIs — see the basis note below):** 52.2% **QEI in Severely Distressed Tracts, Deep Distress included (a share of QEI, not of QLICIs — see the basis note below):** 85.3% **— of which severely distressed but not also deep:** 33.1% **QEI in LIC (Standard Eligible) Tracts:** 14.7% **QEI in NMTC Native Areas (CDE-declared, not verified by this tool):** 5.9% **QEI in High Migration Rural (HMR) Tracts:** 12.7% **BASIS NOTE — the CDFI Fund\'s two distress commitments are measured on QLICIs, not on QEI:** Question 25 of the CY 2026 NMTC Allocation Application (printed pp. 36-40) sets both commitments, and both are measured on QLICIs — specifically on QLICIs "in terms of aggregate dollar amounts", tested for each QLICI.':
+        (),
+
+    # streamlit_app/pages/4_About_and_Methodology.py
+    '**Question 25(b)(i) is not a {} bar.** It is a selectable commitment level — **0 / 5 / 10 / 15 / 20**, where selecting 20 opens a field for any figure from 20% to 100% — over **five** area types in CY 2026: Deep Distress, NMTC Native Areas, High Migration Rural Counties, U.S. Island Areas and — new in CY 2026 — Homeownership Cost Burden (four through CY 2024-2025).':
+        (),
+
+    # nmtcapp/sections/section_b_outcomes.py [#]
+    '1.3.0 S1: THE TEXT MOVED OUT OF THIS FILE, and its authority moved from the Review Process to the Allocation Application.':
+        (),
+
+    # nmtcapp/data/benchmark_thresholds.py [#]
+    '225, 92283-92292) The NOAA settles it affirmatively rather than by absence.':
+        (),
+
+    # nmtcapp/renderers/_question_22.py
+    '30, verbatim: "Question 22 will not be evaluated and scored in Phase I of Allocation Application reviews.':
+        (),
+
+    # rendered_baseline/word.txt
+    'BASIS NOTE — the CDFI Fund\'s two distress commitments are measured on QLICIs, not on QEI|Question 25 of the CY 2026 NMTC Allocation Application (printed pp. 36-40) sets both commitments, and both are measured on QLICIs — specifically on QLICIs "in terms of aggregate dollar amounts", tested for each QLICI.':
+        (),
+
+    # rendered_baseline/pdf.txt
+    "But it is a PROXY for the CY 2026 instrument, not that instrument, and that instrument is AVAILABLE NOW: every round-specific figure in this document must be re-verified against the CY 2026 Application Materials, which the CDFI Fund publishes at https://www.cdfifund.gov/pro grams-training/programs/new-markets-tax-credit/apply-step — specifically: the allocation authority and the number of awards available; the CDE certification deadline for eligibility; Question 25's QLICI-denominated commitment levels, its area-type lists and its ladder; Question 22's QLICI-denominated Non-Metropolitan minimum and maximum; Question 15's product-flexibility ladder; the scoring thresholds — as of September 17, 2026 this tool had not found a published CY 2026 Review Process, and the thresholds this document applies are the CY 2024-2025 Review Process's.":
+        (('APPLICATION', True),),
+
+    # rendered_baseline/excel.txt / rendered_baseline/markdown.txt / rendered_baseline/word.txt
+    "But it is a PROXY for the CY 2026 instrument, not that instrument, and that instrument is AVAILABLE NOW: every round-specific figure in this document must be re-verified against the CY 2026 Application Materials, which the CDFI Fund publishes at https://www.cdfifund.gov/programs-training/programs/new-markets-tax-credit/apply-step — specifically: the allocation authority and the number of awards available; the CDE certification deadline for eligibility; Question 25's QLICI-denominated commitment levels, its area-type lists and its ladder; Question 22's QLICI-denominated Non-Metropolitan minimum and maximum; Question 15's product-flexibility ladder; the scoring thresholds — as of September 17, 2026 this tool had not found a published CY 2026 Review Process, and the thresholds this document applies are the CY 2024-2025 Review Process's.":
+        (('APPLICATION', True),),
+
+    # nmtcapp/renderers/_question_25.py [#]
+    'CY 2026 Application, printed p.':
+        (),
+
+    # nmtcapp/renderers/_question_25.py
+    'CY 2026 NMTC Program Allocation Application, re-downloaded, SHA-256-verified against the ``UPCOMING_APPLICATION_*`` pins in ``renderers/_round_provenance`` (137 pages, 1,576,691 bytes) and text-extracted LOCALLY with pypdf on 2026-09-18 — not fetched through a summarising model, which is the provenance failure this whole cycle exists to correct.':
+        (),
+
+    # nmtcapp/renderers/_question_22.py
+    'CY 2026 NMTC Program Allocation Application, re-downloaded, SHA-256-verified against the ``UPCOMING_APPLICATION_*`` pins in ``renderers/_round_provenance`` and text-extracted LOCALLY with pypdf on 2026-09-18 (R1).':
+        (),
+
+    # nmtcapp/renderers/_question_25.py [#]
+    'CY 2026 printed p.':
+        (),
+
+    # nmtcapp/renderers/_question_25.py [#]
+    'CY 2026 printed pp. 37-38 (PDF 64-65).':
+        (),
+
+    # nmtcapp/renderers/_question_25.py [#]
+    'CY 2026 printed pp. 39-40 (PDF 66-67).':
+        (),
+
+    # rendered_baseline/pdf.txt
+    'Distress Level Commitments Item Value QEI in Deep Distress Tracts (a share of QEI, not of QLICIs — see the basis note below) 52.2% QEI in Severely Distressed Tracts, Deep Distress included (a share of QEI, not of QLICIs — see the basis note below) 85.3% — of which severely distressed but not also deep 33.1% QEI in LIC (Standard Eligible) Tracts 14.7% QEI in NMTC Native Areas (CDE-declared, not verified by this tool) 5.9% QEI in High Migration Rural (HMR) Tracts 12.7% BASIS NOTE — the CDFI Fund\'s two distress commitments are measured on QLICIs, not on QEI Question 25 of the CY 2026 NMTC Allocation Application (printed pp. 36-40) sets both commitments, and both are measured on QLICIs — specifically on QLICIs "in terms of aggregate dollar amounts", tested for each QLICI.':
+        (),
+
+    # nmtcapp/renderers/_question_25.py
+    'Four in the CY 2024-2025 Application — Deep Distress, NMTC Native Areas, High Migration Rural Counties and U.S. Island Areas — and FIVE in the CY 2026 Application, which adds Homeownership Cost Burden (R1, 2026-09-18; see ``Q25B_AREA_TYPES``).':
+        (),
+
+    # nmtcapp/renderers/_question_25.py [#]
+    "Four through CY 2024-2025; the fifth is CY 2026's addition.":
+        (),
+
+    # nmtcapp/renderers/_question_22.py
+    "In the CY 2026 Application, Question 22's NOTE block is printed p.":
+        (),
+
+    # nmtcapp/renderers/_question_25.py
+    "In the CY 2026 Application, Question 25 spans printed pp. 36-40 (PDF pages 63-67); Question 25(b)'s five area types are at printed pp. 39-40 (PDF pages 66-67).":
+        (),
+
+    # nmtcapp/data/benchmark_thresholds.py [#]
+    'It cited the CY 2024-2025 Review Process p.5 — "the larger of their \'minimum\' commitment, or 90% of their \'maximum\' commitment" — and the CY 2026 NOAA (91 FR 58526, Federal Register document 2026-18883) states a different rule with no factor and no "larger of": section V.D says the Fund "will consider requiring any or all of the Allocatees to direct up to the \'maximum\' percentage of QLICIs that the Allocatees indicated would be targeted to Non-Metropolitan counties".':
+        (),
+
+    # nmtcapp/data/benchmark_thresholds.py [#]
+    'It covers FIVE area types in CY 2026 (Deep Distress, NMTC Native Areas, High Migration Rural Counties, U.S. Island Areas, and — new in CY 2026, and conditional on the QLICI financing affordable homeownership units in the tract — Homeownership Cost Burden; four through CY 2024-2025), and a QLICI meeting it "will also automatically meet the commitment made in Question 25(a)".':
+        (),
+
+    # nmtcapp/data/benchmark_thresholds.py [#]
+    'NOAA: 50% of direct financing dollars, and 50% committed':
+        (),
+
+    # nmtcapp/data/benchmark_thresholds.py [#]
+    'NOAA: >=20% of QLICIs, aggregate across the Allocatee pool NON_METRO_MAX_COMMITMENT_FACTOR = 0.90 WAS DELETED HERE (R1, 2026-09-18).':
+        (),
+
+    # rendered_baseline/pdf.txt
+    'Provenance: the CY 2026 NOAA is Federal Register document 2026-18883, filed September 14, 2026 and':
+        (),
+
+    # nmtcapp/data/benchmark_thresholds.py [#]
+    "Q25(b)(i)'s TOP RUNG, not a bar: the ladder is 0/5/10/15/20 over _question_25.Q25B_AREA_TYPES (five in CY 2026), and 20 opens a 20-100% field.":
+        (),
+
+    # nmtcapp/renderers/_question_22.py
+    'Question 22 also "will not be evaluated and scored in Phase I of Allocation Application reviews" (printed p.':
+        (),
+
+    # nmtcapp/renderers/_question_22.py
+    'Question 22(c) and 22(d) of the CY 2026 NMTC Allocation Application (printed p.':
+        (),
+
+    # nmtcapp/renderers/_question_25.py / rendered_baseline/excel.txt
+    'Question 25 of the CY 2026 NMTC Allocation Application (printed pp. 36-40) sets both commitments, and both are measured on QLICIs — specifically on QLICIs "in terms of aggregate dollar amounts", tested for each QLICI.':
+        (),
+
+    # nmtcapp/data/benchmark_thresholds.py [#]
+    'Re-ruled here against Question 25, printed pp. 36-40 of the CY 2026 Allocation Application (137 pp., text-extracted locally 2026-09-18; printed pp. 38-41 of the CY 2024-2025 one, whose 85% and ladder are character-identical).':
+        (),
+
+    # nmtcapp/renderers/_question_22.py
+    'Read from the instrument (provenance below), CY 2026 printed p.':
+        (),
+
+    # nmtcapp/renderers/_round_provenance.py [#]
+    "Reading the CY 2026 Application to confirm it exists is what 1.6.5 did; R1 (2026-09-18) read it for Question 25's area-type lists and page citations and Question 22's citations -- see ``renderers/_question_25`` and ``renderers/_question_22`` -- and the items stay on this list because a re-check instruction does not go false when the tool has done its own.":
+        (),
+
+    # nmtcapp/data/benchmark_thresholds.py [#]
+    'Round 2 retrieved the CY 2024-2025 NOAA (Federal Register vol.':
+        (),
+
+    # nmtcapp/data/benchmark_thresholds.py [#]
+    'Round 2 retrieved the other two documents and the answer is now DISPROVED, not merely unlocated: "special targeting" 0 hits / 0 / 0 Application (142pp), Review Process "bonus point" 0 hits / 0 / 0 (7pp), CY 2024-2025 NOAA (10pp, FR vol.':
+        (),
+
+    # nmtcapp/renderers/_question_22.py
+    'THE CY 2026 APPLICATION FIXED THAT SENTENCE: its printed p.':
+        (),
+
+    # nmtcapp/renderers/_question_25.py
+    "THIS MODULE'S LISTS AND PAGE CITATIONS WERE RECONCILED AGAINST THE CY 2026 APPLICATION ON 2026-09-18 (R1): the twelve items of 25(a) and the 85% and 0/5/10/15/20 figures are character-identical to CY 2024-2025's, and 25(b) gained a fifth area type, Homeownership Cost Burden.":
+        (),
+
+    # nmtcapp/sections/section_b_outcomes.py [#]
+    "The 1.2.1 note quoted the Review Process correctly and inherited the summary's two omissions — that the 20% is the top rung of a SELECTABLE LADDER rather than a bar, and that Question 25(b) covers several area types rather than one (four in CY 2024-2025, five in CY 2026 — renderers/_question_25.Q25B_AREA_TYPES is the list; R1).":
+        (),
+
+    # nmtcapp/intelligence/distress_analysis.py [#]
+    'The Application shows 20 is the TOP RUNG of a selectable 0/5/10/15/20 ladder over several area types (four in CY 2024-2025, five in CY 2026 — the list is Q25B_AREA_TYPES; R1) — see renderers/_question_25.':
+        (),
+
+    # nmtcapp/intelligence/distress_analysis.py [#]
+    'The Fund\'s 85% and 20% are shares of QLICIs "in terms of aggregate dollar amounts" (CY 2026 NMTC Allocation Application, Question 25, printed pp. 36-40 — character-identical to the CY 2024-2025 edition\'s printed pp. 38-41; R1); ``qlici_amount`` reaches no percentage in this package.':
+        (),
+
+    # nmtcapp/data/benchmark_thresholds.py [#]
+    'The constant was referenced by exactly one line in the repository — its own definition — so it is deleted rather than re-pointed at a rule the NOAA does not state.':
+        (),
+
+    # nmtcapp/renderers/_question_25.py [#]
+    'The fifth area type of Question 25(b), NEW IN CY 2026 (R1).':
+        (),
+
+    # streamlit_app/pages/4_About_and_Methodology.py
+    'The phrases "Special Targeting" and "bonus points" appear **nowhere** in the CY 2024-2025 Allocation Application (142 pp.), the Review Process (7 pp.), or the NOAA (10 pp.).':
+        (),
+
+    # streamlit_app/pages/4_About_and_Methodology.py
+    "The summary reads as a 20% bar and compresses Question 25(b)'s area types (four in CY 2024-2025, five in CY 2026) into one, which told a CDE to understate its own qualifying share.":
+        (),
+
+    # nmtcapp/renderers/_question_25.py
+    'They are also a summary, and the summary loses two things the **instrument** — the Allocation Application itself, Question 25 at printed pp. 36-40 of the CY 2026 edition (pp. 38-41 of the CY 2024-2025 edition 1.3.0 read) — states plainly:':
+        (),
+
+    # nmtcapp/renderers/_question_22.py
+    'Through 1.6.5 this module read the CY 2024-2025 Application as a proxy; every sentence quoted above was re-read in the CY 2026 document and is character-identical apart from the 22(c)/22(d) correction recorded above.':
+        (),
+
+    # rendered_baseline/pdf.txt
+    'published September 15, 2026; the CY 2026 Application Materials were confirmed published on September 17, 2026.':
+        (('APPLICATION', True),),
+
+    # nmtcapp/renderers/_round_provenance.py [#]
+    'The NMTC Review Process is an AWARD document, published with the award announcement: the one date this package carries itself is ``CITED_ROUND_TIMELINE["awarded"]`` (CY 2024-2025, 23 Dec 2025); the R1 build prompt reports the same same-day pattern for CY 2022 (22 Sep 2023) and CY 2023 (19 Sep 2024) from the CDFI Fund\'s Step 3 | Award Announcement page, and reports the Fund\'s stated CY 2026 award timing as "Summer 2027" -- neither re-verified by this tool, and that phrase is in NEITHER the NOAA\'s Federal Register text NOR news/741 (both searched 2026-09-18).':
+        (),
+
+    # nmtcapp/renderers/_round_provenance.py [#]
+    "What IS verified: the NOAA's Table 1 runs to 14 Jan 2027 and schedules no award announcement, and applications are due 10 Nov 2026.":
+        (),
+
+    # streamlit_app/pages/4_About_and_Methodology.py
+    "It carries nothing for Targeted Populations, nothing for Homeownership Cost Burden (Question 25(b)'s fifth area type, new in CY 2026 and conditional on the QLICI financing affordable homeownership units in the tract), and nothing for any of items 6-12.":
+        (),
+
+    # nmtcapp/renderers/_question_25.py
+    'nmtcapp.renderers._question_25: the set-union of Q25A_ITEMS_1_TO_5, Q25A_ITEMS_6_TO_12 and Q25B_AREA_TYPES has {} distinct area types; the CY 2026 Application has 15 (12 in 25(a) + 5 in 25(b) - 2 shared).':
         (),
 }
 
@@ -1304,6 +1450,21 @@ NON_CLAIM_REASONS = {
     # rendered_baseline/excel.txt / markdown.txt / pdf.txt / word.txt
     'THE CY 2026 DEADLINES STILL AHEAD, COMPUTED FROM TABLE 1 OF THE NOAA AGAINST THE EASTERN DATE THIS DOCUMENT WAS GENERATED, September 17, 2026: 10 of the 10 deadlines in Table 1 are still ahead — Community Development Entity (CDE) Certification Application deadline — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Request to modify CDE certification service area — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Subsidiary CDE Certification Application for meeting Qualified Equity Investment (QEI) issuance thresholds — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS) [prior Allocatees]; CY 2026 Allocation Application Registration — 5:00 p.m. ET on October 6, 2026 (Electronically via AMIS); Amendment request to add Subsidiary CDEs to Allocation Agreements for meeting QEI issuance thresholds — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Amendment request to remove a Controlling Entity from Allocation Agreement(s) — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Last day to contact CDFI Fund staff — 5:00 p.m. ET on November 6, 2026 (Electronically via AMIS); CY 2026 Allocation Application deadline (including required Attachments) — 5:00 p.m. ET on November 10, 2026 (Electronically via AMIS); QEI Issuance and Qualified Low Income Community Investments (QLICIs) requirements deadline — 11:59 p.m. ET on January 7, 2027 (Not Applicable) [prior Allocatees]; Report QEIs and certify QLICIs deadline — 11:59 p.m. ET on January 14, 2027 (Electronically via AMIS) [prior Allocatees].':
         "The rendered Table 1 list. 'Issuance' is the instrument's own row title, 'QEI Issuance and ... requirements deadline'; the sentence states which deadlines are ahead of the generation date and asserts nothing about whether the NOAA or the Application has published.",
+
+    # --- R1 (2026-09-18) ---
+
+    # streamlit_app/pages/4_About_and_Methodology.py
+    '**Question 25(b)(i) is not a {} bar.** It is a selectable commitment level — **0 / 5 / 10 / 15 / 20**, where selecting 20 opens a field for any figure from 20% to 100% — over **five** area types in CY 2026: Deep Distress, NMTC Native Areas, High Migration Rural Counties, U.S. Island Areas and — new in CY 2026 — Homeownership Cost Burden (four through CY 2024-2025).':
+        "The Streamlit About page's ladder sentence (R1: now five area types, the fifth with its 'to the extent that' limb). 'opens' is the Application's 20 rung opening a 20-100% field; no CY 2026 instrument is said to have published or not.",
+
+    # nmtcapp/data/benchmark_thresholds.py [#]
+    "Q25(b)(i)'s TOP RUNG, not a bar: the ladder is 0/5/10/15/20 over _question_25.Q25B_AREA_TYPES (five in CY 2026), and 20 opens a 20-100% field.":
+        "The trailing comment on DEEP_DISTRESS_MIN_PCT (R1: the count now points at _question_25.Q25B_AREA_TYPES). 'opens' is the 20 rung opening a 20-100% field; it asserts nothing about whether a CY 2026 instrument has published.",
+
+
+    # nmtcapp/renderers/_round_provenance.py [#]
+    'The NMTC Review Process is an AWARD document, published with the award announcement: the one date this package carries itself is ``CITED_ROUND_TIMELINE["awarded"]`` (CY 2024-2025, 23 Dec 2025); the R1 build prompt reports the same same-day pattern for CY 2022 (22 Sep 2023) and CY 2023 (19 Sep 2024) from the CDFI Fund\'s Step 3 | Award Announcement page, and reports the Fund\'s stated CY 2026 award timing as "Summer 2027" -- neither re-verified by this tool, and that phrase is in NEITHER the NOAA\'s Federal Register text NOR news/741 (both searched 2026-09-18).':
+        "The comment above RECHECK_ITEMS explaining item 6's R1 rewrite. 'published' is the historical fact that a round's Review Process appears with its award announcement (CY 2024-2025's on 23 Dec 2025, the package's own CITED_ROUND_TIMELINE date; the earlier rounds and the 'Summer 2027' timing are reported from the R1 build prompt and flagged as not re-verified). The comment asserts nothing about a CY 2026 NOAA or Application having published or not -- those are paragraph 0's claims, registered above.",
 }
 
 #: See ``_MAX_QUOTED_HISTORY`` below. Segments that match the hard
@@ -1319,12 +1480,15 @@ QUOTED_HISTORY = (
 # ---------------------------------------------------------------------------
 # THE FLOORS, MEASURED -- NOT GUESSED
 #
-# Measured on 2026-09-17 against this tree (1.6.5), by running ``selected()``:
+# Measured on 2026-09-18 against this tree (R1 fix round; at 7f2b43b, the
+# R1 tree before it, 239 / 166 / 79 / 13,443 -- the two ImportError messages
+# in renderers/_question_25 added the difference; the 1.6.5 measurement of
+# 2026-09-17 was 202 / 130 / 79 / 13,367), by running ``selected()``:
 #
-#     202 selected occurrences
-#     130 distinct segments
+#     240 selected occurrences
+#     167 distinct segments
 #     79 modules scanned (nmtcapp + streamlit_app, nothing excluded)
-#     13,367 segments in the corpus in total
+#     13,454 segments in the corpus in total
 #
 # Each floor sits BELOW its measurement so that deleting a sentence or two is
 # not automatically red, and FAR above zero so that an empty corpus, a broken
@@ -1333,10 +1497,10 @@ QUOTED_HISTORY = (
 # looked at" are the same green.
 # ---------------------------------------------------------------------------
 
-_MIN_SELECTED_OCCURRENCES = 130        # measured 202
-_MIN_SELECTED_SEGMENTS = 75     # measured 130
+_MIN_SELECTED_OCCURRENCES = 130        # measured 240 (R1 fix round; 239 at 7f2b43b); 202 at 1.6.5
+_MIN_SELECTED_SEGMENTS = 75     # measured 167 (R1 fix round; 166 at 7f2b43b); 130 at 1.6.5
 _MIN_SOURCE_FILES = 55             # measured 79
-_MIN_CORPUS_SEGMENTS = 9500           # measured 13,367
+_MIN_CORPUS_SEGMENTS = 9500           # measured 13,454 (R1 fix round; 13,443 at 7f2b43b); 13,367 at 1.6.5
 
 #: THE HARD BACKSTOP ON THE ``()`` CLASSIFICATION. ``()`` means "this segment
 #: asserts nothing about either constant", and it is the one way a human could
@@ -1857,7 +2021,7 @@ def test_the_scan_reads_a_real_corpus():
     total = sum(len(segments(text)) for _label, text in corpus())
     assert total >= _MIN_CORPUS_SEGMENTS, (
         f"the corpus segmented into {total} sentences, below the "
-        f"{_MIN_CORPUS_SEGMENTS} floor (13,177 measured). The segmenter is "
+        f"{_MIN_CORPUS_SEGMENTS} floor (13,454 measured). The segmenter is "
         "broken, and a broken segmenter selects nothing and passes stage 1."
     )
 
