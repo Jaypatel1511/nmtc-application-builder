@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.7.0] — 2026-09-18
+## [1.7.0] — 2026-09-19
 
 **MINOR. R1: QUESTION 25(b) OF THE CY 2026 APPLICATION LISTS FIVE AREA
 TYPES, AND THE PACKAGE SAID FOUR — AND ONE SUB-SCORE COULD NOT REACH THE
