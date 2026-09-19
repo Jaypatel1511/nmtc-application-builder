@@ -107,7 +107,7 @@ FORMAT | document header/footer/table scaffolding; no propositional content | <C
 LABEL | 1.5.5 T1: field label plus its unsupplied-value disclosure; names no round | Application Round: not specified — CDE to state
 PLACEHO | 1.5.5 T1: the unsupplied-round disclosure standing alone in a table cell; the absence of a claim, not a claim | not specified — CDE to state
 FORMAT | document header/footer/table scaffolding; no propositional content | <CDE> — NMTC | CONFIDENTIAL
-FORMAT | document header/footer/table scaffolding; no propositional content | CONFIDENTIAL — <CDE> — NMTC — Generated N-N-N
+TOOL | workbook footer: scaffolding plus the provenance stamp the other three formats already carry (1.7.1 R6); version and build date are facts about the tool | CONFIDENTIAL — <CDE> — NMTC — Generated N-N-N by nmtc-application-builder vN.N
 FORMAT | document header/footer handling marking, not content | CONFIDENTIAL — Prepared for CDFI Fund Review Only | Do Not Distribute Without CDE Authorization
 FORMAT | wrapped continuation of a cross-reference to the Excel attachment | Excel workbook, Pipeline Detail tab.
 FORMAT | wrapped cross-reference to the Excel attachment | Full N-column pipeline detail (deal economics, QLICI structure, timeline) is provided in the accompanying

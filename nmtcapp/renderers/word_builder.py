@@ -34,6 +34,7 @@ from nmtcapp.tables.impact_table import build_impact_table, build_impact_summary
 from nmtcapp.tables.investor_table import (
     build_investor_identification_table, build_investor_commitment_table,
 )
+from nmtcapp.renderers._document_properties import stamp_docx
 from nmtcapp.tables.pipeline_table import (
     PIPELINE_COLUMN_COUNT, build_pipeline_table, build_pipeline_summary_table,
 )
@@ -101,6 +102,9 @@ class WordApplicationBuilder:
         self._build_methodology(doc)
 
         self._add_page_numbers(doc)
+        # The file's own metadata, from the CDE and the package (1.7.1 R7) —
+        # python-docx's template says author "python-docx", created 2013.
+        stamp_docx(doc, self.application)
         return doc
 
     def save(self, path: str) -> None:
