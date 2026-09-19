@@ -823,7 +823,10 @@ class PDFApplicationBuilder:
             ["Total Pipeline QEI", f"${pr.total_qei_request:,.0f}"],
             ["Total Project Cost", f"${pr.total_project_cost:,.0f}"],
             ["States Represented", str(pr.geographic_diversity.get("states_count", 0))],
-            ["Deep/Severe Distress Concentration",
+            # THE DENOMINATOR TRAVELS WITH THE ROW (1.7.1 R9); see
+            # word_builder for why the bare clause and not either pointer
+            # suffix. Read from _question_25.
+            [f"Deep/Severe Distress Concentration ({Q25_QEI_BASIS_CLAUSE})",
              _elig_metric(d.get("pct_deep_or_severe", 0))],
             ["NMTC Eligibility Rate", _elig_metric(pr.eligibility_pct)],
             ["Jobs to Be Created", f"{impact.get('total_jobs_created', 0):,}"],
@@ -833,6 +836,26 @@ class PDFApplicationBuilder:
             ["Jobs per $1MM QEI", f"{impact.get('jobs_per_million_qei', 0):.1f}"],
         ]
         usable_w = usable_width()
+        # THE LABEL COLUMN HAS TO WRAP (1.7.1 R9). A bare ``str`` in a
+        # ReportLab table cell is drawn on ONE line and simply overruns its
+        # column — there is no wrapping to fall back on. Measured at the
+        # moment the denominator landed on the Deep/Severe label: 300.7 pt of
+        # Helvetica 10 against 270.8 pt of cell width (0.65 of a 432 pt frame,
+        # less two 5 pt paddings). Every label becomes a Paragraph in the
+        # table-body style so the cell wraps instead, and ``splitLongWords=0``
+        # carries R3's rule onto this table too — no token, and so no figure,
+        # GEOID or URL, is ever cut mid-word.
+        label_style = ParagraphStyle(
+            "key_metric_label", parent=styles["body"],
+            fontSize=TYPOGRAPHY["size_table_body"],
+            leading=TYPOGRAPHY["size_table_body"] + 2,
+            spaceAfter=0, spaceBefore=0,
+            textColor=rl_hex("text_body"),
+            splitLongWords=0,
+        )
+        metrics = [metrics[0]] + [
+            [Paragraph(label, label_style), value] for label, value in metrics[1:]
+        ]
         tbl = Table(metrics, colWidths=[usable_w * 0.65, usable_w * 0.35])
         tbl.setStyle(_rl_table_style(len(metrics) - 1))
         flowables += [tbl, Spacer(1, 12)]

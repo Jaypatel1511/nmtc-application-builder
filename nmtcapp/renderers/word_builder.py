@@ -306,7 +306,31 @@ class WordApplicationBuilder:
             ["Total Pipeline QEI", f"${pr.total_qei_request:,.0f}"],
             ["Total Project Cost", f"${pr.total_project_cost:,.0f}"],
             ["States Represented", str(pr.geographic_diversity.get("states_count", 0))],
-            ["Deep/Severe Distress Concentration",
+            # THE DENOMINATOR TRAVELS WITH THE ROW, NOT ONLY WITH THE
+            # HEADLINE (1.7.1 R9). The Excel twin has carried it since
+            # 1.3.0 S4 — excel_builder renders
+            # `"Deep/Severe Distress Concentration " + Q25_QEI_BASIS_SUFFIX_SHEET`
+            # — while Word and PDF printed the label with no denominator on
+            # it at all, not even the word QEI. That is the surface-drift
+            # shape this package has shipped a blocking defect from twice
+            # (1.6.2's Q25 note, 1.7.0's docs sample): the remedy lands on
+            # one artifact and the others keep the old text. Question 25's
+            # two commitments are measured on QLICIs; this figure is
+            # denominated in QEI; a CDE copying this cell into Question 25
+            # files a QEI figure against a QLICI commitment.
+            #
+            # THE BARE CLAUSE, NOT EITHER POINTER SUFFIX. The workbook's
+            # Q25_QEI_BASIS_SUFFIX_SHEET names a sheet no flowing document
+            # has. Q25_QEI_BASIS_SUFFIX says "see the basis note below",
+            # and its own note in _question_25 says that pointer is true
+            # because the note sits "a few lines under the figure" in the
+            # same Section B table — here the note is twenty pages away,
+            # so that justification does not hold. The bare clause is what
+            # R8 already put in the Executive Summary sentence three lines
+            # above this table, so the row and the sentence state the
+            # denominator the same way on the same page. Read from
+            # _question_25, never retyped.
+            [f"Deep/Severe Distress Concentration ({Q25_QEI_BASIS_CLAUSE})",
              _elig_metric(distress.get("pct_deep_or_severe", 0))],
             ["NMTC Eligibility Rate", _elig_metric(pr.eligibility_pct)],
             ["Jobs to Be Created", f"{impact.get('total_jobs_created', 0):,}"],

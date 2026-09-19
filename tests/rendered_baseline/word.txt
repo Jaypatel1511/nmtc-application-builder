@@ -123,7 +123,7 @@ T3|R0|Metric|Value
 T3|R1|Total Pipeline QEI|$88,500,000
 T3|R2|Total Project Cost|$125,450,000
 T3|R3|States Represented|4
-T3|R4|Deep/Severe Distress Concentration|85%
+T3|R4|Deep/Severe Distress Concentration (a share of QEI, not of QLICIs)|85%
 T3|R5|NMTC Eligibility Rate|100%
 T3|R6|Jobs to Be Created|532
 T3|R7|Affordable Units to Be Built|142

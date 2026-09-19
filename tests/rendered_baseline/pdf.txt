@@ -30,7 +30,8 @@ Total Project Cost
 $125,450,000
 States Represented
 4
-Deep/Severe Distress Concentration
+Deep/Severe Distress Concentration (a share of QEI, not of
+QLICIs)
 85%
 NMTC Eligibility Rate
 100%
@@ -56,11 +57,11 @@ does not predict an award outcome.
 READINESS NARRATIVE WITHDRAWN. This tool emits no strengths, weaknesses or recommendations from the
 readiness composite, and none appear in this document. It nevertheless deducted points from the grade above, and it
 does not deduct silently: the full component-by-component deduction table, with the reason each row is or is not a
-quantity the CDFI Fund also scores, is printed by the Pipeline Analyzer page of the app and by `nmtcapp analyze`. It is
 
 @@PAGE 3
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
 Page 3
+quantity the CDFI Fund also scores, is printed by the Pipeline Analyzer page of the app and by `nmtcapp analyze`. It is
 not repeated here, because it is an account of what this tool did to its own number rather than a finding about this
 application.
 
