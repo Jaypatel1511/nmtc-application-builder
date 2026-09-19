@@ -17,12 +17,12 @@ authors:
 repository-code: "https://github.com/Jaypatel1511/nmtc-application-builder"
 url: "https://jaypatel1511.github.io/nmtc-application-builder/"
 license: MIT
-version: "1.6.5"
+version: "1.6.6"
 # WAS "2026-08-26" -- 1.6.1's date, carried forward by the version bump, so a
 # 1.6.2 whose metadata claimed release three weeks BEFORE the NOAA it
 # describes. Corrected in the 1.6.2 fix round. This field is only right at the
 # moment of the tag: if the tag slips past this date, bump it with the tag.
-date-released: "2026-09-17"
+date-released: "2026-09-18"
 keywords:
   - NMTC
   - CDFI

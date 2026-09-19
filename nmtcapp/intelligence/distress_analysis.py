@@ -62,15 +62,17 @@ DEEP_IS_SUBSET_OF_SEVERE = True
 #:
 #: EVERY ONE OF THESE IS A SHARE OF QEI, and none of them answers a CDFI Fund
 #: commitment. The Fund's 85% and 20% are shares of QLICIs "in terms of
-#: aggregate dollar amounts" (CY 2024-2025 NMTC Allocation Application,
-#: Question 25, printed pp. 38-41); ``qlici_amount`` reaches no percentage in
+#: aggregate dollar amounts" (CY 2026 NMTC Allocation Application, Question
+#: 25, printed pp. 36-40 — character-identical to the CY 2024-2025 edition's
+#: printed pp. 38-41; R1); ``qlici_amount`` reaches no percentage in
 #: this package. These strings said "the basis of the Fund's 20% bar" until
 #: FIX-3, which is the sentence Section B's labels were written from.
 #:
 #: 1.3.0 S1: THE WORD "BAR" IS GONE FROM THE 20%. It was cited to the Review
 #: Process, which summarises Question 25(b) as "at least 20% of its QLICIs to
 #: 'Deep Distress' areas". The Application shows 20 is the TOP RUNG of a
-#: selectable 0/5/10/15/20 ladder over four area types — see
+#: selectable 0/5/10/15/20 ladder over several area types (four in CY
+#: 2024-2025, five in CY 2026 — the list is Q25B_AREA_TYPES; R1) — see
 #: renderers/_question_25.
 DISTRESS_SHARE_SEMANTICS = {
     "pct_deep": (

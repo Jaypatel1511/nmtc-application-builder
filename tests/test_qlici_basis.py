@@ -105,7 +105,8 @@ REQUIRED_LABEL_TEXT = (
 #: DOCUMENT. That is a wording change. The five additions are the substantive
 #: half of this round: the note used to describe the Fund's Question 25 from a
 #: seven-page summary of it, and the summary omitted that the 20% is a rung on
-#: a ladder and that Question 25(b) has four area types — omissions which
+#: a ladder and that Question 25(b) has several area types (four in CY
+#: 2024-2025, five in CY 2026 — R1) — omissions which
 #: instructed a CDE to understate its own qualifying share.
 REQUIRED_NOTE_CLAUSES = (
     "both are measured on QLICIs",
@@ -118,7 +119,11 @@ REQUIRED_NOTE_CLAUSES = (
     "in terms of aggregate dollar amounts",
     "at least TWO of items 6-12",
     "selectable commitment level",
-    "FOUR qualifying area types",
+    "FIVE qualifying area types",
+    # R1: the fifth type is conditional, and the note may not name it without
+    # the limb — that would replace an understatement with an overstatement.
+    "The last of these is CONDITIONAL",
+    "affordable homeownership units in those tracts",
     "automatically meet the commitment made in Question 25(a)",
     # And the honest half of "say what the tool can see": the list of visible
     # fields may never stand without the sentence that denies it is an answer.

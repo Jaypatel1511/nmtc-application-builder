@@ -195,7 +195,9 @@ class SectionBCommunityOutcomes(SectionGenerator):
             # 1.2.1 note quoted the Review Process correctly and inherited the
             # summary's two omissions — that the 20% is the top rung of a
             # SELECTABLE LADDER rather than a bar, and that Question 25(b)
-            # covers FOUR area types rather than one. Both omissions instructed
+            # covers several area types rather than one (four in CY 2024-2025,
+            # five in CY 2026 — renderers/_question_25.Q25B_AREA_TYPES is the
+            # list; R1). Both omissions instructed
             # a CDE to understate its own qualifying share. See the header of
             # renderers/_question_25.py; the workbook now renders the same
             # string from the same function, which it did not before.

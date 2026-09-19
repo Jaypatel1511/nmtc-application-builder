@@ -161,9 +161,11 @@ st.markdown(
 | **Community Accountability** | 10 | LIC board representation + community engagement track record |
 
 **Basis note — the Fund's two distress commitments are measured on QLICIs, these
-sub-scores are measured on QEI.** Question 25 of the CY 2024-2025 **Allocation
-Application** (printed pp. 38-41) sets both, denominated in QLICIs *"in terms of
-aggregate dollar amounts"* and tested **for each QLICI**.
+sub-scores are measured on QEI.** Question 25 of the CY 2026 **Allocation
+Application** (printed pp. 36-40) sets both, denominated in QLICIs *"in terms of
+aggregate dollar amounts"* and tested **for each QLICI**. (Re-read against the
+CY 2026 Application on 2026-09-18; the 85%, the ladder and the twelve items of
+25(a) are character-identical to the CY 2024-2025 Application's.)
 
 **Question 25(a)** asks for at least {SEVERE_DISTRESS_MIN_PCT:.0%} of QLICIs in
 areas characterized by at least **one** of items 1-5 (Severe Distress; NMTC
@@ -176,29 +178,38 @@ that **two-of-seven** test, per QLICI.
 
 **Question 25(b)(i) is not a {DEEP_DISTRESS_MIN_PCT:.0%} bar.** It is a
 selectable commitment level — **0 / 5 / 10 / 15 / 20**, where selecting 20 opens
-a field for any figure from 20% to 100% — over **four** area types: Deep
-Distress, NMTC Native Areas, High Migration Rural Counties, U.S. Island Areas. A
-CDE that can honestly commit 10% selects 10 and has failed nothing, and *"A
-QLICI that meets this commitment will also automatically meet the commitment
-made in Question 25(a)."*
+a field for any figure from 20% to 100% — over **five** area types in CY 2026:
+Deep Distress, NMTC Native Areas, High Migration Rural Counties, U.S. Island
+Areas and — new in CY 2026 — Homeownership Cost Burden (four through CY
+2024-2025). The fifth is **conditional**: a CHAS-designated Homeownership Cost
+Burden tract qualifies only *"to the extent that Applicant's projected QLICI
+activities will finance the development or rehabilitation of affordable
+homeownership units in those tracts"* (printed p. 40), and this tool determines
+neither the CHAS designation nor whether a project's activity meets that
+condition. A CDE that can honestly commit 10% selects 10 and has failed
+nothing, and *"A QLICI that meets this commitment will also automatically meet
+the commitment made in Question 25(a)."*
 
 Every distress share this tool computes is a share of **QEI**; `qlici_amount` is
 read only to print it in Appendix A and to check it does not exceed its
 project's QEI, and feeds no percentage, no score and no bar. The two sub-scores
 above are QEI-based *proxies*, and no figure this tool renders answers either
-commitment. This package carries a per-project field for **five of the fourteen**
+commitment. This package carries a per-project field for **five of the fifteen**
 distinct area types Question 25 lists — a tool-verified distress level covering
 Severe and Deep Distress, plus CDE-declared and unverified flags for NMTC Native
 Areas, High Migration Rural Counties and U.S. territory — and nothing for
-Non-Metropolitan Counties, nothing for Targeted Populations, and nothing for any
-of items 6-12. **Holding those fields is not a partial answer to Question 25**:
+Non-Metropolitan Counties, nothing for Targeted Populations, nothing for
+Homeownership Cost Burden (Question 25(b)'s fifth area type, new in CY 2026 and
+conditional on the QLICI financing affordable homeownership units in the
+tract), and nothing for any of items 6-12. **Holding those fields is not a
+partial answer to Question 25**:
 the commitment is a share of QLICI *dollars* and this tool weights nothing by
 QLICI dollars.
 
 *Corrected in 1.3.0.* Through 1.2.2 this note quoted the seven-page **Review
 Process** — accurately, and it is a summary. The summary reads as a 20% bar and
-compresses Question 25(b)'s four area types into one, which told a CDE to
-understate its own qualifying share.
+compresses Question 25(b)'s area types (four in CY 2024-2025, five in CY 2026)
+into one, which told a CDE to understate its own qualifying share.
 
 **Special Targeting is this tool's own criterion. The CDFI Fund publishes no such
 criterion and no bonus points for it.** The CY 2024-2025 NOAA (89 FR 92283, 21 Nov 2024),

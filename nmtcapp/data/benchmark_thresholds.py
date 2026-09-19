@@ -82,8 +82,10 @@ from __future__ import annotations
 # against the Review Process. The Review Process is a SUMMARY of how the Fund
 # scores; the Allocation Application is the INSTRUMENT the Applicant fills in,
 # and the sweep never opened it for this question. Re-ruled here against
-# Question 25, printed pp. 38-41 of the CY 2024-2025 Allocation Application
-# (142 pp., text-extracted locally 2026-08-17). What the summary drops:
+# Question 25, printed pp. 36-40 of the CY 2026 Allocation Application
+# (137 pp., text-extracted locally 2026-09-18; printed pp. 38-41 of the
+# CY 2024-2025 one, whose 85% and ladder are character-identical). What the
+# summary drops:
 #
 #   85%  is denominated in QLICIs "IN TERMS OF AGGREGATE DOLLAR AMOUNTS", and
 #        "multiple indicia of distress" is a specific two-of-seven test over
@@ -93,10 +95,13 @@ from __future__ import annotations
 #        access...).
 #   20%  IS NOT A BAR. Question 25(b)(i) is a selectable ladder — 0 / 5 / 10 /
 #        15 / 20 — and selecting 20 opens a field for any figure from 20% to
-#        100%. It covers FOUR area types (Deep Distress, NMTC Native Areas,
-#        High Migration Rural Counties, U.S. Island Areas), and a QLICI meeting
-#        it "will also automatically meet the commitment made in Question
-#        25(a)".
+#        100%. It covers FIVE area types in CY 2026 (Deep Distress, NMTC
+#        Native Areas, High Migration Rural Counties, U.S. Island Areas, and
+#        — new in CY 2026, and conditional on the QLICI financing affordable
+#        homeownership units in the tract — Homeownership Cost Burden; four
+#        through CY 2024-2025), and a QLICI meeting it "will also
+#        automatically meet the commitment made in Question 25(a)". The list
+#        itself is renderers/_question_25.Q25B_AREA_TYPES; do not retype it.
 #
 # So neither constant is a threshold a CDE either clears or misses. Each is the
 # figure this package scores its own QEI-denominated proxy against, and the
@@ -110,7 +115,7 @@ SEVERE_DISTRESS_MIN_PCT = 0.85       # Q25(a)'s commitment level: >=85% of aggre
 # over what looked like a mutated threshold. A duplicate assignment is a live
 # hazard even when the two values agree today — the next editor changes one of
 # them and the other silently wins.
-DEEP_DISTRESS_MIN_PCT = 0.20         # Q25(b)(i)'s TOP RUNG, not a bar: the ladder is 0/5/10/15/20 over four area types, and 20 opens a 20-100% field. Scored here against a QEI proxy.
+DEEP_DISTRESS_MIN_PCT = 0.20         # Q25(b)(i)'s TOP RUNG, not a bar: the ladder is 0/5/10/15/20 over _question_25.Q25B_AREA_TYPES (five in CY 2026), and 20 opens a 20-100% field. Scored here against a QEI proxy.
 # D5 — THE CRITERION DOES NOT EXIST. Round 1 filed this COULD-NOT-ESTABLISH
 # because it had retrieved only the Review Process. Round 2 retrieved the other
 # two documents and the answer is now DISPROVED, not merely unlocated:
@@ -285,10 +290,17 @@ HOUSE_UNRELATED_ENTITIES_MIN_PCT = 0.90    # HOUSE: Fund's Q23 is Yes/No, not a 
 # NOTE THE DENOMINATOR IS QLICIs, as with Question 25. This package computes
 # QEI shares only, so the same proxy caveat applies here as everywhere else.
 NON_METRO_MIN_COMMITMENT_PCT = 0.20        # NOAA: >=20% of QLICIs, aggregate across the Allocatee pool
-# Review Process p.5: "the CDFI Fund will require Allocatees to invest the
-# larger of their 'minimum' commitment, or 90% of their 'maximum' commitment,
-# into Non-Metropolitan Counties."
-NON_METRO_MAX_COMMITMENT_FACTOR = 0.90     # Review Process p.5: larger of min, or 90% of max
+# NON_METRO_MAX_COMMITMENT_FACTOR = 0.90 WAS DELETED HERE (R1, 2026-09-18). It
+# cited the CY 2024-2025 Review Process p.5 — "the larger of their 'minimum'
+# commitment, or 90% of their 'maximum' commitment" — and the CY 2026 NOAA
+# (91 FR 58526, Federal Register document 2026-18883) states a different rule
+# with no factor and no "larger of": section V.D says the Fund "will consider
+# requiring any or all of the Allocatees to direct up to the 'maximum'
+# percentage of QLICIs that the Allocatees indicated would be targeted to
+# Non-Metropolitan counties". Direct string search of the Federal Register
+# text: "90 percent" not found, "larger of" not found. The constant was
+# referenced by exactly one line in the repository — its own definition — so
+# it is deleted rather than re-pointed at a rule the NOAA does not state.
 RURAL_CDE_NON_METRO_THRESHOLD = 0.50       # NOAA: 50% of direct financing dollars, and 50% committed
 
 # --- Highly Qualified gating thresholds ---

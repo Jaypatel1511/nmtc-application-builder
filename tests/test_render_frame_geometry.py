@@ -668,8 +668,16 @@ def test_the_checker_catches_a_rendered_table_built_without_colwidths(rendered_p
     measures the file, which is the whole of what this gate claims to do.
 
     The coordinate is the evidence: ReportLab centres the over-wide table, so
-    the row labels land at x = -8,293 pt on a 612 pt page. That number is the
-    one this module's header records from the shipped 1.3.0 artifact.
+    the row labels land thousands of points LEFT of the page — x = -8,293 pt
+    on a 612 pt page in the shipped 1.3.0 artifact, which this module's
+    header records. THE MAGNITUDE IS A FUNCTION OF THE NOTE'S LENGTH, not of
+    the defect: the widest cell is the Q25 basis note rendered unwrapped, so
+    every sentence added to that note moves the figure (R1, 2026-09-18: the
+    CY 2026 fifth area type and its conditional limb took it to x = -10,437).
+    Through 1.6.5 this asserted the literal ``"x=-8"``, which pinned the
+    note's 1.3.0 length under the name of a geometry proof. What the proof
+    claims is that the row labels render OFF THE LEFT EDGE by more than a
+    page width, so that is what it asserts.
     """
     from reportlab.platypus import Table
 
@@ -685,10 +693,13 @@ def test_the_checker_catches_a_rendered_table_built_without_colwidths(rendered_p
         "Section B content, drawn onto an actual page. It cannot see the "
         "defect it exists for."
     )
-    assert any("x=-8" in f for f in findings), (
-        "the defect rendered, but not off the left edge — the reproduction "
-        "has drifted from the shipped 1.3.0 artifact and the proof no longer "
-        f"proves what it says:\n" + "\n".join(findings[:3])
+    import re as _re
+    left_edges = [float(m.group(1)) for f in findings
+                  for m in [_re.search(r"from x=(-?\d+(?:\.\d+)?)", f)] if m]
+    assert left_edges and min(left_edges) < -612, (
+        "the defect rendered, but not off the left edge by more than a page "
+        "width — the reproduction has drifted from the shipped 1.3.0 artifact "
+        f"and the proof no longer proves what it says:\n" + "\n".join(findings[:3])
     )
 
 

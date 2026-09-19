@@ -13,7 +13,7 @@ THE DENOMINATOR IS NOT SWAPPED, AND THAT IS A FINDING RATHER THAN A DEFERRAL.
 Question 22(c)/(d) asks for a percentage of **QLICIs**, so the obvious repair
 is to change the basis. It is the wrong repair, because Question 22 does not
 ask for a measurement at all. Read from the instrument (provenance below),
-printed p. 32 / PDF page 59:
+CY 2026 printed p. 31 / PDF page 58:
 
     (c) What is the minimum percentage of QLICIs that the Applicant is
         willing to commit to deploy in Non-Metropolitan Counties?
@@ -44,13 +44,13 @@ pipeline included in Table A5." That is a narrative and a transaction list, not
 a percentage — which is exactly what ``metro_status_qei`` carries alongside the
 share, and why the counts are returned with the dollars.
 
-AND QUESTION 22 IS NOT SCORED IN PHASE I. Printed p. 31, verbatim: "Question 22
+AND QUESTION 22 IS NOT SCORED IN PHASE I. Printed p. 30, verbatim: "Question 22
 will not be evaluated and scored in Phase I of Allocation Application reviews.
 Therefore, this question is not used to determine whether an Applicant scored
 highly enough to receive consideration for an NMTC Allocation."
 
 THE 20% IS A FUND GOAL AND A COMMITMENT THRESHOLD, NEVER A PIPELINE BAR. Also
-printed p. 31: "the CDFI Fund has established the goal that: (i) 20% of all
+printed p. 30: "the CDFI Fund has established the goal that: (i) 20% of all
 QLICIs made by Allocatees under this Round are invested in Non-Metropolitan
 Counties", and the formula reduction falls on "all Allocatees in the pool that
 have not committed to investing a minimum of 20% of their QLICIs in
@@ -60,26 +60,38 @@ individual Applicant must clear. This is why 1.4.0 R4 deletes
 ``non_metro_meets_minimum``.
 
 AN INCONSISTENCY IN THE INSTRUMENT ITSELF, recorded so a later reader does not
-"correct" this module toward it. The printed p. 31 NOTE says the Fund may
+"correct" this module toward it. The CY 2024-2025 NOTE said the Fund may
 require deployment "at or above the minimum indicated in Question 22(b), but
-not more than the maximum percentage indicated in Question 22(c)". In the
-question table on printed p. 32, 22(b) is a **count of years** (0-6) and the
-minimum/maximum percentages are 22(c) and 22(d). The table is the field list an
-Applicant fills in and governs; the NOTE is off by one letter against it. The
-NOTE's own Rural CDE sentence — "commits to a figure of 50% or greater in
-response to Question 22(c)" — agrees with the table, not with itself.
+not more than the maximum percentage indicated in Question 22(c)", where the
+question table has 22(b) as a **count of years** (0-6) and the minimum/maximum
+percentages as 22(c) and 22(d). THE CY 2026 APPLICATION FIXED THAT SENTENCE:
+its printed p. 30 NOTE now reads "at or above the minimum indicated in
+Question 22(c), but not more than the maximum percentage indicated in
+Question 22(d)" — correct against the table. A DIFFERENT SENTENCE ON THE SAME
+PAGE IS STILL OFF BY ONE: "An Applicant may receive a larger NMTC Allocation
+than would otherwise be the case, regardless of designation as a Rural CDE, if
+it: (i) makes a minimum commitment of 20% or greater in response to Question
+22(b)". Question 22(b) is "Provide the number of years (ranging from 0-6)…";
+the intended reference is 22(c), the minimum percentage of QLICIs. The table on printed
+p. 31 is the field list an Applicant fills in and governs; the NOTE's own Rural
+CDE sentence — "commits to a figure of 50% or greater in response to Question
+22(c)" — agrees with the table, not with the larger-allocation sentence.
 
-PROVENANCE. CY 2024-2025 NMTC Program Allocation Application, re-downloaded,
-re-hashed and text-extracted LOCALLY with pypdf. The page count, byte count,
-URL and SHA-256 are stated ONCE, in ``renderers/_round_provenance``. Until
-1.5.0 they were typed here AND in ``renderers/_question_25`` — two hand-copied
-64-character hashes, which is provenance that nobody can proofread; the two
-happened to agree, exactly as ``Q25_QEI_BASIS_CLAUSE``'s three copies did. One
-constant now, read by both. CY 2024-2025 is a CLOSED round being used as a
-proxy for the CY 2026 Allocation Application, which published on 17 Sep 2026
-and has not been reconciled against this module; see ``_round_provenance``.
-Question 22's NOTE block is printed p. 31 (PDF page 58); the question table is
-printed p. 32 (PDF page 59).
+PROVENANCE. CY 2026 NMTC Program Allocation Application, re-downloaded,
+SHA-256-verified against the ``UPCOMING_APPLICATION_*`` pins in
+``renderers/_round_provenance`` and text-extracted LOCALLY with pypdf on
+2026-09-18 (R1). The page count, byte count, URL and SHA-256 are stated ONCE,
+in ``renderers/_round_provenance``. Until 1.5.0 they were typed here AND in
+``renderers/_question_25`` — two hand-copied 64-character hashes, which is
+provenance that nobody can proofread; the two happened to agree, exactly as
+``Q25_QEI_BASIS_CLAUSE``'s three copies did. One constant now, read by both.
+Through 1.6.5 this module read the CY 2024-2025 Application as a proxy; every
+sentence quoted above was re-read in the CY 2026 document and is
+character-identical apart from the 22(c)/22(d) correction recorded above. The
+Review Process thresholds elsewhere in the package are still CY 2024-2025's;
+see ``_round_provenance``. In the CY 2026 Application, Question 22's NOTE block
+is printed p. 30 (PDF page 57); the question table is printed p. 31 (PDF page
+58), continuing to printed p. 32 (PDF page 59), where 22(f) sits.
 """
 from __future__ import annotations
 
@@ -172,14 +184,14 @@ def _q22_basis_note_text() -> str:
         #
         # What Question 22 asks for, and why this is not it.
         "IT IS NOT AN ANSWER TO QUESTION 22. Question 22(c) and 22(d) of the "
-        "CY 2024-2025 NMTC Allocation Application (printed p. 32) ask what "
+        "CY 2026 NMTC Allocation Application (printed p. 31) ask what "
         "\"minimum percentage of QLICIs the Applicant is willing to commit to "
         "deploy in Non-Metropolitan Counties\" and what maximum — a forward "
         "commitment the Applicant enters as a percentage, which \"shall "
         "become a condition of its Allocation Agreement with the CDFI Fund\", "
         "not a measurement of the pipeline the Applicant holds today. "
         "Question 22 also \"will not be evaluated and scored in Phase I of "
-        "Allocation Application reviews\" (printed p. 31). "
+        "Allocation Application reviews\" (printed p. 30). "
         #
         # What it IS good for — the Application's own instruction.
         "WHAT IT IS FOR. Question 22(f) asks the Applicant to \"indicate the "

@@ -5,6 +5,269 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.6.6] — 2026-09-18
+
+**PATCH. R1: QUESTION 25(b) OF THE CY 2026 APPLICATION LISTS FIVE AREA
+TYPES, AND THE PACKAGE SAID FOUR.** No score formula, weight, band,
+threshold or grade moves, and no score moves. One dead constant is deleted.
+The rendered text that changes is the Question 25 basis note (all four
+formats) and item 6 of the round-provenance note's re-check list (all four
+formats); every page citation of the Allocation Application in
+`renderers/_question_25` and `renderers/_question_22` now names the CY 2026
+edition and its pages.
+
+> **74 insertions, 59 deletions** in `tests/rendered_baseline/`, measured
+> `d1d5eba`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+
+| Class | Lines | +/− | Surface |
+|---|---|---|---|
+| The Q25 basis note — markdown line 130 and word `T6\|R7` render it as ONE line each | 4 | +2 / −2 | markdown, word |
+| The Q25 basis note, re-chunked at sentence ends for the workbook: six rows (`Q25 Basis Note!A4`–`A9`) become eight (`A4`–`A11`) | 14 | +8 / −6 | excel |
+| The Q25 note's opening citation, page 7: `CY 2024-2025 … pp. 38-41` → `CY 2026 … pp. 36-40` | 4 | +2 / −2 | pdf |
+| The Q25 note's 25(b) paragraph, page 7: `FOUR` → `FIVE`, the fifth name, its conditional limb, and the enumeration of what a CDE must count, re-wrapped | 32 | +21 / −11 | pdf |
+| `6 of the 14` → `6 of the 15`, page 7 | 2 | +1 / −1 | pdf |
+| The Q25 note's "carries NOTHING for…" enumeration (now naming Homeownership Cost Burden) and closing parenthetical, re-wrapped across pages 7-8 | 37 | +19 / −18 | pdf |
+| Page furniture: the longer note pushes the page 8 and page 9 breaks later; two four-line furniture blocks move | 16 | +8 / −8 | pdf |
+| Round-provenance ¶1, item 6 of the re-check list — one row (`Round Provenance!A5`); the markdown `READINESS SCORE` notes line and the word `DISTRESS LEVELS` notes line carry ¶1 whole | 6 | +3 / −3 | excel, markdown, word |
+| Round-provenance ¶1 item 6, page 23, re-wrapped | 10 | +6 / −4 | pdf |
+| Page furniture: ¶1's two extra lines push two lines of ¶2 from page 23 to 24 and two lines of ¶4's provenance sentence from page 24 to 25 | 8 | +4 / −4 | pdf |
+| `Item`/`Value` extraction rows — none; no table gained or lost a row | 0 | +0 / −0 | — |
+
+**133 lines, zero unexplained.**
+
+### The defect
+
+Question 25(b) of the CY 2026 NMTC Allocation Application (printed p. 40 /
+PDF p. 67; SHA-256 `b5c36c71…`, the `UPCOMING_APPLICATION_SHA256` pin) lists
+**five** qualifying area types. Through 1.6.5 the package said four, on four
+generated filing documents, because `renderers/_question_25` encoded the
+CY 2024-2025 edition's list and typed the count as the literal `"FOUR"`
+beside names interpolated from the tuple. A CDE whose QLICIs sit in
+CHAS-burdened tracts financing affordable homeownership was therefore told
+by this tool that the qualifying route it has does not exist — the
+false-negative class `_question_25`'s header names as the worst error in the
+package, live in an open filing window (Application deadline 10 Nov 2026).
+
+The fifth item, verbatim from the source (its missing "than" is the source's
+own):
+
+> **5. HOMEOWNERSHIP COST BURDEN.** Census tracts, as designated in the
+> Comprehensive Housing Affordability Strategy (CHAS) data by HUD, where at
+> least 20% of owners spend more 30% of their monthly income on
+> housing-related costs OR at least 20% of homes are characterized by at
+> least one housing problem (i.e. incomplete kitchen facilities, incomplete
+> plumbing facilities, more than 1 person per room), to the extent that
+> Applicant's projected QLICI activities will finance the development or
+> rehabilitation of affordable homeownership units in those tracts.
+
+### What R1 does, and what it deliberately does not
+
+**It corrects a description. It does not add a modelled area type.** No CDE
+input field, template column or per-project flag is added;
+`Q25_AREA_TYPES_MODELLED` stays 6, and the rendered ratio moves from
+"6 of the 14" to "6 of the 15" because the denominator grew. The 40/85 gate,
+the section maxima, `CITED_ROUND` and its status and timeline are untouched:
+the package still encodes the CY 2024-2025 Review Process thresholds as a
+disclosed proxy, and the round-provenance note still says so.
+
+* **`Q25B_AREA_TYPES` gains `"Homeownership Cost Burden"`** as its fifth
+  member, bound to a named constant (`Q25B_HOMEOWNERSHIP_COST_BURDEN`) so the
+  sentence that states its condition interpolates the tuple's own string.
+* **The fifth item renders WITH its conditional limb, in the same sentence as
+  its name.** Item 5 qualifies only *"to the extent that"* the QLICI finances
+  *affordable* homeownership units *in those tracts*; naming the area type
+  without the limb would tell a CDE to count any CHAS-burdened tract —
+  replacing an understatement with an overstatement. The note now reads:
+  *"The last of these is CONDITIONAL: a Homeownership Cost Burden tract, as
+  designated in HUD's CHAS data, qualifies only "to the extent that
+  Applicant's projected QLICI activities will finance the development or
+  rehabilitation of affordable homeownership units in those tracts", and this
+  package determines neither the CHAS designation nor whether a project's
+  activity meets that condition."* The limb is `Q25B_HOMEOWNERSHIP_CONDITION`,
+  pinned to all four surfaces. **It is not mapped to Question 19(2)(g)**, which
+  omits "affordable" and "in those tracts", is a book-wide percentage rather
+  than a per-project fact, is gated behind Q19(1)'s innovative-investments
+  election, and is not scored in Phase I; reading a blank Q19 as "No" would
+  manufacture the very false negative R1 removes.
+* **The count is derived, not typed.** The rendered `FIVE` is
+  `Q25B_AREA_TYPE_COUNT_WORD`, read off `len(Q25B_AREA_TYPES)`;
+  `Q25_DISTINCT_AREA_TYPES` is computed as the size of the union of the three
+  item tuples (12 + 5 − 2 = 15: NMTC Native Areas and U.S. Island Areas are
+  the only cross-list overlaps; Severe and Deep Distress are distinct
+  cut-points and are correctly not merged) and asserted equal to 15 at
+  import. Through 1.6.5 it was the literal `14`, and editing the tuple did
+  not move it.
+* **Every typed "four" that stated Question 25(b)'s count is corrected or
+  made round-specific.** Sweep pattern, over `git ls-files` excluding
+  `site/`, `build/`, `dist/` and `CHANGELOG.md`, case-insensitive:
+  `\bfour\b\W{0,4}(qualifying\W{0,4})?area[ -]types?` | `\bfourteen\b` |
+  `\b14\b\W{0,4}(distinct\W{0,4})?area` | `of the\W{0,4}14\b` |
+  `(five|six|5|6)\W{0,4}of\W{0,4}(the\W{0,4})?(fourteen|14)\b` |
+  `25\(b\)[^\n]{0,60}\bfour\b` | `\bfour\b[^\n]{0,60}25\(b\)` | the
+  hand-typed enumeration `Native Areas, High Migration Rural Counties (or|and)
+  (U\.S\. )?Island Areas`. The `\W{0,4}` matters: a first pass with `four area`
+  missed three sites where markdown bold (`**four** area types`) sat between
+  the words, on `docs/reference/methodology.md` and the Streamlit About page.
+  **Count at `d1d5eba`, by `git grep -n -i -P`: 47 matching lines across
+  15 files**, after excluding two false positives by hand
+  (`.github/workflows/release.yml:1344`'s "none of the 14" and
+  `MANIFEST.in:26`'s "ZERO of the 14 top-level test" are module counts).
+  **The pattern is line-oriented and cannot see two of the sites the audit
+  named**: `_question_25.py:325`'s `"… over FOUR "` and `:329-330`'s
+  `"Native Areas, High Migration Rural Counties " "or Island Areas"` are
+  string literals split across source lines, and reach the sweep only as
+  their rendered copies in the baselines. Counted by hand, the corrected
+  total is 49. Of the 47: 21 are source, docs, Streamlit, the
+  pinned-constants file and `tests/test_qlici_basis.py` (5 in
+  `_question_25`, 2 in `benchmark_thresholds`, 1 each in
+  `distress_analysis` and `section_b_outcomes`, 4 in
+  `docs/reference/methodology.md`, 3 on the About page, 3 in
+  `pinned_constants.txt`, 2 in `test_qlici_basis.py` — whose pin now reads
+  `"FIVE qualifying area types"` and additionally pins the conditional
+  sentence); 26 are the four rendered baselines' and the three registries'
+  masked copies of the same sentences, which moved with them. At `HEAD`
+  the pattern matches 8 lines outside the registries and baselines, every
+  one round-qualified ("four in CY 2024-2025, five in CY 2026"). Prior
+  counts of "40 across 16" and "44 across 15" did not state their pattern;
+  this one does. **`intelligence/win_probability.py:545`'s `# Check four qualifying
+  categories` is a different four** — `pct_native_area`,
+  `pct_high_migration_rural`, `pct_persistent_poverty`, `pct_us_territories`,
+  the house Special Targeting scorer; persistent poverty is not a Question
+  25(b) area type at all. It is not touched.
+* **Page citations re-based to the CY 2026 edition** (137 pp.; printed page =
+  PDF page − 27, verified on every arabic page): Question 25 spans printed
+  pp. 36-40 (PDF 63-67); 25(a) items 1-5 printed p. 37 (PDF 64); items 6-12
+  printed pp. 37-38 (PDF 64-65); 25(b) and its five area types printed
+  pp. 39-40 (PDF 66-67). Eight sites in `_question_25`, each re-read rather
+  than offset: the items 6-12 comment's old value, printed 39-40 / PDF 66-67,
+  is exactly where 25(b)'s area types sit in CY 2026, and a blanket sweep
+  would have left it pointing at the wrong question. The sentence-splitting
+  regex comment in `q25_basis_note_paragraphs()` tracks the new literals;
+  `" ".join(q25_basis_note_paragraphs()) == q25_basis_note()` holds (eight
+  chunks, longest 723 characters under the 800 ceiling). `_question_22`:
+  the NOTE block is CY 2026 printed p. 30 (PDF 57), the question table
+  printed p. 31 (PDF 58) continuing to p. 32 (PDF 59).
+* **`_question_22`'s off-by-one paragraph is rewritten against CY 2026,
+  not re-paged.** The sentence 1.4.0 recorded as inconsistent — the NOTE's
+  "22(b) … 22(c)" where the table has 22(c)/22(d) — **is fixed in CY 2026**:
+  it now reads *"at or above the minimum indicated in Question 22(c), but not
+  more than the maximum percentage indicated in Question 22(d)"*. A different
+  sentence on the same page is still off by one: *"An Applicant may receive a
+  larger NMTC Allocation … if it: (i) makes a minimum commitment of 20% or
+  greater in response to Question 22(b)"*, where 22(b) is the 0-6 count of
+  years and the intended reference is 22(c). Every other sentence the module
+  quotes is character-identical in the CY 2026 edition.
+* **`NON_METRO_MAX_COMMITMENT_FACTOR = 0.90` is deleted.** It cited the
+  CY 2024-2025 Review Process p.5 (*"the larger of their 'minimum'
+  commitment, or 90% of their 'maximum' commitment"*). The CY 2026 NOAA
+  (91 FR 58526, document 2026-18883) states a different rule: §V.D says the
+  Fund *"will consider requiring any or all of the Allocatees to direct up to
+  the 'maximum' percentage of QLICIs that the Allocatees indicated would be
+  targeted to Non-Metropolitan counties"* — no factor, no "larger of".
+  Direct string search of the Federal Register full text, re-fetched for this
+  release: `90 percent` 0 hits, `90%` 0 hits, `larger of` 0 hits. The
+  constant was referenced by exactly one line in the repository — its own
+  definition — so it is deleted rather than re-pointed; the deletion is
+  recorded in a comment at the site.
+* **`RECHECK_ITEMS` item 6 no longer instructs a check against a document
+  that does not exist.** It read *"the scoring thresholds in the Review
+  Process"*. The NMTC Review Process is an award document, published with
+  the award announcement — CY 2024-2025's on 23 Dec 2025, the date this
+  package carries as `CITED_ROUND_TIMELINE["awarded"]`; the R1 build prompt
+  reports the same same-day pattern for CY 2022 (22 Sep 2023) and CY 2023
+  (19 Sep 2024) and a Fund-stated CY 2026 award timing of "Summer 2027",
+  **none of which this release re-verified** (the phrase is in neither the
+  NOAA's Federal Register text nor `news/741`, both searched 2026-09-18).
+  What is verified: the NOAA's Table 1 runs to 14 Jan 2027 and schedules no
+  award announcement, and applications are due 10 Nov 2026 — so for the
+  whole filing window the item told a CDE to re-check against nothing. It now renders *"the scoring thresholds — as of
+  September 17, 2026 this tool had not found a published CY 2026 Review
+  Process, and the thresholds this document applies are the CY 2024-2025
+  Review Process's"* — a dated positive about this tool's own looking, per
+  the 1.6.5 monotone rule, dated through `_us_date(LAST_VERIFIED)` (the one
+  date spelling `tests/test_noaa_table_1`'s year-accounting gate admits, and
+  the only date it would admit past today: `today` is allowed but would go
+  red tomorrow). It survives the Fund publishing a Review Process later.
+
+### Surfaced and NOT decided: F15, the unreachable point
+
+`_score_outcomes_quality` returns only 2, 6 or 9, never
+`COMMUNITY_OUTCOMES_QUALITY_MAX = 10`. So `co_total` caps at **49** and
+`aggregate_base_score` at **99**, while every surface prints `/10`, `/50`,
+`/100` and `/110`; the degraded branch's ceiling is 24 of a printed 25. It is
+not cosmetic: the section gate is `co_total >= HIGHLY_QUALIFIED_SECTION_MIN`
+(40), so a CDE whose other four Community Outcomes sub-scores sum to 30 is
+shown 39 and classified Not Qualified where the documented maximum would give
+40 and Highly Qualified. The boundary is reachable and was reproduced on this
+tree. Three dispositions — a tenth rung (invents a scoring criterion), a
+maximum of 9 (breaks the 50-per-section reconciliation the 85 gate rests
+on), or disclosure on every surface (invents nothing, leaves the tier flip
+live) — each cost something, and **none is taken here.** R1 ships without it.
+
+### Out of scope, found, and NOT fixed
+
+* `docs/reference/methodology.md` and the Streamlit About page both say the
+  package carries a field for **"five of the fifteen"** area types and
+  "nothing for Non-Metropolitan Counties". The renderer has said six, with
+  Non-Metropolitan Counties TOOL-VERIFIED, since 1.4.0 landed
+  `PipelineProject.is_non_metro`. R1 corrected the denominator (fourteen →
+  fifteen) and added Homeownership Cost Burden to the enumeration, and left
+  the stale numerator alone.
+* `_round_provenance`'s ¶0 still says *"THIS TOOL STILL ENCODES THE CY
+  2024-2025 INSTRUMENT"* and item 3 of the re-check list still asks a CDE to
+  re-verify Question 25's area-type lists. Both are now conservative rather
+  than false — the thresholds ARE still CY 2024-2025's, and a re-check
+  instruction does not go false once the tool has performed it — but the
+  package now encodes one instrument's area lists and another's thresholds,
+  and `CITED_ROUND` cannot express that. Redesigning the provenance
+  constants to say so is a later cycle; `CITED_ROUND = "CY 2026"` would make
+  the package assert that a round closing 10 Nov 2026 is "closed and
+  awarded".
+* `tests/test_noaa_table_1.py` builds its allowed-date set from Table 1,
+  `LAST_VERIFIED`, `today` and the cited round's timeline, and does not
+  include `UPCOMING_APPLICATION_PUBLICATION_DATE` or
+  `UPCOMING_APPLICATION_RETRIEVED_DATE` (both 2026-09-17); they pass today
+  only because they coincide with `LAST_VERIFIED`. `LAST_VERIFIED` is NOT
+  bumped in this release; whoever bumps it must resolve that interaction
+  first.
+
+### Gates and registries
+
+* `tests/pinned_constants.txt`: the `Q25B_AREA_TYPES` pin now reads all five
+  names; two new pins (`Q25B_HOMEOWNERSHIP_COST_BURDEN`, pinned to the
+  conditional sentence rather than the bare name, and
+  `Q25B_HOMEOWNERSHIP_CONDITION`, the verbatim limb); the Question 25 rows'
+  justifications re-cite the CY 2026 pages. **The attribution gates are
+  digit-blind** — `_normalise` maps every digit run to `N` — so a green
+  registry run is not numeric verification; the page numbers were checked
+  against the extracted text of the PDF, not against the gates.
+* `tests/invariant_allowlist.txt`: 13 entries dead (the old note's masked
+  lines) and 35 ruled, all SOURCED to the CY 2026 Application with the item 5
+  text quoted, or to the 1.6.5 provenance ruling with an R1 addendum for item
+  6. `tests/fund_attribution_allowlist.txt`: six rows re-keyed and re-ruled
+  against the CY 2026 document. `tests/attribution_allowlist.txt`: two rows
+  re-ruled. `tests/test_round_status_consistency.py`: 16 registry keys
+  deleted, 50 added (47 `()`, three of them argued in `NON_CLAIM_REASONS`;
+  three `(('APPLICATION', True),)`, all wraps of the existing ¶1 sentence),
+  and the measured floors re-derived (238 / 165 / 79 / 13,426, floors
+  unchanged).
+* `tests/test_render_frame_geometry.py`'s sensitivity proof asserted the
+  literal `"x=-8"` — the x-offset at which ReportLab centres a
+  `colWidths`-less table of Section B, which is a function of the basis
+  note's LENGTH (the widest cell) and not of the defect. The longer note moves
+  it to −10,437 pt. The proof now asserts what it claims: the row labels land
+  more than a page width off the left edge.
+* The swept-constant census is 282 (was 279: the three new `_question_25`
+  names, less the deleted factor); the Review Process corpus count is
+  118 / 113. Both restated below where the gates read them.
+* Verified on Python 3.14.6 (one interpreter; the 3.9-3.12 matrix is CI's): 1,882 passed, 1 skipped (`network`), after
+  `pip install -e ".[output,viz]" streamlit plotly nbformat nbconvert
+  ipykernel` — three notebook tests and six Streamlit/chart modules need those
+  extras and fail on collection without them, and `nmtcapp.__version__`
+  resolves to `0.0.0.dev` without installed metadata.
+
+---
+
 ## [1.6.5] — 2026-09-17
 
 **PATCH. THE CY 2026 ALLOCATION APPLICATION PUBLISHED, AND THE NOTE SAID IT
@@ -16,7 +279,9 @@ and every sentence that changed was a **perishable negative** replaced by a
 **monotone positive**.
 
 > **41 insertions, 36 deletions** in `tests/rendered_baseline/`, measured
-> `f4c7925`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+> `f4c7925`..`d1d5eba`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+> *(Pinned at 1.6.6 from `HEAD` to the commit that ended this release, the
+> PR #39 merge; the figure is unchanged.)*
 
 | Class | Lines | +/− | Surface |
 |---|---|---|---|
@@ -2313,8 +2578,8 @@ One filled scaffold, the same file both sides, `9a2d584` vs this tree:
 > `git diff --numstat 9a2d584 fc34af5 -- tests/rendered_baseline/` gives 53
 > insertions and 68 deletions, unchanged.*
 
-The rendered-string sweep is unchanged in shape, and 279 constants are swept
-(237 at 1.5.7; this release adds
+The rendered-string sweep is unchanged in shape, and 282 constants are swept
+(279 as this entry shipped, restated at 1.6.6 for the R1 constants; 237 at 1.5.7; this release adds
 `upload_handler.CDE_PROFILE_COLUMNS_FOR_REQUIRED_FIELD`, waived, for 238 as
 shipped — restated to 250 at 1.6.2, which splits the round-provenance
 published-status boolean into twelve net new constants, to 268 at 1.6.4,
@@ -6884,7 +7149,7 @@ and the value-only projection that hid B-3's number formats.
 > source for what the Applicant is asked to COMMIT TO, because the thing the
 > Applicant fills in is the Application.**
 
-**114 mentions across 110 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
+**118 mentions across 113 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
 `README.md`. *(75 across 71 when 1.3.0 shipped; 77 across 73 at 1.5.0, which
 added one in `renderers/_round_provenance`'s re-check list. 1.5.1's first round
 added ten more across ten lines — the T1 withdrawal string and its two
@@ -6901,7 +7166,7 @@ dashed line is restored to the published Highly Qualified gate it was always
 drawing; and the geographic deduction notice, which names the Review Process as
 the place a CDE should look instead. None of the twenty-three cites the Review
 Process for a substantive claim: every one either names it to DENY a bar or
-points a reader at it as the document with the published referent. **The 1.6.5 docs-surface round adds two more across two lines** — `quickstart.md`'s Step 4, which was still publishing the scoring vocabulary retired in 1.1.1: its admonition now names the Review Process as what the score measures against, and the captured sample output carries the engine's own methodology note. The assessment paragraph, which states the section minimums, is ELIDED from that sample rather than adjudicated — the six rulings for that bar were made against the primary source, and the round that pasted the sample had not opened it.)* **13 cite the Review Process for a substantive claim** — a
+points a reader at it as the document with the published referent. **The 1.6.5 docs-surface round adds two more across two lines** — `quickstart.md`'s Step 4, which was still publishing the scoring vocabulary retired in 1.1.1: its admonition now names the Review Process as what the score measures against, and the captured sample output carries the engine's own methodology note. The assessment paragraph, which states the section minimums, is ELIDED from that sample rather than adjudicated — the six rulings for that bar were made against the primary source, and the round that pasted the sample had not opened it. **1.6.6 (R1) is net +4 mentions across +3 lines**: three removed with `NON_METRO_MAX_COMMITMENT_FACTOR` and the old re-check item 6, seven added across six lines — the deletion note at that constant's former site, `_question_22`'s and `_question_25`'s provenance paragraphs naming which thresholds are still the Review Process's, the comment above `RECHECK_ITEMS` and the rewritten item 6 itself. Every one names the Review Process to say which round's it is or that CY 2026's has not been found, none for a bar.)* **13 cite the Review Process for a substantive claim** — a
 percentage, a commitment, or a list of areas. Of those 13:
 
 > **Corrected in 1.3.0 B1.** This paragraph shipped as *"72 mentions across 68
@@ -7989,9 +8254,9 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 279 constants are swept
-where 49 were (238 as this release shipped; restated at 1.6.2, at 1.6.4 and
-in the 1.6.4 fix round — the count is gate-asserted against the current tree, see those
+colour". The rendered-string sweep demands **19**, and 282 constants are swept
+where 49 were (238 as this release shipped; restated at 1.6.2, at 1.6.4,
+in the 1.6.4 fix round and at 1.6.6 — the count is gate-asserted against the current tree, see those
 entries). *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
 round label, its status, the re-check list and the pinned-document facts; 1.5.2
 adds `readiness_score._COMPONENT_BASIS`, the withdrawal note's per-component
