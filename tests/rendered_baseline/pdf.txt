@@ -19,7 +19,8 @@ CONFIDENTIAL — Prepared for CDFI Fund Review Only | Do Not Distribute Without 
 Executive Summary
 Great Lakes Regional Capital CDE, LLC respectfully requests $70.0 million in New
 Markets Tax Credit allocation for CY 2026. Our 8-project pipeline spans 4 states, with
-85% of QEI committed to deep and severely distressed census tracts.
+85% of QEI committed to deep and severely distressed census tracts (a share of QEI,
+not of QLICIs).
 Key Metrics
 Metric
 Value
@@ -56,11 +57,11 @@ READINESS NARRATIVE WITHDRAWN. This tool emits no strengths, weaknesses or recom
 readiness composite, and none appear in this document. It nevertheless deducted points from the grade above, and it
 does not deduct silently: the full component-by-component deduction table, with the reason each row is or is not a
 quantity the CDFI Fund also scores, is printed by the Pipeline Analyzer page of the app and by `nmtcapp analyze`. It is
-not repeated here, because it is an account of what this tool did to its own number rather than a finding about this
 
 @@PAGE 3
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
 Page 3
+not repeated here, because it is an account of what this tool did to its own number rather than a finding about this
 application.
 
 @@PAGE 4

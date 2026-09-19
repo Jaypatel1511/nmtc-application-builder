@@ -26,6 +26,7 @@ from nmtcapp.sections import ALL_SECTIONS
 from nmtcapp.tables.distress_table import build_distress_table, build_distress_summary_table
 from nmtcapp.tables.geographic_table import build_geographic_table
 from nmtcapp.tables.impact_table import build_impact_summary_table
+from nmtcapp.renderers._question_25 import Q25_QEI_BASIS_CLAUSE
 from nmtcapp.tables.pipeline_table import PIPELINE_COLUMN_COUNT, build_pipeline_summary_table
 from nmtcapp.tables.track_record_table import build_track_record_table
 from nmtcapp.core.application_round import (
@@ -791,17 +792,19 @@ class PDFApplicationBuilder:
                 f"{pr.geographic_diversity.get('states_count', 0)} states, with "
                 f"{d.get('pct_deep_or_severe', 0):.0%} of QEI "
                 f"{unverified_qualifier(pr)} committed to deep and severely "
-                "distressed census tracts — figures reflect location-verified "
-                "projects only."
+                f"distressed census tracts ({Q25_QEI_BASIS_CLAUSE}) — figures "
+                "reflect location-verified projects only."
             )
         else:
+            # THE DENOMINATOR TRAVELS WITH THE HEADLINE (1.7.1 R8); see
+            # markdown_builder for the reason. Read from _question_25.
             summary_text = (
                 f"{app.cde.name} respectfully requests ${app.requested_allocation/1e6:.1f} million in "
                 f"New Markets Tax Credit allocation{allocation_round_clause(app.application_round)}. Our "
                 f"{pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states, with "
                 f"{d.get('pct_deep_or_severe', 0):.0%} of QEI committed to deep and severely "
-                f"distressed census tracts."
+                f"distressed census tracts ({Q25_QEI_BASIS_CLAUSE})."
             )
         flowables.append(Paragraph(summary_text, styles["body"]))
         flowables.append(Spacer(1, 10))

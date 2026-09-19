@@ -2,7 +2,7 @@ P|Normal|Great Lakes Regional Capital CDE, LLC
 P|Normal|Contact: Dana Okonkwo | dokonkwo@greatlakesregional.example.org | 216-555-0142
 P|Normal|CONFIDENTIAL — Prepared for CDFI Fund Review Only | Do Not Distribute Without CDE Authorization
 P|Heading 1|Executive Summary
-P|Normal|Great Lakes Regional Capital CDE, LLC requests $70.0 million in New Markets Tax Credit allocation for CY 2026. Our 8-project pipeline spans 4 states, with 85% of QEI committed to deep and severely distressed census tracts.
+P|Normal|Great Lakes Regional Capital CDE, LLC requests $70.0 million in New Markets Tax Credit allocation for CY 2026. Our 8-project pipeline spans 4 states, with 85% of QEI committed to deep and severely distressed census tracts (a share of QEI, not of QLICIs).
 P|Heading 2|Key Metrics
 P|Heading 2|Application Readiness Assessment
 P|Normal|READINESS SCORE: An UNSOURCED HOUSE HEURISTIC of this tool (eligibility 25%, distress concentration 25%, geographic diversity 15%, impact metrics 20%, validation 10%, completeness 5%). The weights are this tool's own judgement; they are not calibrated against award data, the CDFI Fund publishes no such weighting, and the score does not predict an award outcome.

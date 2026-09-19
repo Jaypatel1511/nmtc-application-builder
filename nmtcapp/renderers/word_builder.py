@@ -35,6 +35,7 @@ from nmtcapp.tables.investor_table import (
     build_investor_identification_table, build_investor_commitment_table,
 )
 from nmtcapp.renderers._document_properties import stamp_docx
+from nmtcapp.renderers._question_25 import Q25_QEI_BASIS_CLAUSE
 from nmtcapp.tables.pipeline_table import (
     PIPELINE_COLUMN_COUNT, build_pipeline_table, build_pipeline_summary_table,
 )
@@ -270,17 +271,19 @@ class WordApplicationBuilder:
                 f"{pr.geographic_diversity.get('states_count', 0)} states, with "
                 f"{distress.get('pct_deep_or_severe', 0):.0%} of QEI "
                 f"{unverified_qualifier(pr)} committed to deep and severely "
-                "distressed census tracts — figures reflect location-verified "
-                "projects only."
+                f"distressed census tracts ({Q25_QEI_BASIS_CLAUSE}) — figures "
+                "reflect location-verified projects only."
             )
         else:
+            # THE DENOMINATOR TRAVELS WITH THE HEADLINE (1.7.1 R8); see
+            # markdown_builder for the reason. Read from _question_25.
             summary_text = (
                 f"{app.cde.name} requests ${app.requested_allocation/1e6:.1f} million in "
                 f"New Markets Tax Credit allocation{allocation_round_clause(app.application_round)}. "
                 f"Our {pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states, with "
                 f"{distress.get('pct_deep_or_severe', 0):.0%} of QEI committed to deep and "
-                f"severely distressed census tracts."
+                f"severely distressed census tracts ({Q25_QEI_BASIS_CLAUSE})."
             )
         p = doc.add_paragraph(summary_text)
         p.runs[0].font.size = Pt(TYPOGRAPHY["size_body"])
