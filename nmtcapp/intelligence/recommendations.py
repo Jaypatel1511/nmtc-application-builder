@@ -1069,8 +1069,8 @@ class RecommendationEngine:
                     "Ensure all pipeline projects report concrete outcomes: FTE jobs created, "
                     "jobs retained, affordable units, and commercial square footage."
                 ),
-                expected_impact="Improve Outcomes Quality to near-full credit.",
-                quantified_improvement=f"Estimated +{10-coq} points (Outcomes Quality: {coq}/10 → 9/10).",
+                expected_impact="Improve Outcomes Quality to full credit.",
+                quantified_improvement=f"Estimated +{10-coq} points (Outcomes Quality: {coq}/10 → 10/10).",
                 citation=f"{_SOURCE_DOC}, Section II.C.2 — Community Outcomes, Quality of Community Outcomes",
             ))
 

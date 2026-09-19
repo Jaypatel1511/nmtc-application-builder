@@ -29,9 +29,10 @@ def _degraded_result(distress_breakdown=None) -> PipelineAnalysisResult:
 
 
 def test_degraded_community_outcomes_uses_structural_max():
-    """Degraded CO 20/25 must map to 40.0 (of the structural 50), not 80.0."""
-    # coq=9 (third-party validation), ca=10 (0.44 board + engagement),
-    # st=1 (8% native area) → co_total = 20 with hdt/ddc excluded (None).
+    """Degraded CO 21/25 must map to 42.0 (of the structural 50), not 84.0."""
+    # coq=10 (third-party validation; 9 through 1.6.5 — the 1.7.0 F15 fix pays
+    # the declared maximum), ca=10 (0.44 board + engagement), st=1 (8% native
+    # area) → co_total = 21 with hdt/ddc excluded (None).
     attrs = {
         "has_quantified_outcomes": True,
         "has_third_party_validation": True,
@@ -42,9 +43,9 @@ def test_degraded_community_outcomes_uses_structural_max():
     score = WinProbabilityModel().score(result, 55_000_000, cde_attributes=attrs)
 
     assert score.partial is True
-    assert score.community_outcomes["section_total"] == 20
+    assert score.community_outcomes["section_total"] == 21
     assert score.community_outcomes["max_available"] == 25
-    assert score.dimensional_scores["community_outcomes"] == 40.0
+    assert score.dimensional_scores["community_outcomes"] == 42.0
 
 
 def test_dimensional_scores_structural_maxima_all_sections():

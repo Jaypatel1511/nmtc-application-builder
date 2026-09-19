@@ -5,16 +5,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.6.6] — 2026-09-18
+## [1.7.0] — 2026-09-18
 
-**PATCH. R1: QUESTION 25(b) OF THE CY 2026 APPLICATION LISTS FIVE AREA
-TYPES, AND THE PACKAGE SAID FOUR.** No score formula, weight, band,
-threshold or grade moves, and no score moves. One dead constant is deleted.
-The rendered text that changes is the Question 25 basis note (all four
-formats) and item 6 of the round-provenance note's re-check list (all four
-formats); every page citation of the Allocation Application in
-`renderers/_question_25` and `renderers/_question_22` now names the CY 2026
-edition and its pages.
+**MINOR. R1: QUESTION 25(b) OF THE CY 2026 APPLICATION LISTS FIVE AREA
+TYPES, AND THE PACKAGE SAID FOUR — AND ONE SUB-SCORE COULD NOT REACH THE
+MAXIMUM PRINTED BESIDE IT.** No threshold, weight, band, gate or grade
+moves. **One scored output moves**: `_score_outcomes_quality`'s top rung
+pays `COMMUNITY_OUTCOMES_QUALITY_MAX` (10) instead of the literal 9, so an
+application with quantified, third-party-validated outcomes scores one
+Community Outcomes point higher than it did through 1.6.5 — and an
+application sitting exactly on the 40-point section gate crosses it. That
+is the minor bump. One dead constant is deleted. The rendered text that
+changes in the four generated filing documents is the Question 25 basis
+note and item 6 of the round-provenance note's re-check list; every page
+citation of the Allocation Application in `renderers/_question_25` and
+`renderers/_question_22` now names the CY 2026 edition and its pages. **The
+score change does not reach the four generated filing documents at all**
+— see the F15 section below for where it does reach.
 
 > **74 insertions, 59 deletions** in `tests/rendered_baseline/`, measured
 > `d1d5eba`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
@@ -189,20 +196,79 @@ disclosed proxy, and the round-provenance note still says so.
   the only date it would admit past today: `today` is allowed but would go
   red tomorrow). It survives the Fund publishing a Review Process later.
 
-### Surfaced and NOT decided: F15, the unreachable point
+### F15 — the Outcomes Quality top rung pays what the package declares
 
-`_score_outcomes_quality` returns only 2, 6 or 9, never
-`COMMUNITY_OUTCOMES_QUALITY_MAX = 10`. So `co_total` caps at **49** and
-`aggregate_base_score` at **99**, while every surface prints `/10`, `/50`,
-`/100` and `/110`; the degraded branch's ceiling is 24 of a printed 25. It is
-not cosmetic: the section gate is `co_total >= HIGHLY_QUALIFIED_SECTION_MIN`
-(40), so a CDE whose other four Community Outcomes sub-scores sum to 30 is
-shown 39 and classified Not Qualified where the documented maximum would give
-40 and Highly Qualified. The boundary is reachable and was reproduced on this
-tree. Three dispositions — a tenth rung (invents a scoring criterion), a
-maximum of 9 (breaks the 50-per-section reconciliation the 85 gate rests
-on), or disclosure on every surface (invents nothing, leaves the tier flip
-live) — each cost something, and **none is taken here.** R1 ships without it.
+`_score_outcomes_quality` returned only 2, 6 or 9, never
+`COMMUNITY_OUTCOMES_QUALITY_MAX = 10`. So `co_total` capped at **49** and
+`aggregate_base_score` at **99**, while every surface printed `/10`, `/50`,
+`/100` and `/110`; the degraded branch's ceiling was 24 of a printed 25. It
+was not cosmetic: the section gate is `co_total >= HIGHLY_QUALIFIED_SECTION_MIN`
+(40), so a CDE whose other four Community Outcomes sub-scores summed to 30
+was shown 39 and classified Not Qualified where the documented maximum
+gives 40 and Highly Qualified. **Reproduced on the 1.6.5 tree** (Higher
+Distress 15, Deep Distress 10, Special Targeting 5, Outcomes Quality 9,
+Accountability 0; Business Strategy 49; aggregate 88 ≥ 85; tier
+`Not Qualified` on the section gate alone). On this tree the same inputs
+score 40/50, aggregate 89, `Highly Qualified`.
+
+**Every sub-scorer was probed for its reachable maximum against its declared
+constant, re-derived on this tree** — the seven attribute-only scorers with
+saturating attributes, and the four that read the `PipelineAnalysisResult`
+(`_score_pipeline_credibility`, `_score_higher_distress`,
+`_score_deep_distress`, `_score_special_targeting`) with a result carrying
+`eligibility_pct = 1.0` and every distress share at 1.0:
+
+| Sub-scorer | Reachable | Declared |
+|---|---|---|
+| `_score_product_flexibility` | 10 | 10 |
+| `_score_pipeline_credibility` | 15 | 15 |
+| `_score_track_record_strength` | 15 | 15 |
+| `_score_track_record_alignment` | 10 | 10 |
+| `_score_higher_distress` | 15 | 15 |
+| `_score_deep_distress` | 10 | 10 |
+| `_score_special_targeting` | 5 | 5 |
+| `_score_outcomes_quality` | **9** | **10** |
+| `_score_community_accountability` | 10 | 10 |
+| `_score_dbc_track_record` | 5 | 5 |
+| `_score_unrelated_entities` | 5 | 5 |
+
+One shortfall in eleven, so this was an off-by-one, not a design choice.
+**The fix invents no criterion**: the top rung already represents the
+strongest state the model recognises (quantified outcomes AND third-party
+validation) and now pays the declared maximum, read from the constant so
+the rung cannot fall below the denominator printed beside it again. After
+the change the full-strength score is 50 + 50 = 100 (110 with priority
+points) and the degraded ceiling is 25 of 25. The alternative — lowering
+`COMMUNITY_OUTCOMES_QUALITY_MAX` to 9 — would make Community Outcomes sum to
+49, falsifying the package's own "50 points per section", which the
+two-reviewer reconciliation and the 85-point gate both rest on. The
+`KNOWN` row in `tests/pinned_constants.txt` deferring the thirteen
+hardcoded sub-score caps is a maintenance hazard with no behavioural error
+and is not the same defect; it is not invoked, and the row for this
+constant now records that the cap reads the constant while the lower rungs
+(2 and 6) are still literals.
+
+**Where the change reaches, measured.** The four generated filing documents
+(markdown, Word, PDF, Excel) do not render `score_win_probability()` — no
+module under `renderers/`, `sections/` or `tables/` reads it — so
+`tests/rendered_baseline/` is byte-identical before and after the rung
+change (regenerated; zero diff). The surfaces that move are the API
+(`Application.score_win_probability()`), `nmtcapp score`, the Streamlit
+Win Alignment Scorer page, the notebooks, and the documented sample: the
+README quickstart's `CDEProfile.sample()` + `Pipeline.sample(n=20)` moves
+from **90/100, 99/110, Community Outcomes 47/50** to **91/100, 100/110,
+48/50**, tier Highly Qualified both before and after (Business Strategy
+43/50 keeps it below the 45-point house Top Tier floor). No fixture in the
+suite changes tier; the one that changes total is the degraded-mode fixture
+in `tests/intelligence/test_dimensional_scores_fixed_maxima.py`, 20/25 →
+21/25. `docs/quickstart.md`'s captured summary was already stale against
+the 1.6.5 tree (it showed 88/97, Special Targeting 1/5 and Community
+Outcomes 45/50 for a build that produced 90/99, 3/5 and 47/50) and is
+re-captured from live output. Which applications change tier in the wild:
+exactly those with `has_quantified_outcomes` and
+`has_third_party_validation`, `co_total` of 39 through 1.6.5, and
+`bs_total ≥ 40` with aggregate ≥ 84 — from Not Qualified to Highly
+Qualified, which is the intended effect and the thing to scrutinise.
 
 ### Out of scope, found, and NOT fixed
 
@@ -280,7 +346,7 @@ and every sentence that changed was a **perishable negative** replaced by a
 
 > **41 insertions, 36 deletions** in `tests/rendered_baseline/`, measured
 > `f4c7925`..`d1d5eba`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
-> *(Pinned at 1.6.6 from `HEAD` to the commit that ended this release, the
+> *(Pinned at 1.7.0 from `HEAD` to the commit that ended this release, the
 > PR #39 merge; the figure is unchanged.)*
 
 | Class | Lines | +/− | Surface |
@@ -2579,7 +2645,7 @@ One filled scaffold, the same file both sides, `9a2d584` vs this tree:
 > insertions and 68 deletions, unchanged.*
 
 The rendered-string sweep is unchanged in shape, and 282 constants are swept
-(279 as this entry shipped, restated at 1.6.6 for the R1 constants; 237 at 1.5.7; this release adds
+(279 as this entry shipped, restated at 1.7.0 for the R1 constants; 237 at 1.5.7; this release adds
 `upload_handler.CDE_PROFILE_COLUMNS_FOR_REQUIRED_FIELD`, waived, for 238 as
 shipped — restated to 250 at 1.6.2, which splits the round-provenance
 published-status boolean into twelve net new constants, to 268 at 1.6.4,
@@ -7166,7 +7232,7 @@ dashed line is restored to the published Highly Qualified gate it was always
 drawing; and the geographic deduction notice, which names the Review Process as
 the place a CDE should look instead. None of the twenty-three cites the Review
 Process for a substantive claim: every one either names it to DENY a bar or
-points a reader at it as the document with the published referent. **The 1.6.5 docs-surface round adds two more across two lines** — `quickstart.md`'s Step 4, which was still publishing the scoring vocabulary retired in 1.1.1: its admonition now names the Review Process as what the score measures against, and the captured sample output carries the engine's own methodology note. The assessment paragraph, which states the section minimums, is ELIDED from that sample rather than adjudicated — the six rulings for that bar were made against the primary source, and the round that pasted the sample had not opened it. **1.6.6 (R1) is net +4 mentions across +3 lines**: three removed with `NON_METRO_MAX_COMMITMENT_FACTOR` and the old re-check item 6, seven added across six lines — the deletion note at that constant's former site, `_question_22`'s and `_question_25`'s provenance paragraphs naming which thresholds are still the Review Process's, the comment above `RECHECK_ITEMS` and the rewritten item 6 itself. Every one names the Review Process to say which round's it is or that CY 2026's has not been found, none for a bar.)* **13 cite the Review Process for a substantive claim** — a
+points a reader at it as the document with the published referent. **The 1.6.5 docs-surface round adds two more across two lines** — `quickstart.md`'s Step 4, which was still publishing the scoring vocabulary retired in 1.1.1: its admonition now names the Review Process as what the score measures against, and the captured sample output carries the engine's own methodology note. The assessment paragraph, which states the section minimums, is ELIDED from that sample rather than adjudicated — the six rulings for that bar were made against the primary source, and the round that pasted the sample had not opened it. **1.7.0 (R1) is net +4 mentions across +3 lines**: three removed with `NON_METRO_MAX_COMMITMENT_FACTOR` and the old re-check item 6, seven added across six lines — the deletion note at that constant's former site, `_question_22`'s and `_question_25`'s provenance paragraphs naming which thresholds are still the Review Process's, the comment above `RECHECK_ITEMS` and the rewritten item 6 itself. Every one names the Review Process to say which round's it is or that CY 2026's has not been found, none for a bar.)* **13 cite the Review Process for a substantive claim** — a
 percentage, a commitment, or a list of areas. Of those 13:
 
 > **Corrected in 1.3.0 B1.** This paragraph shipped as *"72 mentions across 68
@@ -8256,7 +8322,7 @@ Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
 colour". The rendered-string sweep demands **19**, and 282 constants are swept
 where 49 were (238 as this release shipped; restated at 1.6.2, at 1.6.4,
-in the 1.6.4 fix round and at 1.6.6 — the count is gate-asserted against the current tree, see those
+in the 1.6.4 fix round and at 1.7.0 — the count is gate-asserted against the current tree, see those
 entries). *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
 round label, its status, the re-check list and the pinned-document facts; 1.5.2
 adds `readiness_score._COMPONENT_BASIS`, the withdrawal note's per-component

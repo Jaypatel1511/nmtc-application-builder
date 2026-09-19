@@ -19,7 +19,7 @@ app = Application(cde=CDEProfile.sample(), requested_allocation=65_000_000)
 app.add_pipeline(Pipeline.from_csv("pipeline.csv"))
 score = app.score_win_probability()
 print(f"Alignment: {score.composite_score:.0f}/100 [{score.tier}]")
-# → Alignment: 90/100 [Highly Qualified]
+# → Alignment: 91/100 [Highly Qualified]
 paths = app.generate("./drafts/")
 # → Word, Excel, PDF, and Markdown application package ready in ./drafts/
 ```

@@ -76,8 +76,8 @@ Sample output:
 ```
 ======================================================================
   NMTC APPLICATION SCORE  (CDFI Fund CY 2024-2025 Framework)
-  Aggregate Base Score:    88 / 100
-  With Priority Points:    97 / 110
+  Aggregate Base Score:    91 / 100
+  With Priority Points:    100 / 110
   Tier:                    HIGHLY QUALIFIED
 ======================================================================
 
@@ -87,11 +87,11 @@ Sample output:
     Track Record Strength     12 / 15
     Track Record Alignment     9 / 10
 
-  COMMUNITY OUTCOMES: 45 / 50
+  COMMUNITY OUTCOMES: 48 / 50
     Higher Distress Targeting 15 / 15
     Deep Distress Commitment  10 / 10
-    Special Targeting          1 /  5
-    Community Outcomes Quality 9 / 10
+    Special Targeting          3 /  5
+    Community Outcomes Quality 10 / 10
     Community Accountability  10 / 10
 
   PRIORITY POINTS:     9 / 10

@@ -6,7 +6,7 @@ quickstart comment is not updated.
 """
 from nmtcapp import Application, CDEProfile, Pipeline
 
-DOCUMENTED_COMPOSITE = 90  # README quickstart comment: "90/100 [Highly Qualified]"
+DOCUMENTED_COMPOSITE = 91  # README quickstart comment: "91/100 [Highly Qualified]" (90 through 1.6.5; 1.7.0 F15 pays the Outcomes Quality top rung its declared 10)
 TOLERANCE = 2
 
 
