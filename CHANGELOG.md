@@ -405,10 +405,12 @@ surfaces in the Executive Summary.
     job does not copy it out, so both take the same checkout-marker skip
     `CONTRIBUTING.md` has taken since 1.3.1. The ceiling was raised by the
     measurement, not to buy room for a floor.
-  * The tarball ran CLEAN apart from this entry's own derived counts:
-    **1,879 passed, 79 skipped, 1 deselected**, and the two failures were
-    the published test count on `README.md` and `streamlit_app/app.py`,
-    fixed below before commit.
+  * **The tarball ran CLEAN, re-built from the final commit: 1,881 passed,
+    79 skipped, 1 deselected, zero failures** — and 1,881 // 2 is 940, so
+    the executed count the job will actually see equals the derivation
+    above exactly. The two red on the first sdist run were this entry's own
+    derived counts (the published test count on `README.md` and
+    `streamlit_app/app.py`), fixed before commit.
 * Published test counts re-derived: 1,896 → 1,961 in `README.md`,
   `CONTRIBUTING.md`, `streamlit_app/app.py` **and, as of R10, this file**.
   Round-status registry: the footer key follows its line; the PDF's spelling
