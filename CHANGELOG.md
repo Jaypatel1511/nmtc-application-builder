@@ -20,7 +20,19 @@ first distress figure a reviewer reads. Every item was measured on the
 published 1.7.0 artifacts or derived from `a29c983`, and every gate below
 was seen red before it was seen green.
 
-> **238 insertions, 275 deletions** in `tests/rendered_baseline/`, measured
+**R9–R11 ARE THREE MORE OF THE SAME CLASS, PORTED FROM A PARALLEL
+IMPLEMENTATION OF THIS RELEASE AND EACH VERIFIED ABSENT HERE BY
+MEASUREMENT.** Two are surface drift — a correction that landed on one
+artifact and not its twins: the Key Metrics row stated no denominator on
+Word and PDF while the workbook had stated one since 1.3.0 (R9), and the
+partial-unverified Executive Summary sentence asserted a verified-only
+denominator on Word and PDF, which this package's own `_disclosure` module
+adjudicates as false and flattering, while markdown already said the
+opposite (R11). The third widens a gate rather than a document: the
+CHANGELOG was not a test-count claim site, and the parallel implementation
+shipped a false count straight through that hole (R10).
+
+> **242 insertions, 278 deletions** in `tests/rendered_baseline/`, measured
 > `a29c983`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
 
 | Class | Lines | +/− | Surface |
@@ -33,9 +45,13 @@ was seen red before it was seen green.
 | R6: the Summary Dashboard footer gains `by nmtc-application-builder v<VERSION>` | 2 | +1 / −1 | excel |
 | R8: the Executive Summary sentence gains `(a share of QEI, not of QLICIs)`; markdown and word one line, pdf wraps to two | 7 | +4 / −3 | markdown, word, pdf |
 | Page furniture: R8's extra line pushes one line from page 2 to 3 | 2 | +1 / −1 | pdf |
+| R9: the Key Metrics label gains `(a share of QEI, not of QLICIs)` — one line on word | 2 | +1 / −1 | word |
+| R9: the same label wraps to two lines inside its PDF cell | 3 | +2 / −1 | pdf |
+| Page furniture: R9's extra line pushes one line from page 2 to 3 | 2 | +1 / −1 | pdf |
+| R10, R11: none — R10 touches no renderer, and R11's sentence renders only on the partial-unverified path, which the packaged fixture never takes | 0 | +0 / −0 | — |
 | `Item`/`Value` extraction rows — none; no table gained or lost a row | 0 | +0 / −0 | — |
 
-**513 lines, zero unexplained.** Recaptured per commit with
+**520 lines, zero unexplained.** Recaptured per commit with
 `python -m tests.regen_rendered_baseline`; each commit's diff is quoted in
 its message.
 
@@ -201,18 +217,136 @@ Pipeline Overview, the Deployment Strategy line and `_disclosure.
 qualified_pct`, and the invariant mask renders `86.7%` as `N.N%`, so
 aligning them re-keys six more allowlist rows across nine sites.
 
+### R9 — the Key Metrics row states what its figure is a share of
+
+`excel_builder` has rendered **"Deep/Severe Distress Concentration (a share
+of QEI, not of QLICIs — see the 'Q25 Basis Note' sheet)"** since 1.3.0 S4,
+when that cell was found holding a raw float under a percent format with no
+denominator in its label. Word and PDF render the same metric in the Key
+Metrics table on the first page of the Executive Summary, and their label
+was **"Deep/Severe Distress Concentration"** — no denominator, not even the
+word QEI. **So the workbook said what the figure was a share of and the two
+documents a federal reviewer reads first did not**, which is the
+one-surface-fixed shape 1.6.2's Q25 note and 1.7.0's docs sample both
+shipped from. A CDE copying this cell into Question 25 files a QEI figure
+against a QLICI commitment.
+
+* **The bare clause, not either pointer suffix.**
+  `Q25_QEI_BASIS_SUFFIX_SHEET` names a workbook tab no flowing document
+  has. `Q25_QEI_BASIS_SUFFIX` says *"see the basis note below"*, and
+  `_question_25`'s own note justifies that pointer by locality — the note
+  sits "a few lines under the figure" in the same Section B table — which
+  is untrue twenty pages up in the Executive Summary. `Q25_QEI_BASIS_CLAUSE`
+  is what R8 put in the sentence three lines above this table, so the row
+  and the sentence now state the denominator identically on the same page.
+  Read from the constant, not retyped.
+* **The PDF label column had to learn to wrap.** A bare `str` in a
+  ReportLab table cell is drawn on one line and overruns its column —
+  measured at the moment the clause landed: 300.7 pt of Helvetica 10
+  against 270.8 pt of cell width. Every Key Metrics label is now a
+  `Paragraph` in the table-body style with `splitLongWords=0`, carrying
+  R3's no-token-is-ever-cut rule onto this table.
+* Gate `tests/test_key_metrics_denominator.py`, **bounded per surface**,
+  because the clause legitimately renders three times in each document
+  (R8's sentence, this row, Section B's basis note). Measured: with the
+  Word row reverted, a whole-document assertion still sees the clause three
+  times and stays green. Assertions are made against one Word cell, one
+  workbook cell, or the PDF text between this row's label and the next
+  metric's, and a companion test asserts the neighbours are outside that
+  boundary. Mutations: Word label reverted → 2 red, PDF and Excel green;
+  PDF reverted → 2 red, Word and Excel green; **Excel reverted → 1 red**,
+  Word and PDF green. One invariant `LABEL` row added.
+
+### R10 — the CHANGELOG is a test-count claim site (`tests/test_test_count_claims`)
+
+`_CLAIM_SITES` held exactly three: `streamlit_app/app.py`, `README.md`,
+`CONTRIBUTING.md`. The module's docstring has cited *this* CHANGELOG since
+1.3.1 as **evidence** that hand-typed counts go stale, and never read it.
+
+**This entry's count was correct, so R10 closes a hole rather than fixing a
+falsehood — and the hole is not hypothetical.** A parallel implementation of
+this same 1.7.1 published *"was 1,909"* against a v1.7.0 that collects
+1,896, contradicting the three files corrected in its own branch, and
+nothing caught it.
+
+* **Scoped to the current entry, and the scope is the design.** Entries
+  below state counts that were true when they shipped — 1,881 under 1.6.5,
+  1,790 under 1.6.2 — so an unscoped pattern goes red on a true sentence,
+  which is how a gate gets deleted instead of fixed. `_CLAIM_SITES` entries
+  gain a third member, a scoper; `None` means the whole file.
+* **The real set of shapes was established, not assumed.** Every 3+ digit
+  run in the current entry was enumerated first. Exactly one is a claim
+  about `pytest tests/ --collect-only -q`: the right-hand side of
+  *"Published test counts re-derived: X → Y"*. The entry also states an
+  `-m "not wheel"` collection, an executed count, a skip count, a `FLOOR`
+  and two run results, all legitimately different numbers, and the pattern
+  is asserted **not** to match any of them.
+* Mutations, on a tree whose four claim sites agreed: a wrong count in the
+  current entry → 2 red; the claim sentence reworded away → 2 red; the
+  scope replaced with `None` → 1 red, reading **1,790** out of the 1.6.2
+  entry. It skips in the sdist job, which does not copy `CHANGELOG.md` out
+  of the tarball — see the `FLOOR` note below, where those two skips are
+  the whole of the ceiling's movement.
+
+### R11 — Word and PDF stop asserting what `_disclosure` denies
+
+**This is the item the "found outside the scope" list below reported and
+did not fix.** On the partial-unverified path Word and PDF ended the
+Executive Summary's distress sentence with *"— figures reflect
+location-verified projects only."* **That asserts a verified-only
+denominator.** `renderers/_disclosure.unverified_banner` adjudicates the
+opposite, in the banner printed four lines above it in the same document —
+*"count only location-verified projects in the numerator but **all pipeline
+QEI in the denominator**, so each is a **LOWER BOUND**"* — and its note
+records why the arithmetic is the half that stays: a verified-only
+denominator **"OVERSTATES, in the direction that flatters the applicant"**,
+one verified deep-distress project out of twenty filing *"100% of QEI in
+deep/severe tracts"*, and *"understating is the only safe direction to err
+in a federal filing."* So one document carried the banner saying LOWER
+BOUND and, a page earlier, a sentence saying the figure was computed the
+flattering way. The claim was struck from the **banner** years ago — the
+fund-attribution allowlist still records that banner as text that "used to
+claim the figures 'reflect verified projects only'" — and survived on two
+surfaces in the Executive Summary.
+
+* **Reworded, not deleted, and not rephrased.** Deleting leaves an
+  unqualified share standing beside a banner, which is how a reader
+  concludes the qualifier belongs to something else; `_disclosure`'s own
+  closing rule is that each figure states its own basis. The wording is
+  markdown's, which has rendered it since the banner was corrected, moved
+  to `_disclosure.LOWER_BOUND_CLAUSE` and read by all three surfaces —
+  three hand-typed copies of one sentence in this package once agreed by
+  luck. **Markdown's rendered bytes do not move.**
+* **No baseline movement at all**: this renders only on the
+  partial-unverified branch, which the packaged fixture never takes — so a
+  gate reading a default render would not see it. `tests/
+  test_partial_unverified_lower_bound.py` builds that branch with
+  `_analysis_in_state(..., "partial_unverified")`.
+* **Bounded where it must be, unbounded where that is stronger.** Positive
+  assertions are scoped to the Executive Summary; the "no verified-only
+  claim anywhere" assertion is deliberately document-wide, because absence
+  over a larger region is the stronger claim. Vacuity measured: with the
+  Word sentence reverted, a document-wide `"lower bound" in text` still
+  returns True — the banner satisfies it from **449 characters away in the
+  same section**.
+* Mutations: each of the three surfaces reverted alone → 3 red each (the
+  surface plus the cross-surface identity); the clause **deleted** from
+  Word rather than reworded → 2 red; **the banner softened** instead of the
+  sentence fixed → 3 red. The last exists because the other way to resolve
+  a contradiction is to weaken the true half.
+
 ### Found outside the scope, reported, not fixed
 
-* **Word's and PDF's partial-unverified Executive Summary still end
-  *"figures reflect location-verified projects only."*** — the claim
-  `renderers/_disclosure.unverified_banner` records as withdrawn because it
-  is false: an unverified project is absent from the numerator and present
-  in the denominator, so the share is a lower bound, which is what markdown
-  says and what the banner directly above the sentence says. The sentence
-  contradicts its own banner on two of four surfaces, in the state a CDE is
-  in until every project geocodes. R8 touched that sentence and left this
-  clause as it was, per the freeze. The fix is markdown's wording carried to
-  Word and PDF; it is one sentence, and it needs the reviewer to say so.
+* ~~**Word's and PDF's partial-unverified Executive Summary still end
+  *"figures reflect location-verified projects only."***~~ — **FIXED IN
+  R11 ABOVE, in this same release.** The report stands as written: the
+  claim `renderers/_disclosure.unverified_banner` records as withdrawn
+  because it is false; an unverified project is absent from the numerator
+  and present in the denominator, so the share is a lower bound, which is
+  what markdown says and what the banner directly above the sentence says.
+  R8 touched that sentence and left the clause per the freeze; R11 carries
+  markdown's wording to Word and PDF and gates all three against each
+  other.
 * `excel_builder._build_pipeline_sheet` retypes `CURRENCY_COLUMNS` as a
   seven-name literal beside the constant that owns it — the R2 shape one
   module over. Consistent today. Carried.
@@ -229,38 +363,64 @@ aligning them re-keys six more allowlist rows across nine sites.
 
 ### Census and verification
 
-* The rendered-string sweep is unchanged in shape, and 288 constants are swept
+* The rendered-string sweep is unchanged in shape, and 289 constants are swept
   (282 at 1.7.0: `PIPELINE_COLUMN_COUNT` and the five `pdf_builder` layout
-  constants); the two historical sentences follow, as that gate requires.
-  The Review Process corpus count is unchanged at 118 / 113.
+  constants; R11's `_disclosure.LOWER_BOUND_CLAUSE` is the 289th and needs no
+  pin — it renders only on the partial-unverified branch, which the sweep's
+  fixture does not take, and the sweep says so on every run rather than a
+  written waiver saying it); the two historical sentences follow, as that gate
+  requires. The Review Process corpus count is unchanged at 118 / 113.
 * The 1.7.0 entry's baseline-delta claim is pinned from `HEAD` to `a29c983`,
   the way 1.6.4's was; re-derived at the pin, 74/59, unchanged.
-* New test modules since v1.4.0: 35 → 41, one per item.
+* New test modules since v1.4.0: 35 → 43, one per item. R9 adds
+  `tests/test_key_metrics_denominator.py`, R11 adds
+  `tests/test_partial_unverified_lower_bound.py`; R10 adds none — it widens
+  `tests/test_test_count_claims.py`, which has existed since 1.3.1.
 * `release.yml`'s `FLOOR` re-derived from a real sdist build, the job's exact
-  invocation, on 3.14.6: 1,938 collected under `-m "not wheel"`, 77 skipped,
-  1,861 executed, half 930, `FLOOR=930` (was 910; band [930, 969]). **The
-  skip ceiling was found under water**: the 1.7.0 block said the job
-  "skipped exactly 57", and the 1.7.0 release job itself (run 35425909441,
-  test-sdist on 3.12) printed `1826 passed, 69 skipped` — the twelve of
-  `test_q25_modelled_surfaces`, acknowledged and not counted.
-  `MAX_SDIST_SKIPS` is 77: that 69, module for module, plus the eight of
-  `test_release_docs_deploy.py`, which reads `.github/workflows/` and the
-  tarball does not ship it. The tarball ran CLEAN on the final tree:
-  1,861 passed, 77 skipped, 1 deselected, zero failures, re-built from this
-  commit (the four red on the first sdist run were this entry's own derived
-  counts, the round-status registry and the published test count, fixed
-  before commit).
-* Published test counts re-derived: 1,896 → 1,939 in `README.md`,
-  `CONTRIBUTING.md` and `streamlit_app/app.py`. Round-status registry: the
-  footer key follows its line; the PDF's spelling of the provenance sentence
-  with the cut URL is gone (the PDF now renders the sentence the other three
-  surfaces render); one re-flowed PDF wrap and three source comments
-  classified, all asserting nothing.
+  invocation. **Re-derived twice this cycle, and the second time the gate is
+  what noticed** — the first derivation's own note said `FLOOR=930` goes red
+  at 1,957 collected, and R9–R11 took the suite to 1,960.
+  * At the settle-read items: 1,938 collected under `-m "not wheel"`, 77
+    skipped, 1,861 executed, half 930, `FLOOR=930` (was 910; band [930,
+    969]). **The skip ceiling was found under water**: the 1.7.0 block said
+    the job "skipped exactly 57", and the 1.7.0 release job itself (run
+    35425909441, test-sdist on 3.12) printed `1826 passed, 69 skipped` — the
+    twelve of `test_q25_modelled_surfaces`, acknowledged and not counted.
+    `MAX_SDIST_SKIPS` became 77: that 69, module for module, plus the eight
+    of `test_release_docs_deploy.py`, which reads `.github/workflows/` and
+    the tarball does not ship it.
+  * At R9–R11: **1,960 collected** under `-m "not wheel"` (1,961 less one
+    deselected), **79 skipped**, **1,881 executed**, half 940, **`FLOOR=940`;
+    band [940, 980], width 40 — ON the maximum `test_release_floor` permits,
+    not inside it, and it goes red at 1,962 collected.** Measured from a real
+    tarball: `python -m build --sdist`, installed `--no-deps` into a venv so
+    `import nmtcapp` resolves under site-packages (confirmed, reporting
+    1.7.1), only `tests/`, `streamlit_app/`, `README.md` and
+    `pyproject.toml` copied out of it into a directory with no `nmtcapp/`.
+  * **`MAX_SDIST_SKIPS` 77 → 79, and both new skips are named rather than
+    absorbed.** Neither new test module skips there — both render from the
+    installed package and read no pruned tree, measured in the tarball at 20
+    passed / 0 skipped. The two are R10's fourth claim site, `CHANGELOG.md`,
+    and the scope proof beside it: MANIFEST.in ships `CHANGELOG.md` and the
+    job does not copy it out, so both take the same checkout-marker skip
+    `CONTRIBUTING.md` has taken since 1.3.1. The ceiling was raised by the
+    measurement, not to buy room for a floor.
+  * The tarball ran CLEAN apart from this entry's own derived counts:
+    **1,879 passed, 79 skipped, 1 deselected**, and the two failures were
+    the published test count on `README.md` and `streamlit_app/app.py`,
+    fixed below before commit.
+* Published test counts re-derived: 1,896 → 1,961 in `README.md`,
+  `CONTRIBUTING.md`, `streamlit_app/app.py` **and, as of R10, this file**.
+  Round-status registry: the footer key follows its line; the PDF's spelling
+  of the provenance sentence with the cut URL is gone (the PDF now renders
+  the sentence the other three surfaces render); one re-flowed PDF wrap and
+  three source comments classified, all asserting nothing.
 * Verified on Python 3.14.6 (one interpreter; the 3.9–3.12 matrix is CI's),
   from a clean clone of the branch into a fresh venv with `[dev]` plus
   `build` (the `wheel`-marked test shells out to `python -m build`, which
   release.yml's build job installs separately): 1,938 passed, 1 skipped
-  (`network`).
+  (`network`) at the settle-read items. **Re-verified after R9–R11 on Python
+  3.11 in this branch's environment: 1,960 passed, 1 skipped (`network`).**
 
 ---
 
@@ -3057,8 +3217,10 @@ One filled scaffold, the same file both sides, `9a2d584` vs this tree:
 > `git diff --numstat 9a2d584 fc34af5 -- tests/rendered_baseline/` gives 53
 > insertions and 68 deletions, unchanged.*
 
-The rendered-string sweep is unchanged in shape, and 288 constants are swept
-(279 as this entry shipped, restated at 1.7.0 for the R1 constants; 237 at 1.5.7; this release adds
+The rendered-string sweep is unchanged in shape, and 289 constants are swept
+(279 as this entry shipped, restated at 1.7.0 for the R1 constants and again at 1.7.1 — first for
+`PIPELINE_COLUMN_COUNT` and the five `pdf_builder` layout constants, then for R11's
+`_disclosure.LOWER_BOUND_CLAUSE`; 237 at 1.5.7; this release adds
 `upload_handler.CDE_PROFILE_COLUMNS_FOR_REQUIRED_FIELD`, waived, for 238 as
 shipped — restated to 250 at 1.6.2, which splits the round-provenance
 published-status boolean into twelve net new constants, to 268 at 1.6.4,
@@ -8733,9 +8895,9 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 288 constants are swept
+colour". The rendered-string sweep demands **19**, and 289 constants are swept
 where 49 were (238 as this release shipped; restated at 1.6.2, at 1.6.4,
-in the 1.6.4 fix round and at 1.7.0 — the count is gate-asserted against the current tree, see those
+in the 1.6.4 fix round, at 1.7.0 and twice at 1.7.1 — the count is gate-asserted against the current tree, see those
 entries). *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
 round label, its status, the re-check list and the pinned-document facts; 1.5.2
 adds `readiness_score._COMPONENT_BASIS`, the withdrawal note's per-component

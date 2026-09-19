@@ -308,7 +308,37 @@ MARKER_EXPR = "not wheel"
 #: 3.14.6: 1,938 collected, 77 skipped, 1,861 executed -- the same 69 as the
 #: 1.7.0 job module for module, plus the eight. Band [930, 969], width 39,
 #: inside the 40 the bound below permits.
-MAX_SDIST_SKIPS = 77
+#:
+#: 1.7.1 R9-R11: 77 -> 79, AND THE TWO ARE NAMED RATHER THAN ABSORBED. The
+#: round adds two test modules and twenty tests, and NONE of them skips in the
+#: sdist: both render documents from the INSTALLED package and read no tree
+#: the tarball prunes, which was checked by running them there (20 passed, 0
+#: skipped) rather than reasoned about. The two new skips are both in
+#: tests/test_test_count_claims.py, which R10 gave a FOURTH claim site --
+#: CHANGELOG.md, plus the scope proof beside it. MANIFEST.in ships
+#: CHANGELOG.md and the job does not copy it out of the tarball, exactly as
+#: for CONTRIBUTING.md, so both take the checkout-marker skip that site
+#: already carries. Re-measured on this tree from a real sdist build
+#: (python -m build --sdist), installed --no-deps into a venv so `import
+#: nmtcapp` resolves under site-packages, run with the job's exact invocation
+#: from a directory holding only tests/, streamlit_app/, README.md and
+#: pyproject.toml out of the tarball:
+#:
+#:     collected under -m "not wheel" 1,960   (1,961 collected, 1 deselected)
+#:     skipped in the sdist             -79
+#:     EXECUTED                       1,881
+#:     half                             940
+#:     rounded down                     940
+#:
+#: FLOOR MOVES 930 -> 940, and it is the measurement that moved it. Band
+#: [940, 980], width 40 -- ON the bound below, not inside it, which is worth
+#: a sentence rather than a shrug: the band's width is
+#: MAX_SDIST_SKIPS//2 plus up to nine of rounding slack, so at 79 it sits
+#: between 39 and 48 and this tree happens to land on 40. The next round that
+#: adds two tests will breach it. The answer then is to re-measure the
+#: ceiling, not to widen max_band_width, which is the 40 -> 20 -> 24 -> 28 ->
+#: 40 history that bound exists to stop.
+MAX_SDIST_SKIPS = 79
 
 _FLOOR_RE = re.compile(r"^\s*FLOOR=(\d+)\s*$", re.MULTILINE)
 _COLLECTED_RE = re.compile(r"(\d+)(?:/\d+)? tests? collected")
@@ -514,7 +544,16 @@ def test_max_sdist_skips_is_bounded_from_ABOVE_as_well(collected_count):
 #: package and the fixture the baseline gate already carries; the two source
 #: sweeps among them walk the INSTALLED package, so they do not skip and do
 #: not pass vacuously on a directory the sdist job does not have.
-CLAIMED_NEW_TEST_MODULES = 41
+#:
+#: 41 -> 43 in the same round's R9-R11, one module per item:
+#: tests/test_key_metrics_denominator.py (R9) and
+#: tests/test_partial_unverified_lower_bound.py (R11). R10 adds no module —
+#: it widens tests/test_test_count_claims.py, which has existed since 1.3.1.
+#: NEITHER new module skips in the sdist: both render from the installed
+#: package, and the second builds the partial-unverified analysis from a
+#: fixture the suite already ships. Verified by running them in the unpacked
+#: tarball, 20 passed and 0 skipped, rather than inferred.
+CLAIMED_NEW_TEST_MODULES = 43
 
 
 def test_the_module_count_in_this_comment_matches_the_tree():

@@ -1389,11 +1389,43 @@ jobs:
           #     half                             930
           #     rounded down                     930
           #
-          # The band is [930, 969]. FLOOR=930 sits on the lower bound again;
-          # it goes red at 1,957 collected, because
-          # floor_to_ten((1957 - 77) // 2) is 940. The 1.7.1 suite adds 43
-          # tests (1,896 -> 1,939) in six modules, one per settle-read item.
-          FLOOR=930
+          # The band was [930, 969]. FLOOR=930 sat on the lower bound again;
+          # that paragraph said it goes red at 1,957 collected, because
+          # floor_to_ten((1957 - 77) // 2) is 940.
+          #
+          # IT WENT RED AT 1,960, AND THE PARAGRAPH ABOVE IS WHY NOBODY HAD TO
+          # NOTICE. 1.7.1's R9-R11 -- the three deltas ported from a parallel
+          # implementation of this same release -- add 22 tests in two modules
+          # plus two cases on an existing one, and the gate, not a person, is
+          # what said so. Tenth consecutive cycle.
+          #
+          # RE-DERIVED FROM A REAL SDIST, this job's exact invocation, on
+          # 3.11: `python -m build --sdist` off the branch, the tarball
+          # installed --no-deps into a venv (so `import nmtcapp` resolves
+          # under site-packages, confirmed before the run, reporting 1.7.1),
+          # ONLY tests/, streamlit_app/, README.md and pyproject.toml copied
+          # out of the tarball into a directory with NO nmtcapp/:
+          #
+          #     collected under -m "not wheel" 1,960   (1,961 less 1 deselected)
+          #     skipped in the sdist             -79
+          #     EXECUTED                       1,881
+          #     half                             940
+          #     rounded down                     940
+          #
+          # THE CEILING MOVES 77 -> 79 AND BOTH NEW SKIPS ARE NAMED. Neither
+          # new test module skips here -- both render from the installed
+          # package and read no pruned tree, measured in the tarball at 20
+          # passed / 0 skipped. The two are R10's fourth test-count claim
+          # site, CHANGELOG.md, and the scope proof beside it: MANIFEST.in
+          # ships CHANGELOG.md and this job does not copy it out, so both take
+          # the same checkout-marker skip CONTRIBUTING.md has taken since
+          # 1.3.1. The ceiling was raised by the measurement, not to buy room.
+          #
+          # The band is [940, 980], width 40 -- ON the maximum
+          # tests/test_release_floor.py permits, not inside it. It goes red at
+          # 1,962 collected. The answer then is to re-measure the ceiling, not
+          # to widen that maximum.
+          FLOOR=940
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()
