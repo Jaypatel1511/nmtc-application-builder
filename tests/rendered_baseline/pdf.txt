@@ -471,13 +471,13 @@ TO COMPLETE: Add the states served and sectors financed for each prior award
 directly to the table below. The CDFI Fund's Section E asks for both and this tool does
 not hold them.]
 Award-by-Award Deployment History
- **Award 1 (FY2019):** $45,000,000 — Fully Deployed. States: [CDE TO
- COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not
-collected by this tool].
- **Award 2 (FY2021):** $60,000,000 — Fully Deployed. States: [CDE TO
- COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not
-collected by this tool].
- **Award 3 (FY2023):** $55,000,000 — Partially Deployed. States: [CDE TO
+ Award 1 (FY2019): $45,000,000 — Fully Deployed. States: [CDE TO COMPLETE
+ — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this
+tool].
+ Award 2 (FY2021): $60,000,000 — Fully Deployed. States: [CDE TO COMPLETE
+ — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this
+tool].
+ Award 3 (FY2023): $55,000,000 — Partially Deployed. States: [CDE TO
  COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not
 collected by this tool].
 Compliance and Monitoring

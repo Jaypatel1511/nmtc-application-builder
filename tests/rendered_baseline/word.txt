@@ -83,9 +83,9 @@ P|Normal|Per this CDE's own profile declaration, no prior NMTC reporting issues 
 P|Normal|[CDE TO COMPLETE: State the CDE's full compliance and performance history over its prior allocations — recapture or reduction events, defaults, cures, and material findings. The profile field above covers reporting issues only and is not by itself a representation about defaults or compliance violations.]
 P|Normal|The deployment history table below lists each prior award's year, amount and deployment status. It does NOT record states served or sectors financed: neither is collected by this tool's CDE profile scaffold, so no value for them exists to print. [CDE TO COMPLETE: Add the states served and sectors financed for each prior award directly to the table below. The CDFI Fund's Section E asks for both and this tool does not hold them.]
 P|Heading 2|Award-by-Award Deployment History
-P|List Bullet|**Award 1 (FY2019):** $45,000,000 — Fully Deployed. States: [CDE TO COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this tool].
-P|List Bullet|**Award 2 (FY2021):** $60,000,000 — Fully Deployed. States: [CDE TO COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this tool].
-P|List Bullet|**Award 3 (FY2023):** $55,000,000 — Partially Deployed. States: [CDE TO COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this tool].
+P|List Bullet|Award 1 (FY2019): $45,000,000 — Fully Deployed. States: [CDE TO COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this tool].
+P|List Bullet|Award 2 (FY2021): $60,000,000 — Fully Deployed. States: [CDE TO COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this tool].
+P|List Bullet|Award 3 (FY2023): $55,000,000 — Partially Deployed. States: [CDE TO COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this tool].
 P|Heading 2|Compliance and Monitoring
 P|Normal|(See Attachment: Track Record Table)
 P|Heading 2|Outcomes and Impact Achieved
