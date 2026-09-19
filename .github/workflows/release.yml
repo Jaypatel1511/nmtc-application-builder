@@ -1363,7 +1363,37 @@ jobs:
           # tests inside the TARBALL are complete; that is this job's role.
           # Recorded so the next reader does not re-derive the wrong
           # conclusion from the skip count.
-          FLOOR=910
+          #
+          # RE-DERIVED AT 1.7.1 (the settle-read corrections), AND THE SKIP
+          # CEILING WAS FOUND UNDER WATER. The 1.7.0 block above says the
+          # job "skipped exactly 57"; the 1.7.0 release job itself (run
+          # 35425909441, this job on 3.12) printed "1826 passed, 69 skipped,
+          # 1 deselected" -- the twelve of test_q25_modelled_surfaces, which
+          # the block acknowledged skip on the docs surface and did not
+          # count. MAX_SDIST_SKIPS in tests/test_release_floor.py is 77 now:
+          # that 69, plus the eight of tests/test_release_docs_deploy.py,
+          # which reads .github/workflows/ and this tarball does not ship it.
+          #
+          # Derived from a REAL SDIST BUILD, this job's exact invocation, on
+          # 3.14.6: the tracked tree exported with `git archive`, `python -m
+          # build --sdist`, the tarball installed into a fresh venv with
+          # [dev], ONLY tests/, streamlit_app/, README.md and pyproject.toml
+          # copied out of it into a directory with NO nmtcapp/, `import
+          # nmtcapp` confirmed to resolve to site-packages at 1.7.1, and the
+          # breakdown read off the junit report -- the same 69 as the 1.7.0
+          # job module for module, plus the eight:
+          #
+          #     collected under -m "not wheel" 1,938
+          #     skipped in the sdist             -77
+          #     EXECUTED                       1,861
+          #     half                             930
+          #     rounded down                     930
+          #
+          # The band is [930, 969]. FLOOR=930 sits on the lower bound again;
+          # it goes red at 1,957 collected, because
+          # floor_to_ten((1957 - 77) // 2) is 940. The 1.7.1 suite adds 43
+          # tests (1,896 -> 1,939) in six modules, one per settle-read item.
+          FLOOR=930
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()

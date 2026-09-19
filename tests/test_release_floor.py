@@ -292,7 +292,23 @@ MARKER_EXPR = "not wheel"
 #: 57 skipped, 1,533 executed, and the tarball green. Band [760, 795], width
 #: 35, inside the 40 the bound below permits -- so raising it has not made
 #: FLOOR meaningfully harder to falsify.
-MAX_SDIST_SKIPS = 57
+#: 1.7.1: 57 -> 77, MEASURED, AND THE OLD NUMBER WAS ALREADY UNDER WATER.
+#: Read off the 1.7.0 release job itself (run 35425909441, test-sdist on
+#: 3.12, `gh run view --job 105851730781 --log`): "1826 passed, 69 skipped,
+#: 1 deselected" -- SIXTY-NINE, while release.yml's 1.7.0 block and this
+#: constant said 57. A ceiling twelve below the thing it bounds is the 1.5.4
+#: sentence a third time. The twelve are test_q25_modelled_surfaces (12,
+#: docs/ pruned -- the 1.7.0 block said "skips on the docs surface only",
+#: which is true, and did not count them), less test_documented_keys'
+#: 8 -> 10 and test_application_round's 1 -> 2 and test_examples_execute's
+#: 4, all of which the 1.5.5 close had already enumerated but the 57 never
+#: absorbed. 1.7.1 adds exactly eight: tests/test_release_docs_deploy.py,
+#: which reads .github/workflows/, which MANIFEST.in does not ship. Measured
+#: on this tree from a real sdist build, the job's exact invocation, on
+#: 3.14.6: 1,938 collected, 77 skipped, 1,861 executed -- the same 69 as the
+#: 1.7.0 job module for module, plus the eight. Band [930, 969], width 39,
+#: inside the 40 the bound below permits.
+MAX_SDIST_SKIPS = 77
 
 _FLOOR_RE = re.compile(r"^\s*FLOOR=(\d+)\s*$", re.MULTILINE)
 _COLLECTED_RE = re.compile(r"(\d+)(?:/\d+)? tests? collected")
@@ -486,7 +502,19 @@ def test_max_sdist_skips_is_bounded_from_ABOVE_as_well(collected_count):
 #: docs/, the same rule test_the_changelogs_review_process_sweep_matches_the_tree
 #: already applies) and importorskips streamlit for the About page, which the
 #: sdist job's copied-out Streamlit tree satisfies.
-CLAIMED_NEW_TEST_MODULES = 35
+#:
+#: 35 -> 41 at 1.7.1 (the settle-read corrections), one module per item:
+#: tests/test_pipeline_column_count.py (R2), tests/test_pdf_text_integrity.py
+#: (R3+R4), tests/test_no_markdown_syntax_leaks.py (R5),
+#: tests/test_document_properties.py (R6+R7),
+#: tests/test_headline_distress_denominator.py (R8) and
+#: tests/test_release_docs_deploy.py (R1). The last SKIPS in the sdist job —
+#: MANIFEST.in does not ship .github/, the same rule this module's own
+#: declared_floor fixture applies. The other five need only the installed
+#: package and the fixture the baseline gate already carries; the two source
+#: sweeps among them walk the INSTALLED package, so they do not skip and do
+#: not pass vacuously on a directory the sdist job does not have.
+CLAIMED_NEW_TEST_MODULES = 41
 
 
 def test_the_module_count_in_this_comment_matches_the_tree():

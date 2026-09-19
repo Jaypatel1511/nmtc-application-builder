@@ -5,6 +5,265 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.7.1] — 2026-09-19
+
+**PATCH. THE 1.7.0 SETTLE READ: NOTHING HERE MAKES THE PACKAGE SAY SOMETHING
+FALSE TODAY.** No threshold, weight, band, gate, grade or score moves; no
+methodology changes; no federal claim is added. Three items stop a federal
+reviewer misreading a number (a workbook column count typed as 33 for a tab
+with 29; PDF dollar totals, tract GEOIDs and the one URL that matters cut
+inside the token; markdown asterisks printed in Word and PDF), two make the
+artifacts diagnosable (the workbook carries no version; both files named
+their rendering library as author), one stops the P0 that has now recurred
+twice (the docs deploy was manual), and one puts a denominator beside the
+first distress figure a reviewer reads. Every item was measured on the
+published 1.7.0 artifacts or derived from `a29c983`, and every gate below
+was seen red before it was seen green.
+
+> **238 insertions, 275 deletions** in `tests/rendered_baseline/`, measured
+> `a29c983`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+
+| Class | Lines | +/− | Surface |
+|---|---|---|---|
+| R2: `Full 33-column` → `Full 29-column`, one sentence each | 4 | +2 / −2 | word, pdf |
+| R3: cut tokens rejoined — 47 lines of `$125,450,00`/`0`, `360290067`/`02`, `Table (201`/`6–2020` become 31 whole lines | 78 | +31 / −47 | pdf |
+| R3: the same tables re-wrapped under content-derived column widths (project names, `Deep Distress`, headers) | 284 | +131 / −153 | pdf |
+| R4: the methodology paragraph re-flowed from the URL line onward — the URL is one line, every later break moves | 110 | +55 / −55 | pdf |
+| R5: `**Award N (FYyyyy):**` → `Award N (FYyyyy):`, three lines each on markdown and word, seven on pdf | 26 | +13 / −13 | markdown, word, pdf |
+| R6: the Summary Dashboard footer gains `by nmtc-application-builder v<VERSION>` | 2 | +1 / −1 | excel |
+| R8: the Executive Summary sentence gains `(a share of QEI, not of QLICIs)`; markdown and word one line, pdf wraps to two | 7 | +4 / −3 | markdown, word, pdf |
+| Page furniture: R8's extra line pushes one line from page 2 to 3 | 2 | +1 / −1 | pdf |
+| `Item`/`Value` extraction rows — none; no table gained or lost a row | 0 | +0 / −0 | — |
+
+**513 lines, zero unexplained.** Recaptured per commit with
+`python -m tests.regen_rendered_baseline`; each commit's diff is quoted in
+its message.
+
+### R1 — the docs deploy is a release job (`.github/workflows/docs-deploy.yml`)
+
+1.6.5's P0 and 1.7.0's P0 are one defect a release apart: federal-fact
+corrections reached PyPI and not the website, because `mkdocs gh-deploy`
+was a line in a runbook. The 1.6.5 cycle wrote *a deploy that is manual is a
+surface that is stale* and left the remedy as a suggestion.
+
+* One workflow, two triggers. `release.yml` gains a `docs` job that
+  `needs: publish` — after, not beside: a site advertising a version PyPI
+  does not yet serve is the deployment-pin failure mode in a new place —
+  and calls `docs-deploy.yml` with `deploy: true`. `contents: write` is on
+  that job only; the workflow keeps `contents: read`.
+* `workflow_dispatch` runs the same job by hand, and its **default is a dry
+  run**: install `.[docs]` on 3.12 (ci.yml's docs toolchain, verbatim),
+  `mkdocs build --strict` (the sample-output hook raises below four
+  formats), fetch `gh-pages`, commit the site onto it locally with
+  `ghp-import -n` exactly as `gh-deploy` does, and `git push --dry-run` —
+  which authenticates, negotiates the fast-forward and writes nothing.
+  `deploy=true` is the real push. No `--force`, no `--no-history`: the
+  branch is fetched first so the push fast-forwards and history stays one
+  line of `Deployed <sha> with MkDocs version: 1.6.1` commits.
+* **Proven locally, step for step, on this branch**: strict build rendered
+  four formats; the fetch gave `c815aaf` (the manual 1.7.0 deploy);
+  `ghp_import -n` committed `6bb5cf0` with parent `c815aaf`;
+  `git push --dry-run origin gh-pages` reported `c815aaf..6bb5cf0` and
+  `git ls-remote` afterwards still read `c815aaf`. **Not proven here: the
+  runner's `GITHUB_TOKEN` path.** That is what the dispatch dry run exists
+  for, and the runbook now says to run it before tagging:
+
+      gh workflow run docs-deploy.yml --ref main        # dry run, touches nothing
+
+  The workflow file must be on `main` for `workflow_dispatch` to see it, so
+  the proof happens between merge and tag. If it goes red, do not tag.
+* `tests/test_release_docs_deploy.py` holds the shape: `needs` is publish
+  and only publish; `contents: write` on the docs job and nowhere else; the
+  toolchain and pinned action SHAs equal ci.yml's; gh-pages fetched before
+  either path; the real push gated on the input, the other `--dry-run`.
+  Six mutations, six red (`needs` dropped; `contents: write` hoisted;
+  `.[docs]` → `.[dev]`; `--strict` dropped; `--dry-run` dropped; fetch
+  dropped). It skips in the sdist job, which does not ship `.github/`.
+* `ci.yml`'s docs-job comment, `CONTRIBUTING.md`,
+  `docs/about/contributing.md` and `scripts/release.sh` no longer describe
+  a manual deploy.
+
+### R2 — Appendix A's column count is derived (`tables/pipeline_table`)
+
+Word and PDF sent the reader to the workbook with *"Full 33-column pipeline
+detail … Pipeline Detail tab"*. The tab has **29** — `openpyxl` on the
+published 1.7.0 workbook (`max_column == 29`) and `len(_PIPELINE_COLUMNS)`
+on the tree agree — and the sentence pointing a federal reviewer at the
+attachment miscounted the attachment. Four typed sites (the two sentences,
+two docstrings); a widened sweep for *thirty-three*, split strings and
+f-strings found no fifth.
+
+* **The Excel writer builds `Pipeline Detail` from `build_pipeline_table`,
+  which reindexes to `_PIPELINE_COLUMNS` and raises on disagreement** — so
+  deriving the prose count from the list is a correctness fix, not a
+  consistency one. `tests/test_pipeline_column_count.py` asserts it on the
+  rendered file: header row 3 *is* the list, in order.
+* `PIPELINE_COLUMN_COUNT = len(_PIPELINE_COLUMNS)`, guarded at import with
+  `raise ImportError` (not `assert`) against 29, interpolated in both
+  sentences; the docstrings name the list. PIN row on word,pdf.
+* Gates: each surface states the count exactly once and it is the
+  constant; `33-column` absent; no source file types a count (walking the
+  installed package, so the sdist job cannot pass on a missing directory).
+  Mutations: Word retyped 33 → 2 red; PDF retyped 33 → 2 red; 30th column →
+  `ImportError`; pin row expecting 30 → red.
+
+### R3 + R4 — the PDF never cuts a figure, a GEOID or a URL (`renderers/pdf_builder`)
+
+Measured on the published PDF: six TOTAL-row figures as `$124,700,00` over
+`0` — $124.7 million read as $124,700 — and the CY 2026 Application
+Materials URL as `…/pro` over `grams-training/…`. On the baseline fixture
+the same defect cut eight figures **and, in the landscape distress
+appendix, 11-digit census tracts** (`360290067` / `02`) and the ACS year
+range (`Table (201` / `6–2020`).
+
+* **Mechanism, instrumented** (the planning chat's hypothesis was the right
+  place to look and not the whole cause): `colWidths=None` made ReportLab
+  split the frame equally — 432 pt less 6 pt frame padding a side, over six
+  columns, is 70 pt a column and 60 pt inside the cell padding, and the
+  bold `$122,500,000` is 61.2 pt; and `ParagraphStyle.splitLongWords`
+  defaults to 1, which cuts any single token wider than its line at
+  whatever character fits. The URL is 426.7 pt at the 11 pt body size in a
+  420 pt column.
+* `splitLongWords=0` on the body style and every table cell style: a token
+  moves whole or not at all. `_auto_col_widths` sizes unspecified columns
+  from content — each at least its widest token plus padding plus a 1 pt
+  margin (an exact-fit 61.2 pt token in a 61.2 pt cell still wrapped),
+  slack shared max-min fairly so short cells never wrap to buy points for
+  prose that wraps regardless, font stepped down to 6 pt if even the widest
+  tokens would not fit. The distress appendix sizes by content instead of
+  an equal 15-way split. `_fit_urls` renders a URL that does not fit the
+  column at the largest whole size at which it does (11 → 10 pt here), one
+  token on one line.
+* `tests/test_pdf_text_integrity.py`, on the baseline fixture **and the same
+  fixture at ten times the dollars** so a width sized for today's figures
+  is not evidence: no line ends in a partial digit group; every total and
+  every tract appears whole; the URL is on one line; and a **modelled check
+  that no cell's wrapped text is wider than its column** — the case the
+  text gates cannot see, because an unsplit token that overflows lands
+  inside the table where the frame gate does not look (measured: equal
+  widths plus `splitLongWords=0` passed both existing gates). Mutations:
+  the 1.7.0 renderer → 6 of 9 red (8 and 17 cuts); widths kept and
+  splitting restored → green (the widths carry the tables); equal widths
+  and splitting off → the cell-overflow check red on eight landscape cells.
+* 47 `invariant_allowlist` entries — 1.6.5's hand-entered PDF wraps of the
+  provenance note — stopped rendering as those fragments; each is a
+  contiguous fragment of a ruled line that survives, so the N-WRAP
+  narrowing covers the new wraps and the entries are removed as the gate
+  instructs. Nothing was adjudicated.
+
+### R5 — Section E emits plain text (`sections/section_e_prior_awards`)
+
+`f"**Award {i+1} (FY{year}):** …"` — markdown bold in a content dict four
+renderers read. Fixed in the section, not the renderers: the dict is the
+one representation every format reads, and `sections/base.
+_content_to_markdown` is where markdown emphasis belongs. Sweep: grep over
+`nmtcapp/sections/` for `**`, `__x`, backticks, `](http` and line-leading
+`#` found this site and `base.py:130` (inside `_content_to_markdown`,
+correct); a runtime walk of every section's generated content found the
+same three strings and nothing else. Gate: no section string carries
+markdown syntax, no Word or PDF paragraph prints `**`, the award lines are
+still present. Markdown loses the bold on the label.
+
+### R6 + R7 — the workbook stamps its build; files name the CDE (`renderers/_document_properties`)
+
+`1.7.0` appeared in no cell of the workbook — the read that caught both the
+1.6.5 and the 1.7.0 P0 on the other three formats. The Summary Dashboard
+footer now ends `Generated <date> by nmtc-application-builder vX.Y.Z`, from
+`nmtcapp.__version__` at call time (125 characters on a 141-character
+span). And every `.docx` carried python-docx's template — author
+`python-docx`, comments *generated by python-docx*, **created and modified
+`2013-12-23`** — every `.xlsx` openpyxl's creator and no title. Now, from
+the CDE and the package only: author/creator the CDE's name; title the
+CDE's name and the round phrase the running headers print;
+comments/description the package and version; Word's created/modified the
+generation time. Subject, keywords, category and manager stay empty — the
+profile carries none. Gate: the stamp in exactly one cell beside the date,
+moving with a monkeypatched `__version__`; both files' properties equal
+the CDE's values, carry no library default, no 2013 date, and leave the
+unsupplied fields empty.
+
+### R8 — the Executive Summary's headline states its denominator
+
+`87% of QEI committed to deep/severely distressed tracts`, bold on the first
+page, and three more times before the block that says it is *a share of
+QEI, not of QLICIs*. The clause now travels with the first occurrence on
+markdown, Word and PDF, in the nominal and the partial-unverified branch,
+as `_question_25.Q25_QEI_BASIS_CLAUSE` — read, not retyped. The three later
+sites are unchanged: the scope was the first occurrence. **No
+adjudication**: the clause names no authority, so the fund-attribution
+gates have nothing new to rule on (25 passed before, 25 after); the two
+invariant DERIVED rows follow their sentences. Gate: headline and clause in
+the same sentence on all three surfaces, both branches, no retyped copy.
+
+**Not done, carried: the headline prints 87% where Section B prints
+86.7%.** The `.0%` format is shared with the Investment Thesis, the
+Pipeline Overview, the Deployment Strategy line and `_disclosure.
+qualified_pct`, and the invariant mask renders `86.7%` as `N.N%`, so
+aligning them re-keys six more allowlist rows across nine sites.
+
+### Found outside the scope, reported, not fixed
+
+* **Word's and PDF's partial-unverified Executive Summary still end
+  *"figures reflect location-verified projects only."*** — the claim
+  `renderers/_disclosure.unverified_banner` records as withdrawn because it
+  is false: an unverified project is absent from the numerator and present
+  in the denominator, so the share is a lower bound, which is what markdown
+  says and what the banner directly above the sentence says. The sentence
+  contradicts its own banner on two of four surfaces, in the state a CDE is
+  in until every project geocodes. R8 touched that sentence and left this
+  clause as it was, per the freeze. The fix is markdown's wording carried to
+  Word and PDF; it is one sentence, and it needs the reviewer to say so.
+* `excel_builder._build_pipeline_sheet` retypes `CURRENCY_COLUMNS` as a
+  seven-name literal beside the constant that owns it — the R2 shape one
+  module over. Consistent today. Carried.
+* `build_pipeline_summary_table`'s docstring says *"6-column"* of a dict it
+  builds by hand. Consistent today. Carried.
+* The rendered baseline's Appendix E prints `0 states` for the fixture CDE's
+  three awards; the sample CDE prints `7 states`. Fixture data, not a
+  renderer defect; noted because a reader of `pdf.txt` will ask.
+* Everything the prompt listed as out of scope is untouched:
+  `Q25_AREA_TYPES_MODELLED`, the Sector Diversity disclaimer, the
+  round-provenance heading, the `$10bn`/`$5bn` fact, the eligibility repr,
+  the round-opening conflation, F7, the 0.60 discontinuity, the unused
+  `qualified`, methodology v3, the classifier, the QLICI denominator, `≥`.
+
+### Census and verification
+
+* The rendered-string sweep is unchanged in shape, and 288 constants are swept
+  (282 at 1.7.0: `PIPELINE_COLUMN_COUNT` and the five `pdf_builder` layout
+  constants); the two historical sentences follow, as that gate requires.
+  The Review Process corpus count is unchanged at 118 / 113.
+* The 1.7.0 entry's baseline-delta claim is pinned from `HEAD` to `a29c983`,
+  the way 1.6.4's was; re-derived at the pin, 74/59, unchanged.
+* New test modules since v1.4.0: 35 → 41, one per item.
+* `release.yml`'s `FLOOR` re-derived from a real sdist build, the job's exact
+  invocation, on 3.14.6: 1,938 collected under `-m "not wheel"`, 77 skipped,
+  1,861 executed, half 930, `FLOOR=930` (was 910; band [930, 969]). **The
+  skip ceiling was found under water**: the 1.7.0 block said the job
+  "skipped exactly 57", and the 1.7.0 release job itself (run 35425909441,
+  test-sdist on 3.12) printed `1826 passed, 69 skipped` — the twelve of
+  `test_q25_modelled_surfaces`, acknowledged and not counted.
+  `MAX_SDIST_SKIPS` is 77: that 69, module for module, plus the eight of
+  `test_release_docs_deploy.py`, which reads `.github/workflows/` and the
+  tarball does not ship it. The tarball ran CLEAN on the final tree:
+  1,861 passed, 77 skipped, 1 deselected, zero failures, re-built from this
+  commit (the four red on the first sdist run were this entry's own derived
+  counts, the round-status registry and the published test count, fixed
+  before commit).
+* Published test counts re-derived: 1,896 → 1,939 in `README.md`,
+  `CONTRIBUTING.md` and `streamlit_app/app.py`. Round-status registry: the
+  footer key follows its line; the PDF's spelling of the provenance sentence
+  with the cut URL is gone (the PDF now renders the sentence the other three
+  surfaces render); one re-flowed PDF wrap and three source comments
+  classified, all asserting nothing.
+* Verified on Python 3.14.6 (one interpreter; the 3.9–3.12 matrix is CI's),
+  from a clean clone of the branch into a fresh venv with `[dev]` plus
+  `build` (the `wheel`-marked test shells out to `python -m build`, which
+  release.yml's build job installs separately): 1,938 passed, 1 skipped
+  (`network`).
+
+---
+
 ## [1.7.0] — 2026-09-19
 
 **MINOR. R1: QUESTION 25(b) OF THE CY 2026 APPLICATION LISTS FIVE AREA

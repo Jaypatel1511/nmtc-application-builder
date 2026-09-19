@@ -36,7 +36,7 @@ is stale.
 ## Running Tests
 
 ```bash
-PYTHONPATH=. pytest tests/ -v          # all 1,896 tests
+PYTHONPATH=. pytest tests/ -v          # all 1,939 tests
 PYTHONPATH=. pytest tests/core/ -v    # specific module
 PYTHONPATH=. pytest tests/ -q --tb=short  # quick summary
 ```
