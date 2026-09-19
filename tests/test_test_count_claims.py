@@ -101,7 +101,7 @@ _MIN_PLAUSIBLE_COLLECTION = 800
 #: this tree and is what group 1 captures. The bold alternatives are there
 #: because the sentence has been written both ways -- ``Published test counts
 #: re-derived: 1,896 → 1,939`` in the 1.7.1 entry and ``Published test count
-#: **1,783 → 1,790**`` in 1.5.9's -- and a pattern that only knows this
+#: **1,783 → 1,790**`` in 1.6.2's -- and a pattern that only knows this
 #: round's spelling is the same one-alternative blindness that hid
 #: CONTRIBUTING.md for a whole release.
 _CHANGELOG_COUNT_RE = (
@@ -138,9 +138,9 @@ _CLAIM_SITES = (
     #
     # SCOPED TO THE CURRENT ENTRY, AND THE SCOPE IS THE WHOLE DESIGN. Headings
     # below state counts that are TRUE AS HISTORY -- 1,881 under 1.6.5, 1,790
-    # under 1.5.9 -- so an unscoped pattern would go red on a true sentence,
+    # under 1.6.2 -- so an unscoped pattern would go red on a true sentence,
     # which is how a gate gets deleted instead of fixed. Measured: with the
-    # scope removed this site reads 1,790 out of the 1.5.9 entry and fails.
+    # scope removed this site reads 1,790 out of the 1.6.2 entry and fails.
     ("CHANGELOG.md", _CHANGELOG_COUNT_RE, lambda text: _current_changelog_entry(text)),
 )
 
@@ -354,7 +354,7 @@ def test_the_changelog_claim_is_scoped_to_the_current_entry(collected):
     and go red on sentences that are true as history — which is how a gate
     gets deleted instead of fixed, and why the scope exists rather than a
     looser comparison. Measured, with the scope removed: this site reads
-    1,790 out of the 1.5.9 entry and fails against a tree collecting 1,950.
+    1,790 out of the 1.6.2 entry and fails against a tree collecting 1,960.
 
     Two-sided, so neither half can rot into decoration:
 

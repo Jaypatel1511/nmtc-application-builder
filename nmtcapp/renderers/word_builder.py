@@ -15,8 +15,8 @@ from docx.shared import Pt, RGBColor, Inches, Cm
 
 from nmtcapp.renderers._cell_format import supplied_total
 from nmtcapp.renderers._disclosure import (
-    is_partial_unverified, qlici_not_supplied_note, qualified_pct,
-    unverified_banner, unverified_ids, unverified_qualifier,
+    LOWER_BOUND_CLAUSE, is_partial_unverified, qlici_not_supplied_note,
+    qualified_pct, unverified_banner, unverified_ids, unverified_qualifier,
 )
 from nmtcapp.renderers._methodology import (
     ACS_VINTAGE, deal_economics_note, distress_definitions, impact_bands_note,
@@ -270,9 +270,19 @@ class WordApplicationBuilder:
                 f"Our {pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states, with "
                 f"{distress.get('pct_deep_or_severe', 0):.0%} of QEI "
+                # THE SENTENCE THIS PACKAGE'S OWN DISCLOSURE MODULE RECORDS AS
+                # FALSE (1.7.1 R11). It ended "— figures reflect
+                # location-verified projects only", which asserts a
+                # VERIFIED-ONLY DENOMINATOR. _disclosure.unverified_banner
+                # adjudicates the opposite, in the banner printed four lines
+                # above this sentence in the same document: the numerator
+                # counts only verified projects, the denominator is all
+                # pipeline QEI, so the share is a LOWER BOUND. A verified-only
+                # denominator OVERSTATES, in the direction that flatters the
+                # applicant. Read from _disclosure, where the reasoning is.
                 f"{unverified_qualifier(pr)} committed to deep and severely "
-                f"distressed census tracts ({Q25_QEI_BASIS_CLAUSE}) — figures "
-                "reflect location-verified projects only."
+                f"distressed census tracts ({Q25_QEI_BASIS_CLAUSE}) — "
+                f"{LOWER_BOUND_CLAUSE}."
             )
         else:
             # THE DENOMINATOR TRAVELS WITH THE HEADLINE (1.7.1 R8); see

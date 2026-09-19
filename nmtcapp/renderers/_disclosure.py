@@ -155,6 +155,44 @@ def qualified_pct(value: float, pr, decimals: int = 0) -> str:
     return f"{value:.{decimals}%} {unverified_qualifier(pr)}"
 
 
+#: What the Executive Summary's distress headline says about its own basis on
+#: the partial-unverified path, on every flowing surface. Stated once here,
+#: beside the adjudication it comes from.
+#:
+#: WORD AND PDF SAID THE OPPOSITE OF THIS MODULE UNTIL 1.7.1 R11. Both ended
+#: that sentence with
+#:
+#:     "— figures reflect location-verified projects only."
+#:
+#: which asserts a VERIFIED-ONLY DENOMINATOR. :func:`unverified_banner` below
+#: adjudicates the opposite in the same document — "all pipeline QEI in the
+#: denominator, so each is a LOWER BOUND" — and reason 2 of its note says a
+#: verified-only denominator "OVERSTATES, in the direction that flatters the
+#: applicant": one verified deep-distress project out of twenty would file
+#: "100% of QEI in deep/severe tracts", and understating is the only safe
+#: direction to err in a federal filing.
+#:
+#: So the same Word or PDF document carried the banner saying LOWER BOUND and,
+#: a page earlier, a sentence saying the figure was computed the flattering
+#: way. The claim was struck from the BANNER in 1.2.x — the
+#: fund-attribution allowlist still records it as "text that used to claim the
+#: figures 'reflect verified projects only'" — and survived on two surfaces in
+#: the Executive Summary, which is the one-surface-fixed shape this package
+#: keeps shipping from.
+#:
+#: THE WORDING IS MARKDOWN'S, NOT A THIRD PHRASING. markdown_builder has
+#: rendered exactly this since the banner was corrected; Word and PDF simply
+#: never got it. Deleting the clause outright was the other candidate and is
+#: worse: the figure IS a lower bound, the banner already says so, and an
+#: unqualified share beside a banner is how a reader concludes the qualifier
+#: belongs to something else. Stating it beside the figure is what the
+#: module's own "every figure states its own basis" rule asks for.
+LOWER_BOUND_CLAUSE = (
+    "a lower bound: unverified projects are absent from the numerator but "
+    "present in the denominator, so the true share may be materially higher"
+)
+
+
 def unverified_banner(pr) -> str:
     """Banner text naming the unverified project IDs.
 
