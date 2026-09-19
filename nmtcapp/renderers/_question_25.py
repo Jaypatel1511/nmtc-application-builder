@@ -213,7 +213,19 @@ Q25B_AREA_TYPES = (
 # The rendered note says "The last of these is CONDITIONAL" and then names
 # the fifth type; the sentence is only true while the conditional type IS
 # the last member. A reorder fails here, at import, not on a filing.
-assert Q25B_AREA_TYPES[-1] == Q25B_HOMEOWNERSHIP_COST_BURDEN
+# ``raise``, not ``assert``: ``python -O`` strips asserts, and a stripped
+# guard would let the reordered tuple render a note whose "last of these"
+# names the wrong type on four surfaces.
+if Q25B_AREA_TYPES[-1] != Q25B_HOMEOWNERSHIP_COST_BURDEN:
+    raise ImportError(
+        "nmtcapp.renderers._question_25: Q25B_AREA_TYPES has been reordered — "
+        f"its last member is {Q25B_AREA_TYPES[-1]!r}, not "
+        f"{Q25B_HOMEOWNERSHIP_COST_BURDEN!r}. The rendered Question 25 basis "
+        "note says 'The last of these is CONDITIONAL' and then names the "
+        "Homeownership Cost Burden type, so the conditional type must stay "
+        "last. Restore the order, or rewrite the sentence in q25_basis_note() "
+        "so it no longer depends on position."
+    )
 
 #: The count of Question 25(b)'s area types, AS A WORD, for the rendered
 #: sentence. Derived from the tuple: through 1.6.5 the sentence carried the
@@ -242,7 +254,20 @@ Q25B_LADDER = (0, 5, 10, 15, 20)
 Q25_DISTINCT_AREA_TYPES = len(
     set(Q25A_ITEMS_1_TO_5) | set(Q25A_ITEMS_6_TO_12) | set(Q25B_AREA_TYPES)
 )
-assert Q25_DISTINCT_AREA_TYPES == 15, Q25_DISTINCT_AREA_TYPES
+# ``raise``, not ``assert``: under ``python -O`` a stripped assert would let a
+# drifted count render silently as "6 of the 16" on four filing surfaces.
+if Q25_DISTINCT_AREA_TYPES != 15:
+    raise ImportError(
+        "nmtcapp.renderers._question_25: the set-union of Q25A_ITEMS_1_TO_5, "
+        f"Q25A_ITEMS_6_TO_12 and Q25B_AREA_TYPES has {Q25_DISTINCT_AREA_TYPES} "
+        "distinct area types; the CY 2026 Application has 15 (12 in 25(a) + 5 "
+        "in 25(b) - 2 shared). Either a tuple gained or lost a member, or one "
+        "of the two shared names (NMTC Native Areas, U.S. Island Areas) no "
+        "longer matches character-for-character across the tuples. Reconcile "
+        "the tuples against the Application; if the Application itself "
+        "changed, update this check and the Q25_DISTINCT_AREA_TYPES docstring "
+        "together."
+    )
 
 #: The area types this package carries a per-project field for. Counted here
 #: rather than typed into the sentence so the two cannot drift.

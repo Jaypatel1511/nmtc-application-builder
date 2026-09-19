@@ -183,8 +183,15 @@ class WinProbabilityScore:
         pp = self.priority_points
 
         def _pts(section: dict, key: str) -> str:
+            # A 3-wide value field, mirroring the ``{MAX:3d}`` denominator on
+            # the other side of the slash. Through 1.7.0's F15 commit this was
+            # ``{val:2d}``: the labels below are hand-padded to 26 characters,
+            # "Community Outcomes Quality" is exactly 26, and the 2-wide
+            # field's leading space was the only thing separating that label
+            # from its value — until F15 made the value 10. The column must
+            # not depend on the digit count of what lands in it.
             val = section.get(key, 0)
-            return "n/a" if val is None else f"{val:2d} "
+            return " n/a" if val is None else f"{val:3d} "
 
         # The .get() defaults are the constants, not literals. A default that
         # is a typed number is a silent second copy of the constant which fires

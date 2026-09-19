@@ -23,6 +23,19 @@ citation of the Allocation Application in `renderers/_question_25` and
 score change does not reach the four generated filing documents at all**
 — see the F15 section below for where it does reach.
 
+> **IF YOU GENERATED A QUESTION 25 SECTION WITH 1.6.5 OR EARLIER, RE-CHECK
+> QUESTION 25(b) BEFORE YOU FILE.** Those documents state that Question 25(b)
+> lists four qualifying area types. The CY 2026 Application lists **five** —
+> the fifth is **Homeownership Cost Burden**, printed p. 40 / PDF p. 67, and
+> it qualifies only to the extent the QLICI activities finance the development
+> or rehabilitation of *affordable* homeownership units *in those tracts*. If
+> any of your QLICIs sit in CHAS-burdened tracts and finance affordable
+> homeownership, that is a qualifying route those documents did not show you,
+> and it may change the commitment level you select in Question 25(b)(i) or the
+> figure you enter in 25(b)(ii). Re-generate with 1.7.0, or read Question 25(b)
+> directly. No figure this package produces answers either Question 25
+> commitment; the area-type lists are what changed.
+
 > **74 insertions, 59 deletions** in `tests/rendered_baseline/`, measured
 > `d1d5eba`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
 
@@ -264,11 +277,32 @@ in `tests/intelligence/test_dimensional_scores_fixed_maxima.py`, 20/25 →
 21/25. `docs/quickstart.md`'s captured summary was already stale against
 the 1.6.5 tree (it showed 88/97, Special Targeting 1/5 and Community
 Outcomes 45/50 for a build that produced 90/99, 3/5 and 47/50) and is
-re-captured from live output. Which applications change tier in the wild:
-exactly those with `has_quantified_outcomes` and
-`has_third_party_validation`, `co_total` of 39 through 1.6.5, and
-`bs_total ≥ 40` with aggregate ≥ 84 — from Not Qualified to Highly
-Qualified, which is the intended effect and the thing to scrutinise.
+re-captured from live output (a claim addendum 3 below corrects: the
+capture was hand-edited, and is now a real redirect). Which applications
+change tier in the wild — swept exhaustively, not reasoned: every
+(`bs_total`, `co_total`) pair a top-rung application can produce, `bs_total`
+0-50 and 1.6.5 `co_total` 9-49 (the rung contributed 9, so 9 is the floor;
+49 was the reachable ceiling), 2,091 pairs classified before and after the
+point with the live `_classify_tier`. **17 pairs move, all of them
+applications with `has_quantified_outcomes` and
+`has_third_party_validation`, in three classes.** (1) Not Qualified → Highly
+Qualified across the 40-point Community Outcomes section floor: 1.6.5
+`co_total` 39 with `bs_total` 45-50 (6 pairs; `bs_total ≥ 45` because the
+aggregate must reach 85 from 84 at the same time). (2) Not Qualified →
+Highly Qualified across the 85-point aggregate gate alone, both section
+floors already met: 1.6.5 `co_total` 40-44 with `bs_total` = 84 −
+`co_total`, i.e. `bs_total` 44-40 (5 pairs). (3) Highly Qualified → Top Tier
+across the house 95-point aggregate cut, both sections at or above the house
+45-point floor once the point lands: 1.6.5 aggregate 94 with `bs_total`
+45-50 and `co_total` 49-44 (6 pairs; the (50, 44) pair crosses the
+Community Outcomes 45 floor and the 95 cut together). An earlier draft of
+this sentence named only class (1) and called it "exactly"; the audit's
+sweep found (2) and (3), and this sweep reproduces all three. No pair moves
+in any other direction, no application without both flags moves, the 2 and
+6 rungs are the literals they were, and no threshold constant moved —
+`HIGHLY_QUALIFIED_AGGREGATE_MIN`, `HIGHLY_QUALIFIED_SECTION_MIN`,
+`HOUSE_TOP_TIER_AGGREGATE_MIN` and `HOUSE_TOP_TIER_SECTION_MIN` read 85 /
+40 / 95 / 45 on `d1d5eba` and on this tree.
 
 ### R1 addendum 2 — the docs surfaces contradicted the generated documents
 
@@ -315,6 +349,73 @@ sits after it. No third surface carries the drift: a sweep for `five of the
 (fifteen|fourteen)`, `nothing for Non-Metropolitan` and `unverified flags
 for` finds only the two paragraphs and the history that records them.
 
+### R1 addendum 3 — the audit fix round
+
+The hostile audit of `7f2b43b` returned *one correction, then yes*. What it
+found, and what moved:
+
+* **F15 broke `summary()`'s column, and the quickstart capture was
+  hand-edited to hide it.** Every sub-score label in
+  `WinProbabilityScore.summary()` is hand-padded inside its f-string to a
+  26-character field, and `"Community Outcomes Quality"` is *exactly* 26
+  characters — it received no padding, and the leading space of the 2-wide
+  value field (`_pts`, `f"{val:2d} "`) was the only thing separating label
+  from value. F15 made that value `10`, and the live line became
+  `Community Outcomes Quality10 / 10`. `docs/quickstart.md` showed the line
+  *with* a space, which no build produced, so the addendum-1 claim that the
+  block was "re-captured from live output, spacing matched" was false — the
+  block was edited by hand and the diff-to-live check was not run. **Fix:**
+  `_pts` is now a 3-wide value field (`f"{val:3d} "`, `" n/a"` for the
+  unscored case), mirroring the `{MAX:3d}` denominator already on the other
+  side of the slash; one change site, no label literal touched, and the
+  column no longer depends on the digit count of what lands in it. Every
+  sub-score line therefore moves one character right on every surface that
+  carries the score — the API, `nmtcapp score`, the Streamlit scorer and the
+  documented sample. **The capture is now a redirect**: the fenced block
+  under "Sample output:" in `docs/quickstart.md` was spliced from
+  `summary()`'s live output by script, and the extracted block diffs
+  zero against a fresh run outside the `Assessment` line, which the page
+  has elided since `ff01fb5` (the one difference the raw diff shows). The
+  audit named `docs/reference/methodology.md` and
+  `tests/test_recommendation_inputs_not_supplied.py` as further carriers of
+  the lines; neither carries a `summary()` capture (the former has the
+  sub-score *table*, the latter a label tuple), and
+  `tests/cli_baseline/analyze.txt` carries none either — grep for the
+  padded labels and `Aggregate Base Score:` finds only the quickstart.
+* **Both import-time asserts in `renderers/_question_25` are now
+  `raise ImportError`.** `assert Q25B_AREA_TYPES[-1] == …` and
+  `assert Q25_DISTINCT_AREA_TYPES == 15` failed as a bare
+  `AssertionError: 16` from `import nmtcapp`, taking the CLI and the
+  Streamlit app down with no instruction — and **under `python -O` they did
+  not fail at all**: a drifted tuple rendered "6 of the 16" silently on four
+  filing surfaces (reproduced by the audit; reproduced here on an isolated
+  copy of the package with a sixteenth name spliced in, `-O` and not). Each
+  now raises an `ImportError` that names what drifted and what to do; both
+  drifts raise under `-O` and the clean tree imports under `-O`. The new
+  count message names the CY 2026 Application and so entered
+  `test_round_status_consistency`'s scan; it is classified `()` (it
+  presupposes the Application exists and asserts nothing about its
+  publication).
+* `tests/test_fund_attribution_source.py`'s registry commentary said "a
+  0/5/10/15/20 ladder over four area types", split across two `#:` lines and
+  so invisible to the line-oriented sweeps. It is history about the 1.3.0
+  ruling, so it is round-qualified ("four in CY 2024-2025, five in CY 2026")
+  like the other historical mentions rather than deleted.
+* `test_round_status_consistency`'s corpus-floor assertion message said
+  "(13,177 measured)", a number from an earlier tree. The floors block and
+  its constants are re-measured on *this* tree — 240 / 167 / 79 / 13,454
+  (239 / 166 / 79 / 13,443 at `7f2b43b`; the two `ImportError` messages are
+  the difference) — floors unchanged.
+* The F15 tier-flip sentence above is rewritten from an exhaustive sweep;
+  the earlier "exactly" named one of three moving classes.
+* The disclosure paragraph at the head of this entry is new: the entry
+  described the defect and told a user holding old output nothing about what
+  to do. Its page numbers, item name and limb were re-checked against PDF
+  p. 67 of the SHA-pinned Application before it went in.
+* `tests/rendered_baseline/` is byte-identical to `7f2b43b` (regenerated;
+  zero diff) — nothing in this round reaches a generated filing document.
+  `LAST_VERIFIED` is not bumped.
+
 ### Out of scope, found, and NOT fixed
 
 * `_round_provenance`'s ¶0 still says *"THIS TOOL STILL ENCODES THE CY
@@ -334,6 +435,21 @@ for` finds only the two paragraphs and the history that records them.
   only because they coincide with `LAST_VERIFIED`. `LAST_VERIFIED` is NOT
   bumped in this release; whoever bumps it must resolve that interaction
   first.
+* **`Q25_AREA_TYPES_MODELLED = 6` is a typed literal** not tied to
+  `PipelineProject`'s field set. The audit's sharpest finding: addendum 2's
+  new gate is a *consistency* gate, not a *correctness* one. The exact 1.4.0
+  defect its own docstring describes — a seventh field landing without the
+  number moving — would leave all three surfaces agreeing on the wrong count
+  and the gate green. Deferred to a 1.7.1 cycle of its own.
+* **`RECHECK_ITEMS` item 6's date is bound to `LAST_VERIFIED`**, whose
+  meaning is "a human re-checked the Fund". Every future bump re-dates the
+  Review-Process positive whether or not anyone looked that day. Item 6
+  needs its own typed date; next cycle.
+* **`_score_pipeline_credibility` is discontinuous at 0.60** (0.599 → 5.99,
+  0.60 → 9.0), and its comment says "<50% → proportional" where the branch
+  covers <60%. Pre-dates this branch; deferred.
+* **`qualified` in `_score_special_targeting`** is computed and unused.
+  Deferred.
 
 ### Gates and registries
 

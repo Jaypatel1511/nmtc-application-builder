@@ -1252,6 +1252,10 @@ ROUND_STATUS_CLAIMS = {
     # streamlit_app/pages/4_About_and_Methodology.py
     "It carries nothing for Targeted Populations, nothing for Homeownership Cost Burden (Question 25(b)'s fifth area type, new in CY 2026 and conditional on the QLICI financing affordable homeownership units in the tract), and nothing for any of items 6-12.":
         (),
+
+    # nmtcapp/renderers/_question_25.py
+    'nmtcapp.renderers._question_25: the set-union of Q25A_ITEMS_1_TO_5, Q25A_ITEMS_6_TO_12 and Q25B_AREA_TYPES has {} distinct area types; the CY 2026 Application has 15 (12 in 25(a) + 5 in 25(b) - 2 shared).':
+        (),
 }
 
 #: Why a selected segment that DOES carry publication-status vocabulary still
@@ -1476,13 +1480,15 @@ QUOTED_HISTORY = (
 # ---------------------------------------------------------------------------
 # THE FLOORS, MEASURED -- NOT GUESSED
 #
-# Measured on 2026-09-18 against this tree (R1; the 1.6.5 measurement of
+# Measured on 2026-09-18 against this tree (R1 fix round; at 7f2b43b, the
+# R1 tree before it, 239 / 166 / 79 / 13,443 -- the two ImportError messages
+# in renderers/_question_25 added the difference; the 1.6.5 measurement of
 # 2026-09-17 was 202 / 130 / 79 / 13,367), by running ``selected()``:
 #
-#     239 selected occurrences
-#     166 distinct segments
+#     240 selected occurrences
+#     167 distinct segments
 #     79 modules scanned (nmtcapp + streamlit_app, nothing excluded)
-#     13,443 segments in the corpus in total
+#     13,454 segments in the corpus in total
 #
 # Each floor sits BELOW its measurement so that deleting a sentence or two is
 # not automatically red, and FAR above zero so that an empty corpus, a broken
@@ -1491,10 +1497,10 @@ QUOTED_HISTORY = (
 # looked at" are the same green.
 # ---------------------------------------------------------------------------
 
-_MIN_SELECTED_OCCURRENCES = 130        # measured 239 (R1); 202 at 1.6.5
-_MIN_SELECTED_SEGMENTS = 75     # measured 166 (R1); 130 at 1.6.5
+_MIN_SELECTED_OCCURRENCES = 130        # measured 240 (R1 fix round; 239 at 7f2b43b); 202 at 1.6.5
+_MIN_SELECTED_SEGMENTS = 75     # measured 167 (R1 fix round; 166 at 7f2b43b); 130 at 1.6.5
 _MIN_SOURCE_FILES = 55             # measured 79
-_MIN_CORPUS_SEGMENTS = 9500           # measured 13,443 (R1); 13,367 at 1.6.5
+_MIN_CORPUS_SEGMENTS = 9500           # measured 13,454 (R1 fix round; 13,443 at 7f2b43b); 13,367 at 1.6.5
 
 #: THE HARD BACKSTOP ON THE ``()`` CLASSIFICATION. ``()`` means "this segment
 #: asserts nothing about either constant", and it is the one way a human could
@@ -2015,7 +2021,7 @@ def test_the_scan_reads_a_real_corpus():
     total = sum(len(segments(text)) for _label, text in corpus())
     assert total >= _MIN_CORPUS_SEGMENTS, (
         f"the corpus segmented into {total} sentences, below the "
-        f"{_MIN_CORPUS_SEGMENTS} floor (13,177 measured). The segmenter is "
+        f"{_MIN_CORPUS_SEGMENTS} floor (13,454 measured). The segmenter is "
         "broken, and a broken segmenter selects nothing and passes stage 1."
     )
 

@@ -82,21 +82,21 @@ Sample output:
 ======================================================================
 
   BUSINESS STRATEGY:  43 / 50
-    Product Flexibility       10 / 10
-    Pipeline Credibility      12 / 15
-    Track Record Strength     12 / 15
-    Track Record Alignment     9 / 10
+    Product Flexibility        10 / 10
+    Pipeline Credibility       12 / 15
+    Track Record Strength      12 / 15
+    Track Record Alignment      9 / 10
 
   COMMUNITY OUTCOMES: 48 / 50
-    Higher Distress Targeting 15 / 15
-    Deep Distress Commitment  10 / 10
-    Special Targeting          3 /  5
+    Higher Distress Targeting  15 / 15
+    Deep Distress Commitment   10 / 10
+    Special Targeting           3 /  5
     Community Outcomes Quality 10 / 10
-    Community Accountability  10 / 10
+    Community Accountability   10 / 10
 
   PRIORITY POINTS:     9 / 10
-    DBC Track Record           4 /  5
-    Unrelated Entities         5 /  5
+    DBC Track Record            4 /  5
+    Unrelated Entities          5 /  5
 
   Assessment: [...] — a paragraph naming each section's total against
   the published minimums, elided here.
