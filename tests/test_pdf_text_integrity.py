@@ -50,10 +50,19 @@ an overflow that stays inside the table, which is why
     equal widths restored, splitLongWords=0 kept   -> the text gates green,
         test_no_table_cell_is_wider_than_its_column RED: eight cells in the
         landscape appendix, GEOIDs and headers, drawn past their cell.
-    So the widths are the load-bearing half for tables; splitLongWords=0
-    is load-bearing for the URL (R4) and is what a caller passing its own
-    col_widths still gets; and the cell-overflow check is the gate for the
-    case the text gates cannot see.
+    So the widths are the load-bearing half for tables, and the
+    cell-overflow check is the gate for the case the text gates cannot see.
+
+    WHAT splitLongWords=0 IS NOT. An earlier draft of this docstring called
+    it load-bearing for the URL (R4). A hostile audit falsified that by
+    mutation: flipping it 0 -> 1 on styles["body"], on cell_style and on
+    header_style leaves every gate GREEN at all three sites. _fit_urls
+    shrinks the URL to 10 pt -- 387.9 pt in a 420 pt column -- so it always
+    fits and the flag never fires for it. The load-bearing pair is
+    _auto_col_widths and _fit_urls; reverting BOTH reproduces the 1.7.0 cut
+    at ``https://www.cdfifund.gov/pro``. splitLongWords=0 is retained as
+    defence in depth, not as a half of the fix, and the claim that it is
+    one was a sentence nobody had mutated.
 
 Two-sided: the absence of the split line AND the presence of the whole
 figure are asserted separately, because a document that stopped printing

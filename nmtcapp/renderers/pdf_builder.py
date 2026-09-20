@@ -407,9 +407,12 @@ def _df_to_rl_table(df, styles, max_rows: int = 40, totals_last: bool = True,
     header_pt = max(body_pt - 1, 6)
 
     # Build cell styles for wrapping. splitLongWords=0 is inherited from
-    # styles["body"] and restated here because it is the half of the R3 fix
-    # that does not depend on the widths: a token never breaks mid-word in a
-    # table cell, whatever the caller passed for col_widths.
+    # styles["body"] and restated here as defence in depth, NOT as a half of
+    # the R3 fix: a hostile audit flipped it 0 -> 1 here and at both other
+    # sites and every gate stayed green, because _auto_col_widths already
+    # keeps each token inside its column. No caller in this tree passes
+    # col_widths -- the distress table, the one that did, moved to
+    # avail_width in 1.7.1 -- so the parameter this once defended is dead.
     cell_style = ParagraphStyle(
         "tbl_cell", parent=styles["body"],
         fontSize=body_pt, leading=body_pt + 2,

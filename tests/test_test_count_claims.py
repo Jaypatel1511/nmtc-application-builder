@@ -100,7 +100,7 @@ _MIN_PLAUSIBLE_COLLECTION = 800
 #: re-derived published count as ``old → new``; the NEW one is the claim about
 #: this tree and is what group 1 captures. The bold alternatives are there
 #: because the sentence has been written both ways -- ``Published test counts
-#: re-derived: 1,896 → 1,939`` in the 1.7.1 entry and ``Published test count
+#: re-derived: 1,896 → 1,961`` in the 1.7.1 entry and ``Published test count
 #: **1,783 → 1,790**`` in 1.6.2's -- and a pattern that only knows this
 #: round's spelling is the same one-alternative blindness that hid
 #: CONTRIBUTING.md for a whole release.
