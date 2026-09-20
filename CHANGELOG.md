@@ -5,7 +5,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.7.1] — 2026-09-19
+## [1.7.1] — 2026-09-20
 
 **PATCH. THE 1.7.0 SETTLE READ: NOTHING HERE MAKES THE PACKAGE SAY SOMETHING
 FALSE TODAY.** No threshold, weight, band, gate, grade or score moves; no

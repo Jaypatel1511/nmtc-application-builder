@@ -22,7 +22,7 @@ version: "1.7.1"
 # 1.6.2 whose metadata claimed release three weeks BEFORE the NOAA it
 # describes. Corrected in the 1.6.2 fix round. This field is only right at the
 # moment of the tag: if the tag slips past this date, bump it with the tag.
-date-released: "2026-09-19"
+date-released: "2026-09-20"
 keywords:
   - NMTC
   - CDFI
