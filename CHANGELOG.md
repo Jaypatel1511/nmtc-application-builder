@@ -5,6 +5,78 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## Unreleased, no version assigned — the `test_noaa_table_1` date-set trap
+
+*Unbracketed on purpose. `tests/test_small_claims` forbids an open
+`## [Unreleased]` heading outright ("a release cut with an open Unreleased
+section publishes an entry nobody has decided the contents of"), and the
+project's convention for work with no version yet is an unbracketed prose
+heading — the shape `_RELEASE_HEADING` documents and skips. Assigning this a
+version number is the release manager's call, not this branch's.*
+
+### Fixed — a gate that was armed to accuse the renderer of a defect it does not have
+
+**`tests/test_noaa_table_1` would have gone red, with a false diagnostic, on
+the next routine bump of `LAST_VERIFIED`.** No shipped output changes; this is
+a test-only correction to a booby trap, and the trap had a date on it.
+
+`_note_problems` builds the set of dates the round-provenance note is allowed
+to render — Table 1's ten rows, `NOAA_PUBLICATION_DATE`, `NOAA_FILED_DATE`,
+`LAST_VERIFIED`, the generation date and `CITED_ROUND_TIMELINE`. Paragraph 0
+also renders two dates that were **not** in that set:
+`UPCOMING_APPLICATION_PUBLICATION_DATE` (the day the CDFI Fund published the
+CY 2026 Allocation Application) and `UPCOMING_APPLICATION_RETRIEVED_DATE` (the
+day this tool retrieved and read the PDF). Both hold `2026-09-17`, and so does
+`LAST_VERIFIED` — **so the gate was green by coincidence, not by derivation.**
+
+The coincidence was armed to end on the one edit the package's own runbook
+tells a maintainer to make. `RECHECK_AFTER` is `2026-10-17`, and from
+**2026-10-18 Eastern** `test_the_round_claim_has_not_expired` requires
+`LAST_VERIFIED` to be bumped. The cadence re-check reads the program page; it
+does **not** re-retrieve the Application, so the two application constants
+correctly stay put. On that bump they stop coinciding and six tests redden
+with:
+
+> the note renders 'September 17, 2026' (2026-09-17), which is not a Table 1
+> date, not one of the note's own as-of dates and not the cited round's
+> timeline. **A typed date.**
+
+That message is false. Both dates reach the prose through `_us_date` from
+their own constants (`_application_publication_clauses`), and both values are
+pinned with their sources in `tests/pinned_constants.txt`. The message would
+have sent whoever was clearing the expiry hunting for a hardcoded literal in
+the renderer that does not exist — during the one task the expiry gate exists
+to make routine.
+
+**What changed.** The two constants are named members of `allowed_iso`, beside
+the NOAA dates (issuer events) and `LAST_VERIFIED` (this tool's own looking),
+which is the category they belong to — they are provenance, not deadlines, and
+they are not Table 1 rows. The diagnostic now names the provenance category,
+and the module docstring's description of direction 1 matches the set again.
+
+**The gate did not go vacuous.** `allowed_iso` remains a closed enumeration of
+module constants, so a date in the prose that no constant backs still reddens:
+the hostile audit's mutation MI, `" Also due 31 Aug 2026."`, was re-injected
+and seen red. What this set has never been is a check on a constant's *value*
+— a constant that is both rendered and named here moves both sides at once.
+That was already true of `LAST_VERIFIED` and the two NOAA dates before this
+change, and was verified by mutating `NOAA_FILED_DATE` against the *pre-fix*
+file and watching `test_noaa_table_1` stay green. Those values are owned by
+`tests/pinned_constants.txt` and the rendered baselines, both of which were
+seen red on a mutated `UPCOMING_APPLICATION_PUBLICATION_DATE`.
+
+**The expiry gate is untouched and still fires.** Simulated across the
+boundary: green at 2026-10-16 and 2026-10-17 ET, red at 2026-10-18 and
+2026-10-19 ET. After this fix a real bump to `2026-10-18` reddens only the
+seven tests that are *supposed* to redden — the four rendered baselines and
+three invariant-allowlist entries, regenerated in the same commit as the bump
+— instead of those seven plus six false ones.
+
+No test was added or removed: 1,960 passed / 1 skipped, 1,961 collected,
+before and after.
+
+---
+
 ## [1.7.1] — 2026-09-20
 
 **PATCH. THE 1.7.0 SETTLE READ: NOTHING HERE MAKES THE PACKAGE SAY SOMETHING
