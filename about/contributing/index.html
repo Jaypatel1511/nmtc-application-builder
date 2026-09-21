@@ -1326,9 +1326,13 @@ now raises rather than publishing a page claiming four formats over two files.</
 <code>WARNING: ... does not provide the extra 'docs'</code> and installed only the core.
 CI builds the docs on every pull request, so an unbuildable docs tree fails
 before it is merged.</p>
-<p><strong>Publishing is still manual.</strong> CI builds; it does not deploy. A correction to a
-page under <code>docs/</code> is not live on the published site until somebody runs
-<code>python -m mkdocs gh-deploy</code>.</p>
+<p><strong>Publishing is part of the release.</strong> CI builds on every pull request; the
+release workflow deploys — <code>release.yml</code>'s <code>docs</code> job calls
+<code>.github/workflows/docs-deploy.yml</code> after the PyPI publish succeeds, so a
+correction to a page under <code>docs/</code> goes live with the release that carries it.
+Between releases, the same workflow can be run by hand
+(<code>gh workflow run docs-deploy.yml --ref main -f deploy=true</code>); its default is
+a dry run that proves the job without touching the site.</p>
 <hr />
 <h2 id="running-tests">Running tests<a class="headerlink" href="#running-tests" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># Run the full test suite</span>
