@@ -63,7 +63,11 @@ permissions:
 jobs:
   deploy:
     name: Build docs (strict) and deploy to gh-pages
-    runs-on: ubuntu-latest
+    # Runner pinned, not `ubuntu-latest`: actions/python-versions ships NO Python
+    # 3.9 build for ubuntu-26.04, and the `ubuntu-latest` label moves to Ubuntu 26
+    # on 2026-10-19. Remove this pin once this repo's Python floor rises above 3.9
+    # and every version in every matrix here has an ubuntu-26.04 build.
+    runs-on: ubuntu-24.04
     # One deploy at a time. Two concurrent pushes to gh-pages would race on
     # the fast-forward and the loser would fail for no reason in the docs.
     concurrency:
