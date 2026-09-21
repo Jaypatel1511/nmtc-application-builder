@@ -31,11 +31,19 @@ WHAT THIS MODULE ASSERTS, AND WHY EACH HALF IS NEEDED
   2. Every YEAR the note mentions is a round label, the NOAA's document
      number, or a date -- in any spelling the gate can parse -- that
      normalises to a Table 1 date, one of the note's own AS-OF dates
-     (publication, filing, verification, generation) or the cited round's
-     timeline. A spelling the gate cannot parse fails closed. A date typed
+     (NOAA publication, NOAA filing, verification, generation), one of its
+     PROVENANCE dates (the day the CY 2026 Application was published, the
+     day this tool retrieved it) or the cited round's timeline. A spelling
+     the gate cannot parse fails closed. A date typed
      into the prose that the table does not carry is exactly how August 31
      got in; as first written this direction read ``Month D, YYYY`` only,
      and ``31 Aug 2026`` walked past it (hostile audit, mutation MI).
+
+     THE TWO PROVENANCE DATES WERE UNNAMED UNTIL 1.7.1+1, and passed only
+     because they happened to equal ``LAST_VERIFIED``. See the comment on
+     ``allowed_iso`` in ``_note_problems``: the omission was a trap armed to
+     fire on the routine bump that clears the expiry gate, and it accused
+     the renderer of a typed date it does not contain.
 
   3. Every Table 1 row still ahead of "today" is named in the note, with its
      time and its date, in the part of the note that says it is still ahead.
@@ -166,9 +174,9 @@ def _year_problems(note: str, allowed_iso: set) -> list:
             else:
                 cover(match.span(), iso in allowed_iso,
                       f"the note renders {match.group(0)!r} ({iso}), which is "
-                      "not a Table 1 date, not one of the note's own as-of "
-                      "dates and not the cited round's timeline. A typed "
-                      "date.")
+                      "not a Table 1 date, not one of the note's own as-of or "
+                      "provenance dates and not the cited round's timeline. A "
+                      "typed date.")
     for match in _ROUND_LABEL.finditer(note):
         cover(match.span(),
               match.group(0) in (rp.CITED_ROUND, rp.UPCOMING_ROUND),
@@ -395,12 +403,46 @@ def _note_problems(today: _dt.date) -> list:
     paragraphs = rp.round_provenance_paragraphs(today=today)
     note = " ".join(paragraphs)
 
-    # Direction 1: nothing rendered that the table (or an as-of date, or the
-    # cited round's own timeline) lacks -- selected by YEAR, in any spelling,
-    # failing closed on a spelling the gate cannot read.
+    # Direction 1: nothing rendered that the table (or a provenance date, or
+    # an as-of date, or the cited round's own timeline) lacks -- selected by
+    # YEAR, in any spelling, failing closed on a spelling the gate cannot read.
+    #
+    # THE PROVENANCE DATES ARE NAMED HERE, NOT LEFT TO COINCIDE WITH
+    # ``LAST_VERIFIED``. Paragraph 0 renders two dates that are not deadlines
+    # and never were: the day the CDFI Fund PUBLISHED the CY 2026 Allocation
+    # Application, and the day THIS TOOL RETRIEVED and read that PDF. Both
+    # reach the prose through ``_us_date`` from their own constants -- see
+    # ``_application_publication_clauses`` -- so neither is a typed date, and
+    # each is the same KIND of thing as the two NOAA dates above (an issuer
+    # event) and as ``LAST_VERIFIED`` (this tool's own looking), which is why
+    # those three are already named members rather than Table 1 rows.
+    #
+    # Through the 1.7.1 tip these two were MISSING from this set, and the set
+    # was green only because ``UPCOMING_APPLICATION_PUBLICATION_DATE`` and
+    # ``UPCOMING_APPLICATION_RETRIEVED_DATE`` both hold "2026-09-17" and so
+    # did ``LAST_VERIFIED``. That is a coincidence, not a derivation, and it
+    # was armed to break on the one edit that is SUPPOSED to be routine: the
+    # cadence re-check bumps ``LAST_VERIFIED`` (the expiry gate's runbook in
+    # ``tests/test_round_provenance`` says to, and from 2026-10-18 ET the
+    # expiry REQUIRES it) and does NOT re-retrieve the Application. On that
+    # bump the coincidence ends and this gate reddens on six tests with the
+    # diagnostic "A typed date." -- pointing whoever is clearing the expiry
+    # at a hardcoded literal in the renderer that does not exist, while the
+    # two constants sit correctly pinned in ``tests/pinned_constants.txt``.
+    #
+    # NAMING THEM DOES NOT WIDEN WHAT THE GATE CATCHES. The set stays a
+    # CLOSED enumeration of module constants, so a date in the prose that no
+    # constant backs -- the hostile audit's mutation MI, ``" Also due 31 Aug
+    # 2026."`` -- still reddens here. What this set has never been is a check
+    # on a constant's VALUE: a constant that is both rendered and named here
+    # moves both sides at once, exactly as ``LAST_VERIFIED`` and the two NOAA
+    # dates already do. Those values are pinned, with their sources, in
+    # ``tests/pinned_constants.txt``, and that is the gate that owns them.
     allowed_iso = {row.iso for row in rp.NOAA_TABLE_1} | {
         rp.NOAA_PUBLICATION_DATE,
         rp.NOAA_FILED_DATE,
+        rp.UPCOMING_APPLICATION_PUBLICATION_DATE,
+        rp.UPCOMING_APPLICATION_RETRIEVED_DATE,
         rp.LAST_VERIFIED,
         today.isoformat(),
     } | set(rp.CITED_ROUND_TIMELINE.values())
