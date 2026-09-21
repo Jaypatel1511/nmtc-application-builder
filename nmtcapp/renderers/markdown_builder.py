@@ -6,8 +6,8 @@ from datetime import date
 from typing import TYPE_CHECKING
 
 from nmtcapp.renderers._disclosure import (
-    is_partial_unverified, unverified_banner, unverified_ids,
-    unverified_qualifier,
+    LOWER_BOUND_CLAUSE, is_partial_unverified, unverified_banner,
+    unverified_ids, unverified_qualifier,
 )
 from nmtcapp.renderers._cell_format import format_cell
 from nmtcapp.renderers._methodology import (
@@ -20,6 +20,7 @@ from nmtcapp.sections import ALL_SECTIONS
 from nmtcapp.tables.distress_table import build_distress_table
 from nmtcapp.tables.geographic_table import build_geographic_table
 from nmtcapp.tables.impact_table import build_impact_table
+from nmtcapp.renderers._question_25 import Q25_QEI_BASIS_CLAUSE
 from nmtcapp.tables.pipeline_table import build_pipeline_table
 from nmtcapp.tables.track_record_table import build_track_record_table
 from nmtcapp.core.application_round import allocation_round_clause, round_label
@@ -160,9 +161,13 @@ class MarkdownApplicationBuilder:
                 f"Our {pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states with "
                 f"**{d.get('pct_deep_or_severe', 0):.0%} of QEI {unverified_qualifier(pr)} "
-                "committed to deep/severely distressed tracts** — a lower bound: "
-                "unverified projects are absent from the numerator but present in "
-                "the denominator, so the true share may be materially higher.\n\n"
+                # THE LOWER-BOUND CLAUSE IS _disclosure's NOW (1.7.1 R11).
+                # Markdown has rendered this sentence since the banner was
+                # corrected and Word and PDF had not; the wording moves to
+                # _disclosure so all three read one string. Byte-identical to
+                # what markdown rendered before — the baseline does not move.
+                f"committed to deep/severely distressed tracts** ({Q25_QEI_BASIS_CLAUSE}) "
+                f"— {LOWER_BOUND_CLAUSE}.\n\n"
             )
         else:
             banner = ""
@@ -172,8 +177,13 @@ class MarkdownApplicationBuilder:
                 f"{allocation_round_clause(app.application_round, 'application round ')}. "
                 f"Our {pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states with "
+                # THE DENOMINATOR TRAVELS WITH THE HEADLINE (1.7.1 R8). This is
+                # the first distress figure a reviewer reads, bold, on page
+                # one; Question 25's commitments are measured on QLICIs and
+                # the block that says so was hundreds of lines below. The
+                # clause is _question_25's, read, not retyped.
                 f"**{d.get('pct_deep_or_severe', 0):.0%} of QEI committed to deep/severely "
-                f"distressed tracts**.\n\n"
+                f"distressed tracts** ({Q25_QEI_BASIS_CLAUSE}).\n\n"
             )
 
         partial_tag = " (PARTIAL)" if getattr(score, "partial", False) else ""

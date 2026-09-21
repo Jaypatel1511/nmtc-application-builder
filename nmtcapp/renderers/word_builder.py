@@ -15,8 +15,8 @@ from docx.shared import Pt, RGBColor, Inches, Cm
 
 from nmtcapp.renderers._cell_format import supplied_total
 from nmtcapp.renderers._disclosure import (
-    is_partial_unverified, qlici_not_supplied_note, qualified_pct,
-    unverified_banner, unverified_ids, unverified_qualifier,
+    LOWER_BOUND_CLAUSE, is_partial_unverified, qlici_not_supplied_note,
+    qualified_pct, unverified_banner, unverified_ids, unverified_qualifier,
 )
 from nmtcapp.renderers._methodology import (
     ACS_VINTAGE, deal_economics_note, distress_definitions, impact_bands_note,
@@ -34,7 +34,11 @@ from nmtcapp.tables.impact_table import build_impact_table, build_impact_summary
 from nmtcapp.tables.investor_table import (
     build_investor_identification_table, build_investor_commitment_table,
 )
-from nmtcapp.tables.pipeline_table import build_pipeline_table, build_pipeline_summary_table
+from nmtcapp.renderers._document_properties import stamp_docx
+from nmtcapp.renderers._question_25 import Q25_QEI_BASIS_CLAUSE
+from nmtcapp.tables.pipeline_table import (
+    PIPELINE_COLUMN_COUNT, build_pipeline_table, build_pipeline_summary_table,
+)
 from nmtcapp.tables.track_record_table import build_track_record_table
 from nmtcapp.core.application_round import (
     allocation_round_clause, nmtc_round_phrase, round_label,
@@ -99,6 +103,9 @@ class WordApplicationBuilder:
         self._build_methodology(doc)
 
         self._add_page_numbers(doc)
+        # The file's own metadata, from the CDE and the package (1.7.1 R7) —
+        # python-docx's template says author "python-docx", created 2013.
+        stamp_docx(doc, self.application)
         return doc
 
     def save(self, path: str) -> None:
@@ -263,18 +270,30 @@ class WordApplicationBuilder:
                 f"Our {pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states, with "
                 f"{distress.get('pct_deep_or_severe', 0):.0%} of QEI "
+                # THE SENTENCE THIS PACKAGE'S OWN DISCLOSURE MODULE RECORDS AS
+                # FALSE (1.7.1 R11). It ended "— figures reflect
+                # location-verified projects only", which asserts a
+                # VERIFIED-ONLY DENOMINATOR. _disclosure.unverified_banner
+                # adjudicates the opposite, in the banner printed four lines
+                # above this sentence in the same document: the numerator
+                # counts only verified projects, the denominator is all
+                # pipeline QEI, so the share is a LOWER BOUND. A verified-only
+                # denominator OVERSTATES, in the direction that flatters the
+                # applicant. Read from _disclosure, where the reasoning is.
                 f"{unverified_qualifier(pr)} committed to deep and severely "
-                "distressed census tracts — figures reflect location-verified "
-                "projects only."
+                f"distressed census tracts ({Q25_QEI_BASIS_CLAUSE}) — "
+                f"{LOWER_BOUND_CLAUSE}."
             )
         else:
+            # THE DENOMINATOR TRAVELS WITH THE HEADLINE (1.7.1 R8); see
+            # markdown_builder for the reason. Read from _question_25.
             summary_text = (
                 f"{app.cde.name} requests ${app.requested_allocation/1e6:.1f} million in "
                 f"New Markets Tax Credit allocation{allocation_round_clause(app.application_round)}. "
                 f"Our {pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states, with "
                 f"{distress.get('pct_deep_or_severe', 0):.0%} of QEI committed to deep and "
-                f"severely distressed census tracts."
+                f"severely distressed census tracts ({Q25_QEI_BASIS_CLAUSE})."
             )
         p = doc.add_paragraph(summary_text)
         p.runs[0].font.size = Pt(TYPOGRAPHY["size_body"])
@@ -297,7 +316,31 @@ class WordApplicationBuilder:
             ["Total Pipeline QEI", f"${pr.total_qei_request:,.0f}"],
             ["Total Project Cost", f"${pr.total_project_cost:,.0f}"],
             ["States Represented", str(pr.geographic_diversity.get("states_count", 0))],
-            ["Deep/Severe Distress Concentration",
+            # THE DENOMINATOR TRAVELS WITH THE ROW, NOT ONLY WITH THE
+            # HEADLINE (1.7.1 R9). The Excel twin has carried it since
+            # 1.3.0 S4 — excel_builder renders
+            # `"Deep/Severe Distress Concentration " + Q25_QEI_BASIS_SUFFIX_SHEET`
+            # — while Word and PDF printed the label with no denominator on
+            # it at all, not even the word QEI. That is the surface-drift
+            # shape this package has shipped a blocking defect from twice
+            # (1.6.2's Q25 note, 1.7.0's docs sample): the remedy lands on
+            # one artifact and the others keep the old text. Question 25's
+            # two commitments are measured on QLICIs; this figure is
+            # denominated in QEI; a CDE copying this cell into Question 25
+            # files a QEI figure against a QLICI commitment.
+            #
+            # THE BARE CLAUSE, NOT EITHER POINTER SUFFIX. The workbook's
+            # Q25_QEI_BASIS_SUFFIX_SHEET names a sheet no flowing document
+            # has. Q25_QEI_BASIS_SUFFIX says "see the basis note below",
+            # and its own note in _question_25 says that pointer is true
+            # because the note sits "a few lines under the figure" in the
+            # same Section B table — here the note is twenty pages away,
+            # so that justification does not hold. The bare clause is what
+            # R8 already put in the Executive Summary sentence three lines
+            # above this table, so the row and the sentence state the
+            # denominator the same way on the same page. Read from
+            # _question_25, never retyped.
+            [f"Deep/Severe Distress Concentration ({Q25_QEI_BASIS_CLAUSE})",
              _elig_metric(distress.get("pct_deep_or_severe", 0))],
             ["NMTC Eligibility Rate", _elig_metric(pr.eligibility_pct)],
             ["Jobs to Be Created", f"{impact.get('total_jobs_created', 0):,}"],
@@ -385,8 +428,12 @@ class WordApplicationBuilder:
         _write_df_to_doc(doc, summary_df)
 
         # Note pointing to Excel for full detail
+        # The count is PIPELINE_COLUMN_COUNT, never a literal (1.7.1 R2): this
+        # sentence sends the reader to the workbook, and through 1.7.0 it said
+        # 33 of a tab that has 29.
         p = doc.add_paragraph(
-            "Full 33-column pipeline detail (deal economics, QLICI structure, timeline) "
+            f"Full {PIPELINE_COLUMN_COUNT}-column pipeline detail (deal economics, "
+            "QLICI structure, timeline) "
             "is provided in the accompanying Excel workbook, Pipeline Detail tab. "
             "The landscape pages below contain key pipeline fields for reference."
         )

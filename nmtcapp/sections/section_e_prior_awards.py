@@ -196,8 +196,14 @@ class SectionEPriorAwards(SectionGenerator):
                 f"${amount:,.0f}" if amount is not None
                 else "[CDE TO COMPLETE: allocation amount]"
             )
+            # PLAIN TEXT, NOT MARKDOWN (1.7.1 R5). This read
+            # ``f"**Award {i+1} ...:** "`` through 1.7.0 — markdown bold in a
+            # content dict that four renderers read. Markdown rendered it;
+            # Word and PDF printed the asterisks. A section emits no
+            # format's syntax; sections/base._content_to_markdown is where
+            # markdown gets its emphasis.
             award_details.append(
-                f"**Award {i+1} (FY{award.get('year', 'N/A')}):** "
+                f"Award {i+1} (FY{award.get('year', 'N/A')}): "
                 f"{amount_text} — {status}. "
                 f"States: {states}. Sectors: {sectors}."
                 + (" " + award.get("notes", "") if award.get("notes") else "")

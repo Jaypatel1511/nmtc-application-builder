@@ -19,7 +19,8 @@ CONFIDENTIAL — Prepared for CDFI Fund Review Only | Do Not Distribute Without 
 Executive Summary
 Great Lakes Regional Capital CDE, LLC respectfully requests $70.0 million in New
 Markets Tax Credit allocation for CY 2026. Our 8-project pipeline spans 4 states, with
-85% of QEI committed to deep and severely distressed census tracts.
+85% of QEI committed to deep and severely distressed census tracts (a share of QEI,
+not of QLICIs).
 Key Metrics
 Metric
 Value
@@ -29,7 +30,8 @@ Total Project Cost
 $125,450,000
 States Represented
 4
-Deep/Severe Distress Concentration
+Deep/Severe Distress Concentration (a share of QEI, not of
+QLICIs)
 85%
 NMTC Eligibility Rate
 100%
@@ -55,12 +57,12 @@ does not predict an award outcome.
 READINESS NARRATIVE WITHDRAWN. This tool emits no strengths, weaknesses or recommendations from the
 readiness composite, and none appear in this document. It nevertheless deducted points from the grade above, and it
 does not deduct silently: the full component-by-component deduction table, with the reason each row is or is not a
-quantity the CDFI Fund also scores, is printed by the Pipeline Analyzer page of the app and by `nmtcapp analyze`. It is
-not repeated here, because it is an account of what this tool did to its own number rather than a finding about this
 
 @@PAGE 3
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
 Page 3
+quantity the CDFI Fund also scores, is printed by the Pipeline Analyzer page of the app and by `nmtcapp analyze`. It is
+not repeated here, because it is an account of what this tool did to its own number rather than a finding about this
 application.
 
 @@PAGE 4
@@ -471,13 +473,13 @@ TO COMPLETE: Add the states served and sectors financed for each prior award
 directly to the table below. The CDFI Fund's Section E asks for both and this tool does
 not hold them.]
 Award-by-Award Deployment History
- **Award 1 (FY2019):** $45,000,000 — Fully Deployed. States: [CDE TO
- COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not
-collected by this tool].
- **Award 2 (FY2021):** $60,000,000 — Fully Deployed. States: [CDE TO
- COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not
-collected by this tool].
- **Award 3 (FY2023):** $55,000,000 — Partially Deployed. States: [CDE TO
+ Award 1 (FY2019): $45,000,000 — Fully Deployed. States: [CDE TO COMPLETE
+ — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this
+tool].
+ Award 2 (FY2021): $60,000,000 — Fully Deployed. States: [CDE TO COMPLETE
+ — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this
+tool].
+ Award 3 (FY2023): $55,000,000 — Partially Deployed. States: [CDE TO
  COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not
 collected by this tool].
 Compliance and Monitoring
@@ -498,57 +500,47 @@ draft.]
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
 Page 16
 Appendix A: Pipeline Detail
- Project ID
+Project ID
  Project Name
- State
- Distress
- Level
- QEI Request
+State
+ Distress Level
+QEI Request ($)
+ Total Project Cost
  ($)
- Total Project
- Cost ($)
 PRJ-D01
 Erie Shoreline
-Health
-Pavilion
+Health Pavilion
 PA
-Deep
-Distress
+Deep Distress
 $13,000,000
 $18,400,000
 PRJ-D02
-Toledo
-Advanced
-Components
-Plant
+Toledo Advanced
+Components Plant
 OH
 Severely
 Distressed
 $17,500,000
 $24,750,000
 PRJ-D03
-Buffalo East
-Side Grocery
-Anchor
+Buffalo East Side
+Grocery Anchor
 NY
 Severely
 Distressed
 $6,600,000
 $9,300,000
 PRJ-D04
-Flint
-Riverfront
+Flint Riverfront
 Mixed-Income
 Lofts
 MI
-Deep
-Distress
+Deep Distress
 $22,000,000
 $31,200,000
 PRJ-D05
 Youngstown
-Workforce
-Training
+Workforce Training
 Institute
 OH
 Low Income
@@ -558,27 +550,23 @@ $12,650,000
 PRJ-D06
 Saginaw
 Community
-Wellness
-Center
+Wellness Center
 MI
 Severely
 Distressed
 $5,200,000
 $7,450,000
 PRJ-D07
-Scranton
-Solar
+Scranton Solar
 Manufacturing
 Line
 PA
-Deep
-Distress
+Deep Distress
 $11,200,000
 $15,900,000
 PRJ-D08
-Rochester
-Main Street
-Small
+Rochester Main
+Street Small
 Business ...
 NY
 Low Income
@@ -588,9 +576,8 @@ $5,800,000
 TOTALS
 8 projects
 $88,500,000
-$125,450,00
-0
-Full 33-column pipeline detail (deal economics, QLICI structure, timeline) is provided in the accompanying
+$125,450,000
+Full 29-column pipeline detail (deal economics, QLICI structure, timeline) is provided in the accompanying
 Excel workbook, Pipeline Detail tab.
 
 @@PAGE 17
@@ -602,12 +589,10 @@ Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026  |  CONFIDENTIAL
 Page 18
 Appendix B: Distress Documentation
  Project ID
- Project
- Name
+ Project Name
  City, State
- Census
- Tract
-(GEOID)
+ Census Tract
+ (GEOID)
  NMTC
 Eligible
  Distress
@@ -615,33 +600,31 @@ Eligible
  Severely
 Distressed
  Flag
- NMTC
-Native Area
-(CDE-declar
- ed)
+ NMTC Native
+ Area
+(CDE-declared)
  High
 Migration
-Rural (HMR)
+ Rural
+(HMR)
 Opportunity
  Zone
- Poverty
-Rate (%)
- Median
+Poverty
+ Rate
+ (%)
+Median
 Family
 Income
-Unemploym
-ent Rate (%)
-Data Source
- ACS
-Vintage
+Unemployment
+ Rate (%)
+ Data Source
+ACS Vintage
 PRJ-D01
-Erie
-Shoreline
+Erie Shoreline
 Health
 Pavilion
 Erie, PA
-420490003
-00
+42049000300
 Yes
 Deep
 Distress
@@ -649,14 +632,16 @@ Yes
 No
 No
 Yes
-See ACS
-See ACS
+See
+ACS
+See
+ACS
 See ACS
 CDFI Fund
 NMTC
 Eligibility
-Table (201
-6–2020
+Table
+(2016–2020
 ACS)
 2016–2020
 ACS
@@ -665,12 +650,10 @@ Estimates
 PRJ-D02
 Toledo
 Advanced
-Componen
-ts Plant
-Toledo,
-OH
-390950024
-00
+Components
+Plant
+Toledo, OH
+39095002400
 Yes
 Severely
 Distressed
@@ -678,27 +661,27 @@ Yes
 No
 No
 No
-See ACS
-See ACS
+See
+ACS
+See
+ACS
 See ACS
 CDFI Fund
 NMTC
 Eligibility
-Table (201
-6–2020
+Table
+(2016–2020
 ACS)
 2016–2020
 ACS
 5-Year
 Estimates
 PRJ-D03
-Buffalo
-East Side
-Grocery
+Buffalo East
+Side Grocery
 Anchor
 Buffalo, NY
-360290067
-02
+36029006702
 Yes
 Severely
 Distressed
@@ -706,27 +689,27 @@ Yes
 No
 No
 No
-See ACS
-See ACS
+See
+ACS
+See
+ACS
 See ACS
 CDFI Fund
 NMTC
 Eligibility
-Table (201
-6–2020
+Table
+(2016–2020
 ACS)
 2016–2020
 ACS
 5-Year
 Estimates
 PRJ-D04
-Flint
-Riverfront
-Mixed-Inco
-me Lofts
+Flint Riverfront
+Mixed-Income
+Lofts
 Flint, MI
-260490009
-00
+26049000900
 Yes
 Deep
 Distress
@@ -734,29 +717,29 @@ Yes
 No
 No
 Yes
-See ACS
-See ACS
+See
+ACS
+See
+ACS
 See ACS
 CDFI Fund
 NMTC
 Eligibility
-Table (201
-6–2020
+Table
+(2016–2020
 ACS)
 2016–2020
 ACS
 5-Year
 Estimates
 PRJ-D05
-Youngstow
-n
+Youngstown
 Workforce
 Training
 Institute
-Youngstow
-n, OH
-390998109
-00
+Youngstown,
+OH
+39099810900
 Yes
 Low
 Income
@@ -765,14 +748,16 @@ No
 No
 No
 No
-See ACS
-See ACS
+See
+ACS
+See
+ACS
 See ACS
 CDFI Fund
 NMTC
 Eligibility
-Table (201
-6–2020
+Table
+(2016–2020
 ACS)
 2016–2020
 ACS
@@ -783,10 +768,8 @@ Saginaw
 Community
 Wellness
 Center
-Saginaw,
-MI
-261450002
-00
+Saginaw, MI
+26145000200
 Yes
 Severely
 Distressed
@@ -794,14 +777,16 @@ Yes
 Yes
 No
 No
-See ACS
-See ACS
+See
+ACS
+See
+ACS
 See ACS
 CDFI Fund
 NMTC
 Eligibility
-Table (201
-6–2020
+Table
+(2016–2020
 ACS)
 2016–2020
 ACS
@@ -812,12 +797,10 @@ Estimates
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026  |  CONFIDENTIAL
 Page 19
  Project ID
- Project
- Name
+ Project Name
  City, State
- Census
- Tract
-(GEOID)
+ Census Tract
+ (GEOID)
  NMTC
 Eligible
  Distress
@@ -825,34 +808,32 @@ Eligible
  Severely
 Distressed
  Flag
- NMTC
-Native Area
-(CDE-declar
- ed)
+ NMTC Native
+ Area
+(CDE-declared)
  High
 Migration
-Rural (HMR)
+ Rural
+(HMR)
 Opportunity
  Zone
- Poverty
-Rate (%)
- Median
+Poverty
+ Rate
+ (%)
+Median
 Family
 Income
-Unemploym
-ent Rate (%)
-Data Source
- ACS
-Vintage
+Unemployment
+ Rate (%)
+ Data Source
+ACS Vintage
 PRJ-D07
 Scranton
-Solar Man
-ufacturing
+Solar
+Manufacturing
 Line
-Scranton,
-PA
-420691009
-00
+Scranton, PA
+42069100900
 Yes
 Deep
 Distress
@@ -860,14 +841,16 @@ Yes
 No
 Yes
 Yes
-See ACS
-See ACS
+See
+ACS
+See
+ACS
 See ACS
 CDFI Fund
 NMTC
 Eligibility
-Table (201
-6–2020
+Table
+(2016–2020
 ACS)
 2016–2020
 ACS
@@ -875,15 +858,13 @@ ACS
 Estimates
 PRJ-D08
 Rochester
-Main
-Street
+Main Street
 Small
 Business
 Fund
 Rochester,
 NY
-360550044
-00
+36055004400
 Yes
 Low
 Income
@@ -892,21 +873,22 @@ No
 No
 No
 No
-See ACS
-See ACS
+See
+ACS
+See
+ACS
 See ACS
 CDFI Fund
 NMTC
 Eligibility
-Table (201
-6–2020
+Table
+(2016–2020
 ACS)
 2016–2020
 ACS
 5-Year
 Estimates
-SUMMAR
-Y
+SUMMARY
 8 total
 projects
 8/8
@@ -918,26 +900,24 @@ Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDE
 Page 20
 Appendix C: Geographic Targeting
  State
- Projec
- t
-Count
+Project
+ Count
  QEI ($)
  QEI (%
  of
 Total)
- Deep/Sever
- e Projects
+Deep/Severe
+ Projects
  Native Area
-Projects (CDE-
- declared)
- HMR Pr
- ojects
- OZ Proj
- ects
+ Projects
+(CDE-declared)
+ HMR
+Projects
+ OZ
+Projects
 MI
 2
-$27,200,00
-0
+$27,200,000
 30.7%
 2
 1
@@ -945,8 +925,7 @@ $27,200,00
 1
 NY
 2
-$10,700,00
-0
+$10,700,000
 12.1%
 1
 0
@@ -954,8 +933,7 @@ $10,700,00
 0
 OH
 2
-$26,400,00
-0
+$26,400,000
 29.8%
 1
 0
@@ -963,20 +941,16 @@ $26,400,00
 0
 PA
 2
-$24,200,00
-0
+$24,200,000
 27.3%
 2
 0
 1
 2
-TOTA
-L
+TOTAL
 8
-$88,500,00
-0
-100.0
-%
+$88,500,000
+100.0%
 6
 1
 1
@@ -987,18 +961,17 @@ Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDE
 Page 21
 Appendix D: Impact Projections
  Project Name
- State
+State
  Sector
  Jobs
 Created
  QEI ($)
- Cost per
- Job ($)
+Cost per Job
+ ($)
  Distress
  Level
 Erie Shoreline
-Health
-Pavilion
+Health Pavilion
 PA
 Healthcare
 96
@@ -1028,8 +1001,7 @@ $6,600,000
 $178,846
 Severely
 Distressed
-Flint
-Riverfront
+Flint Riverfront
 Mixed-Income
 Lofts
 MI
@@ -1048,8 +1020,7 @@ Education
 41
 $8,900,000
 $308,537
-Low
-Income
+Low Income
 Community
 Saginaw
 Community
@@ -1063,8 +1034,7 @@ $5,200,000
 $225,758
 Severely
 Distressed
-Scranton
-Solar
+Scranton Solar
 Manufacturing
 Line
 PA
@@ -1075,17 +1045,16 @@ $11,200,000
 $203,846
 Deep
 Distress
-Rochester
-Main Street
-Small Busi...
+Rochester Main
+Street Small
+Busi...
 NY
 Small
 Business
 62
 $4,100,000
 $93,548
-Low
-Income
+Low Income
 Community
 TOTALS (8
 projects)
@@ -1098,36 +1067,31 @@ Full impact detail is in the Excel attachment.
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
 Page 22
 Appendix E: CDE Track Record
- Award Year
+Award Year
  Allocation ($)
  Deployment
  Status
  States
 Deployed
- Sectors
+Sectors
  Notes
 2019
 $45,000,000
-Fully
-Deployed
+Fully Deployed
 2021
 $60,000,000
-Fully
-Deployed
+Fully Deployed
 2023
 $55,000,000
 Partially
 Deployed
 TOTALS
-$160,000,00
-0
-2 rounds
-fully
+$160,000,000
+2 rounds fully
 deployed
 0 states
-$160,000,00
-0 total prior
-allocation
+$160,000,000 total
+prior allocation
 
 @@PAGE 23
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
@@ -1156,65 +1120,65 @@ THIS, AND THEN RE-CHECK IT. The CY 2024-2025 Application is a real federal
 instrument and nothing here is unreliable. But it is a PROXY for the CY 2026
 instrument, not that instrument, and that instrument is AVAILABLE NOW: every
 round-specific figure in this document must be re-verified against the CY 2026
-Application Materials, which the CDFI Fund publishes at https://www.cdfifund.gov/pro
-grams-training/programs/new-markets-tax-credit/apply-step — specifically: the
-allocation authority and the number of awards available; the CDE certification deadline
-for eligibility; Question 25's QLICI-denominated commitment levels, its area-type lists
-and its ladder; Question 22's QLICI-denominated Non-Metropolitan minimum and
-maximum; Question 15's product-flexibility ladder; the scoring thresholds — as of
-September 17, 2026 this tool had not found a published CY 2026 Review Process,
-and the thresholds this document applies are the CY 2024-2025 Review Process's.
-THE CY 2026 CDE CERTIFICATION RULE HAS TWO ROUTES, AND THE
-SECOND HAS A DATE IN TABLE 1 OF THE NOAA. To be eligible to apply in CY
-2026 an organization must EITHER already be a certified CDE as of the NOAA's
-Federal Register publication date, September 15, 2026, OR submit its CDE
-Certification Application through AMIS by 11:59 p.m. ET on September 22, 2026. As of
-September 17, 2026 the AMIS route is STILL AHEAD: an organization that is not yet a
+Application Materials, which the CDFI Fund publishes at
+https://www.cdfifund.gov/programs-training/programs/new-markets-tax-credit/apply-step —
+specifically: the allocation authority and the number of awards available; the CDE
+certification deadline for eligibility; Question 25's QLICI-denominated commitment
+levels, its area-type lists and its ladder; Question 22's QLICI-denominated
+Non-Metropolitan minimum and maximum; Question 15's product-flexibility ladder; the
+scoring thresholds — as of September 17, 2026 this tool had not found a published CY
+2026 Review Process, and the thresholds this document applies are the CY
+2024-2025 Review Process's. THE CY 2026 CDE CERTIFICATION RULE HAS TWO
+ROUTES, AND THE SECOND HAS A DATE IN TABLE 1 OF THE NOAA. To be
+eligible to apply in CY 2026 an organization must EITHER already be a certified CDE
+as of the NOAA's Federal Register publication date, September 15, 2026, OR submit
+its CDE Certification Application through AMIS by 11:59 p.m. ET on September 22,
+2026. As of September 17, 2026 the AMIS route is STILL AHEAD: an organization that
 
 @@PAGE 24
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL
 Page 24
-certified CDE can still meet the rule by submitting its CDE Certification Application
-through AMIS by 11:59 p.m. ET on September 22, 2026. The NOAA adds that the
-CDFI Fund will not provide allocation authority to an Applicant that is not certified as a
-CDE. An organization that does neither CANNOT APPLY IN CY 2026. There is no late
-filing; its next opportunity is a future round. AND IF YOU ARE A PRIOR ALLOCATEE,
-TABLE 1 BINDS YOU ON DATES OF ITS OWN: any prior Allocatee that requires
-action by the CDFI Fund in order to meet the Qualified Equity Investment (QEI)
-issuance thresholds published in the CY 2026 NOAA must submit a CDE Certification
-Application for its Subsidiary CDE(s) through AMIS by 11:59 p.m. ET on September
-22, 2026, and any Allocation Agreement amendment request to add Subsidiary CDEs
-by 11:59 p.m. ET on November 3, 2026. As of September 17, 2026 both of those
-dates are still ahead. The thresholds are eligibility conditions with their own deadlines,
-both after the application deadline: the Table 2 share of prior-round QEIs must be
-finalized, and the required share of them used to make QLICIs, by 11:59 p.m. ET on
-January 7, 2027, and those QEIs reported and QLICIs certified in AMIS by 11:59 p.m.
-ET on January 14, 2027. The QEI issuance thresholds themselves are in Table 2 of
-the NOAA, Federal Register document 2026-18883; this tool neither computes them
-nor reproduces them. THE CY 2026 DEADLINES STILL AHEAD, COMPUTED FROM
-TABLE 1 OF THE NOAA AGAINST THE EASTERN DATE THIS DOCUMENT WAS
-GENERATED, September 17, 2026: 10 of the 10 deadlines in Table 1 are still ahead
-— Community Development Entity (CDE) Certification Application deadline — 11:59
-p.m. ET on September 22, 2026 (Electronically via AMIS); Request to modify CDE
-certification service area — 11:59 p.m. ET on September 22, 2026 (Electronically via
-AMIS); Subsidiary CDE Certification Application for meeting Qualified Equity
-Investment (QEI) issuance thresholds — 11:59 p.m. ET on September 22, 2026
-(Electronically via AMIS) [prior Allocatees]; CY 2026 Allocation Application
-Registration — 5:00 p.m. ET on October 6, 2026 (Electronically via AMIS);
-Amendment request to add Subsidiary CDEs to Allocation Agreements for meeting
-QEI issuance thresholds — 11:59 p.m. ET on November 3, 2026 (Electronically via
-AMIS) [prior Allocatees]; Amendment request to remove a Controlling Entity from
-Allocation Agreement(s) — 11:59 p.m. ET on November 3, 2026 (Electronically via
-AMIS) [prior Allocatees]; Last day to contact CDFI Fund staff — 5:00 p.m. ET on
-November 6, 2026 (Electronically via AMIS); CY 2026 Allocation Application deadline
-(including required Attachments) — 5:00 p.m. ET on November 10, 2026
-(Electronically via AMIS); QEI Issuance and Qualified Low Income Community
-Investments (QLICIs) requirements deadline — 11:59 p.m. ET on January 7, 2027
-(Not Applicable) [prior Allocatees]; Report QEIs and certify QLICIs deadline — 11:59
-p.m. ET on January 14, 2027 (Electronically via AMIS) [prior Allocatees]. Already
-passed: none. Every one of these dates is set by the NOAA, none is a figure this tool
-computes, and nothing in this document moves them. Provenance: the CY 2026
-NOAA is Federal Register document 2026-18883, filed September 14, 2026 and
+is not yet a certified CDE can still meet the rule by submitting its CDE Certification
+Application through AMIS by 11:59 p.m. ET on September 22, 2026. The NOAA adds
+that the CDFI Fund will not provide allocation authority to an Applicant that is not
+certified as a CDE. An organization that does neither CANNOT APPLY IN CY 2026.
+There is no late filing; its next opportunity is a future round. AND IF YOU ARE A
+PRIOR ALLOCATEE, TABLE 1 BINDS YOU ON DATES OF ITS OWN: any prior
+Allocatee that requires action by the CDFI Fund in order to meet the Qualified Equity
+Investment (QEI) issuance thresholds published in the CY 2026 NOAA must submit a
+CDE Certification Application for its Subsidiary CDE(s) through AMIS by 11:59 p.m. ET
+on September 22, 2026, and any Allocation Agreement amendment request to add
+Subsidiary CDEs by 11:59 p.m. ET on November 3, 2026. As of September 17, 2026
+both of those dates are still ahead. The thresholds are eligibility conditions with their
+own deadlines, both after the application deadline: the Table 2 share of prior-round
+QEIs must be finalized, and the required share of them used to make QLICIs, by 11:59
+p.m. ET on January 7, 2027, and those QEIs reported and QLICIs certified in AMIS by
+11:59 p.m. ET on January 14, 2027. The QEI issuance thresholds themselves are in
+Table 2 of the NOAA, Federal Register document 2026-18883; this tool neither
+computes them nor reproduces them. THE CY 2026 DEADLINES STILL AHEAD,
+COMPUTED FROM TABLE 1 OF THE NOAA AGAINST THE EASTERN DATE THIS
+DOCUMENT WAS GENERATED, September 17, 2026: 10 of the 10 deadlines in
+Table 1 are still ahead — Community Development Entity (CDE) Certification
+Application deadline — 11:59 p.m. ET on September 22, 2026 (Electronically via
+AMIS); Request to modify CDE certification service area — 11:59 p.m. ET on
+September 22, 2026 (Electronically via AMIS); Subsidiary CDE Certification
+Application for meeting Qualified Equity Investment (QEI) issuance thresholds —
+11:59 p.m. ET on September 22, 2026 (Electronically via AMIS) [prior Allocatees]; CY
+2026 Allocation Application Registration — 5:00 p.m. ET on October 6, 2026
+(Electronically via AMIS); Amendment request to add Subsidiary CDEs to Allocation
+Agreements for meeting QEI issuance thresholds — 11:59 p.m. ET on November 3,
+2026 (Electronically via AMIS) [prior Allocatees]; Amendment request to remove a
+Controlling Entity from Allocation Agreement(s) — 11:59 p.m. ET on November 3,
+2026 (Electronically via AMIS) [prior Allocatees]; Last day to contact CDFI Fund staff
+— 5:00 p.m. ET on November 6, 2026 (Electronically via AMIS); CY 2026 Allocation
+Application deadline (including required Attachments) — 5:00 p.m. ET on November
+10, 2026 (Electronically via AMIS); QEI Issuance and Qualified Low Income
+Community Investments (QLICIs) requirements deadline — 11:59 p.m. ET on January
+7, 2027 (Not Applicable) [prior Allocatees]; Report QEIs and certify QLICIs deadline —
+11:59 p.m. ET on January 14, 2027 (Electronically via AMIS) [prior Allocatees].
+Already passed: none. Every one of these dates is set by the NOAA, none is a figure
+this tool computes, and nothing in this document moves them. Provenance: the CY
+2026 NOAA is Federal Register document 2026-18883, filed September 14, 2026 and
 
 @@PAGE 25
 Great Lakes Regional Capital CDE, LLC  —  NMTC CY 2026 Application  |  CONFIDENTIAL

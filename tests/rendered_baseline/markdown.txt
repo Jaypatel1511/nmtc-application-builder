@@ -15,7 +15,7 @@ Readiness Grade: **B** (84.9/100 — this tool's own unsourced house heuristic, 
 
 ## Executive Summary
 
-Great Lakes Regional Capital CDE, LLC respectfully requests $70.0MM in New Markets Tax Credit allocation for application round CY 2026. Our 8-project pipeline spans 4 states with **85% of QEI committed to deep/severely distressed tracts**.
+Great Lakes Regional Capital CDE, LLC respectfully requests $70.0MM in New Markets Tax Credit allocation for application round CY 2026. Our 8-project pipeline spans 4 states with **85% of QEI committed to deep/severely distressed tracts** (a share of QEI, not of QLICIs).
 
 **Application Readiness Score: 84.9/100 (Grade B)**
 
@@ -285,9 +285,9 @@ The deployment history table below lists each prior award's year, amount and dep
 
 ### Award-by-Award Deployment History
 
-- **Award 1 (FY2019):** $45,000,000 — Fully Deployed. States: [CDE TO COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this tool].
-- **Award 2 (FY2021):** $60,000,000 — Fully Deployed. States: [CDE TO COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this tool].
-- **Award 3 (FY2023):** $55,000,000 — Partially Deployed. States: [CDE TO COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this tool].
+- Award 1 (FY2019): $45,000,000 — Fully Deployed. States: [CDE TO COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this tool].
+- Award 2 (FY2021): $60,000,000 — Fully Deployed. States: [CDE TO COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this tool].
+- Award 3 (FY2023): $55,000,000 — Partially Deployed. States: [CDE TO COMPLETE — not collected by this tool]. Sectors: [CDE TO COMPLETE — not collected by this tool].
 
 ### Compliance and Monitoring
 

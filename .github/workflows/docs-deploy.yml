@@ -1,0 +1,119 @@
+name: Docs deploy
+
+# THE DOCS DEPLOY, AS A JOB AND NOT A RUNBOOK LINE (1.7.1 R1).
+#
+# Two consecutive releases shipped federal-fact corrections to PyPI that never
+# reached the website, because `mkdocs gh-deploy` was a manual step: 1.6.5's
+# sample carried dead deadlines, 1.7.0's carried a live false negative about a
+# federal question, downloadable as Word and PDF, 52 days before the filing
+# deadline. The 1.6.5 cycle wrote the rule -- "a deploy that is manual is a
+# surface that is stale" -- and left the remedy as a suggestion. This is it.
+#
+# ONE DEFINITION, TWO TRIGGERS. release.yml calls this workflow after `publish`
+# succeeds (workflow_call), so the site that advertises a version is deployed
+# only once PyPI serves it -- the deployment-pin failure mode, kept out of a
+# new place. A human can run the same job by hand (workflow_dispatch), which
+# is how it is proved BEFORE a tag depends on it, and how a docs correction is
+# published between releases without anybody's laptop.
+#
+# WHAT THE DISPATCH DOES BY DEFAULT: a DRY RUN. It installs the toolchain,
+# builds with --strict (docs/hooks/generate_sample_output.py raises when fewer
+# than four formats render, so a strict build is the gate that makes this job
+# mean something), commits the site to a local gh-pages branch exactly as
+# `mkdocs gh-deploy` would, and runs `git push --dry-run` -- which
+# authenticates against the repository, negotiates the ref update and stops
+# short of writing it. Every step a real deploy takes is exercised except the
+# final ref write, and the site is not touched. `deploy: true` performs the
+# real push; from `main` that is the manual redeploy this workflow replaces.
+#
+# TOOLCHAIN MATCHES ci.yml's docs job EXACTLY: Python 3.12, `pip install
+# ".[docs]"`. pyproject pins the output libraries in [docs] on purpose -- the
+# build renders the sample, and a maintainer once got a two-of-four-format
+# sample when they were absent. Do not invent a different install line here.
+#
+# GH-PAGES HISTORY IS KEPT. ghp-import (which mkdocs gh-deploy drives) commits
+# on top of `origin/gh-pages` when that ref exists locally and starts a fresh
+# root when it does not; a fresh root cannot be pushed without --force, which
+# is how CI recipes end up rewriting gh-pages every release. So the branch is
+# fetched first and the push is a fast-forward, the same shape as every
+# "Deployed <sha> with MkDocs version: 1.6.1" commit already on that branch.
+
+on:
+  workflow_call:
+    inputs:
+      deploy:
+        description: "Push to gh-pages. false = dry run (build, commit locally, push --dry-run)."
+        type: boolean
+        required: false
+        default: true
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Push to gh-pages. Leave false to prove the job without touching the site."
+        type: boolean
+        required: false
+        default: false
+
+# The caller's job-level permissions bound a called workflow; this block is
+# what a workflow_dispatch run gets. contents: write is the one scope a push
+# to gh-pages needs, and this file is the only place it is granted.
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    name: Build docs (strict) and deploy to gh-pages
+    runs-on: ubuntu-latest
+    # One deploy at a time. Two concurrent pushes to gh-pages would race on
+    # the fast-forward and the loser would fail for no reason in the docs.
+    concurrency:
+      group: gh-pages-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Install the docs toolchain
+        run: |
+          python -m pip install --upgrade pip
+          pip install ".[docs]"
+
+      - name: Build docs (strict)
+        # --strict turns a warning into a failure, and the sample-output hook
+        # raises when a configured format is missing. This is the gate; the
+        # deploy below rebuilds with the same flag, so a site that could not
+        # pass this step is never committed.
+        run: python -m mkdocs build --strict
+
+      - name: Fetch gh-pages so the deploy is a fast-forward
+        run: |
+          git fetch --no-tags --depth=1 origin +refs/heads/gh-pages:refs/remotes/origin/gh-pages
+          git rev-parse --short origin/gh-pages
+
+      - name: Identify the committer
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Deploy to gh-pages
+        if: ${{ inputs.deploy }}
+        # The same command a maintainer ran by hand through 1.7.0, with the
+        # same commit message shape, so the branch history reads as one line.
+        run: python -m mkdocs gh-deploy --strict
+
+      - name: Dry run — commit locally and push --dry-run
+        if: ${{ !inputs.deploy }}
+        # What mkdocs gh-deploy does, minus the final ref write: ghp-import
+        # commits the built site onto the fetched gh-pages branch, and
+        # `git push --dry-run` authenticates, negotiates and reports the
+        # update it would make. A 403, a missing branch or a non-fast-forward
+        # all fail here, exactly as they would on a real deploy.
+        run: |
+          MKDOCS_VERSION="$(python -c 'import mkdocs; print(mkdocs.__version__)')"
+          python -m ghp_import -n -m "Deployed ${GITHUB_SHA} with MkDocs version: ${MKDOCS_VERSION} (dry run)" -b gh-pages site
+          git log -1 --format='%h %s' gh-pages
+          git push --dry-run origin gh-pages
+          echo "DRY RUN COMPLETE: the site built strict, committed on gh-pages locally, and the push was accepted in negotiation. Nothing was written to origin."

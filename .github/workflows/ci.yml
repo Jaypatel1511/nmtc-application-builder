@@ -187,11 +187,14 @@ jobs:
   # formats produced, under a --strict build that passed — was invisible until
   # somebody ran mkdocs by hand.
   #
-  # This does NOT deploy. gh-pages still needs a manual `mkdocs gh-deploy`, and
-  # a correction to a docs page is not live until someone runs it. What the job
-  # buys is that the docs cannot become unbuildable, and that the hook (which
-  # now raises when a configured format is missing) fails a pull request
-  # instead of publishing a page that overstates what it contains.
+  # This does NOT deploy. Deploying is release.yml's `docs` job, which calls
+  # docs-deploy.yml after `publish` succeeds (1.7.1 R1 -- through 1.7.0 it was
+  # a manual `mkdocs gh-deploy` that two consecutive releases skipped). What
+  # this job buys is that the docs cannot become unbuildable, and that the
+  # hook (which raises when a configured format is missing) fails a pull
+  # request instead of publishing a page that overstates what it contains.
+  # docs-deploy.yml installs the same toolchain, on the same interpreter;
+  # tests/test_release_docs_deploy.py holds the two identical.
   #
   # One version, not the matrix: the docs build is not version-sensitive and a
   # second matrix leg would quadruple the cost of a check whose whole job is to

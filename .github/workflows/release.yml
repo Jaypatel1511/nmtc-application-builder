@@ -1363,7 +1363,69 @@ jobs:
           # tests inside the TARBALL are complete; that is this job's role.
           # Recorded so the next reader does not re-derive the wrong
           # conclusion from the skip count.
-          FLOOR=910
+          #
+          # RE-DERIVED AT 1.7.1 (the settle-read corrections), AND THE SKIP
+          # CEILING WAS FOUND UNDER WATER. The 1.7.0 block above says the
+          # job "skipped exactly 57"; the 1.7.0 release job itself (run
+          # 35425909441, this job on 3.12) printed "1826 passed, 69 skipped,
+          # 1 deselected" -- the twelve of test_q25_modelled_surfaces, which
+          # the block acknowledged skip on the docs surface and did not
+          # count. MAX_SDIST_SKIPS in tests/test_release_floor.py is 77 now:
+          # that 69, plus the eight of tests/test_release_docs_deploy.py,
+          # which reads .github/workflows/ and this tarball does not ship it.
+          #
+          # Derived from a REAL SDIST BUILD, this job's exact invocation, on
+          # 3.14.6: the tracked tree exported with `git archive`, `python -m
+          # build --sdist`, the tarball installed into a fresh venv with
+          # [dev], ONLY tests/, streamlit_app/, README.md and pyproject.toml
+          # copied out of it into a directory with NO nmtcapp/, `import
+          # nmtcapp` confirmed to resolve to site-packages at 1.7.1, and the
+          # breakdown read off the junit report -- the same 69 as the 1.7.0
+          # job module for module, plus the eight:
+          #
+          #     collected under -m "not wheel" 1,938
+          #     skipped in the sdist             -77
+          #     EXECUTED                       1,861
+          #     half                             930
+          #     rounded down                     930
+          #
+          # The band was [930, 969]. FLOOR=930 sat on the lower bound again;
+          # that paragraph said it goes red at 1,957 collected, because
+          # floor_to_ten((1957 - 77) // 2) is 940.
+          #
+          # IT WENT RED AT 1,960, AND THE PARAGRAPH ABOVE IS WHY NOBODY HAD TO
+          # NOTICE. 1.7.1's R9-R11 -- the three deltas ported from a parallel
+          # implementation of this same release -- add 22 tests in two modules
+          # plus two cases on an existing one, and the gate, not a person, is
+          # what said so. Tenth consecutive cycle.
+          #
+          # RE-DERIVED FROM A REAL SDIST, this job's exact invocation, on
+          # 3.11: `python -m build --sdist` off the branch, the tarball
+          # installed --no-deps into a venv (so `import nmtcapp` resolves
+          # under site-packages, confirmed before the run, reporting 1.7.1),
+          # ONLY tests/, streamlit_app/, README.md and pyproject.toml copied
+          # out of the tarball into a directory with NO nmtcapp/:
+          #
+          #     collected under -m "not wheel" 1,960   (1,961 less 1 deselected)
+          #     skipped in the sdist             -79
+          #     EXECUTED                       1,881
+          #     half                             940
+          #     rounded down                     940
+          #
+          # THE CEILING MOVES 77 -> 79 AND BOTH NEW SKIPS ARE NAMED. Neither
+          # new test module skips here -- both render from the installed
+          # package and read no pruned tree, measured in the tarball at 20
+          # passed / 0 skipped. The two are R10's fourth test-count claim
+          # site, CHANGELOG.md, and the scope proof beside it: MANIFEST.in
+          # ships CHANGELOG.md and this job does not copy it out, so both take
+          # the same checkout-marker skip CONTRIBUTING.md has taken since
+          # 1.3.1. The ceiling was raised by the measurement, not to buy room.
+          #
+          # The band is [940, 980], width 40 -- ON the maximum
+          # tests/test_release_floor.py permits, not inside it. It goes red at
+          # 1,962 collected. The answer then is to re-measure the ceiling, not
+          # to widen that maximum.
+          FLOOR=940
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()
@@ -1428,3 +1490,26 @@ jobs:
           path: dist/
       - name: Publish to PyPI (trusted publishing — no API token)
         uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # v1.14.0
+
+  # THE DOCS ARE PART OF THE RELEASE (1.7.1 R1). Two consecutive releases
+  # shipped federal-fact corrections to PyPI that never reached the website,
+  # because gh-pages was a manual `mkdocs gh-deploy` after the tag -- 1.6.5's
+  # stale sample carried dead deadlines, 1.7.0's a live false negative about
+  # a federal question. See .github/workflows/docs-deploy.yml for the job;
+  # this is only its place in the sequence.
+  #
+  # AFTER publish, not beside it. The docs build renders the sample from the
+  # checkout and does not depend on PyPI, but a site advertising a version
+  # PyPI does not yet serve is the deployment-pin failure mode in a new place.
+  # A docs failure here leaves PyPI published and the run red, which is the
+  # honest state: rerun docs-deploy.yml by hand with deploy=true.
+  #
+  # contents: write is scoped to this job. The workflow keeps contents: read.
+  docs:
+    name: Deploy docs to gh-pages
+    needs: publish
+    permissions:
+      contents: write
+    uses: ./.github/workflows/docs-deploy.yml
+    with:
+      deploy: true

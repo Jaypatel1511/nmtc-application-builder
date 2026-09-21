@@ -301,7 +301,8 @@ def _build_totals_row(df: pd.DataFrame) -> dict:
 def build_pipeline_summary_table(pipeline: "Pipeline") -> pd.DataFrame:
     """Build a 6-column summary of the pipeline for Word/PDF body sections.
 
-    Full 33-column detail lives in the Excel attachment.  This view gives
+    Full detail — every column of ``_PIPELINE_COLUMNS`` — lives in the
+    Excel attachment.  This view gives
     reviewers the key facts on a single portrait page.
 
     Example::
@@ -357,3 +358,33 @@ CURRENCY_COLUMNS = [
     "Leverage Loan ($)", "Total NMTCs ($)", "Estimated Investor Equity ($)",
     "CDE Fee ($)",
 ]
+
+#: How many columns Appendix A carries — DERIVED, NOT TYPED (1.7.1 R2).
+#:
+#: Word and PDF send the reader to the workbook with "Full N-column pipeline
+#: detail ... is provided in the accompanying Excel workbook, Pipeline Detail
+#: tab". Through 1.7.0 the N was a literal 33 at four sites, a hundred lines
+#: from the list that computes it, and the tab had 29: the sentence pointing
+#: a federal reviewer at the attachment miscounted the attachment. The same
+#: typed-literal-beside-a-computed-value shape as Q25_DISTINCT_AREA_TYPES
+#: (1.7.0 R1), fixed the same way — read it, never retype it.
+#:
+#: The workbook's header IS this list: renderers/excel_builder writes
+#: ``build_pipeline_table``'s frame, which reindexes to ``_PIPELINE_COLUMNS``
+#: and raises if the row dict disagrees. tests/test_pipeline_column_count
+#: measures that on the rendered file rather than trusting it.
+PIPELINE_COLUMN_COUNT = len(_PIPELINE_COLUMNS)
+# ``raise``, not ``assert``: ``python -O`` strips asserts, and a stripped guard
+# would let a column added here render a new count on two surfaces while the
+# pin row in tests/pinned_constants.txt and the CHANGELOG still said the old
+# one. Adding a column is deliberate; make this number, the pin and the
+# CHANGELOG move together.
+if PIPELINE_COLUMN_COUNT != 29:
+    raise ImportError(
+        f"_PIPELINE_COLUMNS has {PIPELINE_COLUMN_COUNT} entries; this module "
+        "expects 29 — the column run pinned in tests/pinned_constants.txt "
+        "against CY 2024-2025 Application Exhibit A, TABLE A5. If a column "
+        "was added or removed on purpose, update this guard, the "
+        "_PIPELINE_COLUMNS pin row, the PIPELINE_COLUMN_COUNT pin row and "
+        "the CHANGELOG in the same commit."
+    )

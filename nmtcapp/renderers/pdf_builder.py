@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from datetime import date
 from typing import TYPE_CHECKING
 
 from nmtcapp.renderers._disclosure import (
-    is_partial_unverified, qlici_not_supplied_note, qualified_pct,
-    unverified_banner, unverified_ids, unverified_qualifier,
+    LOWER_BOUND_CLAUSE, is_partial_unverified, qlici_not_supplied_note,
+    qualified_pct, unverified_banner, unverified_ids, unverified_qualifier,
 )
 from nmtcapp.renderers._cell_format import format_cell, supplied_total
 from nmtcapp.renderers._frame_geometry import (
@@ -25,7 +26,8 @@ from nmtcapp.sections import ALL_SECTIONS
 from nmtcapp.tables.distress_table import build_distress_table, build_distress_summary_table
 from nmtcapp.tables.geographic_table import build_geographic_table
 from nmtcapp.tables.impact_table import build_impact_summary_table
-from nmtcapp.tables.pipeline_table import build_pipeline_summary_table
+from nmtcapp.renderers._question_25 import Q25_QEI_BASIS_CLAUSE
+from nmtcapp.tables.pipeline_table import PIPELINE_COLUMN_COUNT, build_pipeline_summary_table
 from nmtcapp.tables.track_record_table import build_track_record_table
 from nmtcapp.core.application_round import (
     allocation_round_clause, nmtc_round_phrase, round_label,
@@ -68,6 +70,52 @@ def _rl_escape(text: str) -> str:
     return (
         text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     )
+
+
+#: ReportLab's default Frame padding, each side. The body frame is
+#: ``usable_width()`` wide and a line of text inside it is this much narrower
+#: on each edge. Not a layout choice of this package — the Frame default —
+#: but the number a token has to fit within.
+_FRAME_PADDING_PTS = 6.0
+
+_URL_RE = re.compile(r"https?://[^\s<>\"']+")
+
+
+def _fit_urls(text: str, size: float, avail: float) -> str:
+    """Render each URL in ``text`` at the largest size at which it fits one line.
+
+    THE ONE TOKEN THAT MUST NOT BREAK (1.7.1 R4). ``splitLongWords=0`` on the
+    body style stops ReportLab cutting a URL at whatever character reaches
+    the margin — but a URL wider than the text column still has nowhere to
+    go. The CY 2026 Application Materials URL is 426.7 pt at the 11 pt body
+    size and the portrait column inside the frame padding is 420 pt: whole,
+    it hangs 0.7 pt past the frame edge, and
+    ``tests/test_render_frame_geometry`` says so. At 10 pt it is 387.9 pt and
+    fits. So a URL that does not fit at the paragraph's size is wrapped in a
+    ``<font size>`` tag at the largest whole size at which it does, never
+    below 6 pt. A URL that fits is left alone. Copy-paste yields the whole
+    address either way; that is the property this exists for.
+
+    ``text`` is Paragraph markup (already escaped where it needed to be); the
+    URL pattern stops at a quote or angle bracket so an existing tag is not
+    swallowed.
+
+    Example::
+
+        _fit_urls("see https://example.org/x", 11, 420.0)   # unchanged
+    """
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+
+    def _shrink(match: "re.Match") -> str:
+        url = match.group(0)
+        if stringWidth(url, "Helvetica", size) <= avail:
+            return url
+        fitted = int(size) - 1
+        while fitted > 6 and stringWidth(url, "Helvetica", fitted) > avail:
+            fitted -= 1
+        return f'<font size="{fitted}">{url}</font>'
+
+    return _URL_RE.sub(_shrink, text)
 
 
 # ---------------------------------------------------------------------------
@@ -131,6 +179,14 @@ def _build_styles():
             textColor=body_color,
             leading=15, spaceBefore=3, spaceAfter=3,
             alignment=TA_JUSTIFY,
+            # NEVER BREAK INSIDE A TOKEN (1.7.1 R4). ReportLab's default
+            # splitLongWords=1 cuts a word wider than the line at whatever
+            # character fits: the CY 2026 Application Materials URL — the one
+            # link the round-provenance note tells the reader to re-verify
+            # against — rendered as ".../pro" / "grams-training/..." and
+            # copy-pasted broken. A token that does not fit now moves whole to
+            # the next line. Every table cell style inherits this via parent=.
+            splitLongWords=0,
         ),
         "bullet": ParagraphStyle(
             "bullet", parent=base["Normal"],
@@ -162,6 +218,24 @@ def _build_styles():
 # Table helpers
 # ---------------------------------------------------------------------------
 
+#: Left plus right cell padding in ``_rl_table_style``, which a column width
+#: must carry on top of its widest token. Stated once here and read by the
+#: style, so the two cannot disagree.
+_CELL_PADDING_PTS = 5
+
+#: Added to every column's minimum width so the widest token is strictly
+#: narrower than its cell, not equal to it. Measured: a 61.2 pt bold total in
+#: a column derived to exactly 61.2 pt of interior still wrapped, because
+#: ReportLab's fit test and this module's width arithmetic round differently
+#: at the last digit.
+_TOKEN_SAFETY_PTS = 1.0
+
+#: The smallest body size the auto-sizer will step down to before giving up
+#: and letting tokens overflow — where ``tests/test_pdf_text_integrity`` and
+#: ``tests/test_render_frame_geometry`` catch it rather than the reader.
+_MIN_TABLE_BODY_PT = 6
+
+
 def _rl_table_style(n_data_rows: int, totals_last: bool = False) -> "TableStyle":
     """Build a ReportLab TableStyle matching the Word/Excel aesthetic."""
     primary_hex = COLORS["primary"]
@@ -186,8 +260,8 @@ def _rl_table_style(n_data_rows: int, totals_last: bool = False) -> "TableStyle"
         # Row padding
         ("TOPPADDING", (0, 0), (-1, -1), 4),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-        ("LEFTPADDING", (0, 0), (-1, -1), 5),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+        ("LEFTPADDING", (0, 0), (-1, -1), _CELL_PADDING_PTS),
+        ("RIGHTPADDING", (0, 0), (-1, -1), _CELL_PADDING_PTS),
     ]
 
     # Alternating row shading
@@ -203,26 +277,148 @@ def _rl_table_style(n_data_rows: int, totals_last: bool = False) -> "TableStyle"
     return TableStyle(cmds)
 
 
+def _auto_col_widths(cells, avail: float) -> list:
+    """Column widths that keep every token whole (1.7.1 R3).
+
+    ``cells`` is a list of rows; each row a list of ``(text, font, size)``.
+    Returns one width per column summing to ``avail``.
+
+    WHY NOT ``colWidths=None``. ReportLab then divides the frame equally, and
+    a six-column portrait table gets 70 pt a column, 60 pt inside the
+    padding, while the bold total ``$122,500,000`` measures 61.2 pt. With
+    ``splitLongWords`` on, the figure rendered as ``$122,500,00`` over
+    ``0`` — a thousand times smaller to the eye — at six sites of the
+    published 1.7.0 PDF. Widening the column moves the threshold and leaves
+    the defect for a larger figure, so the width is derived from the content:
+
+      minimum   the widest single token in the column, plus padding. A money
+                string is one token, so a currency column can never be
+                narrower than its largest figure.
+      natural   the widest whole cell text, plus padding — what the column
+                would take to never wrap at all.
+
+    If every natural width fits, the slack is shared in proportion to natural
+    width. Otherwise every column gets its minimum and the slack is shared
+    max-min fairly over what each column still wants (natural − minimum):
+    the smallest wants are met in full first, so a column of short cells
+    ("See ACS", "Deep Distress") never wraps to buy a few points for a prose
+    column that wraps regardless, and the prose columns split what is left
+    equally. If even the minimums exceed ``avail`` the caller steps the font
+    down; see ``_df_to_rl_table``.
+    """
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+
+    n_cols = max(len(row) for row in cells)
+    pad = 2 * _CELL_PADDING_PTS + _TOKEN_SAFETY_PTS
+    min_w = [0.0] * n_cols
+    nat_w = [0.0] * n_cols
+    for row in cells:
+        for j, (text, font, size) in enumerate(row):
+            tokens = text.split()
+            widest = max((stringWidth(t, font, size) for t in tokens), default=0.0)
+            min_w[j] = max(min_w[j], widest + pad)
+            nat_w[j] = max(nat_w[j], stringWidth(text, font, size) + pad)
+
+    if sum(nat_w) <= avail:
+        total = sum(nat_w) or 1.0
+        return [w + (avail - sum(nat_w)) * (w / total) for w in nat_w]
+    if sum(min_w) <= avail:
+        want = [max(nat - mn, 0.0) for nat, mn in zip(nat_w, min_w)]
+        slack = avail - sum(min_w)
+        grant = [0.0] * n_cols
+        remaining, left = slack, n_cols
+        for j in sorted(range(n_cols), key=lambda k: want[k]):
+            give = min(want[j], remaining / left)
+            grant[j] = give
+            remaining -= give
+            left -= 1
+        return [mn + g for mn, g in zip(min_w, grant)]
+    # Does not fit even with every token whole. Scale the minimums; the
+    # tokens overflow their cells visibly rather than split invisibly, and
+    # the two gates named above go red.
+    total = sum(min_w) or 1.0
+    return [avail * (w / total) for w in min_w]
+
+
 def _df_to_rl_table(df, styles, max_rows: int = 40, totals_last: bool = True,
-                    col_widths=None, font_size: int = None) -> list:
+                    col_widths=None, font_size: int = None,
+                    avail_width: float = None) -> list:
     """Convert a DataFrame to a list of ReportLab flowables (table + optional caption).
 
-    Uses Paragraph objects for text cells so long values wrap rather than overflow.
+    Uses Paragraph objects for text cells so long values wrap rather than
+    overflow — and, since 1.7.1 R3, never wrap INSIDE a token. When
+    ``col_widths`` is not given the columns are sized by
+    :func:`_auto_col_widths` against ``avail_width`` (the portrait text
+    column by default), stepping the font down as far as
+    ``_MIN_TABLE_BODY_PT`` if the widest tokens would not otherwise fit.
     """
     flowables = []
     if df is None or df.empty:
         flowables.append(Paragraph("No data available.", styles["caption"]))
         return flowables
 
+    if avail_width is None:
+        avail_width = usable_width()
+
+    display = df.head(max_rows)
+    # Cell text first, so the widths can be measured before any Paragraph is
+    # built. The COLUMN decides the format, not the magnitude — see
+    # renderers/_cell_format. This branched on abs(v) > 1000, so a
+    # non-currency float took a dollar sign and a fraction-valued share
+    # printed as "0.33".
+    texts = []
+    for _, row in display.iterrows():
+        row_texts = []
+        for col_name, v in zip(display.columns, row):
+            text = format_cell(col_name, v)
+            # Truncate very long strings
+            if len(text) > 80:
+                text = text[:77] + "..."
+            row_texts.append(text)
+        texts.append(row_texts)
+    n_rows = len(texts)
+
     body_pt = font_size or TYPOGRAPHY["size_table_body"]
+    if col_widths is not None:
+        widths = list(col_widths)
+    else:
+        from reportlab.pdfbase.pdfmetrics import stringWidth
+
+        while True:
+            header_pt = max(body_pt - 1, 6)
+            measured = [[(str(c), "Helvetica-Bold", header_pt) for c in display.columns]]
+            for i, row_texts in enumerate(texts):
+                font = "Helvetica-Bold" if (totals_last and i == n_rows - 1) else "Helvetica"
+                measured.append([(t, font, body_pt) for t in row_texts])
+            widths = _auto_col_widths(measured, avail_width)
+            # _auto_col_widths always sums to avail_width; what it cannot
+            # promise is that every token fits its column. Re-measure that
+            # and step the font down until it does or the floor is reached.
+            widest_token = [0.0] * len(display.columns)
+            for row in measured:
+                for j, (t, f, sz) in enumerate(row):
+                    for tok in t.split():
+                        widest_token[j] = max(widest_token[j], stringWidth(tok, f, sz))
+            every_token_fits = all(wt + 2 * _CELL_PADDING_PTS + _TOKEN_SAFETY_PTS <= w + 0.01
+                                   for wt, w in zip(widest_token, widths))
+            if every_token_fits or body_pt <= _MIN_TABLE_BODY_PT:
+                break
+            body_pt -= 1
     header_pt = max(body_pt - 1, 6)
 
-    # Build cell styles for wrapping
+    # Build cell styles for wrapping. splitLongWords=0 is inherited from
+    # styles["body"] and restated here as defence in depth, NOT as a half of
+    # the R3 fix: a hostile audit flipped it 0 -> 1 here and at both other
+    # sites and every gate stayed green, because _auto_col_widths already
+    # keeps each token inside its column. No caller in this tree passes
+    # col_widths -- the distress table, the one that did, moved to
+    # avail_width in 1.7.1 -- so the parameter this once defended is dead.
     cell_style = ParagraphStyle(
         "tbl_cell", parent=styles["body"],
         fontSize=body_pt, leading=body_pt + 2,
         spaceAfter=0, spaceBefore=0,
         textColor=rl_hex("text_body"),
+        splitLongWords=0,
     )
     header_style = ParagraphStyle(
         "tbl_hdr", parent=styles["body"],
@@ -230,32 +426,21 @@ def _df_to_rl_table(df, styles, max_rows: int = 40, totals_last: bool = True,
         spaceAfter=0, spaceBefore=0,
         textColor=rl_colors.white, fontName="Helvetica-Bold",
         alignment=TA_CENTER,
+        splitLongWords=0,
     )
 
-    display = df.head(max_rows)
     header = [Paragraph(str(c), header_style) for c in display.columns]
     data = [header]
-    for i, (_, row) in enumerate(display.iterrows()):
-        is_last = (i == len(display) - 1)
-        row_data = []
-        # The COLUMN decides the format, not the magnitude — see
-        # renderers/_cell_format. This branched on abs(v) > 1000, so a
-        # non-currency float took a dollar sign and a fraction-valued share
-        # printed as "0.33".
-        for col_name, v in zip(display.columns, row):
-            text = format_cell(col_name, v)
-            # Truncate very long strings
-            if len(text) > 80:
-                text = text[:77] + "..."
-            style = ParagraphStyle(
-                "tbl_cell_bold" if is_last else "tbl_cell_row",
-                parent=cell_style,
-                fontName="Helvetica-Bold" if is_last else "Helvetica",
-            )
-            row_data.append(Paragraph(text, style))
-        data.append(row_data)
+    for i, row_texts in enumerate(texts):
+        is_last = (i == n_rows - 1)
+        style = ParagraphStyle(
+            "tbl_cell_bold" if is_last else "tbl_cell_row",
+            parent=cell_style,
+            fontName="Helvetica-Bold" if is_last else "Helvetica",
+        )
+        data.append([Paragraph(text, style) for text in row_texts])
 
-    tbl = Table(data, colWidths=col_widths, repeatRows=1)
+    tbl = Table(data, colWidths=widths, repeatRows=1)
     tbl_style = _rl_table_style(len(data) - 1, totals_last=totals_last)
     # Add word wrap support
     tbl_style.add("WORDWRAP", (0, 0), (-1, -1), "LTR")
@@ -609,18 +794,23 @@ class PDFApplicationBuilder:
                 f"{pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states, with "
                 f"{d.get('pct_deep_or_severe', 0):.0%} of QEI "
+                # THE SENTENCE THIS PACKAGE'S OWN DISCLOSURE MODULE RECORDS AS
+                # FALSE (1.7.1 R11); see word_builder and _disclosure for the
+                # adjudication. Read from _disclosure.
                 f"{unverified_qualifier(pr)} committed to deep and severely "
-                "distressed census tracts — figures reflect location-verified "
-                "projects only."
+                f"distressed census tracts ({Q25_QEI_BASIS_CLAUSE}) — "
+                f"{LOWER_BOUND_CLAUSE}."
             )
         else:
+            # THE DENOMINATOR TRAVELS WITH THE HEADLINE (1.7.1 R8); see
+            # markdown_builder for the reason. Read from _question_25.
             summary_text = (
                 f"{app.cde.name} respectfully requests ${app.requested_allocation/1e6:.1f} million in "
                 f"New Markets Tax Credit allocation{allocation_round_clause(app.application_round)}. Our "
                 f"{pr.total_projects}-project pipeline spans "
                 f"{pr.geographic_diversity.get('states_count', 0)} states, with "
                 f"{d.get('pct_deep_or_severe', 0):.0%} of QEI committed to deep and severely "
-                f"distressed census tracts."
+                f"distressed census tracts ({Q25_QEI_BASIS_CLAUSE})."
             )
         flowables.append(Paragraph(summary_text, styles["body"]))
         flowables.append(Spacer(1, 10))
@@ -639,7 +829,10 @@ class PDFApplicationBuilder:
             ["Total Pipeline QEI", f"${pr.total_qei_request:,.0f}"],
             ["Total Project Cost", f"${pr.total_project_cost:,.0f}"],
             ["States Represented", str(pr.geographic_diversity.get("states_count", 0))],
-            ["Deep/Severe Distress Concentration",
+            # THE DENOMINATOR TRAVELS WITH THE ROW (1.7.1 R9); see
+            # word_builder for why the bare clause and not either pointer
+            # suffix. Read from _question_25.
+            [f"Deep/Severe Distress Concentration ({Q25_QEI_BASIS_CLAUSE})",
              _elig_metric(d.get("pct_deep_or_severe", 0))],
             ["NMTC Eligibility Rate", _elig_metric(pr.eligibility_pct)],
             ["Jobs to Be Created", f"{impact.get('total_jobs_created', 0):,}"],
@@ -649,6 +842,26 @@ class PDFApplicationBuilder:
             ["Jobs per $1MM QEI", f"{impact.get('jobs_per_million_qei', 0):.1f}"],
         ]
         usable_w = usable_width()
+        # THE LABEL COLUMN HAS TO WRAP (1.7.1 R9). A bare ``str`` in a
+        # ReportLab table cell is drawn on ONE line and simply overruns its
+        # column — there is no wrapping to fall back on. Measured at the
+        # moment the denominator landed on the Deep/Severe label: 300.7 pt of
+        # Helvetica 10 against 270.8 pt of cell width (0.65 of a 432 pt frame,
+        # less two 5 pt paddings). Every label becomes a Paragraph in the
+        # table-body style so the cell wraps instead, and ``splitLongWords=0``
+        # carries R3's rule onto this table too — no token, and so no figure,
+        # GEOID or URL, is ever cut mid-word.
+        label_style = ParagraphStyle(
+            "key_metric_label", parent=styles["body"],
+            fontSize=TYPOGRAPHY["size_table_body"],
+            leading=TYPOGRAPHY["size_table_body"] + 2,
+            spaceAfter=0, spaceBefore=0,
+            textColor=rl_hex("text_body"),
+            splitLongWords=0,
+        )
+        metrics = [metrics[0]] + [
+            [Paragraph(label, label_style), value] for label, value in metrics[1:]
+        ]
         tbl = Table(metrics, colWidths=[usable_w * 0.65, usable_w * 0.35])
         tbl.setStyle(_rl_table_style(len(metrics) - 1))
         flowables += [tbl, Spacer(1, 12)]
@@ -735,8 +948,12 @@ class PDFApplicationBuilder:
         summary_df = build_pipeline_summary_table(self.application.pipeline)
         flowables += _df_to_rl_table(summary_df, styles, totals_last=True)
         flowables.append(Spacer(1, 6))
+        # The count is PIPELINE_COLUMN_COUNT, never a literal (1.7.1 R2): this
+        # sentence sends the reader to the workbook, and through 1.7.0 it said
+        # 33 of a tab that has 29.
         flowables.append(Paragraph(
-            "<i>Full 33-column pipeline detail (deal economics, QLICI structure, timeline) "
+            f"<i>Full {PIPELINE_COLUMN_COUNT}-column pipeline detail (deal economics, "
+            "QLICI structure, timeline) "
             "is provided in the accompanying Excel workbook, Pipeline Detail tab.</i>",
             styles["caption"],
         ))
@@ -760,10 +977,11 @@ class PDFApplicationBuilder:
         ]
         df = build_distress_table(self.application.pipeline)
         if df is not None and not df.empty:
-            n_cols = len(df.columns)
-            col_w = usable_w / n_cols
-            col_widths = [col_w] * n_cols
-            flowables += _df_to_rl_table(df, styles, font_size=7, col_widths=col_widths)
+            # Sized by content against the landscape frame (1.7.1 R3), not an
+            # equal split: an equal split put a figure's widest token in a
+            # column narrower than it.
+            flowables += _df_to_rl_table(df, styles, font_size=7,
+                                         avail_width=usable_w)
         else:
             flowables.append(Paragraph("No distress data available.", styles["caption"]))
 
@@ -811,6 +1029,8 @@ class PDFApplicationBuilder:
             f"{_rl_escape(impact_bands_note())}<br/><br/>"
             f"{_rl_escape(readiness_weights_note())}"
         )
+        text = _fit_urls(text, TYPOGRAPHY["size_body"],
+                         usable_width() - 2 * _FRAME_PADDING_PTS)
         flowables.append(Paragraph(text, styles["body"]))
         return flowables
 
@@ -935,6 +1155,8 @@ def _content_to_flowables(content: dict, styles) -> list:
             for para_text in str(body).split("\n\n"):
                 para_text = para_text.strip()
                 if para_text:
+                    para_text = _fit_urls(para_text, TYPOGRAPHY["size_body"],
+                                          usable_width() - 2 * _FRAME_PADDING_PTS)
                     flowables.append(Paragraph(para_text, styles["body"]))
 
         flowables.append(Spacer(1, 6))

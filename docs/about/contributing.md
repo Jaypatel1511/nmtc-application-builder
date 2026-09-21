@@ -39,9 +39,13 @@ now raises rather than publishing a page claiming four formats over two files.
 CI builds the docs on every pull request, so an unbuildable docs tree fails
 before it is merged.
 
-**Publishing is still manual.** CI builds; it does not deploy. A correction to a
-page under `docs/` is not live on the published site until somebody runs
-`python -m mkdocs gh-deploy`.
+**Publishing is part of the release.** CI builds on every pull request; the
+release workflow deploys — `release.yml`'s `docs` job calls
+`.github/workflows/docs-deploy.yml` after the PyPI publish succeeds, so a
+correction to a page under `docs/` goes live with the release that carries it.
+Between releases, the same workflow can be run by hand
+(`gh workflow run docs-deploy.yml --ref main -f deploy=true`); its default is
+a dry run that proves the job without touching the site.
 
 ---
 

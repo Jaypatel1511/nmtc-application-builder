@@ -594,7 +594,8 @@ ROUND_STATUS_CLAIMS = {
         (),
 
     # rendered_baseline/excel.txt
-    'CONFIDENTIAL — Great Lakes Regional Capital CDE, LLC — NMTC CY 2026 — Generated <RUNDATE>':
+    # 1.7.1 R6: the footer gained the package stamp the other three formats carry.
+    'CONFIDENTIAL — Great Lakes Regional Capital CDE, LLC — NMTC CY 2026 — Generated <RUNDATE> by nmtc-application-builder v<VERSION>':
         (),
 
     # nmtcapp/renderers/_round_provenance.py
@@ -874,6 +875,25 @@ ROUND_STATUS_CLAIMS = {
     "Through 1.6.3 this module carried TWO of these ten dates, and the CDE certification one was 2026-08-31 -- the date in the CDFI Fund's 12 Aug 2026 PRE-ANNOUNCEMENT (cdfifund.gov/news/738), which the NOAA superseded with 2026-09-22 on the day it published.":
         (('NOAA', True),),
 
+    # rendered_baseline/pdf.txt — 1.7.1 R4 re-flowed the methodology paragraph
+    # from the URL line onward and this sentence now straddles a page break, so
+    # the segmenter cuts it at the block boundary. Same sentence, same claim.
+    "To be eligible to apply in CY 2026 an organization must EITHER already be a certified CDE as of the NOAA's Federal Register publication date, September 15, 2026, OR submit its CDE Certification Application through AMIS by 11:59 p.m. ET on September 22,":
+        (('NOAA', True),),
+
+    # nmtcapp/renderers/pdf_builder.py [#] — 1.7.1 R4, a comment about a URL's
+    # width; names the round's instrument, asserts nothing about its status.
+    'ReportLab\'s default splitLongWords=1 cuts a word wider than the line at whatever character fits: the CY 2026 Application Materials URL — the one link the round-provenance note tells the reader to re-verify against — rendered as ".../pro" / "grams-training/..."':
+        (),
+
+    # nmtcapp/renderers/pdf_builder.py — 1.7.1 R4, _fit_urls's docstring.
+    'The CY 2026 Application Materials URL is 426.7 pt at the 11 pt body size and the portrait column inside the frame padding is 420 pt: whole, it hangs 0.7 pt past the frame edge, and ``tests/test_render_frame_geometry`` says so.':
+        (),
+
+    # nmtcapp/renderers/_document_properties.py — 1.7.1 R7, an example title.
+    '``"<CDE name> — NMTC CY 2026 Allocation Application"``, round permitting.':
+        (),
+
     # rendered_baseline/excel.txt
     # rendered_baseline/markdown.txt
     # rendered_baseline/pdf.txt
@@ -1085,9 +1105,9 @@ ROUND_STATUS_CLAIMS = {
     'BASIS NOTE — the CDFI Fund\'s two distress commitments are measured on QLICIs, not on QEI|Question 25 of the CY 2026 NMTC Allocation Application (printed pp. 36-40) sets both commitments, and both are measured on QLICIs — specifically on QLICIs "in terms of aggregate dollar amounts", tested for each QLICI.':
         (),
 
-    # rendered_baseline/pdf.txt
-    "But it is a PROXY for the CY 2026 instrument, not that instrument, and that instrument is AVAILABLE NOW: every round-specific figure in this document must be re-verified against the CY 2026 Application Materials, which the CDFI Fund publishes at https://www.cdfifund.gov/pro grams-training/programs/new-markets-tax-credit/apply-step — specifically: the allocation authority and the number of awards available; the CDE certification deadline for eligibility; Question 25's QLICI-denominated commitment levels, its area-type lists and its ladder; Question 22's QLICI-denominated Non-Metropolitan minimum and maximum; Question 15's product-flexibility ladder; the scoring thresholds — as of September 17, 2026 this tool had not found a published CY 2026 Review Process, and the thresholds this document applies are the CY 2024-2025 Review Process's.":
-        (('APPLICATION', True),),
+    # 1.7.1 R4: the PDF's own spelling of this sentence — with the URL cut at
+    # 'gov/pro' / 'grams-training' — is gone; the PDF now renders the sentence
+    # the other three surfaces render, which is the key below.
 
     # rendered_baseline/excel.txt / rendered_baseline/markdown.txt / rendered_baseline/word.txt
     "But it is a PROXY for the CY 2026 instrument, not that instrument, and that instrument is AVAILABLE NOW: every round-specific figure in this document must be re-verified against the CY 2026 Application Materials, which the CDFI Fund publishes at https://www.cdfifund.gov/programs-training/programs/new-markets-tax-credit/apply-step — specifically: the allocation authority and the number of awards available; the CDE certification deadline for eligibility; Question 25's QLICI-denominated commitment levels, its area-type lists and its ladder; Question 22's QLICI-denominated Non-Metropolitan minimum and maximum; Question 15's product-flexibility ladder; the scoring thresholds — as of September 17, 2026 this tool had not found a published CY 2026 Review Process, and the thresholds this document applies are the CY 2024-2025 Review Process's.":
