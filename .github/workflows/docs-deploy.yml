@@ -26,6 +26,22 @@ name: Docs deploy
 # final ref write, and the site is not touched. `deploy: true` performs the
 # real push; from `main` that is the manual redeploy this workflow replaces.
 #
+# WHERE A REAL DEPLOY MAY COME FROM (the ref guard). gh-pages is the public
+# site, so `deploy: true` is honoured from exactly two places:
+#   * a hand-run (workflow_dispatch) on refs/heads/main, and
+#   * release.yml's `docs` job on a `v*` tag push. A called workflow sees the
+#     CALLER's github context, so there github.event_name is `push` and
+#     github.ref is `refs/tags/vX.Y.Z` -- NOT refs/heads/main. A guard of
+#     `github.ref == 'refs/heads/main'` alone would skip the release-time
+#     deploy and silently undo the 1.7.1 fix; that is why the tag arm exists.
+# Anything else with `deploy: true` -- a dispatch from a feature branch, or a
+# dispatch pointed at a tag (which would overwrite the site with an old
+# release's docs) -- FAILS the run at its first step rather than skipping the
+# push and going green. A dry run (`deploy: false`) is allowed from any ref;
+# proving the job on a branch is what dispatch is for. The same condition is
+# written twice below (the refusal step, and the deploy step's own `if:` as
+# a second lock); tests/test_release_docs_deploy.py holds them equal.
+#
 # TOOLCHAIN MATCHES ci.yml's docs job EXACTLY: Python 3.12, `pip install
 # ".[docs]"`. pyproject pins the output libraries in [docs] on purpose -- the
 # build renders the sample, and a maintainer once got a two-of-four-format
@@ -74,6 +90,18 @@ jobs:
       group: gh-pages-deploy
       cancel-in-progress: false
     steps:
+      - name: Refuse a real deploy from any ref but main or a release tag
+        if: ${{ inputs.deploy && !(github.ref == 'refs/heads/main' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))) }}
+        # Context passed through env, not interpolated into the script: a
+        # branch name may legally contain `$(`, and this step runs on
+        # exactly the refs nobody reviewed.
+        env:
+          RUN_EVENT: ${{ github.event_name }}
+          RUN_REF: ${{ github.ref }}
+        run: |
+          echo "::error::deploy=true is honoured only from refs/heads/main (workflow_dispatch) or a v* tag push (release.yml). This run: event=${RUN_EVENT} ref=${RUN_REF}. Re-run with deploy=false to dry-run this ref, or dispatch from main."
+          exit 1
+
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
@@ -103,7 +131,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Deploy to gh-pages
-        if: ${{ inputs.deploy }}
+        if: ${{ inputs.deploy && (github.ref == 'refs/heads/main' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))) }}
         # The same command a maintainer ran by hand through 1.7.0, with the
         # same commit message shape, so the branch history reads as one line.
         run: python -m mkdocs gh-deploy --strict

@@ -5,6 +5,39 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## Unreleased, no version assigned — `docs-deploy.yml` honours a real deploy only from `main` or a release tag
+
+*Unbracketed for the same reason as the section below; the version is the
+release manager's call.*
+
+### Fixed — a hand-run from any branch could publish that branch's docs
+
+**`workflow_dispatch` with `deploy: true` from any branch pushed that
+branch's site to `gh-pages`.** The real deploy step was gated on the input
+alone. It is now gated on the input *and* the ref: `refs/heads/main` for a
+hand-run, or a `v*` tag on a `push` event for release.yml's call. The tag arm
+is not optional: a called workflow sees the *caller's* `github` context, so
+the release-time deploy that 1.7.1 added runs with `github.ref ==
+refs/tags/vX.Y.Z`, and a bare `github.ref == 'refs/heads/main'` guard would
+have skipped it on every release — green, and silently undoing 1.7.1's fix.
+
+A requested deploy that is not honoured **fails the run at its first step**
+(before any build) instead of skipping the push and going green. A dry run
+(`deploy: false`) is still allowed from any ref. A dispatch pointed at a tag
+is refused too, since it would overwrite the site with an old release's docs.
+
+`tests/test_release_docs_deploy` now *evaluates* both `if:` expressions over
+an (event, ref, deploy) truth table rather than matching their text, and was
+seen red on three mutations: the guard removed, the tag arm removed, and the
+refusal step removed. The assertions were folded into the existing gated-push
+test, so no test was added or removed and the published counts and
+`MAX_SDIST_SKIPS` do not move. Not run on a GitHub runner; the Actions
+semantics it relies on (a called workflow inheriting the caller's
+`github.ref` and `github.event_name`) are documented behaviour, not measured
+here.
+
+---
+
 ## Unreleased, no version assigned — the `test_noaa_table_1` date-set trap
 
 *Unbracketed on purpose. `tests/test_small_claims` forbids an open

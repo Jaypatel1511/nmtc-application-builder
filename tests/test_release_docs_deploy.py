@@ -34,6 +34,19 @@ MUTATION RECORD (2026-09-19): ``needs: publish`` removed -> red;
 ``contents: write`` moved to the workflow level -> red (two tests);
 ``.[docs]`` retyped as ``.[dev]`` -> red; ``--strict`` dropped from the
 deploy line -> red; ``--dry-run`` dropped -> red.
+
+THE REF GUARD (post-1.7.1). ``workflow_dispatch`` with ``deploy: true`` from
+any branch published that branch's docs to gh-pages. The real push is now
+gated on the input AND the ref: main for a hand-run, a ``v*`` tag for
+release.yml's call (a called workflow sees the CALLER's context, so that run
+has ``github.ref == refs/tags/vX.Y.Z`` and ``event_name == push``). A naive
+``refs/heads/main`` guard would have skipped every release-time deploy, so
+this module EVALUATES both ``if:`` expressions over the full truth table
+rather than matching their text. Folded into the existing gated-push test on
+purpose: a new test here is a new sdist skip, and MAX_SDIST_SKIPS in
+tests/test_release_floor.py sits on its bound. MUTATION RECORD
+(2026-09-24): ref guard removed from the deploy step -> red; the tag arm
+removed -> red; the refusal step removed -> red.
 """
 from __future__ import annotations
 
@@ -170,10 +183,77 @@ def test_deploy_fetches_gh_pages_before_pushing(deploy):
     )
 
 
+def _step_if(steps: str, name_prefix: str) -> str:
+    """The ``${{ ... }}`` body of the ``if:`` on the step whose name starts so."""
+    m = re.search(
+        rf"^      - name: {re.escape(name_prefix)}[^\n]*\n"
+        r"        if:\s*\$\{\{\s*(.*?)\s*\}\}\s*$",
+        steps, re.M,
+    )
+    assert m, f"no step named {name_prefix!r} with an `if:` on its next line"
+    return m.group(1)
+
+
+def _evaluate(expr: str, *, deploy: bool, event: str, ref: str) -> bool:
+    """A GitHub Actions ``if:`` over the four terms this workflow uses.
+
+    Deliberately narrow: any token outside the whitelist fails the test, so a
+    condition this translator does not understand cannot evaluate "true" by
+    accident. Actions compares strings case-insensitively; every literal here
+    is already lower-case, and so is every ref this is fed.
+    """
+    py = expr
+    for a, b in (("&&", " and "), ("||", " or "), ("!", " not "),
+                 ("inputs.deploy", "DEPLOY"), ("github.event_name", "EVENT"),
+                 ("github.ref", "REF"), ("startsWith", "STARTS")):
+        py = py.replace(a, b)
+    leftover = re.sub(r"'[^']*'|\b(?:and|or|not|DEPLOY|EVENT|REF|STARTS)\b|==|[(),\s]", "", py)
+    assert not leftover, f"unrecognised tokens in the `if:` expression: {leftover!r}"
+    return bool(eval(py, {"__builtins__": {}}, {  # noqa: S307 - whitelisted above
+        "DEPLOY": deploy, "EVENT": event, "REF": ref,
+        "STARTS": lambda s, p: s.startswith(p)}))
+
+
+#: (event, ref, deploy input) -> may the real push run. The release row is the
+#: one a naive `refs/heads/main` guard gets wrong.
+_REF_TRUTH_TABLE = (
+    ("push", "refs/tags/v1.7.2", True, True),               # release.yml -> workflow_call
+    ("workflow_dispatch", "refs/heads/main", True, True),   # manual redeploy from main
+    ("workflow_dispatch", "refs/heads/main", False, False),  # dry run on main
+    ("workflow_dispatch", "refs/heads/feature/x", True, False),  # THE FINDING
+    ("workflow_dispatch", "refs/heads/feature/x", False, False),
+    ("workflow_dispatch", "refs/tags/v1.6.5", True, False),  # an old tag's docs over the site
+    ("workflow_dispatch", "refs/heads/mainline", True, False),
+    ("push", "refs/heads/main", False, False),
+)
+
+
 def test_the_real_push_is_gated_and_the_dry_run_never_writes(deploy):
     steps = deploy.split("\n    steps:", 1)[1]
-    real = re.search(r"if:\s*\$\{\{\s*inputs\.deploy\s*\}\}.*?gh-deploy", steps, re.S)
+    real = re.search(r"if:\s*\$\{\{\s*inputs\.deploy\b[^\n]*\}\}.*?gh-deploy", steps, re.S)
     assert real, "the real deploy is not gated on inputs.deploy"
+
+    # THE REF GUARD: evaluated, not pattern-matched.
+    push_if = _step_if(steps, "Deploy to gh-pages")
+    refuse_if = _step_if(steps, "Refuse a real deploy")
+    refuse_step = steps.split("- name: Refuse a real deploy", 1)[1].split("\n      - ", 1)[0]
+    assert re.search(r"^\s*exit 1\s*$", refuse_step, re.M), "the refusal step does not fail the run"
+    assert steps.find("- name: Refuse a real deploy") < steps.find("uses: actions/checkout"), (
+        "the refusal must be the first step, so a refused run fails before building"
+    )
+    for event, ref, want_deploy, may_push in _REF_TRUTH_TABLE:
+        got_push = _evaluate(push_if, deploy=want_deploy, event=event, ref=ref)
+        got_refuse = _evaluate(refuse_if, deploy=want_deploy, event=event, ref=ref)
+        assert got_push == may_push, (
+            f"({event}, {ref}, deploy={want_deploy}): the gh-deploy step would "
+            f"{'run' if got_push else 'skip'}; it must {'run' if may_push else 'skip'}"
+        )
+        assert got_refuse == (want_deploy and not may_push), (
+            f"({event}, {ref}, deploy={want_deploy}): the refusal step would "
+            f"{'fail' if got_refuse else 'pass'} the run -- a requested deploy "
+            "that is not honoured must go red, and an honoured one must not"
+        )
+
     dry = re.search(r"if:\s*\$\{\{\s*!inputs\.deploy\s*\}\}.*?(?=\n      - name:|\Z)", steps, re.S)
     assert dry, "no dry-run step gated on !inputs.deploy"
     assert "git push --dry-run origin gh-pages" in dry.group(0), (
