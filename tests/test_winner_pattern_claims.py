@@ -57,6 +57,19 @@ previous registry did not know. What this gate buys is that every spelling
 ever found stays found, and that the true sentences it once flagged stay
 unflagged. It does not claim that every evasion is caught.
 
+Fix round 3 is the same lesson a third time: fifteen more phrasings passed
+the round-2 gate -- a statistic word beside an allocatee noun ("Prior
+Allocatees averaged 80%", "the top quartile of allocatees", "historical
+allocatee data"), a selected population with a statistic verb ("Winning
+pipelines average 7 states", "awarded CDEs exceed"), and derivations from
+"actual NMTC awards", "award data" and "award books". Each has a spelling
+now and is a must-fail case. KNOWN LIMITS, stated rather than hidden: the
+allocatee-statistic window is 3 tokens, so "Allocatees across the five
+rounds from 2019 to 2023 averaged 80%" passes; "data", "distribution" and
+"population" beside an allocatee noun count only after a past/CY qualifier,
+because "the Fund does publish Allocatee-level deployment data" is true; and
+a negation anywhere in the gap breaks the link.
+
 R11 (1.7.1) moved ``LOWER_BOUND_CLAUSE`` into ``renderers/_disclosure``, read
 it on every surface, forbade the contradicting sentence document-wide, pinned
 the true half so it could not be softened, required the surfaces to state it
@@ -161,6 +174,23 @@ _CLAIM_VERB = (r"(?:exceed|average|concentrat|score|cluster|show|outperform|"
                r"rang|spread|span|focus|prioriti[sz]|emphasi[sz]|clear|meet|"
                r"beat|top|lead|dominat)\w*")
 
+#: fix round 3. Allocatee-population nouns, singular admitted (the statistic
+#: word beside it is what makes the claim), and the words that make them one.
+_ALLOC = (r"(?:allocatees?|awardees?|(?:award|allocation)\W+recipients?|"
+          r"recipients\W+of\W+(?:nmtc\W+)?(?:allocations?|awards?))")
+_STATW = (r"(?:averag\w*|medians?|means?|typical\w*|exceed\w*|quartiles?|"
+          r"deciles?|percentiles?|p\d\d|track(?:s|ed|ing)?\b(?!\W+records?)|"
+          r"concentrat\w*|\d+(?:\.\d+)?\s?%)")
+#: "data", "distribution", "population" are NOT statistic words on their own:
+#: "the Fund does publish Allocatee-level deployment data" and "Per-Allocatee
+#: distributions ARE published" are true. They count only after a past /
+#: CY qualifier: "historical allocatee data", "CY2020-2024 allocatee data".
+_PAST_Q = r"(?:historical|past|prior|previous|recent|cy\s?\d{4}(?:[–-]\d{2,4})?)"
+#: one token and what follows it, WITHOUT crossing ; : . ! ?
+#: A negation inside the gap breaks the link: "not a distribution of past
+#: Allocatees and not percentiles of anything published" pairs nothing.
+_CGAP = rf"(?:(?!(?:not|no|never|nor)\b){_W}[^\w;:.!?]+)"
+
 FORBIDDEN = {
     "historical-winners": re.compile(rf"historical\W+{_GAP}{{0,3}}?winn\w*", re.I),
     "observed-in-winners": re.compile(rf"observed\W+in\W+{_GAP}{{0,6}}?winn\w*", re.I),
@@ -173,8 +203,11 @@ FORBIDDEN = {
     # Narrowed to claim contexts: "prior award data" is the CDE's OWN history
     # (tables/track_record_table) and is not a claim about winners.
     "award-data": re.compile(
-        rf"(?:years?\W+of|cdfi\W+fund|historical|past|winner)\W+{_GAP}{{0,2}}?"
-        r"award\W+data\b", re.I),
+        rf"(?:years?\W+of|cdfi\W+fund|historical|past|winner|based\W+on|"
+        # fix round 3: the derivation verbs. NOT "use(s)": "The bands use no
+        # award data" is a denial whose "no" governs the match.
+        rf"drawn\W+from|derived\W+from|comes?\W+from|came\W+from|calibrated\W+on|"
+        rf"built\W+on)\W+{_GAP}{{0,2}}?award\W+data\b", re.I),
     "typical-winner": re.compile(
         r"typical\W+(?:winn\w*|awardees?|allocatees?|recipients?)", re.I),
     "what-winners-did": re.compile(
@@ -244,8 +277,9 @@ FORBIDDEN = {
         rf"(?:calibrat\w*|benchmarked)\W+(?:on|from|against|using|with|to|by)\W+"
         rf"{_GAP}{{0,3}}?(?:award\W+books?|public\W+data\W+release)\b"
         rf"|\b(?:bands?|thresholds?|benchmarks?|cut\W+points?|medians?|"
-        rf"percentiles?|patterns?)\W+{_GAP}{{0,2}}?(?:derived|drawn|taken|measured|"
-        rf"built|based|sourced|computed|set|fitted|estimated)\W+(?:on|from|"
+        rf"percentiles?|patterns?|figures?|numbers|values|scores|statistics)\W+"
+        rf"{_GAP}{{0,2}}?(?:derived|drawn|taken|measured|built|based|sourced|"
+        rf"computed|set|fitted|estimated|come|comes|came|pulled)\W+(?:on|from|"
         rf"against|using|with|to|by)\W+{_GAP}{{0,3}}?(?:award\W+books?|public\W+"
         rf"data\W+release)\b"
         rf"|\b(?:bands?|thresholds?|benchmarks?|cut\W+points?|medians?|"
@@ -258,6 +292,35 @@ FORBIDDEN = {
         rf"(?:from|in|of)\W+{_GAP}{{0,2}}?(?:prior|past|previous|recent|earlier)"
         r"\W+rounds?\b"
         r"|\btop[- ]ranked\W+(?:cdes?|applicants?|applications?)\b", re.I),
+    # fix round 3: a STATISTIC WORD within 3 tokens of an allocatee /
+    # awardee / recipient noun, in either order, inside one clause (a comma
+    # or a parenthesis does not end it; ; : . ! ? do). Singular counts here
+    # ("historical allocatee data", "the Allocatee population"), because the
+    # statistic word is what makes it a claim. What keeps passing: the NOAA
+    # label "[prior Allocatees]" (no statistic word near it, and a semicolon
+    # after it), "a program-level goal across all Allocatees" (the 20% is six
+    # tokens away), and "track record" (not a statistic).
+    "allocatee-statistic": re.compile(
+        rf"\b{_ALLOC}\b[^\w;:.!?]+{_CGAP}{{0,3}}?{_STATW}"
+        rf"|{_STATW}[^\w;:.!?]+{_CGAP}{{0,3}}?{_ALLOC}\b"
+        rf"|\b{_PAST_Q}\W+{_CGAP}{{0,1}}?{_ALLOC}\W+(?:data|distributions?|"
+        r"populations?|statistics|figures)\b", re.I),
+    # fix round 3: a selected population with a statistic or measurement
+    # verb: "Winning pipelines average 7 states", "Funded applications
+    # average", "awarded CDEs exceed this floor".
+    "selected-population-statistic": re.compile(
+        rf"{_NON}\b(?:winning|funded|awarded|selected|successful|top[- ]ranked)\W+"
+        # not "projects": "the selected projects must span" is the
+        # optimizer's own selection
+        rf"(?:cdes?|applicants?|applications?|pipelines?|entities)\W+"
+        rf"{_CGAP}{{0,2}}?(?:{_STATW}|{_CLAIM_VERB})", re.I),
+    # fix round 3: figures derived from awards qualified as real / past:
+    # "Figures drawn from actual NMTC awards". The CDE's own "past NMTC
+    # awards" in a track-record instruction carries no derivation verb.
+    "derived-from-awards": re.compile(
+        rf"\b(?:drawn|derived|taken|measured|calibrated|sourced|built|inferred|"
+        rf"computed|estimated)\W+(?:from|on)\W+{_GAP}{{0,2}}?(?:actual|real|past|"
+        rf"prior|previous|historical|published|recent)\W+{_GAP}{{0,2}}?awards\b", re.I),
 }
 
 #: A match is a DENIAL, not a claim, only when a negation DIRECTLY GOVERNS it
@@ -387,6 +450,8 @@ RECORDS = (
      "the correction note quoting the paragraph it replaced"),
     ("docs/reference/data-sources.md", '*"to infer winner distributions"*',
      "the 1.5.1 correction quoting the claim it withdrew"),
+    ("nmtcapp/data/benchmark_thresholds.py", '"90%" strings in the Review Process are 16.90% of awardees',
+     "a Review Process statistic about actual awardees, quoted to rule out a threshold -- a federal figure, not a winner pattern (re-listed in fix round 3)"),
     # -- added with fix round 2's spellings (winner p25/median/mean, winners
     #    as the subject of a measurement verb, past Allocatees). Each is a
     #    quote of withdrawn wording or a denial whose negation does not sit
@@ -806,6 +871,24 @@ EVASIONS = (
     "Top-ranked CDEs from prior rounds deploy in seven states.",
     "Selected CDEs from prior rounds averaged 80% deep distress.",
     "Top-ranked CDEs average 7.2 states.",
+    # -- fix round 3: the audit's allocatee-statistic and selected-population
+    #    probes, as listed in the coordinator's fix-round-3 message. All
+    #    fifteen passed the round-2 gate.
+    "Prior Allocatees averaged 80% severe distress.",
+    "Across allocatees (2020-2023), the median was 0.8.",
+    "Among allocatees, 80% is typical.",
+    "Scores are based on historical allocatee data.",
+    "Historically, awarded CDEs exceed this floor.",
+    "Based on award data, not this tool's own guesses.",
+    "These figures come from CDFI Fund award books.",
+    "Recipients of allocations average 7 states.",
+    "The top quartile of allocatees exceeds 90%.",
+    "Distress bands track the Allocatee population.",
+    "Winning pipelines average 7 states.",
+    "Funded applications average 7 states.",
+    "Figures drawn from actual NMTC awards.",
+    "calibrated on CY2020-2024 allocatee data",
+    "Allocatees in past rounds averaged 80% deep distress",
 )
 
 #: And what must NOT be caught: denials within the window, the CDE's own
@@ -835,6 +918,14 @@ NOT_CLAIMS = (
     # a round-level table statistic, not a band calibration
     "avg_award is computed from the Award Book's own figures",
     "Application-level data for non-winners remains unpublished.",
+    # -- fix round 3: true sentences near the new allocatee-statistic rule
+    "The 20% is a program-level goal across all Allocatees and a bar on what an Allocatee",
+    "11:59 p.m. ET on September 22, 2026 (Electronically via AMIS) [prior Allocatees]; CY",
+    "The Fund does publish Allocatee-level deployment data (NMTC Public Data Release 2003-2023).",
+    "Per-Allocatee distributions ARE published.",
+    "not a distribution of past Allocatees and not percentiles of anything published",
+    "Minimum number of distinct states the selected projects must span.",
+    "Enter the prior Allocatee's track record for the last three rounds.",
 )
 
 

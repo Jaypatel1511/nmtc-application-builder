@@ -1475,7 +1475,11 @@ jobs:
           # RE-MEASURED AFTER 1.7.2's FIX ROUND 2, which adds 44 tests: 2,087
           # collected under -m "not wheel", 79 skipped, 2,008 executed, half
           # 1,004, rounded down 1000. Band [1000, 1043].
-          FLOOR=1000
+          #
+          # RE-MEASURED AFTER FIX ROUND 3, which adds 24 tests: 2,111
+          # collected, 79 skipped, 2,032 executed, half 1,016, rounded down
+          # 1010. Band [1010, 1055].
+          FLOOR=1010
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()

@@ -373,7 +373,8 @@ MARKER_EXPR = "not wheel"
 #: 2,043 collected, 79 skipped, 1,964 executed, half 982, FLOOR 980, band
 #: [980, 1021]. Re-measured after fix round 2 (44 more tests): 2,087
 #: collected, 79 skipped, 2,008 executed, half 1,004, FLOOR 1000, band
-#: [1000, 1043].
+#: [1000, 1043]. Re-measured after fix round 3 (24 more): 2,111 collected,
+#: 79 skipped, 2,032 executed, half 1,016, FLOOR 1010, band [1010, 1055].
 MAX_SDIST_SKIPS = 79
 
 _FLOOR_RE = re.compile(r"^\s*FLOOR=(\d+)\s*$", re.MULTILINE)

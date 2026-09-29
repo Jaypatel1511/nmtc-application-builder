@@ -131,7 +131,12 @@ allocatees / award and allocation recipients **only in a claim context**
 (a statistic of them, a comparison with them, a possessive, or
 *past/recent/prior-round* on the plural), the award books or Public Data
 Release as a band's calibration source, and *top-ranked / selected CDEs from
-prior rounds* — over every page rendered cold and after its action, the committed
+prior rounds*; and after fix round 3 a statistic word within 3 tokens of an
+allocatee / awardee / recipient noun (*Prior Allocatees averaged*, *top
+quartile of allocatees*, *historical allocatee data*), a selected population
+with a statistic verb (*Winning pipelines average*, *awarded CDEs exceed*),
+and derivations from *actual NMTC awards*, *award data* and *award books* —
+over every page rendered cold and after its action, the committed
 rendered and CLI baselines, the installed package, `streamlit_app/`, README
 and `pyproject.toml` as whole files, and in a checkout `docs/`, `examples/`,
 `scripts/`, `mkdocs.yml`, `CONTRIBUTING.md`, `CITATION.cff`. Rendered text
@@ -348,7 +353,11 @@ attribute 'leverage_ratio'). Using manual computation fallback."*
   awardees, allocatees and recipients fire only in a claim context; a
   negation must directly govern the match; the new spellings are listed
   under *F2*. Now 0 of the 21 pass and 0 of the 4 are flagged. EVASIONS
-  12 → 33 and NOT_CLAIMS 8 → 19 carry every probe given. The wider rules
+  12 → 33 and NOT_CLAIMS 8 → 19 carry every probe listed in the fix-round-2
+  instructions this build received; the lanes' own reports were not
+  available to it, so that is not "every probe the lanes wrote", and fix
+  round 3's audit then found fifteen phrasings this gate passed (see *Fix
+  round 3*). The wider rules
   found three real claims in docstrings and an error string (*"Winner median
   distress"*, *"above winner p75"* twice, *"from the winner mean"*), now
   fixed, and 29 lines that quote withdrawn wording or deny the claim with a
@@ -381,26 +390,66 @@ attribute 'leverage_ratio'). Using manual computation fallback."*
   the rendered scan reads its body off AppTest's element tree (AppTest has
   no `html` accessor on streamlit 1.50 or 1.64).
 
+### Fix round 3 — both lanes returned SHIP; four small items
+
+* **Every `except` clause in the nmtc-calc adapter is pinned.** An AST test
+  asserts, per function, exactly what each clause catches:
+  `{ModuleNotFoundError}` and `{_Refused}` in `compute_pipeline_economics`,
+  `{ValueError, ArithmeticError}` in `_compute_via_library`, `{Exception}`
+  in `_nmtc_calc_version` (a metadata lookup for an error message). The
+  audit added `TypeError` to the refusal tuple and the contract module
+  stayed green — 1.7.1's silent-fallback class. That mutation now fails two
+  tests (the table, and a behavioural twin in which a `TypeError` from
+  `structure()` must propagate); narrowing the tuple and widening the
+  `_Refused` clause each fail two as well.
+* **F2 gate: allocatee statistics and selected populations.** Fifteen
+  phrasings the audit wrote passed the round-2 gate; all fifteen now fail
+  and are must-fail cases (EVASIONS 33 → 48). Seven true sentences near the
+  new rules are must-pass cases (NOT_CLAIMS 19 → 26): the NOAA's *[prior
+  Allocatees]* deadline label, *a program-level goal across all
+  Allocatees*, *the Fund does publish Allocatee-level deployment data*,
+  *Per-Allocatee distributions ARE published*, *the selected projects must
+  span*, a denial, and *the prior Allocatee's track record*. The
+  Review Process's *16.90% of awardees* is a RECORD again (58). Known
+  limits, in the gate's docstring: the allocatee window is 3 tokens (*Allocatees
+  across the five rounds from 2019 to 2023 averaged 80%* passes — checked);
+  *data / distribution / population* count only after a past or CY
+  qualifier; a negation in the gap breaks the link. No probe had to be left
+  out.
+* **The sector-mix tiers are this package's own.** `visualizations.md` said
+  the bars are *"color-coded by CDFI Fund priority tier"* and listed medium
+  as small business and mixed use; the tiers are `schema.TARGET_SECTORS`,
+  and medium also holds community facility and clean energy. Relabelled
+  house, membership corrected. The sweep found four more Fund attributions
+  of the same tiers, all corrected: `pipeline-analysis.md` (which also said
+  the high tier *"score[s] highest on the sector diversity dimension"* —
+  false: that score is the normalized Shannon entropy of the shares and never
+  reads a tier), `sector_analysis`'s `high_priority_pct` docstring,
+  `schema.py`'s *"CDFI Fund priority areas (current NOFA guidance)"* header,
+  and a `maps.py` comment calling the tiering sourced. The tiers colour the
+  chart and feed `high_priority_pct`, which is displayed and scored nowhere.
+
 ### Census and verification
 
-* Published test counts re-derived: 1,961 → 2,088 in `README.md`,
+* Published test counts re-derived: 1,961 → 2,112 in `README.md`,
   `CONTRIBUTING.md`, `streamlit_app/app.py` and this entry
   (`pytest tests/ --collect-only -q`). Four new test modules, collected at
   each stage: 47 at the build (`4bca7a3`), 74 after fix round 1 (+27), 118
-  after fix round 2 (+44). Fix round 1's version of this line said "83
+  after fix round 2 (+44), 142 after fix round 3 (+24). Fix round 1's version of this line said "83
   tests, 36 of them from fix round 1": the four modules collected 74, and
   36 was the whole suite's round-1 delta (2,008 → 2,044), not theirs.
 * **The README badge read `tests-1881 passing`** — hardcoded, and stale by
   two releases; the 1.7.1 settle read's note that it agreed at 1,961 was
-  wrong about the badge. It now reads `tests-2088`, **still hand-typed and
+  wrong about the badge. It now reads `tests-2112`, **still hand-typed and
   still unchecked by any gate.**
 * New test modules since v1.4.0: 43 → 47.
-* `release.yml`'s `FLOOR` 940 → **1000**, from a real sdist build of the
-  final tree, the job's exact invocation: 2,087 collected under
-  `-m "not wheel"`, 79 skipped, 2,008 executed, half 1,004.
+* `release.yml`'s `FLOOR` 940 → **1010**, from a real sdist build of the
+  final tree, the job's exact invocation: 2,111 collected under
+  `-m "not wheel"`, 79 skipped, 2,032 executed, half 1,016.
   `MAX_SDIST_SKIPS` re-measured at **79, unchanged** — none of the new tests
-  skips there. Band [1000, 1043]. (Fix round 1 had it at 980, band
-  [980, 1021], from 2,043 collected.)
+  skips there. Band [1010, 1055]. (Fix round 1 had it at 980, band
+  [980, 1021], from 2,043 collected; fix round 2 at 1000, band [1000, 1043],
+  from 2,087.)
 * **`test_max_sdist_skips_is_bounded_from_ABOVE_as_well` now asserts
   `MAX_SDIST_SKIPS <= 2 * max_ceiling_share`, i.e. ≤ 80** (renamed from
   `max_band_width`; the value 40 is unchanged). It used to compare the whole
