@@ -371,7 +371,9 @@ MARKER_EXPR = "not wheel"
 #: 2,007 collected under -m "not wheel", 79 skipped, 1,928 executed, FLOOR
 #: unchanged at 960. Re-measured again after fix round 1 (36 more tests):
 #: 2,043 collected, 79 skipped, 1,964 executed, half 982, FLOOR 980, band
-#: [980, 1021].
+#: [980, 1021]. Re-measured after fix round 2 (44 more tests): 2,087
+#: collected, 79 skipped, 2,008 executed, half 1,004, FLOOR 1000, band
+#: [1000, 1043].
 MAX_SDIST_SKIPS = 79
 
 _FLOOR_RE = re.compile(r"^\s*FLOOR=(\d+)\s*$", re.MULTILINE)

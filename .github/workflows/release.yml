@@ -1471,7 +1471,11 @@ jobs:
           # a real sdist build of that tree, this job's exact invocation, on
           # 3.12 -- 2,043 collected under -m "not wheel", 79 skipped, 1,964
           # executed, half 982, rounded down 980. Band [980, 1021].
-          FLOOR=980
+          #
+          # RE-MEASURED AFTER 1.7.2's FIX ROUND 2, which adds 44 tests: 2,087
+          # collected under -m "not wheel", 79 skipped, 2,008 executed, half
+          # 1,004, rounded down 1000. Band [1000, 1043].
+          FLOOR=1000
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()

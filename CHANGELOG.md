@@ -121,11 +121,17 @@ false provenance for another.
 detector.** (1) FORBIDDEN spellings — *historical … winners*, *observed in …
 winners*, *trained on … winner data*, *typical winner*, *what winners do*,
 *winning applications*, *compared to past winners*, and after fix round 1
-(P8/X4) *award data*, *measured from … award recipients*, *awardees*,
-*award-winning*, *successful … applicants*, allocatees as a population,
-possessive *winners'*, *past/prior/previous/recent/historical* near *winn\**
-and *past/recent/historical* near *award\**, and *winners* after *vs./
-against/compared* — over every page rendered cold and after its action, the committed
+(P8/X4) *award data*, *measured from … award recipients*, *award-winning*,
+*successful … applicants*, possessive *winners'*,
+*past/prior/previous/recent/historical* near *winn\**, and *winners* after
+*vs./against/compared*; and after fix round 2 *winner p75/median/mean*,
+winners as the subject of a measurement verb (*Winners consistently exceed*,
+*Award winners concentrate*), *across winners*, *winning CDEs*, awardees /
+allocatees / award and allocation recipients **only in a claim context**
+(a statistic of them, a comparison with them, a possessive, or
+*past/recent/prior-round* on the plural), the award books or Public Data
+Release as a band's calibration source, and *top-ranked / selected CDEs from
+prior rounds* — over every page rendered cold and after its action, the committed
 rendered and CLI baselines, the installed package, `streamlit_app/`, README
 and `pyproject.toml` as whole files, and in a checkout `docs/`, `examples/`,
 `scripts/`, `mkdocs.yml`, `CONTRIBUTING.md`, `CITATION.cff`. Rendered text
@@ -133,8 +139,11 @@ gets no exemption; a source line that QUOTES withdrawn wording to record it
 is a listed RECORD with its reason, excusing exactly one line, never dead.
 (2) AGREEMENT — a winner pattern/benchmark/figure/distribution must carry a
 qualifier within 6 tokens, in the same clause (fix round 1; the first cut
-accepted one anywhere in the sentence, and a negation anywhere earlier in the
-clause — a negation now has to sit within 4 tokens before the match). (3) The clause's
+accepted one anywhere in the sentence). A negation excuses a rule-1 match
+only when it directly governs it — before the match or its determiner, or
+before a denial head that takes it as object (*not measurements of past
+winners*); fix round 1's 4-token window excused *It is no secret that past
+winners averaged 80%* (fix round 2). (3) The clause's
 true half is pinned. (4) The clause is verbatim on every page that is not
 classified otherwise (page 1 is, with its reason), in the README and in three
 docs pages, and no `.py` retypes it. **Red-proved on ten mutations**, among
@@ -220,7 +229,11 @@ attribute 'leverage_ratio'). Using manual computation fallback."*
   nmtc-calc version and accepted by `PipelineProject`. `ArithmeticError`
   falls back too — a row of 5e-324 underflows equity to 0 and `structure()`
   divides by it; 1.7.1 fell back there, the first cut of 1.7.2 crashed
-  (fix round 1, X6). **Everything else propagates.**
+  (fix round 1, X6). Both fall back only from `NMTCDeal(...)` and
+  `structure()` for one project; the adapter's own summing and rounding are
+  outside the handler, and totals too large for a float raise
+  `PipelineTotalsOverflow` from either path (fix round 2). **Everything else
+  propagates.**
 * Bound: **`nmtc-calc>=0.2.1,<0.4`**. The floor is the version CI now runs
   the whole suite against; 0.1.0 and 0.2.0 were probed (the library path runs
   and equals the fallback on the 20-project sample) but are not admitted,
@@ -280,14 +293,24 @@ attribute 'leverage_ratio'). Using manual computation fallback."*
   that quoted the old headers are re-derived, rulings unchanged.
 * **P8, X4 — the F2 gate** is widened and its qualifier and negation must
   bind (see *F2*). Eleven evasions the lanes wrote, plus one more, are
-  parametrized cases; all twelve pass the pre-fix gate and fail this one.
+  parametrized cases; those twelve pass the pre-fix gate and fail this one.
+  That is a statement about those twelve, not about evasions in general:
+  fix round 2's probes passed this gate (see *Fix round 2*).
 * **P9, X5 — the enumeration and the rendered scan** now count `st.code`,
   metrics, dataframes/tables, tabs, subscripted containers and `help=`
-  tooltips: 54 newly counted sites, each read.
+  tooltips: **46** newly counted sites, each read — page 1 +30, page 2 +3,
+  page 3 +12, page 4 +1, Home 0, none removed (the old and new enumerators
+  run over the same pages: 0 sites dropped, 46 added). This entry and
+  `c06ab76`'s commit message said 54; the per-page figures there were right
+  and the sum was not.
 * **P10, X9 — the call-time stamp test** runs on every page.
 * **P11 — "with this tool's own sub-score weights"** understated the house
   content: Special Targeting (5 of Community Outcomes' 50) is a criterion in
-  none of the primary documents, and five sub-scores use `HOUSE_` thresholds.
+  none of the primary documents, and **four** sub-scores use `HOUSE_`
+  thresholds — product flexibility, track record alignment, special
+  targeting and unrelated entities (an AST walk of
+  `win_probability._score_*`). This entry and `aee8f1d`'s commit message
+  said five.
   Now *"this tool's own sub-criteria, weights and thresholds"* on page 2, the
   Home card, the disclosure, README, `api.md`, `limitations.md`,
   `docs/index.md`, `methodology.md` and About; page 2 names Special
@@ -306,21 +329,78 @@ attribute 'leverage_ratio'). Using manual computation fallback."*
   (`9fb68ae`, `5685289`). This build had dated only the CHANGELOG; both now
   read 2026-09-29, and the runbook's dating step re-dates both.
 
+### Fix round 2 — lane X returned SHIP; lane P returned SHIP pending cheap corrections
+
+* **Figures in this entry that did not reproduce**, each re-derived by
+  running it: the four new modules' test count (see *Census*), the sub-scores
+  using `HOUSE_` thresholds (four, not five: see *P11*), and the newly
+  counted enumeration sites (46, not 54: see *P9, X5*). The commit messages
+  that carry the old figures (`aee8f1d`, `c06ab76`) are left as written;
+  this entry is the correction.
+* **The F2 gate, both directions.** It flagged true sentences — *"Enter the
+  CDE's past NMTC awards in the track record table"*, *"List your most
+  recent award and its QEI amount"*, *"Section E lists the CDE's recent
+  awards"*, *"The CDFI Fund publishes award recipients each round"* — and
+  passed 19 of the 21 new claim spellings the lanes sent, including two
+  that slipped through its negation window (*"It is no secret that past
+  winners averaged 80%"*, *"Scores are never far from successful NMTC
+  applicants"*). Bare *award(s)* is dropped from the past-winners rule;
+  awardees, allocatees and recipients fire only in a claim context; a
+  negation must directly govern the match; the new spellings are listed
+  under *F2*. Now 0 of the 21 pass and 0 of the 4 are flagged. EVASIONS
+  12 → 33 and NOT_CLAIMS 8 → 19 carry every probe given. The wider rules
+  found three real claims in docstrings and an error string (*"Winner median
+  distress"*, *"above winner p75"* twice, *"from the winner mean"*), now
+  fixed, and 29 lines that quote withdrawn wording or deny the claim with a
+  negation that does not sit on the phrase, now RECORDS with reasons; 4
+  records went dead and are removed (57 in all). **It is still a spelling
+  registry. A phrasing nobody has written down yet will pass it, as every
+  one of this round's probes did before this round.**
+* **The scoped disclosure lead-in is pinned** in the Home and page-3
+  renders. Restoring *"Alignment scores measure similarity to"* in
+  `utils.METHODOLOGY_DISCLOSURE` turns the new test red while the one-string
+  test stays green, which was the gap.
+* **Page 2's notice** now says *"Some recommendations below, and the Pipeline
+  Optimizer, compare …"*: `RecommendationEngine` reads
+  `WINNER_PATTERN_THRESHOLDS` only for the eligibility recommendation.
+* **The adapter's fallback handler wraps nmtc-calc's calls only.** With every
+  row at 1e308 the totals overflow; the log used to blame nmtc-calc
+  (*"nmtc-calc refused a deal's inputs (OverflowError …)"*) and the fallback
+  then raised the same `OverflowError`. Now `PipelineTotalsOverflow` names
+  the adapter's arithmetic, from either path; an AST test pins the handler's
+  body to `NMTCDeal` and `structure`.
+* **Nits.** `historical_awards.py`'s sector and impact headers now say what
+  the struck lines actually asserted (the sector source line did not claim a
+  winner measurement, its header and field comments did; the impact lines
+  never mentioned winners). *"Neither is a win probability"* followed three
+  things: now *"None of the three"* (disclosure, README). The below-90%
+  completeness warning names its cut point as this tool's own house cut
+  point. `test_release_floor`'s comment on `max_ceiling_share` said "27 of a
+  40 band"; the ceiling's share at 1,234 collected was 20, in a band 27
+  wide. `st.html` is not used anywhere; it is now a counted prose kind, and
+  the rendered scan reads its body off AppTest's element tree (AppTest has
+  no `html` accessor on streamlit 1.50 or 1.64).
+
 ### Census and verification
 
-* Published test counts re-derived: 1,961 → 2,044 in `README.md`,
+* Published test counts re-derived: 1,961 → 2,088 in `README.md`,
   `CONTRIBUTING.md`, `streamlit_app/app.py` and this entry
-  (`pytest tests/ --collect-only -q`). Four new modules; 83 tests, 36 of them
-  from fix round 1.
+  (`pytest tests/ --collect-only -q`). Four new test modules, collected at
+  each stage: 47 at the build (`4bca7a3`), 74 after fix round 1 (+27), 118
+  after fix round 2 (+44). Fix round 1's version of this line said "83
+  tests, 36 of them from fix round 1": the four modules collected 74, and
+  36 was the whole suite's round-1 delta (2,008 → 2,044), not theirs.
 * **The README badge read `tests-1881 passing`** — hardcoded, and stale by
   two releases; the 1.7.1 settle read's note that it agreed at 1,961 was
-  wrong about the badge. It now reads `tests-2044`, **still hand-typed and
+  wrong about the badge. It now reads `tests-2088`, **still hand-typed and
   still unchecked by any gate.**
 * New test modules since v1.4.0: 43 → 47.
-* `release.yml`'s `FLOOR` 940 → **980**, from a real sdist build of the final
-  tree, the job's exact invocation: 2,043 collected under `-m "not wheel"`,
-  79 skipped, 1,964 executed, half 982. `MAX_SDIST_SKIPS` re-measured at
-  **79, unchanged** — none of the new tests skips there. Band [980, 1021].
+* `release.yml`'s `FLOOR` 940 → **1000**, from a real sdist build of the
+  final tree, the job's exact invocation: 2,087 collected under
+  `-m "not wheel"`, 79 skipped, 2,008 executed, half 1,004.
+  `MAX_SDIST_SKIPS` re-measured at **79, unchanged** — none of the new tests
+  skips there. Band [1000, 1043]. (Fix round 1 had it at 980, band
+  [980, 1021], from 2,043 collected.)
 * **`test_max_sdist_skips_is_bounded_from_ABOVE_as_well` now asserts
   `MAX_SDIST_SKIPS <= 2 * max_ceiling_share`, i.e. ≤ 80** (renamed from
   `max_band_width`; the value 40 is unchanged). It used to compare the whole

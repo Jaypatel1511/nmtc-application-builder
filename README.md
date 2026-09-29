@@ -4,7 +4,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/nmtc-application-builder.svg)](https://pypi.org/project/nmtc-application-builder/)
 [![Python](https://img.shields.io/pypi/pyversions/nmtc-application-builder.svg)](https://pypi.org/project/nmtc-application-builder/)
-[![Tests](https://img.shields.io/badge/tests-2044-brightgreen.svg)](https://github.com/Jaypatel1511/nmtc-application-builder/actions)
+[![Tests](https://img.shields.io/badge/tests-2088-brightgreen.svg)](https://github.com/Jaypatel1511/nmtc-application-builder/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://jaypatel1511.github.io/nmtc-application-builder/)
 
@@ -287,7 +287,7 @@ Contributions welcome — bug fixes, additional data sources, visualization impr
 git clone https://github.com/Jaypatel1511/nmtc-application-builder.git
 cd nmtc-application-builder
 pip install -e ".[dev]"
-PYTHONPATH=. pytest tests/ -v          # 2,044 tests, should all pass
+PYTHONPATH=. pytest tests/ -v          # 2,088 tests, should all pass
 ```
 
 See [CONTRIBUTING.md](https://github.com/Jaypatel1511/nmtc-application-builder/blob/main/CONTRIBUTING.md) for guidelines on pull requests, code style, and issue reporting.
