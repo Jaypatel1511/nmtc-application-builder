@@ -24,6 +24,13 @@ ships the two changes merged to `main` since 1.7.1 without a version** — the
 `docs-deploy.yml` ref guard (PR #43) and the `test_noaa_table_1` date-set
 fix (PR #42) — recorded at the end of this entry as they were written.
 
+**And it repairs a dependency break that reached 1.7.1 on PyPI.** nmtc-calc
+0.3.0, published 2026-09-28, renamed a field this package's economics adapter
+read; a blanket `except Exception` turned the break into a silent fallback on
+every fresh install. Measured on the published 1.7.1, **no figure moved** —
+see *nmtc-calc 0.3.0* below for the diffs — and the adapter now runs its
+library path on nmtc-calc 0.2.x and 0.3.x and fails loudly on anything else.
+
 ### F4 — the app's surface list is derived from the directory
 
 `02_current_state` recorded "five prose entry points across four pages". The
@@ -150,30 +157,106 @@ round. The same module asserts the note on the COLD render of every page;
 an exemption needs a written reason and there are none. **Red-proved:** the
 call removed (the 1.7.1 state); the call moved below `st.stop()`.
 
+### nmtc-calc 0.3.0 — the adapter's library path had stopped running on every fresh install
+
+**What broke.** `pyproject.toml` declared `nmtc-calc>=0.1.0`, so every fresh
+install — **including `nmtc-application-builder==1.7.1` from PyPI** — resolved
+nmtc-calc 0.3.0 from its release on 2026-09-28. 0.3.0 renamed
+`TransactionResult.leverage_ratio` to `leverage_loan_to_equity_ratio`.
+`integrations/nmtc_calc_adapter` read the old name inside a blanket `except
+Exception`, so the `AttributeError` became a manual fallback with one log
+line: *"nmtc-calc computation failed ('TransactionResult' object has no
+attribute 'leverage_ratio'). Using manual computation fallback."*
+`tests/test_cli_baseline` was red on untouched `main` for this reason alone.
+
+**The harm, measured on the published 1.7.1** — two fresh venvs,
+`nmtc-application-builder[output]==1.7.1` with nmtc-calc 0.2.1 and with 0.3.0:
+
+* The four generated formats, extracted as text (markdown, `.docx`
+  paragraphs and cells, `.xlsx` cells, PDF text): **no difference.**
+* `nmtcapp analyze --demo` stdout: **no difference.** Its stderr gains the
+  fallback line.
+* `compute_pipeline_economics` on the 20-, 5- and 1-project samples: **every
+  key identical** (20 projects: total QEI $122,500,000, NMTCs $47,775,000,
+  investor equity $39,653,250, leverage loans $82,846,750, CDE fees
+  $3,062,500, leverage/equity 2.089 under both). The fallback models the same
+  identity; that is why nothing moved, and nothing checked it.
+* Rounding, stressed: 400 random pipelines with odd-cent QEIs, library path
+  (0.2.1) against the fallback: 1 differed, by **$1** in `total_qei`.
+* Streamlit: the warning goes to the server log. No rendered element on any
+  of the five pages carries it (279 elements scanned under 0.3.0).
+
+**The fix.**
+
+* The ratio is read through `leverage_to_equity()`, which accepts
+  `LEVERAGE_TO_EQUITY_FIELDS` — `leverage_loan_to_equity_ratio` (≥ 0.3.0),
+  `leverage_ratio` (0.2.x) — and raises, naming the installed version, when
+  neither exists. Verified from both sources: `structure()` computes
+  `deal.leverage_loan / deal.investor_equity` (0.2.1 `transaction.py:85`,
+  0.3.0 `:127`), and 0.3.0's own note says *"(0.2.1 called it
+  leverage_ratio.)"*. `qei`, `total_nmtcs` (39% of QEI; 0.3.0 derives it as
+  `statute.TOTAL_CREDIT_RATE`, the seven §45D percentages summed, 0.39),
+  `investor_equity` (credits × price), `leverage_loan` (QEI − equity) and
+  `cde_fee` (QEI × rate) are unchanged in name and definition.
+* The `NMTCDeal` keywords the adapter passes are all still fields in 0.3.0
+  (it passes no `compliance_years`, which 0.3.0 dropped). The house constants
+  clear 0.3.0's new contract: every rate in [0, 1), and `cde_fee_rate` 0.025
+  against the negative-tranche bound 0.39 × 0.83 = 0.3237.
+* The blanket handler is split. `ImportError` falls back (nmtc-calc not
+  importable). `ValueError` falls back — nmtc-calc's documented input refusal
+  (`NegativeTrancheError` and `UnbalancedStackError` subclass it); a row with
+  QEI above total project cost is refused by every nmtc-calc version and
+  accepted by `PipelineProject`. **Everything else propagates.**
+* Bound: **`nmtc-calc>=0.2.1,<0.4`**. The floor is the version CI now runs
+  the whole suite against; 0.1.0 and 0.2.0 were probed (the library path runs
+  and equals the fallback on the 20-project sample) but are not admitted,
+  because nothing exercises them. The ceiling is because 0.3.0 broke this
+  adapter on a minor.
+* `ci.yml` gains an `nmtc-calc-floor` job: Python 3.12, `".[dev]"` plus
+  `nmtc-calc==0.2.1`, the version asserted, the whole suite. The `test`
+  matrix resolves the newest version the bound admits.
+* `tests/integrations/test_calc_contract.py`, against whichever nmtc-calc is
+  installed: inside the bound, and `ci.yml`'s floor pin equals it; every
+  `result.<field>` read and `NMTCDeal` keyword, derived from the adapter by
+  AST walk, exists; the fields mean what the adapter assumes; the house
+  constants clear the input contract; **the library path is taken** (the
+  fallback is made to raise) and equals the fallback; an API mismatch raises;
+  an import failure and an input refusal each fall back with a warning.
+  **Red-proved:** 1.7.1's `result.leverage_ratio` read (3 red); with the
+  blanket `except` as well (3 red); the blanket `except` alone (1 red);
+  `cde_fee_rate` 0.33 (4 red); the `ci.yml` floor pin at 0.2.0 (1 red).
+
 ### Census and verification
 
-* Published test counts re-derived: 1,961 → 2,000 in `README.md`,
+* Published test counts re-derived: 1,961 → 2,008 in `README.md`,
   `CONTRIBUTING.md`, `streamlit_app/app.py` and this entry
-  (`pytest tests/ --collect-only -q`). Three new modules, 39 tests.
+  (`pytest tests/ --collect-only -q`). Four new modules, 47 tests.
 * **The README badge read `tests-1881 passing`** — hardcoded, and stale by
   two releases; the 1.7.1 settle read's note that it agreed at 1,961 was
-  wrong about the badge. It now reads `tests-2000`, **still hand-typed and
+  wrong about the badge. It now reads `tests-2008`, **still hand-typed and
   still unchecked by any gate.**
-* New test modules since v1.4.0: 43 → 46.
+* New test modules since v1.4.0: 43 → 47.
 * `release.yml`'s `FLOOR` 940 → **960**, from a real sdist build, the job's
-  exact invocation: 1,999 collected under `-m "not wheel"`, 79 skipped, 1,920
-  executed. `MAX_SDIST_SKIPS` re-measured at **79, unchanged** — none of the
-  new modules skips there. **Band [960, 999], width 39 — and green only at
-  1,999, 2,000 and 2,001 collected.** At this ceiling the band's width is
-  `39 + ((collected − 79) // 2) % 10`, plus one when the count is even, so it
-  fits the 40 `test_release_floor` permits at three counts in every twenty.
-  Re-measuring cannot fix that; it is the decision 1.7.1's audit carried, and
-  this release did not make it.
-* The rendered-string sweep is unchanged in shape, and 292 constants are
+  exact invocation: 2,007 collected under `-m "not wheel"`, 79 skipped, 1,928
+  executed, half 964. `MAX_SDIST_SKIPS` re-measured at **79, unchanged** —
+  none of the new modules skips there. Band [960, 1003].
+* **`test_max_sdist_skips_is_bounded_from_ABOVE_as_well` now bounds the
+  ceiling's share of that band, rounding excluded.** It compared the whole
+  width — the ceiling's share plus 0–9 of floor-to-ten rounding set by the
+  collected count's last digit — against 40, and at the measured ceiling of
+  79 the share alone is 39–40. So it was green at three collected counts in
+  every twenty whatever the ceiling (1,998 red, 1,999–2,001 green, 2,007
+  red), and the only ways back to green were a wider maximum or adding tests
+  until the count landed in a window. Both were refused. `max_band_width`
+  stays 40; the ceiling's share is 39–40 at every count for 79, and the gate
+  is still red at 82 (41) and 400 (200) — red-proved. The freshness gate and
+  release.yml's rule are unchanged. **This is the decision the 1.7.1 audit
+  carried; it is its own commit so it can be rejected.**
+* The rendered-string sweep is unchanged in shape, and 293 constants are
   swept (289 at 1.7.1: `_disclosure.ASSUMED_WINNER_PATTERNS`,
-  `_disclosure.ASSUMED_WINNER_PATTERNS_CLAUSE` and
-  `maps._SECTOR_MIX_TITLE`); the three historical sentences follow, as that
-  gate requires.
+  `_disclosure.ASSUMED_WINNER_PATTERNS_CLAUSE`, `maps._SECTOR_MIX_TITLE` and
+  `nmtc_calc_adapter.LEVERAGE_TO_EQUITY_FIELDS`); the three historical
+  sentences follow, as that gate requires.
 * The Review Process corpus count is restated to 131 / 126 (118 / 113 at
   1.7.1): thirteen added across thirteen lines, every one naming the Review
   Process to say what the Win Alignment Scorer's score applies — README (4),
@@ -280,16 +363,10 @@ before and after.
 
 ### Found outside the scope, reported, not fixed
 
-* **🔴 nmtc-calc 0.3.0, published 2026-09-28, breaks this package's economics
-  adapter on any fresh install.** `pyproject.toml` declares
-  `nmtc-calc>=0.1.0`; 0.3.0's `TransactionResult` has no `leverage_ratio`, so
-  `integrations/nmtc_calc_adapter` raises inside its try and every analysis
-  falls back to the manual computation with the message *"nmtc-calc
-  computation failed ('TransactionResult' object has no attribute
-  'leverage_ratio')"*. `tests/test_cli_baseline` is red on untouched `main`
-  (`0f0d4c2`) for this reason alone — the only failure on that tree — and is
-  red here for the same reason. Not in F1–F4; the fix (a ceiling on the
-  dependency, or the adapter) is a separate decision.
+* ~~**nmtc-calc 0.3.0 breaks this package's economics adapter on any fresh
+  install.**~~ — **FIXED ABOVE, in this same release** (*nmtc-calc 0.3.0*).
+  Found while building F1–F4: `tests/test_cli_baseline` was red on untouched
+  `main` (`0f0d4c2`) for this reason alone.
 * `docs/about/limitations.md` still says *"CY2024 data is partially
   estimated … The `CY2024` entry in `NMTC_AWARD_ROUNDS` uses estimated
   application counts"*; 1.5.0 F5 replaced that row with the Award Book's
@@ -660,8 +737,8 @@ surfaces in the Executive Summary.
 
 ### Census and verification
 
-* The rendered-string sweep is unchanged in shape, and 292 constants are swept
-  (restated at 1.7.2 for its three; 289 as this entry shipped; 282 at 1.7.0: `PIPELINE_COLUMN_COUNT` and the five `pdf_builder` layout
+* The rendered-string sweep is unchanged in shape, and 293 constants are swept
+  (restated at 1.7.2 for its four; 289 as this entry shipped; 282 at 1.7.0: `PIPELINE_COLUMN_COUNT` and the five `pdf_builder` layout
   constants; R11's `_disclosure.LOWER_BOUND_CLAUSE` is the 289th and needs no
   pin — it renders only on the partial-unverified branch, which the sweep's
   fixture does not take, and the sweep says so on every run rather than a
@@ -3516,7 +3593,7 @@ One filled scaffold, the same file both sides, `9a2d584` vs this tree:
 > `git diff --numstat 9a2d584 fc34af5 -- tests/rendered_baseline/` gives 53
 > insertions and 68 deletions, unchanged.*
 
-The rendered-string sweep is unchanged in shape, and 292 constants are swept
+The rendered-string sweep is unchanged in shape, and 293 constants are swept
 (279 as this entry shipped, restated at 1.7.0 for the R1 constants, again at 1.7.1 and at 1.7.2 — at 1.7.1 first for
 `PIPELINE_COLUMN_COUNT` and the five `pdf_builder` layout constants, then for R11's
 `_disclosure.LOWER_BOUND_CLAUSE`; 237 at 1.5.7; this release adds
@@ -9194,7 +9271,7 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 292 constants are swept
+colour". The rendered-string sweep demands **19**, and 293 constants are swept
 where 49 were (238 as this release shipped; restated at 1.6.2, at 1.6.4,
 in the 1.6.4 fix round, at 1.7.0, twice at 1.7.1 and at 1.7.2 — the count is gate-asserted against the current tree, see those
 entries). *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the

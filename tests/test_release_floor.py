@@ -614,7 +614,13 @@ def test_max_sdist_skips_is_bounded_from_ABOVE_as_well(collected_count):
 #: is a shared helper the last two import, not a test module, and is not
 #: counted. NONE of the three skips in the sdist job -- measured there, not
 #: reasoned: 79 skipped before and after, module for module.
-CLAIMED_NEW_TEST_MODULES = 46
+#:
+#: 46 -> 47 in the same release: tests/integrations/test_calc_contract.py,
+#: the nmtc-calc contract gate (0.3.0 renamed a field the adapter read, and a
+#: blanket except hid it). It does not skip in the sdist either: it needs
+#: only the installed nmtc-calc and pyproject.toml, which the job copies out,
+#: and its ci.yml half is conditional on a checkout rather than a skip.
+CLAIMED_NEW_TEST_MODULES = 47
 
 
 def test_the_module_count_in_this_comment_matches_the_tree():
