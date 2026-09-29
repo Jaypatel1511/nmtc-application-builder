@@ -187,14 +187,19 @@ RECORDS = (
      "the 1.5.1 note quoting the passage it withdrew"),
 )
 
-#: Surfaces that must carry the clause VERBATIM (RULE 4). Rendered pages are
-#: checked cold; the docs files only in a checkout.
-CLAUSE_PAGES = (
-    "app.py",
-    "pages/2_Win_Alignment_Scorer.py",
-    "pages/3_Pipeline_Optimizer.py",
-    "pages/4_About_and_Methodology.py",
-)
+#: Surfaces that must carry the clause VERBATIM (RULE 4). EVERY PAGE, counted
+#: from the directory, unless classified here with the reason it does not --
+#: a hand-typed list of disclosing pages is the enumeration F4 replaced.
+CLAUSE_EXEMPT_PAGES = {
+    "pages/1_Pipeline_Analyzer.py": (
+        "Its two house-winner figures state their own provenance where they "
+        "render -- the distress chart's caption (this tool's own screening "
+        "band, not a percentile of past winners) and the jobs-per-QEI caption "
+        "(WINNER_IMPACT_BENCHMARKS, this tool's own unsourced figures, not "
+        "percentiles of any measured population) -- and rule 2 holds every "
+        "sentence on the page to that; it renders no alignment score."
+    ),
+}
 CLAUSE_FILES = ("README.md",)
 CLAUSE_CHECKOUT_FILES = (
     "docs/about/limitations.md",
@@ -450,8 +455,13 @@ def test_no_surface_claims_the_winner_patterns_were_measured(corpus):
 
 
 def test_every_record_still_records_exactly_one_line(corpus):
-    """No dead records, and no record wide enough to excuse two lines."""
-    counts = {(p, f): set() for p, f, _ in RECORDS}
+    """No dead records, and no record wide enough to excuse two lines.
+
+    SCOPED TO WHAT WAS SCANNED: in the sdist job docs/ is absent, so a docs
+    record has nothing to match there and is not dead -- the same rule
+    test_fund_attribution_source's dead-entry check applies.
+    """
+    counts = {(p, f): set() for p, f, _ in RECORDS if p in corpus["source"]}
     for where, line, _detail, excusable in _flagged(corpus):
         if not excusable:
             continue
@@ -462,6 +472,8 @@ def test_every_record_still_records_exactly_one_line(corpus):
     assert not bad, (
         "RECORDS entries must each excuse exactly one flagged line (dead or "
         f"too wide): {bad}")
+    for rel in CLAUSE_EXEMPT_PAGES:
+        assert rel in _pages(), f"CLAUSE_EXEMPT_PAGES names {rel}, which is not a page"
     for path, _fragment, why in RECORDS:
         assert len(why) >= 30, f"record in {path} carries no real reason: {why!r}"
         assert not path.startswith("rendered:"), "rendered text can never be a record"
@@ -478,11 +490,20 @@ def test_the_clause_keeps_its_true_half():
     assert ASSUMED_WINNER_PATTERNS_CLAUSE.startswith(ASSUMED_WINNER_PATTERNS)
 
 
-@pytest.mark.parametrize("relpath", CLAUSE_PAGES)
-def test_each_disclosing_page_renders_the_clause_verbatim(relpath):
+def _pages() -> list:
+    from tests.test_streamlit_surface_enumeration import page_files
+    return page_files()
+
+
+@pytest.mark.parametrize("relpath", _pages())
+def test_each_page_renders_the_clause_verbatim_or_is_classified(relpath):
     """RULE 4, rendered, on the COLD load. Markdown bold is stripped first:
     Home and page 3 bold the noun phrase, as Home always has."""
     from tests.streamlit_render import page_text
+    if relpath in CLAUSE_EXEMPT_PAGES:
+        assert len(CLAUSE_EXEMPT_PAGES[relpath]) >= 60, (
+            f"{relpath}'s exemption gives no real reason")
+        return
     text = page_text(relpath, "cold").replace("**", "")
     assert ASSUMED_WINNER_PATTERNS_CLAUSE in text, (
         f"{relpath} does not render the provenance clause verbatim.\n"

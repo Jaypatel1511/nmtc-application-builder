@@ -338,6 +338,32 @@ MARKER_EXPR = "not wheel"
 #: adds two tests will breach it. The answer then is to re-measure the
 #: ceiling, not to widen max_band_width, which is the 40 -> 20 -> 24 -> 28 ->
 #: 40 history that bound exists to stop.
+#:
+#: 1.7.2 (F1-F4): RE-MEASURED AT 79, UNCHANGED, AND THE BAND WIDTH IS THE
+#: PROBLEM THE PARAGRAPH ABOVE PREDICTED. The round adds three test modules
+#: and 39 tests; NONE skips in the sdist -- the enumeration reads
+#: streamlit_app/, which the job copies out; the two rendered-page modules
+#: drive the copied-out pages through AppTest against the installed package;
+#: the winner-pattern gate scans docs/ only in a checkout (the mkdocs.yml
+#: marker test_fund_attribution_source uses) and asserts, rather than skips,
+#: what it can reach. Measured from a real sdist build of this tree, the
+#: job's exact invocation on 3.12, `import nmtcapp` resolving under
+#: site-packages at 1.7.2, from a directory holding only tests/,
+#: streamlit_app/, README.md and pyproject.toml out of the tarball:
+#:
+#:     collected under -m "not wheel" 1,999   (2,000 collected, 1 deselected)
+#:     skipped in the sdist             -79
+#:     EXECUTED                       1,920
+#:     half                             960
+#:     rounded down                     960
+#:
+#: Band [960, 999], width 39. BUT THE WIDTH IS NOT A PROPERTY OF THE SUITE;
+#: it is 39 + ((collected - 79) // 2) % 10 + (0 if collected is odd else 1)
+#: at this ceiling, so it is <= 40 at only three collected counts in every
+#: twenty -- here 1,999, 2,000 and 2,001 -- and red at 1,998 and 2,002. The
+#: next change that adds three tests reddens this whatever it contains, and
+#: re-measuring cannot help: the ceiling is its measurement. That is the "real
+#: decision" the 1.7.1 audit carried; this round did not make it.
 MAX_SDIST_SKIPS = 79
 
 _FLOOR_RE = re.compile(r"^\s*FLOOR=(\d+)\s*$", re.MULTILINE)
@@ -553,7 +579,15 @@ def test_max_sdist_skips_is_bounded_from_ABOVE_as_well(collected_count):
 #: package, and the second builds the partial-unverified analysis from a
 #: fixture the suite already ships. Verified by running them in the unpacked
 #: tarball, 20 passed and 0 skipped, rather than inferred.
-CLAIMED_NEW_TEST_MODULES = 43
+#:
+#: 43 -> 46 at 1.7.2 (the 1.7.1 app settle read, F1-F4):
+#: tests/test_streamlit_surface_enumeration.py (F4),
+#: tests/test_winner_pattern_claims.py (F2) and
+#: tests/test_streamlit_page_provenance.py (F1, F3). tests/streamlit_render.py
+#: is a shared helper the last two import, not a test module, and is not
+#: counted. NONE of the three skips in the sdist job -- measured there, not
+#: reasoned: 79 skipped before and after, module for module.
+CLAIMED_NEW_TEST_MODULES = 46
 
 
 def test_the_module_count_in_this_comment_matches_the_tree():

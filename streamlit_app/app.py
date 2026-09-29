@@ -94,7 +94,7 @@ def home():
         # it is unsourced. A provenance claim on the landing page is still a
         # provenance claim.
         "📊 CDFI Fund NMTC eligibility data, 2016–2020 ACS &nbsp;|&nbsp; "
-        "✅ 1,961 tests &nbsp;|&nbsp; "
+        "✅ 2,000 tests &nbsp;|&nbsp; "
         "🔓 MIT License"
         "</div>",
         unsafe_allow_html=True,
@@ -179,10 +179,9 @@ def home():
         ))
 
     st.markdown("---")
-    # WHICH ROUND (1.7.2 F3). The sample CDE box above names a round ("CY
-    # 2026"); the note that says what that round's status is, and that this
-    # tool encodes the CY 2024-2025 instrument as a disclosed proxy, is read
-    # from the one authority every other page and format reads.
+    # WHICH ROUND (1.7.2 F3). The sample CDE box above names a round, so this
+    # page carries the round-provenance note too, read from the one authority
+    # every other page and format reads rather than paraphrased here.
     st.info(md(round_provenance_paragraphs()[0]))
     # "observed in historical NMTC award winners" asserted an empirical
     # provenance the package's own source denies — see
