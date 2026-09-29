@@ -52,7 +52,7 @@ consistently, and with the basis of every band stated beside it.
 
 **CDFI consultants and advisors** — the library provides a structured diagnostic framework that can be used across multiple CDE clients, reducing duplicated analysis effort and providing quantified recommendations to clients.
 
-**Community development researchers** — the library surfaces historical winner pattern statistics and provides a structured API for pipeline-level analysis. Researchers studying NMTC program dynamics or capital deployment patterns may find the data layer useful.
+**Community development researchers** — the library surfaces the round-level CDFI Fund award statistics (applications, awards and allocation per round) and provides a structured API for pipeline-level analysis. Its winner pattern figures are this tool's own assumed winner patterns — unsourced house constants, not measurements of past winners — so they are not research data. Researchers studying NMTC program dynamics or capital deployment patterns may find the data layer useful.
 
 ## Origins and motivation
 

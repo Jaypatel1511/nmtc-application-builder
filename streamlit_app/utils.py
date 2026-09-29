@@ -27,6 +27,10 @@ from nmtcapp.core.application_round import (  # noqa: F401  (round_label re-expo
     round_label,
 )
 from nmtcapp.renderers._cell_format import NOT_SUPPLIED_INPUT
+from nmtcapp.renderers._disclosure import (
+    ASSUMED_WINNER_PATTERNS,
+    ASSUMED_WINNER_PATTERNS_CLAUSE,
+)
 from nmtcapp.renderers._round_provenance import UPCOMING_ROUND
 
 #: The round the FICTIONAL sample CDE is filing into.
@@ -173,8 +177,8 @@ def _supplied_round(cde_extra: dict | None) -> str | None:
 #: cannot request more than the entire country's round, so a cell above this
 #: is not an ambitious request; it is a unit error. ``AWARD_SIZE_TIERS``
 #: deliberately leaves its top tier unbounded ("over_65MM" -> inf) and is
-#: therefore no help here: it describes what winners got, not what the cell
-#: can mean.
+#: therefore no help here: it is a house partition of award sizes
+#: (tests/scoring_attribution.txt rules it HOUSE), not what the cell can mean.
 _MAX_ALLOCATION_MILLIONS = 5_000
 
 #: What ``Application`` is given when an upload states no allocation.
@@ -917,15 +921,55 @@ def apply_theme() -> None:
     )
 
 
+#: THE HOME PAGE'S METHODOLOGY DISCLOSURE, NOW READ BY EVERY PAGE THAT CARRIES
+#: IT (1.7.2 F2/F3). It lived inline in app.py, so the Pipeline Optimizer --
+#: the page whose objective IS alignment with the house winner constants --
+#: carried no disclosure at all. Built from
+#: ``_disclosure.ASSUMED_WINNER_PATTERNS_CLAUSE`` so the provenance words are
+#: one string package-wide; the rendered bytes are the ones Home rendered
+#: through 1.7.1, bold included.
+METHODOLOGY_DISCLOSURE = (
+    "⚠️ **Methodology Disclosure:** Alignment scores measure similarity to "
+    + ASSUMED_WINNER_PATTERNS_CLAUSE.replace(
+        ASSUMED_WINNER_PATTERNS, f"**{ASSUMED_WINNER_PATTERNS}**", 1)
+    + ". They are **not** win probabilities. The CDFI Fund does not "
+    "publish non-winner application data, so a true probability of selection "
+    "cannot be computed, and it publishes no distribution of applicant "
+    "characteristics, so no percentile of applicants can be computed either. "
+    "Scores are intended to guide pipeline improvement, not predict award "
+    "outcomes."
+)
+
+
+def render_methodology_disclosure() -> None:
+    """Render the Methodology Disclosure (Home, Pipeline Optimizer)."""
+    st.info(METHODOLOGY_DISCLOSURE)
+
+
 def render_methodology_warning() -> None:
-    """Display the mandatory win-alignment methodology disclosure."""
+    """Display the Win Alignment Scorer's own methodology notice.
+
+    THIS SAID THE SCORE "MEASURES HOW CLOSELY THIS APPLICATION MATCHES PATTERNS
+    OBSERVED IN HISTORICAL NMTC AWARD WINNERS (CY2020–CY2024)" (1.7.2 F2). That
+    was false twice. The patterns were never observed -- they are house
+    constants, per ``_disclosure.ASSUMED_WINNER_PATTERNS_CLAUSE`` -- and the
+    score on this page does not read them at all:
+    ``intelligence/win_probability`` scores the CY 2024-2025 Review Process
+    structure, and its own ``_METHODOLOGY`` says so. The house winner bands DO
+    reach this page, through the recommendations panel
+    (``HistoricalBenchmarks``), so the notice names them there, with their
+    provenance, rather than attaching them to the score.
+    """
     st.warning(
-        "**Methodology Notice:** The alignment score measures how closely this "
-        "application matches patterns observed in historical NMTC award winners "
-        "(CY2020–CY2024). It is **not** a win probability. The CDFI Fund does not "
-        "publish non-winner application data, so a true probability of selection "
-        "cannot be computed. A high alignment score improves competitiveness but "
-        "does **not** guarantee an award."
+        "**Methodology Notice:** The score on this page applies the CDFI "
+        "Fund's published CY 2024-2025 Review Process structure (Business "
+        "Strategy, Community Outcomes, Priority Points) with this tool's own "
+        "sub-score weights. It is **not** a win probability. The CDFI Fund "
+        "does not publish non-winner application data, so a true probability "
+        "of selection cannot be computed. A high alignment score improves "
+        "competitiveness but does **not** guarantee an award. Where this tool "
+        "compares a pipeline with winner patterns (the recommendations below, "
+        f"and the Pipeline Optimizer), those are {ASSUMED_WINNER_PATTERNS_CLAUSE}."
     )
 
 

@@ -217,7 +217,7 @@ READINESS_SCORING_WEIGHTS = {
     "eligibility_quality":   0.25,  # % of pipeline in LIC tracts
     "distress_concentration": 0.25,  # % of QEI in deep/severe distress
     "geographic_diversity":  0.15,  # states and MSA breadth
-    "impact_metrics":        0.20,  # jobs/units vs historical benchmarks
+    "impact_metrics":        0.20,  # jobs/units vs this tool's house benchmarks
     "validation_pass_rate":  0.10,  # % of validation checks passing
     "completeness":          0.05,  # required fields populated
 }

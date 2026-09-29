@@ -454,7 +454,7 @@ An application can have a high readiness score but a low alignment score (eligib
 2. **Past reporting compliance deductions.** Late or inaccurate prior-round reporting can result in score deductions. This tool assumes clean compliance history; it is flagged in `phase2_flags.prior_reporting_compliance_risk`.
 3. **Subjective reviewer judgment.** Phase 1 reviewers exercise judgment on the quality of narrative explanations. Narrative quality, internal consistency, and clarity cannot be quantified from pipeline data alone.
 4. **Anomalous score resolution.** When two reviewers disagree by more than a threshold, a third reviewer resolves the discrepancy. This process is not modeled.
-5. **Non-winner data.** The CDFI Fund does not publish application-level data for non-winning applicants. Historical benchmarks in `HistoricalBenchmarks` are derived from winner-level data only.
+5. **Non-winner data.** The CDFI Fund does not publish application-level data for non-winning applicants. The bands in `HistoricalBenchmarks` are this tool's own house constants — unsourced, not derived from winner-level data, and not measurements of past winners.
 
 ---
 

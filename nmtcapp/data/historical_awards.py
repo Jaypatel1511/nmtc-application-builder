@@ -31,9 +31,12 @@ All figures are derived from public CDFI Fund disclosures:
 
 NOTE ON DATA QUALITY: Application-level microdata for non-winners is NOT publicly
 available. Winner-level data is sourced from CDFI Fund press releases and award
-announcements. All statistics about "typical winner" patterns are inferred from
-these public disclosures and should be treated as approximations, not precise
-empirical measures.
+announcements. The "typical winner" patterns below (WINNER_* dicts) were NOT
+inferred from those disclosures: 1.2.0's primary-source pass above found their
+cited series does not exist, and tests/scoring_attribution.txt rules every key
+HOUSE -- unsourced house constants, not measurements of past winners
+(renderers/_disclosure.ASSUMED_WINNER_PATTERNS_CLAUSE). This paragraph said they
+were "inferred from these public disclosures" until 1.7.2 F2.
 """
 from __future__ import annotations
 
@@ -152,7 +155,8 @@ AWARD_SIZE_TIERS: dict = {
 }
 
 # ---------------------------------------------------------------------------
-# Distress concentration patterns in winning applications
+# Distress concentration -- ASSUMED winner pattern: a house constant, not a
+# measurement of winning applications (see this module's docstring; 1.7.2 F2)
 # Source: CDFI Fund Annual Reports; NOFA scoring criteria emphasize ≥75% in
 # distressed tracts. Winners consistently exceed this floor.
 # ---------------------------------------------------------------------------
@@ -172,7 +176,8 @@ WINNER_DISTRESS_PATTERNS: dict = {
 }
 
 # ---------------------------------------------------------------------------
-# Geographic diversity patterns in winning applications
+# Geographic diversity -- ASSUMED winner pattern: a house constant, not a
+# measurement of winning applications (see this module's docstring; 1.7.2 F2)
 # Source: CDFI Fund Annual Reports; geographic reach is an explicit scoring
 # criterion. Multi-state CDEs are strongly favored.
 # ---------------------------------------------------------------------------
@@ -190,12 +195,13 @@ WINNER_GEOGRAPHIC_PATTERNS: dict = {
 }
 
 # ---------------------------------------------------------------------------
-# Sector distribution patterns in winning applications
+# Sector distribution -- ASSUMED winner pattern: a house constant, not a
+# measurement of winning applications (see this module's docstring; 1.7.2 F2)
 # Source: CDFI Fund Annual Reports (Table: NMTC Investments by Business Type)
 # ---------------------------------------------------------------------------
 
 WINNER_SECTOR_PATTERNS: dict = {
-    # Mean sector share of QEI across winning applications
+    # Assumed mean sector share of QEI (house constant, unsourced)
     "healthcare":          0.22,
     "affordable_housing":  0.18,
     "small_business":      0.17,
@@ -281,7 +287,7 @@ def get_historical_winners() -> pd.DataFrame:
 
 
 def get_winner_distress_distribution() -> dict:
-    """Return distress concentration statistics across historical winning applications.
+    """Return this tool's assumed winner distress pattern (house constants, unsourced).
 
     Example::
 
@@ -292,7 +298,7 @@ def get_winner_distress_distribution() -> dict:
 
 
 def get_winner_sector_distribution() -> dict:
-    """Return sector allocation patterns in winning applications.
+    """Return this tool's assumed winner sector pattern (house constants, unsourced).
 
     Example::
 
@@ -303,7 +309,7 @@ def get_winner_sector_distribution() -> dict:
 
 
 def get_winner_geographic_patterns() -> dict:
-    """Return geographic diversity statistics across historical winning applications.
+    """Return this tool's assumed winner geographic pattern (house constants, unsourced).
 
     Example::
 
@@ -314,7 +320,7 @@ def get_winner_geographic_patterns() -> dict:
 
 
 def get_award_size_percentiles() -> dict:
-    """Return award amount tiers and their frequency across historical winners.
+    """Return this tool's house partition of award sizes (unsourced; not a measured frequency).
 
     Example::
 

@@ -409,7 +409,11 @@ class Application:
         )
 
     def benchmark(self) -> "BenchmarkComparison":
-        """Compare this application against historical NMTC winner benchmarks.
+        """Compare this application against this tool's own house benchmark bands.
+
+        The bands (``WINNER_PATTERN_THRESHOLDS``) are unsourced house
+        constants, not measurements of past winners -- see
+        ``benchmarks._METHODOLOGY``.
 
         Example::
 
@@ -458,7 +462,10 @@ class Application:
         constraints: Optional["OptimizationConstraints"] = None,
         max_iterations: int = 500,
     ) -> "OptimizationResult":
-        """Optimize the pipeline to maximize alignment with historical winner patterns.
+        """Optimize the pipeline to maximize alignment with this tool's own assumed winner patterns.
+
+        Those patterns are unsourced house constants, not measurements of past
+        winners (``renderers._disclosure.ASSUMED_WINNER_PATTERNS_CLAUSE``).
 
         Uses greedy construction + swap-based local search. Handles infeasible
         constraints gracefully — always returns a result.

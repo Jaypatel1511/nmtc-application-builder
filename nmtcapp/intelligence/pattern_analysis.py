@@ -1,6 +1,8 @@
 """
-Pattern analysis: characterize historical winner patterns and compare a
-pipeline result against them.
+Pattern analysis: summarise this tool's own assumed winner patterns and compare
+a pipeline result against them. The patterns are the WINNER_* dicts in
+``data/historical_awards.py`` -- unsourced house constants, not measurements of
+past winners (``renderers/_disclosure.ASSUMED_WINNER_PATTERNS_CLAUSE``).
 """
 from __future__ import annotations
 
@@ -19,9 +21,10 @@ if TYPE_CHECKING:
 
 
 def analyze_winning_patterns() -> dict:
-    """Return a structured summary of historical NMTC winner patterns.
+    """Return a structured summary of this tool's own assumed winner patterns.
 
-    Aggregates data from CDFI Fund award announcements (CY2020–CY2024) into a
+    Collects the WINNER_* house constants (unsourced -- see
+    ``data/historical_awards.py``) and the round-level acceptance rate into a
     single dict. Useful for display tables, quick benchmarking, and notebook
     exploration.
 
@@ -83,10 +86,10 @@ def analyze_winning_patterns() -> dict:
 
 
 def compare_to_winners(pipeline_result: "PipelineAnalysisResult") -> dict:
-    """Compare a pipeline analysis result to historical winner pattern distributions.
+    """Compare a pipeline analysis result to this tool's assumed winner patterns.
 
     Returns a dict with one entry per major dimension. Each entry contains the
-    pipeline's observed value, the winner distribution statistics, and a human-
+    pipeline's observed value, the assumed (house) winner figures, and a human-
     readable gap label ("above_winner_median", "at_winner_p25", etc.).
 
     Args:

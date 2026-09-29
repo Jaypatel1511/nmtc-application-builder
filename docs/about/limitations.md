@@ -6,11 +6,11 @@ This page documents the known limitations of NMTC Application Builder honestly. 
 
 ## Alignment score is not win probability
 
-This cannot be overstated. The composite score returned by `score_win_probability()` measures alignment with historical winner patterns — not the probability of receiving an NMTC allocation.
+This cannot be overstated. The composite score returned by `score_win_probability()` applies the CDFI Fund's published CY 2024-2025 Review Process structure with this tool's own sub-score weights — it is not the probability of receiving an NMTC allocation.
 
 The distinction matters practically:
-- A score of 80/100 does not mean "80% chance of winning." It means your pipeline is well-aligned with historical winners across most dimensions.
-- A score of 40/100 does not mean "40% chance of winning." It means your pipeline has significant gaps relative to typical winner patterns.
+- A score of 80/100 does not mean "80% chance of winning." It means the application scores well against that structure in most sections.
+- A score of 40/100 does not mean "40% chance of winning." It means the application has significant gaps against that structure.
 - An application that scores 90/100 may still not be funded if a competitor scored 95/100 and the program is oversubscribed. An application that scores 55/100 may be funded if it has other strengths the model does not capture.
 
 The CDFI Fund uses a multi-criterion scoring rubric that includes qualitative assessments of management capacity, community engagement, and organizational track record — dimensions that NMTC Application Builder does not score. A high alignment score is a positive indicator, not a guarantee.
@@ -19,7 +19,7 @@ The CDFI Fund uses a multi-criterion scoring rubric that includes qualitative as
 
 ## Data recency limitations
 
-The winner pattern statistics embedded in the library (`historical_awards.py`) are derived from CDFI Fund award announcements and annual reports covering CY2020–CY2024. This creates two limitations:
+The round-level statistics embedded in the library (`NMTC_AWARD_ROUNDS` in `historical_awards.py`) come from CDFI Fund award announcements. Its winner pattern figures (the `WINNER_*` dicts) are this tool's own assumed winner patterns, which are unsourced house constants — not measurements of past winners, and not a CDFI Fund publication. This creates two limitations:
 
 1. **CY2024 data is partially estimated.** At the time of the library's release, CY2024 award announcements were pending. The `CY2024` entry in `NMTC_AWARD_ROUNDS` uses estimated application counts and acceptance rates based on prior round trends. When final CY2024 data is published, the library will be updated.
 
@@ -33,7 +33,7 @@ Practitioners should always verify that the most recent NOFA aligns with the sco
 
 **Cannot evaluate qualitative dimensions.** The CDFI Fund scores applications on Management Capacity (organizational track record, board composition, CDFi experience) and Business Strategy (narrative coherence, market analysis quality) in ways that require human review. NMTC Application Builder does not assess the quality of your organizational narrative, the strength of your board composition, or the credibility of your market opportunity description.
 
-**Cannot assess investor relationships.** Having committed investors dramatically improves both the credibility of the application and the probability of deploying capital. The library models award size fit (whether the requested allocation is in the typical winner range) but does not model the strength of investor relationships or the certainty of capital deployment.
+**Cannot assess investor relationships.** Having committed investors dramatically improves both the credibility of the application and the probability of deploying capital. The library models award size fit (against a house award-size partition, which is unsourced and is not a measured winner range) but does not model the strength of investor relationships or the certainty of capital deployment.
 
 **Cannot model reviewer subjectivity.** NOFA review involves human readers who may weigh criteria differently from the mechanical model. The alignment score is a systematic approximation — actual scoring by CDFI Fund reviewers involves judgment that cannot be fully captured.
 
@@ -53,14 +53,9 @@ State centroids used are standard geographic center points of the lower 48 state
 
 ## Non-public application data means benchmarks are approximate
 
-The winner pattern statistics in this library are inferred from CDFI Fund press releases and annual reports — not from a microdata sample of individual applications. The CDFI Fund does not publish application-level data for either winners or non-winners.
+The winner pattern statistics in this library are this tool's own assumed winner patterns, which are unsourced house constants — not measurements of past winners, and not a CDFI Fund publication. They were once described as inferred from CDFI Fund press releases and annual reports; the annual-report series they cited does not exist (see the module docstring of `historical_awards.py`), and `tests/scoring_attribution.txt` rules every key HOUSE. The CDFI Fund does not publish application-level data for either winners or non-winners.
 
-Specifically:
-- **Distress statistics** are inferred from NOFA thresholds and narrative descriptions in award announcements, not from a dataset of winner applications
-- **Geographic statistics** (states, HHI) are estimated from program-level annual report tables
-- **Impact statistics** are drawn from the NMTC Impact Table in annual reports, which aggregates across all funded investments for the reporting year
-
-The statistics are reasonable approximations based on the best available public data, but they carry uncertainty that microdata would eliminate. The standard deviations and percentiles in particular are estimated, not computed from a sample.
+Specifically, none of the distress, geographic (states, HHI) or impact figures is derived from a dataset of winner applications, and the percentiles are not computed from any sample. Treat each as a house reference point for reading your own pipeline, not as evidence about where you stand against real applicants.
 
 ---
 
@@ -90,4 +85,4 @@ NMTC Application Builder is a diagnostic and benchmarking tool — a starting po
 - Review the deal structure and investor strategy
 - Evaluate the application in the context of the specific round's competitive landscape
 
-The library helps you understand your quantitative position. Winning applications are won by practitioners, not algorithms.
+The library helps you understand your quantitative position. Allocations are won by practitioners, not algorithms.

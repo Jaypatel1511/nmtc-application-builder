@@ -11,6 +11,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from nmtcapp.optimizer.constraints import OptimizationConstraints
+from nmtcapp.renderers._disclosure import ASSUMED_WINNER_PATTERNS
 
 from utils import (
     VALID_SECTORS,
@@ -20,6 +21,7 @@ from utils import (
     apply_theme,
     md,
     metric_classification,
+    render_methodology_disclosure,
 )
 from chart_style import (
     apply_matplotlib_theme, style_plotly_fig, PLOTLY_CONFIG,
@@ -40,10 +42,17 @@ st.markdown(
     "+ swap-based local search** algorithm — no LP/MIP solver required."
 )
 
+# WAS "maximizes composite alignment with historical NMTC winner patterns"
+# (1.7.2 F2) -- on the one page that carried no Methodology Disclosure at all
+# to contradict it. The objectives (optimizer/objectives.py) read the WINNER_*
+# dicts in data/historical_awards.py, which are unsourced house constants; the
+# subtitle now says so through the shared noun phrase, and the disclosure
+# Home renders is rendered here too (F3).
 st.info(
-    "The optimizer maximizes composite alignment with historical NMTC winner patterns. "
-    "Alignment score ≠ win probability — see the Win Alignment Scorer for framing guidance."
+    f"The optimizer maximizes composite alignment with {ASSUMED_WINNER_PATTERNS} "
+    "— see the Methodology Disclosure below. Alignment score ≠ win probability."
 )
+render_methodology_disclosure()
 
 st.markdown("---")
 

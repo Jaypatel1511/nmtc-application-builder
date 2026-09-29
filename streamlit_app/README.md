@@ -28,7 +28,7 @@ The app opens at `http://localhost:8501`.
 |---|---|
 | **Home** | Landing page with feature overview |
 | **1 Pipeline Analyzer** | Upload CSV or use sample data; full analysis report |
-| **2 Win Alignment Scorer** | Score vs. historical NMTC winner patterns |
+| **2 Win Alignment Scorer** | Score against the CY 2024-2025 Review Process structure (not a win probability) |
 | **3 Pipeline Optimizer** | Optimise project subset under budget/diversity constraints |
 | **4 About & Methodology** | Data sources, limitations, historical round statistics |
 

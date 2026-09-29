@@ -71,7 +71,7 @@ Run comprehensive analysis and return an `ApplicationAnalysis`. Orchestrates eli
 score_win_probability() -> WinProbabilityScore
 ```
 
-Score this application's alignment with historical NMTC winner patterns (CY2020–CY2024). Returns a composite 0–100 alignment score and per-dimension breakdown. **Not a win probability** — see the methodology disclosure in `WinProbabilityScore.methodology_disclosure`.
+Score this application against the CDFI Fund's published CY 2024-2025 Review Process structure (Business Strategy, Community Outcomes, Priority Points), with this tool's own sub-score weights. Returns a composite 0–100 alignment score and per-section breakdown. **Not a win probability** — see the methodology disclosure in `WinProbabilityScore.methodology_disclosure`.
 
 ---
 
@@ -81,7 +81,7 @@ Score this application's alignment with historical NMTC winner patterns (CY2020�
 benchmark() -> BenchmarkComparison
 ```
 
-Compare this application against historical NMTC winner benchmarks. Returns a `BenchmarkComparison` with per-metric tier classifications and percentile positions.
+Place this application's pipeline metrics in this tool's own house benchmark bands — unsourced, and not measurements of past winners (see `benchmarks._METHODOLOGY`). Returns a `BenchmarkComparison` with per-metric tier classifications.
 
 ---
 
@@ -104,7 +104,7 @@ optimize_pipeline(
 ) -> OptimizationResult
 ```
 
-Optimize the pipeline to maximize alignment with historical winner patterns. Uses greedy construction + swap-based local search. Always returns a result — infeasible constraints are reported in `OptimizationResult.infeasibility_reason`.
+Optimize the pipeline to maximize alignment with this tool's own assumed winner patterns, which are unsourced house constants — not measurements of past winners, and not a CDFI Fund publication. Uses greedy construction + swap-based local search. Always returns a result — infeasible constraints are reported in `OptimizationResult.infeasibility_reason`.
 
 **Parameters:**
 - `constraints` — `OptimizationConstraints` instance. If `None`, runs unconstrained (all projects eligible, no budget cap).

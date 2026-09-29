@@ -94,6 +94,7 @@ CONTAINER_PROSE_CALLS = frozenset({
 #: re-derives this set from utils.py so a new helper cannot hide from it.
 PROSE_HELPERS = frozenset({
     "render_methodology_warning",
+    "render_methodology_disclosure",
     "metric_classification",
 })
 
@@ -142,7 +143,7 @@ PAGE_REGISTRY = {
     },
     "pages/3_Pipeline_Optimizer.py": {
         "nav_title": "Pipeline Optimizer",
-        "prose_sites": 23,
+        "prose_sites": 24,
         "provenance_calls": 0,
         "what": "select the highest-scoring project subset under QEI, state "
                 "and sector constraints",

@@ -12,7 +12,7 @@
 
 ---
 
-CDEs spend months preparing NMTC allocation applications without knowing how their pipeline compares to historical winners. This library changes that — scoring your pipeline against five years of CDFI Fund award data in seconds, generating competition-ready document drafts automatically, and telling you exactly what to fix.
+CDEs spend months preparing NMTC allocation applications without a structured way to check their pipeline before they file. This library changes that — scoring your application against the CDFI Fund's published CY 2024-2025 Review Process structure in seconds, generating competition-ready document drafts automatically, and telling you exactly what to fix.
 
 ```python
 app = Application(cde=CDEProfile.sample(), requested_allocation=65_000_000)
@@ -28,7 +28,7 @@ paths = app.generate("./drafts/")
 
 ## The Problem
 
-CDE teams preparing NMTC allocation applications work blind. They spend weeks manually assembling pipeline data in Excel, draft narrative sections without knowing how their distress concentration or geographic diversity compares to past winners, and submit applications with no objective measure of competitiveness. The CDFI Fund receives 280–340 applications per round with a ~35% acceptance rate — yet most CDEs have no systematic way to benchmark their position before the deadline.
+CDE teams preparing NMTC allocation applications work blind. They spend weeks manually assembling pipeline data in Excel, draft narrative sections without a structured read of their own distress concentration or geographic diversity, and submit applications with no objective measure of competitiveness. The CDFI Fund receives 280–340 applications per round with a ~35% acceptance rate — yet most CDEs have no systematic way to benchmark their position before the deadline.
 
 ## The Solution
 
@@ -58,7 +58,7 @@ app.add_pipeline(pipeline)
 analysis = app.analyze()
 analysis.summary()
 
-# 4. Score alignment with historical winners
+# 4. Score against the CY 2024-2025 Review Process structure
 score = app.score_win_probability()                 # alignment score, not win probability
 print(f"{score.composite_score:.0f}/100 [{score.competitive_tier}]")
 
@@ -135,7 +135,7 @@ When CDE Profile fields are missing, the Streamlit analyzer displays which sub-s
   three-way Non-Metropolitan County split of pipeline QEI (non-metro / metropolitan /
   not determined), from the OMB designation for each geocoded tract
 - **Sector mix analysis** — Shannon entropy, dominant sector, high-priority sector alignment
-- **Impact projection** — Jobs per $MM QEI benchmarked against historical winner distributions
+- **Impact projection** — Jobs per $MM QEI placed against this tool's own house reference figures (unsourced; not a distribution of past winners)
 - **CDFI Fund alignment scoring** — Business Strategy (0–50), Community Outcomes (0–50), Priority Points (0–10 bonus) against the published CY 2024-2025 review criteria; tier: Not Qualified / Highly Qualified / Top Tier
 - **Quantified recommendations** — Specific, numbered improvement actions per dimension with estimated score impact
 - **Pipeline optimizer** — Greedy + local-search selects the best project subset for your target budget
@@ -143,7 +143,7 @@ When CDE Profile fields are missing, the Streamlit analyzer displays which sub-s
 - **Geographic visualizations** — Publication-quality pipeline maps, radar charts, and benchmark plots at 300 DPI
 - **CLI** — `nmtcapp init` / `nmtcapp analyze` for quick command-line workflows
 
-> **Methodology note:** Alignment scores measure similarity to historical winner patterns — they are not win probabilities. The CDFI Fund does not publish rejected application data, so a true probability model cannot be built from public information alone.
+> **Methodology note:** The optimizer's alignment score and the benchmark bands measure similarity to this tool's own assumed winner patterns, which are unsourced house constants — not measurements of past winners, and not a CDFI Fund publication. The CDFI Fund alignment score applies the published CY 2024-2025 Review Process structure with this tool's own sub-score weights. Neither is a win probability. The CDFI Fund does not publish rejected application data, so a true probability model cannot be built from public information alone.
 
 ---
 
@@ -203,9 +203,9 @@ This library integrates six companion libraries built for the CDFI space:
 
 **CDE application teams** — Run `analyze()` on your pipeline weekly during application season. Watch your readiness score improve as you add projects and address recommendations. Generate the first draft of every section automatically.
 
-**CDFI consultants** — Drop a client's pipeline CSV in and produce a competitive benchmark report in minutes. Show exactly where they stand vs. historical winners before committing to a full engagement.
+**CDFI consultants** — Drop a client's pipeline CSV in and produce a competitive benchmark report in minutes. Show where the pipeline stands against the CY 2024-2025 Review Process structure and this tool's own house reference bands before committing to a full engagement.
 
-**Researchers and policy analysts** — Query the embedded CY2020–2024 CDFI Fund award statistics. Study what differentiates winning applications across distress concentration, geographic reach, and impact intensity.
+**Researchers and policy analysts** — Query the embedded round-level CDFI Fund award statistics (applications, awards and allocation per round, CY 2020 through CY 2024-2025). The package holds no application-level or winner-level distress, geography or impact data; its winner patterns are unsourced house constants — not measurements of past winners, and not a CDFI Fund publication.
 
 **CDEs evaluating pipeline strategy** — Use the optimizer to understand what subset of your project pipeline maximizes competitive alignment given a target allocation amount and diversity constraints.
 
@@ -214,7 +214,7 @@ This library integrates six companion libraries built for the CDFI space:
 ## Limitations & Honest Disclosures
 
 - **Not a win probability model.** Alignment score ≠ probability of receiving an allocation. The CDFI Fund does not publish rejected application data, so a calibrated probability model cannot be built from public information alone.
-- **Historical patterns, not the current NOAA.** Benchmarks derive from CY2020–2024 award data. CDFI Fund priorities shift — always check the current NOAA for updated criteria.
+- **House patterns, not the current NOAA.** The benchmark bands and the optimizer's targets are this tool's own assumed winner patterns, which are unsourced house constants — not measurements of past winners, and not a CDFI Fund publication. CDFI Fund priorities shift — always check the current NOAA for updated criteria.
 - **Approximate geographic data.** Pipeline maps use state centroids, not actual project addresses. Eligibility enrichment uses `nmtc-mapper` (live CDFI Fund data only — see *Degraded mode* below; there is no offline fallback).
 - **Not a substitute for expert review.** Always have a qualified CDFI practitioner or attorney review application materials before submission.
 - **No investor or underwriting analysis.** This library covers competitive positioning, not deal structuring, investor sourcing, or legal compliance.

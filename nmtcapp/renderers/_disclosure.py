@@ -193,6 +193,46 @@ LOWER_BOUND_CLAUSE = (
 )
 
 
+#: WHAT THE WINNER PATTERNS ARE (1.7.2 F2). ONE STRING, READ EVERYWHERE.
+#:
+#: The Streamlit Home page's Methodology Disclosure adjudicated this in 1.2.x:
+#: the "winner patterns" this tool compares a pipeline with are its own
+#: assumptions. ``nmtcapp/data/historical_awards.py`` records that the
+#: publication its WINNER_* dicts cite does not exist and that every value
+#: under them is unsourced; ``tests/scoring_attribution.txt`` rules every key
+#: HOUSE. The disclosure said so -- and two surfaces on the same app still
+#: said the opposite, unqualified: Home's "Getting started" ("score your
+#: application against historical winner patterns") and the Pipeline
+#: Optimizer's subtitle ("maximizes composite alignment with historical NMTC
+#: winner patterns"). The 1.7.1 settle read found them. A repo-wide sweep
+#: then found the same claim in the Win Alignment Scorer's own Methodology
+#: Notice ("patterns observed in historical NMTC award winners"), the
+#: optimizer's methodology note, the README, the docs site, the example
+#: notebook and a dozen docstrings.
+#:
+#: It is the one-surface-fixed shape for the fifth time in two releases, so
+#: the fix is the one R11 applied to LOWER_BOUND_CLAUSE: the wording lives
+#: here, surfaces interpolate it, and ``tests/test_winner_pattern_claims.py``
+#: fails when the unqualified claim reappears anywhere it can scan.
+#:
+#: ``ASSUMED_WINNER_PATTERNS`` is the noun phrase; ``..._CLAUSE`` is the noun
+#: phrase with its provenance, verbatim from the Home disclosure, whose
+#: rendered bytes do not move.
+#:
+#: WHAT THIS DOES NOT SAY, deliberately: which score uses the patterns. The
+#: Pipeline Optimizer's objectives and ``HistoricalBenchmarks``' bands do; the
+#: Win Alignment Scorer's score (``intelligence/win_probability``) applies the
+#: CY 2024-2025 Review Process structure with this tool's own sub-score
+#: weights and reads no WINNER_* constant. A surface describing that score
+#: must not borrow this clause for it.
+ASSUMED_WINNER_PATTERNS = "this tool's own assumed winner patterns"
+
+ASSUMED_WINNER_PATTERNS_CLAUSE = (
+    f"{ASSUMED_WINNER_PATTERNS}, which are unsourced house constants — not "
+    "measurements of past winners, and not a CDFI Fund publication"
+)
+
+
 def unverified_banner(pr) -> str:
     """Banner text naming the unverified project IDs.
 
