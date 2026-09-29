@@ -1019,9 +1019,9 @@ def render_methodology_warning() -> None:
         "the Fund's. It is **not** a win probability. The CDFI Fund "
         "does not publish non-winner application data, so a true probability "
         "of selection cannot be computed. A high alignment score improves "
-        "competitiveness but does **not** guarantee an award. Where this tool "
-        "compares a pipeline with winner patterns (the recommendations below, "
-        f"and the Pipeline Optimizer), those are {ASSUMED_WINNER_PATTERNS_CLAUSE}."
+        "competitiveness but does **not** guarantee an award. The "
+        "recommendations below and the Pipeline Optimizer compare a pipeline "
+        f"with {ASSUMED_WINNER_PATTERNS_CLAUSE}."
     )
 
 

@@ -25,6 +25,21 @@ in a dozen docstrings. The one-surface-fixed shape, again.
 THE GATE -- R11's SHAPE, APPLIED TO THIS CLAUSE
 ===============================================
 
+WHAT IT IS, STATED HONESTLY: A SPELLING REGISTRY, NOT A DETECTOR. It catches
+the spellings listed in FORBIDDEN and the nouns in WINNER_NOUN, and nothing
+it has not been told about. The first cut passed eleven evasions a hostile
+lane wrote in minutes -- "five years of CDFI Fund award data", "patterns of
+past awardees", "past winners' profiles", "winners' patterns", "patterns
+measured from CY2020-2024 award recipients", "successful NMTC applicants",
+"what prior awardees looked like", "what award-winning CDEs looked like",
+"Past winners averaged 80%", "vs. CY2020-2024 winners", "compares favourably
+with recent winners" -- and its qualifier and negation rules accepted a
+matching word ANYWHERE in the sentence or clause. Fix round 1 (P8/X4) widened
+the spellings to cover every one of those (each is asserted below), bound a
+negation to the 4 tokens before the match and a qualifier to 6 tokens either
+side of the noun in the same clause. A new spelling will still pass. What
+this gate buys is that every spelling ever found stays found.
+
 R11 (1.7.1) moved ``LOWER_BOUND_CLAUSE`` into ``renderers/_disclosure``, read
 it on every surface, forbade the contradicting sentence document-wide, pinned
 the true half so it could not be softened, required the surfaces to state it
@@ -103,32 +118,65 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 #: token is ``\w+(?:[–-]\w+)*`` -- hyphens only INSIDE a word -- because
 #: ``[\w–-]+\W+`` lets both halves claim a dash and backtracks exponentially
 #: on a ``# -----`` ruler (measured: 121 s on one page module).
+_W = r"\w+(?:[–-]\w+)*"          # one word token; hyphens only inside a word
+_GAP = rf"(?:{_W}\W+)"            # a token and what follows it
+
 FORBIDDEN = {
-    "historical-winners": re.compile(
-        r"historical\W+(?:\w+(?:[–-]\w+)*\W+){0,3}?winn\w*", re.I),
-    "observed-in-winners": re.compile(
-        r"observed\W+in\W+(?:\w+(?:[–-]\w+)*\W+){0,6}?winn\w*", re.I),
+    "historical-winners": re.compile(rf"historical\W+{_GAP}{{0,3}}?winn\w*", re.I),
+    "observed-in-winners": re.compile(rf"observed\W+in\W+{_GAP}{{0,6}}?winn\w*", re.I),
+    "measured-from-awardees": re.compile(
+        rf"measured\W+(?:from|on|across|among)\W+{_GAP}{{0,4}}?"
+        r"(?:winn|award|allocatee|recipient)\w*", re.I),
     "trained-on-winner-data": re.compile(
-        r"trained\W+on\W+(?:\w+(?:[–-]\w+)*\W+){0,4}?winn\w*"
+        rf"trained\W+on\W+{_GAP}{{0,4}}?winn\w*"
         r"|(?<!non-)(?<!non )\bwinn(?:er|ing)\W+data\b", re.I),
+    # Narrowed to claim contexts: "prior award data" is the CDE's OWN history
+    # (tables/track_record_table) and is not a claim about winners.
+    "award-data": re.compile(
+        rf"(?:years?\W+of|cdfi\W+fund|historical|past|winner)\W+{_GAP}{{0,2}}?"
+        r"award\W+data\b", re.I),
     "typical-winner": re.compile(r"typical\W+winn\w*", re.I),
-    "what-winners-do": re.compile(r"what\W+winners\W+(?:do|look|got|have)\b", re.I),
+    "what-winners-did": re.compile(
+        rf"\bwhat\W+{_GAP}{{0,2}}?(?:winners|awardees|allocatees|recipients|"
+        r"award[- ]winning)\b", re.I),
     "winning-applications": re.compile(r"winning\W+applications?\b", re.I),
-    "compared-to-past-winners": re.compile(
-        r"(?:compar\w*|\bvs\b\.?|versus|against|relative\W+to|stands?)\W+"
-        r"(?:\w+(?:[–-]\w+)*\W+){0,3}?(?:past|prior|previous)\W+winn\w*", re.I),
+    "award-winning": re.compile(r"\baward[- ]winning\b", re.I),
+    "awardees": re.compile(r"\b(?:awardees?|award\W+recipients?)\b", re.I),
+    "allocatees-as-a-population": re.compile(
+        rf"(?:patterns?|profiles?|statistics|distributions?|averages?|data|"
+        rf"medians?|percentiles?)\W+(?:of|from|across|among|for)\W+{_GAP}{{0,3}}?"
+        r"allocatees\b|\ballocatees['’]", re.I),
+    "successful-applicants": re.compile(
+        rf"\bsuccessful\W+{_GAP}{{0,2}}?applicants?\b", re.I),
+    "possessive-winners": re.compile(r"\bwinners['’]", re.I),
+    "past-winners": re.compile(
+        rf"\b(?:past|prior|previous|recent|historical)\W+{_GAP}{{0,3}}?winn\w*"
+        rf"|\b(?:past|recent|historical)\W+{_GAP}{{0,3}}?award(?:s|ees?|ed)?\b", re.I),
+    "versus-winners": re.compile(
+        rf"(?:\bvs\b\.?|versus|against|compar\w*|relative\W+to|favou?rably\W+with)"
+        rf"\W+{_GAP}{{0,3}}?winners?\b(?![- ](?:patterns?|benchmarks?|"
+        r"distributions?|figures?|statistics|profiles?|bands?|heuristics?|"
+        r"thresholds?))", re.I),
 }
 
-#: A match is a DENIAL, not a claim, when its own clause says so before it:
-#: "no corpus of winning applications is loaded", "not a measurement of
-#: winning applications". Scoped to the clause (split at ; : . — ( ) so a
-#: "not" in one clause cannot excuse a claim in the next. A newline is NOT a
-#: clause break: a comment wraps a clause across lines.
+#: A match is a DENIAL, not a claim, when a negation sits at most
+#: ``_NEGATION_WINDOW`` tokens before it in the same clause: "not a
+#: measurement of winning applications", "not a percentile of past winners",
+#: "use no award data". The window is what keeps this from being gamed --
+#: the first cut accepted a "not" ANYWHERE earlier in the clause (fix round 1,
+#: P8/X4). A newline is not a clause break: a comment wraps a clause.
 _NEGATION = re.compile(r"\b(?:not|no|never|nor|none|neither)\b", re.I)
+_NEGATION_WINDOW = 4
 _CLAUSE_BREAK = re.compile(r"[;:.!?—–()\[\]]")
-_DENIABLE = {"winning-applications", "compared-to-past-winners"}
+#: Every rule is deniable except the ones whose words cannot be a denial:
+#: "historical ... winners", "observed in ... winners", "trained on".
+_DENIABLE = set(FORBIDDEN) - {"historical-winners", "observed-in-winners",
+                              "trained-on-winner-data"}
 
-#: RULE 2. The nouns of the claim, and what must accompany them.
+#: RULE 2. The nouns of the claim, and the qualifier that must BIND to them:
+#: within ``_QUALIFIER_WINDOW`` tokens before or after the noun, in the same
+#: sentence. The first cut accepted a qualifier anywhere in the sentence, so
+#: "winner patterns show strong CDEs win; this tool's own view differs" passed.
 WINNER_NOUN = re.compile(
     r"(?<!non-)\bwinners?[- ](?:patterns?|benchmarks?|distributions?|figures?|"
     r"statistics|profiles?|bands?|heuristics?|thresholds?)\b", re.I)
@@ -136,6 +184,8 @@ QUALIFIER = re.compile(
     r"assumed|\bhouse\b|this tool'?s(?: own)?|this package'?s(?: own)?|"
     r"unsourced|not measurements?|\bno winner|\bnot (?:a|against|derived|"
     r"inferred)\b|never|does not exist", re.I)
+_QUALIFIER_WINDOW = 6
+_QUALIFIER_CLAUSE_BREAK = re.compile(r"[;:.!?—–]")
 
 #: The provenance clause's load-bearing phrases (RULE 3).
 CLAUSE_ANCHORS = (
@@ -190,6 +240,32 @@ RECORDS = (
      "the 1.5.1 correction note quoting the paragraph it corrected"),
     ("docs/quickstart.md", 'This passage said the engine "benchmarks each dimension against historical',
      "the 1.5.1 note quoting the passage it withdrew"),
+    # -- added with the widened spellings (fix round 1, P8/X4). Quotes of
+    #    withdrawn wording, and uses of the words that are not the claim.
+    ("nmtcapp/data/benchmark_thresholds.py", '"90%" strings in the Review Process are 16.90% of awardees',
+     "a Review Process statistic about actual awardees, quoted to rule out a threshold -- a federal figure, not a winner pattern"),
+    ("nmtcapp/data/schema.py", "collection 1559-0027 — the Awardee/Allocatee Annual Report",
+     "the name of an OMB information collection filed TO the Fund, cited to say it is not published"),
+    ("nmtcapp/data/schema.py", 'NOT a source, and removed in 1.2.0: "Historical NMTC allocation award analysis',
+     "the module docstring quoting a source title 1.2.0 removed"),
+    ("nmtcapp/renderers/_question_22.py", 'a benchmark row scored against a "winner',
+     "the docstring recording the benchmark row 1.4.0 deleted"),
+    ("streamlit_app/pages/1_Pipeline_Analyzer.py", "The CDFI Fund publishes winner-level award data",
+     "a true statement about what the Fund publishes, in the comment explaining why no winner distribution exists"),
+    ("docs/workflow/recommendations.md", "Both are claims about what past Allocatees did, this package holds no such",
+     "the correction note naming the withdrawn claims as claims"),
+    ("docs/workflow/recommendations.md", 'targets "derived from the winner distribution"',
+     "the 1.5.1 warning quoting the engine the page used to describe"),
+    ("docs/workflow/visualizations.md", 'that the dashed line was a **"Winner Benchmark"** at **75**',
+     "the 1.5.1 warning quoting the label it corrected"),
+    ("docs/workflow/visualizations.md", '"Winner Benchmark" attributes the line to a population of past Allocatees this package has never held',
+     "the same warning, explaining why the label was false"),
+    ("docs/workflow/visualizations.md", "calling it a winner benchmark traded a sourced threshold for an unsourced one",
+     "the same warning, naming the mislabel it corrected"),
+    ("docs/workflow/visualizations.md", '"shows exactly where you stand relative to the winner distribution"',
+     "the correction note quoting the paragraph it replaced"),
+    ("docs/reference/data-sources.md", '*"to infer winner distributions"*',
+     "the 1.5.1 correction quoting the claim it withdrew"),
 )
 
 #: Surfaces that must carry the clause VERBATIM (RULE 4). EVERY PAGE, counted
@@ -292,9 +368,9 @@ def _line_at(text: str, offset: int):
 
 
 def _denied(text: str, match) -> bool:
-    before = text[:match.start()]
-    clause = _CLAUSE_BREAK.split(before)[-1]
-    return bool(_NEGATION.search(clause))
+    clause = _CLAUSE_BREAK.split(text[:match.start()])[-1]
+    tokens = re.findall(r"\w+(?:['’-]\w+)*", clause)[-_NEGATION_WINDOW:]
+    return any(_NEGATION.fullmatch(t) for t in tokens)
 
 
 def forbidden_hits(text: str) -> list:
@@ -315,8 +391,22 @@ def unqualified_sentences(text: str) -> list:
     """Sentences naming a winner-pattern noun with no qualifier (rule 2)."""
     flat = re.sub(r"`[^`]*`", " ", text)        # identifiers are not prose
     flat = re.sub(r"\s+", " ", flat)
-    return [s for s in _SENTENCE.split(flat)
-            if WINNER_NOUN.search(s) and not QUALIFIER.search(s)]
+    out = []
+    for sentence in _SENTENCE.split(flat):
+        for m in WINNER_NOUN.finditer(sentence):
+            # Same CLAUSE as well as within the token window: a qualifier
+            # across a semicolon or a dash qualifies a different claim.
+            # Parentheses do NOT break this window: "assumed (house) winner
+            # patterns" binds its qualifier. A semicolon, colon or dash does.
+            left = _QUALIFIER_CLAUSE_BREAK.split(sentence[:m.start()])[-1]
+            right = _QUALIFIER_CLAUSE_BREAK.split(sentence[m.end():])[0]
+            before = re.findall(r"\S+", left)[-_QUALIFIER_WINDOW:]
+            after = re.findall(r"\S+", right)[:_QUALIFIER_WINDOW]
+            window = " ".join(before + [m.group(0)] + after)
+            if not QUALIFIER.search(window):
+                out.append(sentence)
+                break
+    return out
 
 
 #: Names whose interpolation into an f-string IS the qualifier. An f-string
@@ -466,14 +556,21 @@ def test_every_record_still_records_exactly_one_line(corpus):
     record has nothing to match there and is not dead -- the same rule
     test_fund_attribution_source's dead-entry check applies.
     """
-    counts = {(p, f): set() for p, f, _ in RECORDS if p in corpus["source"]}
-    for where, line, _detail, excusable in _flagged(corpus):
+    # One quote can trip BOTH rules -- a spelling (rule 1, reported by line)
+    # and an unbound noun (rule 2, reported by sentence). A record may excuse
+    # at most one line per rule, and must excuse at least one.
+    counts = {(p, f): {"spelling": set(), "noun": set()}
+              for p, f, _ in RECORDS if p in corpus["source"]}
+    for where, line, detail, excusable in _flagged(corpus):
         if not excusable:
             continue
         rec = _record_for(where, line)
         if rec:
-            counts[rec].add(where)
-    bad = {k: sorted(v) for k, v in counts.items() if len(v) != 1}
+            kind = "noun" if detail == "unqualified winner noun" else "spelling"
+            counts[rec][kind].add(where)
+    bad = {k: {r: sorted(w) for r, w in v.items()} for k, v in counts.items()
+           if not (v["spelling"] or v["noun"])
+           or len(v["spelling"]) > 1 or len(v["noun"]) > 1}
     assert not bad, (
         "RECORDS entries must each excuse exactly one flagged line (dead or "
         f"too wide): {bad}")
@@ -482,6 +579,56 @@ def test_every_record_still_records_exactly_one_line(corpus):
     for path, _fragment, why in RECORDS:
         assert len(why) >= 30, f"record in {path} carries no real reason: {why!r}"
         assert not path.startswith("rendered:"), "rendered text can never be a record"
+
+
+#: The eleven evasions fix round 1 was handed, plus the qualifier-anywhere
+#: one. Each must be caught by rule 1 or rule 2 -- asserted, not remembered.
+EVASIONS = (
+    "scoring your pipeline against five years of CDFI Fund award data",
+    "It compares patterns of past awardees.",
+    "It uses past winners' profiles.",
+    "It measures winners' patterns.",
+    "These are patterns measured from CY2020-2024 award recipients.",
+    "Benchmarks mirror successful NMTC applicants.",
+    "See what prior awardees looked like.",
+    "See what award-winning CDEs looked like.",
+    "Past winners averaged 80% deep distress.",
+    "The 9-metric comparison vs. CY2020-2024 winners.",
+    "Your pipeline compares favourably with recent winners.",
+    "Winner patterns show multi-state CDEs win; this tool's own view differs.",
+)
+
+#: And what must NOT be caught: denials within the window, the CDE's own
+#: award history, the NOAA's term of art.
+NOT_CLAIMS = (
+    "not measurements of past winners",
+    "not a percentile of past winners",
+    "No corpus of winning applications is loaded anywhere.",
+    "The bands use no award data.",
+    "this tool's own assumed (house) winner patterns",
+    "the three prior NMTC award rounds of the CDE",
+    "Formats prior award data into the track record table.",
+    "any prior Allocatee that requires action by the CDFI Fund",
+)
+
+
+@pytest.mark.parametrize("phrase", EVASIONS)
+def test_every_known_evasion_is_caught(phrase):
+    assert forbidden_hits(phrase) or unqualified_sentences(phrase), (
+        f"the gate passes {phrase!r}; add the spelling rather than the phrase")
+
+
+@pytest.mark.parametrize("phrase", NOT_CLAIMS)
+def test_a_denial_or_an_unrelated_use_is_not_caught(phrase):
+    assert not forbidden_hits(phrase) and not unqualified_sentences(phrase), (
+        f"the gate flags {phrase!r}, which is not a claim that the winner "
+        "patterns were measured -- a false positive is how a gate stops being read")
+
+
+def test_a_negation_outside_its_window_does_not_excuse_a_claim():
+    """The first cut excused any 'not' earlier in the clause."""
+    assert forbidden_hits(
+        "Scores are not probabilities and they are tuned on what past winners did")
 
 
 def test_the_clause_keeps_its_true_half():

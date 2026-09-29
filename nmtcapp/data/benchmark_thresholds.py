@@ -52,7 +52,7 @@ SECTION A — CY 2024-2025 scoring thresholds, MIXED PROVENANCE
   1.2.3: the series went 1.2.1 -> 1.3.0, so the deferral pointed at a date
   that could not arrive, and has now outlived three releases.)
 
-SECTION B — Legacy winner-pattern thresholds: this tool's own ASSUMED bands
+SECTION B — this tool's own ASSUMED legacy winner-pattern thresholds
   Used by HistoricalBenchmarks (benchmarks.py) for the 9-metric tier comparison.
   Kept for backward compatibility. Unsourced house constants, not published by
   the CDFI Fund and not measurements of past winners (benchmarks._METHODOLOGY;

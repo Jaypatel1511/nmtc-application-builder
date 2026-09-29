@@ -178,7 +178,7 @@ nmtc-application-builder/
 │   ├── integrations/       nmtc-mapper · nmtc-calc · cdfidata · impact-ledger
 │   ├── visualization/      pipeline maps · distress heatmap · radar · alignment charts
 │   ├── renderers/          Word · Excel · PDF · Markdown builders
-│   ├── data/               historical awards · benchmark thresholds · schema
+│   ├── data/               round-level award statistics · house constants · schema
 │   ├── templates/          pipeline_template.xlsx (v1.1) · pipeline_template.csv · cde_profile_template.yaml
 │   └── cli.py              nmtcapp init / analyze / version
 ├── examples/               3 executed Jupyter notebooks + sample output

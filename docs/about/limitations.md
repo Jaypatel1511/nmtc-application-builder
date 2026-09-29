@@ -53,7 +53,7 @@ State centroids used are standard geographic center points of the lower 48 state
 
 ## Non-public application data means benchmarks are approximate
 
-The winner pattern statistics in this library are this tool's own assumed winner patterns, which are unsourced house constants — not measurements of past winners, and not a CDFI Fund publication. They were once described as inferred from CDFI Fund press releases and annual reports; the annual-report series they cited does not exist (see the module docstring of `historical_awards.py`), and `tests/scoring_attribution.txt` rules every key HOUSE. The CDFI Fund does not publish application-level data for either winners or non-winners.
+This library's winner pattern statistics are this tool's own assumed winner patterns, which are unsourced house constants — not measurements of past winners, and not a CDFI Fund publication. They were once described as inferred from CDFI Fund press releases and annual reports; the annual-report series they cited does not exist (see the module docstring of `historical_awards.py`), and `tests/scoring_attribution.txt` rules every key HOUSE. The CDFI Fund does not publish application-level data for either winners or non-winners.
 
 Specifically, none of the distress, geographic (states, HHI) or impact figures is derived from a dataset of winner applications, and the percentiles are not computed from any sample. Treat each as a house reference point for reading your own pipeline, not as evidence about where you stand against real applicants.
 

@@ -67,7 +67,7 @@ Tests are organized to mirror the source tree:
 ```
 tests/
   core/             # Application, CDEProfile, Pipeline, PipelineProject
-  data/             # Historical awards, schema constants
+  data/             # Round-level award statistics, house constants, schema
   intelligence/     # Distress, geographic, sector, impact, win probability, recommendations
   optimizer/        # PipelineOptimizer, OptimizationConstraints
   renderers/        # Word, Excel, PDF, Markdown builders
