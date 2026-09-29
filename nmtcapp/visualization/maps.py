@@ -468,8 +468,9 @@ def plot_sector_distribution(application: "Application", output_path: str) -> st
     # PAGE without opening the module -- documenting the annotation accurately
     # instead of removing it.
     #
-    # NOT REPLACED WITH A DISCLOSED VERSION. The sector TIERING is sourced (the
-    # Fund names its priority areas) and the bars already carry it; what share
+    # NOT REPLACED WITH A DISCLOSED VERSION. The sector TIERING is this
+    # package's own house classification (schema.TARGET_SECTORS; this comment
+    # called it sourced until 1.7.2 fix round 3) and the bars carry it; what share
     # of QEI belongs in each tier is the part with no referent, so there is no
     # disclosed form of this sentence to draw. The chart says what the pipeline
     # holds and stops there.

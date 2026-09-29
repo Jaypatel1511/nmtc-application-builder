@@ -305,3 +305,60 @@ def test_only_nmtc_calcs_calls_sit_inside_the_fallback_handler():
     assert calls == ["NMTCDeal", "structure"], calls
     names = {n.id for stmt in body for n in ast.walk(stmt) if isinstance(n, ast.Name)}
     assert "totals" not in names and "round" not in names, names
+
+
+def _caught(handler: ast.ExceptHandler) -> frozenset:
+    """The exception names an ``except`` clause catches; a bare ``except:``
+    is reported as {"<bare>"}."""
+    if handler.type is None:
+        return frozenset({"<bare>"})
+    nodes = handler.type.elts if isinstance(handler.type, ast.Tuple) else [handler.type]
+    return frozenset(n.id if isinstance(n, ast.Name) else ast.unparse(n) for n in nodes)
+
+
+#: EVERY except clause in the adapter module, by function, with exactly what
+#: it catches (fix round 3). The 1.7.1 defect was a handler wider than its
+#: reason; a hostile audit then added ``TypeError`` to the input-refusal
+#: handler and this module stayed green. Widening, narrowing, adding or
+#: removing any handler now fails here and has to be argued in this table.
+EXPECTED_HANDLERS = {
+    "compute_pipeline_economics": [
+        frozenset({"ModuleNotFoundError"}),   # nmtc-calc absent (re-raises unless .name == "nmtccalc")
+        frozenset({"_Refused"}),              # carried out of _compute_via_library
+    ],
+    "_compute_via_library": [
+        frozenset({"ValueError", "ArithmeticError"}),   # nmtc-calc's own refusal, per project
+    ],
+    "_nmtc_calc_version": [
+        frozenset({"Exception"}),             # metadata lookup for an error message only
+    ],
+}
+
+
+def test_every_handler_in_the_adapter_catches_exactly_what_it_is_for():
+    tree = ast.parse(_ADAPTER_SOURCE.read_text(encoding="utf-8"))
+    found = {}
+    for fn in ast.walk(tree):
+        if isinstance(fn, ast.FunctionDef):
+            handlers = [_caught(h) for h in ast.walk(fn) if isinstance(h, ast.ExceptHandler)]
+            if handlers:
+                found[fn.name] = handlers
+    module_level = [h for h in tree.body if isinstance(h, ast.Try)]
+    assert not module_level, "a module-level try in the adapter is not in the table"
+    assert found == EXPECTED_HANDLERS, (
+        "the adapter's except clauses changed:\n"
+        f"  found    {found}\n  expected {EXPECTED_HANDLERS}\n"
+        "A handler wider than its reason is how 1.7.1 ran the fallback on "
+        "every install silently. Argue the change in EXPECTED_HANDLERS.")
+
+
+def test_the_input_refusal_handler_does_not_swallow_a_type_error(monkeypatch):
+    """Behavioural twin of the table: a TypeError from structure() -- an API
+    change, not an input refusal -- must propagate, not fall back."""
+    def _typeerror(deal):
+        raise TypeError("structure() got an unexpected keyword argument")
+    monkeypatch.setattr(nmtc_transaction, "structure", _typeerror)
+    monkeypatch.setattr(adapter_mod, "_compute_fallback",
+                        lambda _p: pytest.fail("fell back on a TypeError"))
+    with pytest.raises(TypeError):
+        adapter_mod.compute_pipeline_economics(Pipeline.sample(n=2))

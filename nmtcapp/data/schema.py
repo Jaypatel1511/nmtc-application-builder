@@ -136,7 +136,11 @@ TARGET_DISTRESS_THRESHOLDS = {
 MIN_GEOGRAPHIC_DIVERSITY: int = 3
 
 # ---------------------------------------------------------------------------
-# Sector targets — CDFI Fund priority areas (current NOFA guidance)
+# Sector targets — THIS PACKAGE'S OWN HOUSE TIERS. The header said "CDFI Fund
+# priority areas (current NOFA guidance)" until 1.7.2 fix round 3; the NOAA
+# ranks no sectors into high/medium/low, and no source is recorded for this
+# classification. It drives the sector-mix chart's colours and legend and
+# sector_analysis.high_priority_pct, and nothing that is scored.
 # ---------------------------------------------------------------------------
 TARGET_SECTORS = {
     "healthcare":         {"description": "FQHCs, hospitals, behavioral health", "priority": "high"},

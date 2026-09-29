@@ -76,7 +76,7 @@ from nmtcapp.visualization import plot_sector_distribution
 plot_sector_distribution(app, "./charts/sector_mix.png")
 ```
 
-**What it shows:** A horizontal bar chart of QEI by sector, sorted by QEI descending. Bars are color-coded by CDFI Fund priority tier: deep blue (high priority: healthcare, affordable housing, education), medium blue (medium priority: small business, mixed use), light blue (other sectors). Each bar shows the sector's percentage of total QEI.
+**What it shows:** A horizontal bar chart of QEI by sector, sorted by QEI descending. Bars are color-coded by **this package's own house priority tier** (`schema.TARGET_SECTORS`, not a CDFI Fund classification; the NOAA ranks no sectors): deep blue (high: healthcare, affordable housing, education), medium blue (medium: small business, mixed use, community facility, clean energy), light blue (low: other). The legend is built from the same tiers. Each bar shows the sector's percentage of total QEI.
 
 **Reference annotation:** none. The chart carried a note reading *"Winners
 typically have ≥50% in high-priority sectors (healthcare, affordable housing,
