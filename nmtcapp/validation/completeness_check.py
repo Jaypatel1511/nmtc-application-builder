@@ -98,8 +98,11 @@ def check_completeness(application: "Application") -> ValidationResult:
         ratio = total_pipeline_qei / requested
         if ratio < 0.90:
             warnings.append(
+                # The 90% cut point and the advice are this tool's own
+                # (fix round 2, item 6) -- labelled as the 150% one below is.
                 f"Pipeline QEI (${total_pipeline_qei:,.0f}) is less than 90% of "
-                f"requested allocation (${requested:,.0f}) — consider adding projects"
+                f"requested allocation (${requested:,.0f}), this tool's own house "
+                f"cut point — consider adding projects"
             )
         elif ratio > 1.50:
             warnings.append(

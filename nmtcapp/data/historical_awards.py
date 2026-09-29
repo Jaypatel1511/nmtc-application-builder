@@ -202,8 +202,11 @@ WINNER_GEOGRAPHIC_PATTERNS: dict = {
 # ---------------------------------------------------------------------------
 # Sector distribution -- ASSUMED winner pattern: a house constant, not a
 # measurement of winning applications (see this module's docstring; 1.7.2 F2)
-# Its former source line cited a publication that does not exist (see this
-# module's docstring) and asserted a measurement of winners; struck in 1.7.2.
+# Its former source line cited a table inside a publication that does not
+# exist (see this module's docstring); it asserted nothing about winners
+# itself. The former header and two field comments did, stating the shares
+# and the 35% cap as measurements of selected applications. All struck in
+# 1.7.2 (header wording corrected, fix round 2).
 # ---------------------------------------------------------------------------
 
 WINNER_SECTOR_PATTERNS: dict = {
@@ -225,8 +228,11 @@ WINNER_SECTOR_PATTERNS: dict = {
 # Impact intensity (jobs, units, cost per $1MM QEI) -- ASSUMED winner
 # pattern: a house constant, not a measurement of winning applications (see
 # this module's docstring; 1.7.2)
-# Its former source line cited a publication that does not exist (see this
-# module's docstring) and asserted a measurement of winners; struck in 1.7.2.
+# Its former source line cited a table and an FY2018-FY2023 span inside a
+# publication that does not exist (see this module's docstring). Neither it
+# nor the former header mentioned winners: the WINNER_ name is what presents
+# these figures as a winner population. Struck in 1.7.2 (header wording
+# corrected, fix round 2).
 # ---------------------------------------------------------------------------
 
 WINNER_IMPACT_BENCHMARKS: dict = {

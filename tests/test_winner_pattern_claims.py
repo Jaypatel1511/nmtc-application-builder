@@ -685,6 +685,44 @@ def test_the_home_and_optimizer_disclosures_are_one_string():
             f"(with or without its leading emoji). Infos rendered: {infos}")
 
 
+#: The scoped lead-in (fix round 1, P6), pinned where it RENDERS (fix round 2,
+#: item 3). The one-string test above compares each render with
+#: utils.METHODOLOGY_DISCLOSURE, so restoring the old unscoped lead-in in the
+#: constant kept it green. This names the words.
+DISCLOSURE_LEAD_IN = (
+    "The optimizer's alignment score and the benchmark bands measure "
+    f"similarity to {ASSUMED_WINNER_PATTERNS}"
+)
+DISCLOSURE_SCORER_SENTENCE = "The Win Alignment Scorer's score applies"
+WITHDRAWN_LEAD_IN = "Alignment scores measure similarity to"
+
+
+@pytest.mark.parametrize("rel", ("app.py", "pages/3_Pipeline_Optimizer.py"))
+def test_the_disclosure_names_what_uses_the_house_patterns(rel):
+    """The unscoped lead-in was true of the optimizer's score and false of
+    the Win Alignment Scorer's, which page 2 also calls an alignment score."""
+    from tests.streamlit_render import rendered_pages, texts
+    infos = [t.replace("**", "") for k, t in texts(rendered_pages()[rel]["cold"])
+             if k == "info"]
+    joined = "\n".join(infos)
+    assert DISCLOSURE_LEAD_IN in joined, (
+        f"{rel}'s disclosure no longer opens {DISCLOSURE_LEAD_IN!r}. Infos: {infos}")
+    assert DISCLOSURE_SCORER_SENTENCE in joined, (
+        f"{rel}'s disclosure no longer states the scorer's own basis")
+    assert WITHDRAWN_LEAD_IN not in joined, (
+        f"{rel} renders the withdrawn lead-in {WITHDRAWN_LEAD_IN!r}")
+
+
+def test_page_two_says_only_some_recommendations_use_the_house_patterns():
+    """RecommendationEngine reads WINNER_PATTERN_THRESHOLDS for the
+    eligibility recommendation only (fix round 2, item 4)."""
+    from tests.streamlit_render import page_text
+    text = page_text("pages/2_Win_Alignment_Scorer.py", "cold").replace("**", "")
+    flat = re.sub(r"\s+", " ", text)
+    assert "Some recommendations below, and the Pipeline Optimizer, compare" in flat
+    assert "The recommendations below and the Pipeline Optimizer compare" not in flat
+
+
 def test_the_copies_that_cannot_interpolate_state_it_verbatim():
     """RULE 4, files. Markdown cannot interpolate a Python constant, so the
     README and docs copies are held to it character for character -- change

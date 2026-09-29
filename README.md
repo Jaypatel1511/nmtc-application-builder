@@ -143,7 +143,7 @@ When CDE Profile fields are missing, the Streamlit analyzer displays which sub-s
 - **Geographic visualizations** — Publication-quality pipeline maps, radar charts, and benchmark plots at 300 DPI
 - **CLI** — `nmtcapp init` / `nmtcapp analyze` for quick command-line workflows
 
-> **Methodology note:** The optimizer's alignment score and the benchmark bands measure similarity to this tool's own assumed winner patterns, which are unsourced house constants — not measurements of past winners, and not a CDFI Fund publication. The CDFI Fund alignment score applies the published CY 2024-2025 Review Process structure with this tool's own sub-criteria, weights and thresholds — one sub-criterion, Special Targeting (5 of Community Outcomes' 50 points), is this tool's own criterion, not the Fund's. Neither is a win probability. The CDFI Fund does not publish rejected application data, so a true probability model cannot be built from public information alone.
+> **Methodology note:** The optimizer's alignment score and the benchmark bands measure similarity to this tool's own assumed winner patterns, which are unsourced house constants — not measurements of past winners, and not a CDFI Fund publication. The CDFI Fund alignment score applies the published CY 2024-2025 Review Process structure with this tool's own sub-criteria, weights and thresholds — one sub-criterion, Special Targeting (5 of Community Outcomes' 50 points), is this tool's own criterion, not the Fund's. None of the three is a win probability. The CDFI Fund does not publish rejected application data, so a true probability model cannot be built from public information alone.
 
 ---
 

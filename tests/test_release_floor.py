@@ -528,9 +528,10 @@ def test_max_sdist_skips_is_bounded_from_ABOVE_as_well(collected_count):
     # to raise max_ceiling_share.
     #
     #: Half the widest skip ceiling this package accepts -- the ceiling's
-    #: share of the FLOOR band. Measured at 27 of a 40 band when first derived
-    #: (1,234 collected, ceiling 40); 40 is stated as a number so that raising
-    #: it is an edit somebody has to defend.
+    #: share of the FLOOR band. When first derived (1,234 collected, ceiling
+    #: 40) that share was 20 -- upper 617 less (1,234 - 40) // 2 = 597 -- in a
+    #: band 27 wide [590, 617]; 40 is stated as a number so that raising it is
+    #: an edit somebody has to defend.
     max_ceiling_share = 40
     share = upper - (collected_count - MAX_SDIST_SKIPS) // 2
 

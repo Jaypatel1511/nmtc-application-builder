@@ -983,7 +983,7 @@ METHODOLOGY_DISCLOSURE = (
         ASSUMED_WINNER_PATTERNS, f"**{ASSUMED_WINNER_PATTERNS}**", 1)
     + ". The Win Alignment Scorer's score applies "
     + REVIEW_PROCESS_SCORE_BASIS
-    + ". Neither is a win probability. The CDFI Fund does not "
+    + ". None of the three is a win probability. The CDFI Fund does not "
     "publish non-winner application data, so a true probability of selection "
     "cannot be computed, and it publishes no distribution of applicant "
     "characteristics, so no percentile of applicants can be computed either. "
@@ -1019,8 +1019,12 @@ def render_methodology_warning() -> None:
         "the Fund's. It is **not** a win probability. The CDFI Fund "
         "does not publish non-winner application data, so a true probability "
         "of selection cannot be computed. A high alignment score improves "
-        "competitiveness but does **not** guarantee an award. The "
-        "recommendations below and the Pipeline Optimizer compare a pipeline "
+        "competitiveness but does **not** guarantee an award. Some "
+        # WAS "The recommendations below and the Pipeline Optimizer compare"
+        # (fix round 2, item 4). RecommendationEngine reads
+        # WINNER_PATTERN_THRESHOLDS for the eligibility recommendation only;
+        # the other recommendations compare nothing with the house patterns.
+        "recommendations below, and the Pipeline Optimizer, compare a pipeline "
         f"with {ASSUMED_WINNER_PATTERNS_CLAUSE}."
     )
 
