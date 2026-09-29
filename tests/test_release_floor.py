@@ -359,11 +359,16 @@ MARKER_EXPR = "not wheel"
 #:
 #: Band [960, 999], width 39. BUT THE WIDTH IS NOT A PROPERTY OF THE SUITE;
 #: it is 39 + ((collected - 79) // 2) % 10 + (0 if collected is odd else 1)
-#: at this ceiling, so it is <= 40 at only three collected counts in every
-#: twenty -- here 1,999, 2,000 and 2,001 -- and red at 1,998 and 2,002. The
-#: next change that adds three tests reddens this whatever it contains, and
-#: re-measuring cannot help: the ceiling is its measurement. That is the "real
-#: decision" the 1.7.1 audit carried; this round did not make it.
+#: at this ceiling, so test_max_sdist_skips_is_bounded_from_ABOVE_as_well was
+#: green at only three collected counts in every twenty -- 1,999, 2,000 and
+#: 2,001 -- and re-measuring could not help: the ceiling is its measurement.
+#: The same release's nmtc-calc contract test took the suite to 2,007 and
+#: reddened it. RESOLVED IN 1.7.2 BY CORRECTING WHAT THAT GATE MEASURES (see
+#: its body): it bounds the ceiling's share of the band, rounding excluded,
+#: which is 39 or 40 at every count for a ceiling of 79 and still red at 82
+#: or 400. Re-measured on the final tree: 2,007 collected under -m "not
+#: wheel", 79 skipped, 1,928 executed, half 964, FLOOR unchanged at 960, band
+#: [960, 1003].
 MAX_SDIST_SKIPS = 79
 
 _FLOOR_RE = re.compile(r"^\s*FLOOR=(\d+)\s*$", re.MULTILINE)
@@ -486,7 +491,29 @@ def test_max_sdist_skips_is_bounded_from_ABOVE_as_well(collected_count):
     """
     lower = _floor_to_ten((collected_count - MAX_SDIST_SKIPS) // 2)
     upper = collected_count // 2
-    width = upper - lower
+
+    # 1.7.2: WHAT IS BOUNDED IS THE CEILING'S SHARE OF THE BAND, NOT THE
+    # ROUNDING. The band's width is the ceiling's contribution,
+    # upper - (collected - MAX_SDIST_SKIPS) // 2 (MAX_SDIST_SKIPS/2, give or
+    # take one for parity), PLUS 0-9 of floor-to-ten rounding that depends only
+    # on the collected count's last digit. This bound compared the SUM against
+    # 40. At the ceiling it was calibrated for (40, width 27) the rounding fit
+    # in the headroom; at the measured ceiling of 79 the ceiling's share alone
+    # is 39-40, so the gate went red at 17 collected counts in every 20
+    # whatever MAX_SDIST_SKIPS was -- 1,998 and 2,002 red, 1,999-2,001 green,
+    # 2,007 red -- and re-measuring could not help, because the ceiling IS its
+    # measurement. A gate that reddens on the last digit of the test count is
+    # a gate whose failures stop being read, and the only ways to turn it
+    # green were to type a wider maximum or to add or merge tests until the
+    # count landed in a window. Both were refused.
+    #
+    # So the rounding is excluded and the ceiling's share is what is bounded.
+    # The purpose is unchanged and still bites: MAX_SDIST_SKIPS = 400 makes
+    # the share 200 against 40; 82 makes it 41. What no longer moves it is
+    # adding a test. The rounding slack still sits in the band the freshness
+    # gate above uses -- that is the rule release.yml states -- it is simply
+    # not charged to the ceiling.
+    width = upper - (collected_count - MAX_SDIST_SKIPS) // 2
 
     #: The widest FLOOR band this package will accept. Measured at 27 when
     #: derived (1,234 collected, ceiling 40); 40 is that measurement with one
@@ -496,9 +523,9 @@ def test_max_sdist_skips_is_bounded_from_ABOVE_as_well(collected_count):
     max_band_width = 40
 
     assert width <= max_band_width, (
-        f"MAX_SDIST_SKIPS = {MAX_SDIST_SKIPS} opens the FLOOR band to "
-        f"[{lower}, {upper}] -- {width} wide, against a stated maximum of "
-        f"{max_band_width}.\n\n"
+        f"MAX_SDIST_SKIPS = {MAX_SDIST_SKIPS} contributes {width} to the "
+        f"FLOOR band [{lower}, {upper}] (rounding excluded), against a stated "
+        f"maximum of {max_band_width}.\n\n"
         "MAX_SDIST_SKIPS only ever widens this band downward, so a large value "
         "cannot make anything stricter; it can only stop "
         "test_release_floor_is_derived_from_the_current_suite from failing on "
