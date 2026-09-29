@@ -12,6 +12,7 @@ import streamlit as st
 
 from nmtcapp.optimizer.constraints import OptimizationConstraints
 from nmtcapp.renderers._disclosure import ASSUMED_WINNER_PATTERNS
+from nmtcapp.renderers._round_provenance import round_provenance_paragraphs
 
 from utils import (
     render_version_stamp,
@@ -56,6 +57,12 @@ st.info(
 )
 render_methodology_disclosure()
 
+# WHICH ROUND (1.7.2 F3). Pages 1, 2 and 4 have carried the round-provenance
+# note since 1.5.4; this page -- a scoring and selection surface -- carried no
+# round context at all: no NOAA, no deadline, no proxy disclosure. READ, NOT
+# RETYPED, exactly as page 2 renders it. It sits above the st.stop() below, so
+# a CDE who has not yet run the optimizer reads it too.
+st.info(md(round_provenance_paragraphs()[0]))
 
 st.markdown("---")
 

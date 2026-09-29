@@ -1,5 +1,6 @@
 """NMTC Application Builder — Streamlit demo entry point."""
 import streamlit as st
+from nmtcapp.renderers._round_provenance import round_provenance_paragraphs
 from utils import (
     SAMPLE_APPLICATION_ROUND,
     apply_theme,
@@ -178,6 +179,11 @@ def home():
         ))
 
     st.markdown("---")
+    # WHICH ROUND (1.7.2 F3). The sample CDE box above names a round ("CY
+    # 2026"); the note that says what that round's status is, and that this
+    # tool encodes the CY 2024-2025 instrument as a disclosed proxy, is read
+    # from the one authority every other page and format reads.
+    st.info(md(round_provenance_paragraphs()[0]))
     # "observed in historical NMTC award winners" asserted an empirical
     # provenance the package's own source denies — see
     # nmtcapp/data/historical_awards.py. The patterns were not observed;

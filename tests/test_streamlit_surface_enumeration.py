@@ -122,8 +122,8 @@ PROVENANCE_FUNCTIONS = frozenset({"round_provenance_paragraphs", "q25_basis_note
 PAGE_REGISTRY = {
     "app.py": {
         "nav_title": "Home",
-        "prose_sites": 10,
-        "provenance_calls": 0,
+        "prose_sites": 11,
+        "provenance_calls": 1,
         "what": "landing page: feature cards, getting-started steps, the "
                 "sample CDE, and the Methodology Disclosure",
     },
@@ -144,8 +144,8 @@ PAGE_REGISTRY = {
     },
     "pages/3_Pipeline_Optimizer.py": {
         "nav_title": "Pipeline Optimizer",
-        "prose_sites": 25,
-        "provenance_calls": 0,
+        "prose_sites": 26,
+        "provenance_calls": 1,
         "what": "select the highest-scoring project subset under QEI, state "
                 "and sector constraints",
     },

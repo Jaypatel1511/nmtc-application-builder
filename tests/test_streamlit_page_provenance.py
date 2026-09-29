@@ -45,6 +45,10 @@ import pytest
 from tests.streamlit_render import rendered_pages, texts
 from tests.test_streamlit_surface_enumeration import page_files
 
+#: Pages that legitimately do not render the round-provenance note, each
+#: with the reason. A reason is required to be a sentence, not a label.
+PROVENANCE_EXEMPT: dict = {}
+
 PAGES = page_files()
 
 
@@ -54,6 +58,13 @@ def _installed_version() -> str:
 
 def _captions(at) -> list:
     return [text for kind, text in texts(at) if kind == "caption"]
+
+
+def _provenance_note() -> str:
+    """Paragraph 0 as a page hands it to Streamlit (``md()`` escapes ``$``)."""
+    import utils  # streamlit_app/, on sys.path via tests.streamlit_render
+    from nmtcapp.renderers._round_provenance import round_provenance_paragraphs
+    return utils.md(round_provenance_paragraphs()[0])
 
 
 # ---------------------------------------------------------------------------
@@ -99,3 +110,35 @@ def test_the_stamp_is_read_at_call_time_not_import_time(monkeypatch):
     assert not at.exception, f"page 3 raised: {at.exception}"
     assert "Running nmtc-application-builder v9.9.9-callt" in _captions(at), (
         f"the stamp did not follow a patched nmtcapp.__version__: {_captions(at)}")
+
+
+# ---------------------------------------------------------------------------
+# F3
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("relpath", PAGES)
+def test_every_page_renders_the_round_provenance_note(relpath):
+    """On the COLD render -- before any click, above any st.stop()."""
+    if relpath in PROVENANCE_EXEMPT:
+        pytest.fail(
+            f"{relpath} is exempted ({PROVENANCE_EXEMPT[relpath]!r}) and "
+            "should not reach this test; see the exemption test below")
+    at = rendered_pages()[relpath]["cold"]
+    assert not at.exception, f"{relpath} raised: {at.exception}"
+    note = _provenance_note()
+    bodies = [text for _kind, text in texts(at)]
+    assert any(note in body for body in bodies), (
+        f"{relpath} does not render the round-provenance note "
+        "(round_provenance_paragraphs()[0]) on first load.\n\n"
+        "Render it with st.info(md(round_provenance_paragraphs()[0])) above "
+        "any st.stop(), as pages 1 and 2 do -- or, if this page legitimately "
+        "should not, classify it in PROVENANCE_EXEMPT with a written reason."
+    )
+
+
+def test_every_exemption_names_a_real_page_and_a_real_reason():
+    """An exemption is a classification, not a way to switch the test off."""
+    for relpath, reason in PROVENANCE_EXEMPT.items():
+        assert relpath in PAGES, f"exempted page {relpath} does not exist"
+        assert len(reason) >= 60, f"{relpath}'s exemption gives no real reason"
+    assert len(PAGES) >= 5, f"the directory yielded only {PAGES}"
