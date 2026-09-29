@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+import math
 import logging
 from dataclasses import dataclass, field, replace
 from typing import Iterator, List, Optional
@@ -135,6 +136,19 @@ class PipelineProject:
     geocode_success: Optional[bool] = None
 
     def __post_init__(self) -> None:
+        # NON-FINITE VALUES ARE REFUSED BY NAME (1.7.2 fix round 1, X6). Every
+        # check below is a comparison, and `nan <= 0` is False, so a NaN
+        # passed all three and an inf passed as a very large project. Both
+        # then reached the analysis as figures. Checked first, so the message
+        # names the real problem rather than a sign.
+        for _name in ("total_project_cost", "qei_request", "qlici_amount",
+                      "expected_sq_ft"):
+            _value = getattr(self, _name)
+            if _value is not None and not math.isfinite(_value):
+                raise ValueError(
+                    f"Project {self.project_id}: {_name} must be a finite number, "
+                    f"got {_value!r}"
+                )
         if self.total_project_cost <= 0:
             raise ValueError(f"Project {self.project_id}: total_project_cost must be > 0")
         if self.qei_request <= 0:
@@ -489,6 +503,8 @@ def _required_float(val, field_name: str) -> float:
         raise ValueError(f"'{field_name}' must be a number, got: {val!r}")
     if pd.isna(result):
         raise ValueError(f"'{field_name}' is required but was left blank")
+    if not math.isfinite(result):
+        raise ValueError(f"'{field_name}' must be a finite number, got: {val!r}")
     return result
 
 
@@ -502,6 +518,9 @@ def _required_int(val, field_name: str) -> int:
         raise ValueError(f"'{field_name}' must be a whole number, got: {val!r}")
     if pd.isna(f):
         raise ValueError(f"'{field_name}' is required but was left blank")
+    if not math.isfinite(f):
+        # int(float("inf")) raised a bare OverflowError here (fix round 1, X6).
+        raise ValueError(f"'{field_name}' must be a finite whole number, got: {val!r}")
     return int(f)
 
 

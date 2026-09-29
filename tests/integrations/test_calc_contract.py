@@ -32,8 +32,10 @@ WHAT THIS ASSERTS, AGAINST THE INSTALLED LIBRARY
    39% x ``credit_price``) and its [0, 1) rate bound.
 5. The LIBRARY PATH IS TAKEN when nmtc-calc is installed -- with the fallback
    made to raise, so a silent fallback cannot pass.
-6. An API mismatch FAILS LOUDLY; only an import failure or nmtc-calc's own
-   input refusal (ValueError) falls back.
+6. An API mismatch FAILS LOUDLY, and so does a rename inside nmtc-calc
+   (a missing submodule). Only nmtc-calc being absent, its own input refusal
+   (ValueError) and degenerate arithmetic inside it (ArithmeticError) fall
+   back, each with a warning.
 
 ``ci.yml``'s ``nmtc-calc`` job runs the suite against the floor (0.2.1); the
 ``test`` matrix resolves the newest version the bound admits (0.3.0 today).
@@ -209,12 +211,35 @@ def test_an_api_mismatch_fails_loudly_instead_of_falling_back(monkeypatch):
         adapter_mod.compute_pipeline_economics(Pipeline.sample(n=3))
 
 
-def test_an_import_failure_still_falls_back_and_says_so(monkeypatch, caplog):
+def test_nmtc_calc_absent_falls_back_and_says_so(monkeypatch, caplog):
+    """ModuleNotFoundError for "nmtccalc" itself: the package is not installed."""
     monkeypatch.setitem(sys.modules, "nmtccalc", None)
     with caplog.at_level(logging.WARNING, logger=adapter_mod.__name__):
         result = adapter_mod.compute_pipeline_economics(Pipeline.sample(n=5))
-    assert "not importable" in caplog.text
+    assert "not installed" in caplog.text
     assert result == adapter_mod._compute_fallback(list(Pipeline.sample(n=5)))
+
+
+def test_a_rename_inside_nmtc_calc_fails_loudly(monkeypatch):
+    """A submodule gone missing is version skew, not absence (fix round 1, X7)."""
+    monkeypatch.setitem(sys.modules, "nmtccalc.models.transaction", None)
+    with pytest.raises(ModuleNotFoundError) as info:
+        adapter_mod.compute_pipeline_economics(Pipeline.sample(n=2))
+    assert info.value.name == "nmtccalc.models.transaction"
+
+
+def test_degenerate_arithmetic_inside_nmtc_calc_falls_back(caplog):
+    """A row of 5e-324 everywhere underflows equity to 0.0 and structure()
+    divides by it. 1.7.1 fell back; the first cut of 1.7.2 raised
+    ZeroDivisionError (fix round 1, X6)."""
+    p = list(Pipeline.sample(n=1))[0]
+    p.total_project_cost = p.qei_request = p.qlici_amount = 5e-324
+    pl = Pipeline()
+    pl.add(p)
+    with caplog.at_level(logging.WARNING, logger=adapter_mod.__name__):
+        result = adapter_mod.compute_pipeline_economics(pl)
+    assert "refused a deal's inputs (ZeroDivisionError" in caplog.text
+    assert result == adapter_mod._compute_fallback([p])
 
 
 def test_nmtc_calcs_own_input_refusal_falls_back_and_says_so(caplog):

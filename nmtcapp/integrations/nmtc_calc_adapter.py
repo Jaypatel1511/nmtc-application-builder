@@ -50,32 +50,43 @@ def compute_pipeline_economics(pipeline: "Pipeline") -> dict:
     # with nothing but a log line on stderr to say so. An API break is not a
     # data condition. Two narrow fallbacks remain, each for a reason:
     #
-    #   ImportError  nmtc-calc is not importable at all (a broken or partial
-    #                environment). The fallback models the same identity, so
-    #                the analysis still runs, and the log says why.
-    #   ValueError   nmtc-calc REFUSED a deal's inputs -- its documented
-    #                contract (NMTCDeal.__post_init__; NegativeTrancheError
-    #                and UnbalancedStackError subclass ValueError). A pipeline
-    #                row with QEI above total project cost is refused by
-    #                every nmtc-calc version and accepted by PipelineProject,
-    #                so this is a real input path, not version skew.
+    #   nmtc-calc ABSENT   ModuleNotFoundError whose .name is exactly
+    #                "nmtccalc": the package is not installed at all. The
+    #                fallback models the same identity, so the analysis still
+    #                runs, and the log says why. Any OTHER import failure --
+    #                ``nmtccalc.models.transaction`` missing, ``NMTCDeal`` not
+    #                importable from ``nmtccalc`` -- is a rename inside the
+    #                package and propagates (fix round 1, X7).
+    #   INPUT REFUSED      ValueError or ArithmeticError from nmtc-calc's own
+    #                construction or arithmetic. ValueError is its documented
+    #                contract (NMTCDeal.__post_init__; NegativeTrancheError and
+    #                UnbalancedStackError subclass it) -- a row with QEI above
+    #                total project cost is refused by every nmtc-calc version
+    #                and accepted by PipelineProject. ArithmeticError is the
+    #                degenerate-number case: a row of 5e-324 everywhere
+    #                underflows investor equity to 0.0 and structure() divides
+    #                by it. 1.7.1 fell back there (by accident, through the
+    #                blanket handler); the first cut of this fix crashed with
+    #                ZeroDivisionError (fix round 1, X6).
     #
     # Everything else -- AttributeError, TypeError, a changed signature --
     # propagates, with the installed nmtc-calc version named.
     try:
         from nmtccalc import NMTCDeal
         import nmtccalc.models.transaction as nmtc_transaction
-    except ImportError as exc:
+    except ModuleNotFoundError as exc:
+        if exc.name != "nmtccalc":
+            raise
         logger.warning(
-            "nmtc-calc is not importable (%s). Using manual computation fallback.", exc
+            "nmtc-calc is not installed (%s). Using manual computation fallback.", exc
         )
         return _compute_fallback(projects)
     try:
         return _compute_via_library(projects, NMTCDeal, nmtc_transaction)
-    except ValueError as exc:
+    except (ValueError, ArithmeticError) as exc:
         logger.warning(
-            "nmtc-calc refused a deal's inputs (%s). Using manual computation "
-            "fallback.", exc
+            "nmtc-calc refused a deal's inputs (%s: %s). Using manual computation "
+            "fallback.", type(exc).__name__, exc
         )
         return _compute_fallback(projects)
 

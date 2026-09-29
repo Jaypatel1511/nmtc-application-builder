@@ -60,6 +60,27 @@ def test_pipeline_project_negative_jobs_raises():
         _make_project(expected_jobs_created=-1)
 
 
+@pytest.mark.parametrize("field", ["total_project_cost", "qei_request",
+                                   "qlici_amount", "expected_sq_ft"])
+@pytest.mark.parametrize("bad", [float("nan"), float("inf")])
+def test_pipeline_project_refuses_non_finite_values(field, bad):
+    """1.7.2 fix round 1, X6: `nan <= 0` is False, so NaN passed every
+    sign check and inf passed as a very large project."""
+    with pytest.raises(ValueError, match=f"{field} must be a finite number"):
+        _make_project(**{field: bad})
+
+
+def test_csv_parsing_refuses_non_finite_and_names_blank_cells():
+    """What a CSV row with 'inf', or with the cell left blank, now does."""
+    from nmtcapp.core.pipeline import _required_float, _required_int
+    with pytest.raises(ValueError, match="must be a finite number"):
+        _required_float("inf", "qei_request")
+    with pytest.raises(ValueError, match="must be a finite whole number"):
+        _required_int("inf", "expected_jobs_created")   # was a bare OverflowError
+    with pytest.raises(ValueError, match="is required but was left blank"):
+        _required_float(float("nan"), "qei_request")    # pandas reads a blank as NaN
+
+
 def test_pipeline_project_full_address():
     p = _make_project(address="100 Main St", city="Chicago", state="IL")
     assert p.full_address == "100 Main St, Chicago, IL"
