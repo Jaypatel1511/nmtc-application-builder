@@ -65,18 +65,42 @@ _ACTIONS = {
 _CARRIED = ("app", "is_demo_data", "allocation_is_stated", "analysis")
 
 
+#: Elements whose LABEL (and help tooltip) is prose a CDE reads, beyond the
+#: body kinds above. Fix round 1 (P9/X5): st.code, st.metric labels and help,
+#: st.dataframe headers, tab and expander labels and every widget's label and
+#: help= tooltip were outside the scan -- 1_Pipeline_Analyzer renders the
+#: readiness-withdrawal disclosure as st.code.
+LABELLED_KINDS = ("expander", "tabs", "metric", "button", "radio", "slider",
+                  "select_slider", "number_input", "multiselect", "selectbox",
+                  "checkbox", "toggle", "text_input", "text_area",
+                  "date_input", "color_picker")
+
+
 def texts(at) -> list:
-    """``[(kind, text), ...]`` for every prose element, expander labels included."""
+    """``[(kind, text), ...]`` for every piece of prose the page rendered:
+    bodies, code blocks, labels, help tooltips and table headers."""
     out = []
     for kind in PROSE_KINDS:
         for el in getattr(at, kind, []):
             value = getattr(el, "value", None)
             if isinstance(value, str):
                 out.append((kind, value))
-    for el in getattr(at, "expander", []):
-        label = getattr(el, "label", None)
-        if isinstance(label, str):
-            out.append(("expander", label))
+    for el in getattr(at, "code", []):
+        value = getattr(el, "value", None)
+        if isinstance(value, str):
+            out.append(("code", value))
+    for kind in LABELLED_KINDS:
+        for el in getattr(at, kind, []):
+            for attr in ("label", "help"):
+                text = getattr(el, attr, None)
+                if isinstance(text, str) and text.strip():
+                    out.append((f"{kind}.{attr}", text))
+    for kind in ("dataframe", "table"):
+        for el in getattr(at, kind, []):
+            value = getattr(el, "value", None)
+            columns = getattr(value, "columns", None)
+            if columns is not None:
+                out.append((f"{kind}.columns", " | ".join(str(c) for c in columns)))
     return out
 
 

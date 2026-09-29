@@ -33,12 +33,17 @@ WHAT THIS GATE DOES INSTEAD
 2. It reads ``st.navigation``'s ``st.Page`` list out of ``app.py`` and requires
    it to name exactly the files on disk: a page file the navigation does not
    list is unreachable, and a navigation entry with no file is a dead link.
-3. It walks each page's AST for every PROSE RENDER SITE -- ``st.markdown``,
-   ``st.write``, ``st.caption``, ``st.info``, ``st.warning``, ``st.error``,
-   ``st.success``, ``st.title``/``header``/``subheader``, ``st.text``,
-   ``st.toast``, ``st.expander`` labels, the same calls on ``st.sidebar`` and
-   on layout containers (``col.caption(...)``), and the ``utils`` helpers that
-   render prose on a page's behalf. The count per page is pinned in the
+3. It walks each page's AST for every PROSE RENDER SITE it knows the shape
+   of -- ``st.markdown``, ``st.write``, ``st.caption``, ``st.info``,
+   ``st.warning``, ``st.error``, ``st.success``, ``st.title``/``header``/
+   ``subheader``, ``st.text``, ``st.toast``, ``st.code``, ``st.metric``,
+   ``st.dataframe``/``st.table`` (headers), ``st.tabs`` and ``st.expander``
+   labels, the same calls on ``st.sidebar`` and on layout containers,
+   subscripted ones included (``cols[0].markdown``), every ``help=`` tooltip on
+   any Streamlit call, and the ``utils`` helpers that render prose on a page's
+   behalf. (Fix round 1, P9/X5, added code, metric, dataframe/table, tabs,
+   subscripted containers and help=; the first cut called its narrower list
+   "every prose render site", which it was not.) The count per page is pinned in the
    registry, so a new prose site is a REVIEW EVENT: the failure prints the
    derived site list, and whoever adds one re-reads it against the rules the
    other gates in this directory enforce (round provenance, the winner-pattern
@@ -76,9 +81,14 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 _APP_DIR = _REPO_ROOT / "streamlit_app"
 
 #: Calls on ``st`` (or ``st.sidebar``) that put user-facing prose on a page.
+#:
+#: Fix round 1 (P9/X5) added ``code`` (1_Pipeline_Analyzer renders the
+#: readiness-withdrawal disclosure with st.code), ``metric`` (its label and
+#: help are prose), ``dataframe``/``table`` (headers) and ``tabs`` (labels).
 ST_PROSE_CALLS = frozenset({
     "markdown", "write", "caption", "info", "warning", "error", "success",
     "title", "header", "subheader", "text", "toast", "expander",
+    "code", "metric", "dataframe", "table", "tabs",
 })
 
 #: The same, on a layout container (``left.markdown``, ``c3.caption``). Kept
@@ -86,6 +96,7 @@ ST_PROSE_CALLS = frozenset({
 #: ``str.title()`` is not a render call.
 CONTAINER_PROSE_CALLS = frozenset({
     "markdown", "write", "caption", "info", "warning", "error", "success",
+    "code", "metric", "dataframe", "expander", "tabs",
 })
 
 #: ``streamlit_app/utils.py`` functions that render prose ON A PAGE'S BEHALF.
@@ -129,7 +140,7 @@ PAGE_REGISTRY = {
     },
     "pages/1_Pipeline_Analyzer.py": {
         "nav_title": "Pipeline Analyzer",
-        "prose_sites": 66,
+        "prose_sites": 96,
         "provenance_calls": 2,
         "what": "load or upload a pipeline, run the analysis, read the "
                 "distress / geography / sector / impact report and the "
@@ -137,21 +148,21 @@ PAGE_REGISTRY = {
     },
     "pages/2_Win_Alignment_Scorer.py": {
         "nav_title": "Win Alignment Scorer",
-        "prose_sites": 39,
+        "prose_sites": 42,
         "provenance_calls": 1,
         "what": "score the application against the CY 2024-2025 Review "
                 "Process structure",
     },
     "pages/3_Pipeline_Optimizer.py": {
         "nav_title": "Pipeline Optimizer",
-        "prose_sites": 26,
+        "prose_sites": 38,
         "provenance_calls": 1,
         "what": "select the highest-scoring project subset under QEI, state "
                 "and sector constraints",
     },
     "pages/4_About_and_Methodology.py": {
         "nav_title": "About and Methodology",
-        "prose_sites": 25,
+        "prose_sites": 26,
         "provenance_calls": 1,
         "what": "data sources, scoring methodology, limitations, round "
                 "provenance",
@@ -179,9 +190,17 @@ def page_files() -> list:
 
 
 def _root_name(node):
-    while isinstance(node, ast.Attribute):
+    """The Name at the root of ``st.sidebar.x`` or ``cols[0].x``."""
+    while isinstance(node, (ast.Attribute, ast.Subscript)):
         node = node.value
     return node.id if isinstance(node, ast.Name) else None
+
+
+def _container_label(node) -> str:
+    """``cols[0]`` -> ``cols[]``; ``left`` -> ``left``."""
+    if isinstance(node, ast.Subscript):
+        return f"{_root_name(node)}[]"
+    return node.id
 
 
 def prose_sites(relpath: str) -> list:
@@ -201,9 +220,12 @@ def prose_sites(relpath: str) -> list:
             if root == "st" and func.attr in ST_PROSE_CALLS:
                 prefix = "st.sidebar." if isinstance(func.value, ast.Attribute) else "st."
                 kind = prefix + func.attr
-            elif (root not in (None, "st") and isinstance(func.value, ast.Name)
+            elif (root not in (None, "st")
+                  and isinstance(func.value, (ast.Name, ast.Subscript))
                   and func.attr in CONTAINER_PROSE_CALLS):
-                kind = f"<{func.value.id}>.{func.attr}"
+                # Subscripted containers (``cols[0].markdown``) are sites too
+                # (fix round 1, P9/X5).
+                kind = f"<{_container_label(func.value)}>.{func.attr}"
         elif isinstance(func, ast.Name) and func.id in PROSE_HELPERS:
             kind = f"{func.id}()"
         if kind is None:
@@ -216,6 +238,13 @@ def prose_sites(relpath: str) -> list:
                 and first.func.id == "md"):
             kind += " (md)"
         out.append((node.lineno, kind))
+    # A help= TOOLTIP is prose on any Streamlit call -- a widget, a metric --
+    # whether or not the call is itself a prose site (fix round 1, P9/X5).
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+                and _root_name(node.func.value) is not None
+                and any(kw.arg == "help" for kw in node.keywords)):
+            out.append((node.lineno, f"{node.func.attr}(help=)"))
     return sorted(out)
 
 
