@@ -1347,7 +1347,7 @@ a dry run that proves the job without touching the site.</p>
 <p>Tests are organized to mirror the source tree:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>tests/
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  core/             # Application, CDEProfile, Pipeline, PipelineProject
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  data/             # Historical awards, schema constants
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  data/             # Round-level award statistics, house constants, schema
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  intelligence/     # Distress, geographic, sector, impact, win probability, recommendations
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>  optimizer/        # PipelineOptimizer, OptimizationConstraints
 <a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  renderers/        # Word, Excel, PDF, Markdown builders
@@ -1401,12 +1401,12 @@ a dry run that proves the job without touching the site.</p>
 - Full traceback if applicable</p>
 <hr />
 <h2 id="contributing-data-updates">Contributing data updates<a class="headerlink" href="#contributing-data-updates" title="Permanent link">&para;</a></h2>
-<p>When the CDFI Fund publishes new award announcement data or annual reports, the <code>historical_awards.py</code> constants should be updated. If you have access to new data:</p>
+<p>When the CDFI Fund announces a new round's awards, the round-level constants in <code>historical_awards.py</code> should be updated. If you have the announcement or Award Book:</p>
 <ol>
 <li>Update the relevant constants in <code>nmtcapp/data/historical_awards.py</code></li>
 <li>Add the new round entry to <code>NMTC_AWARD_ROUNDS</code> with a source comment</li>
 <li>Update <code>APPLICATION_VOLUME_TRENDS</code> lists</li>
-<li>Update <code>WINNER_DISTRESS_PATTERNS</code>, <code>WINNER_GEOGRAPHIC_PATTERNS</code>, <code>WINNER_IMPACT_BENCHMARKS</code>, or <code>WINNER_SECTOR_PATTERNS</code> if new annual report data changes the aggregate statistics</li>
+<li><strong>Do not "update" <code>WINNER_DISTRESS_PATTERNS</code>, <code>WINNER_GEOGRAPHIC_PATTERNS</code>, <code>WINNER_IMPACT_BENCHMARKS</code> or <code>WINNER_SECTOR_PATTERNS</code> from a new report.</strong> They are this tool's own assumed winner patterns — unsourced house constants, not aggregate statistics of any published data — and <code>tests/scoring_attribution.txt</code> rules every key HOUSE. No CDFI Fund release carries them. Changing one is a methodology change under that file's standing ruling, <em>source it or delete it</em>: give the key a CITED row naming a retrievable document, or remove it</li>
 <li>Update the module docstring to reflect the new data coverage period</li>
 <li>Run the full test suite — some tests assert on specific constant values and may need updating</li>
 <li>Submit a pull request with the data source URL in the commit message</li>

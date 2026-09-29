@@ -1328,7 +1328,7 @@
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="n">plot_sector_distribution</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s2">"./charts/sector_mix.png"</span><span class="p">)</span>
 </code></pre></div>
-<p><strong>What it shows:</strong> A horizontal bar chart of QEI by sector, sorted by QEI descending. Bars are color-coded by CDFI Fund priority tier: deep blue (high priority: healthcare, affordable housing, education), medium blue (medium priority: small business, mixed use), light blue (other sectors). Each bar shows the sector's percentage of total QEI.</p>
+<p><strong>What it shows:</strong> A horizontal bar chart of QEI by sector, sorted by QEI descending. Bars are color-coded by <strong>this package's own house priority tier</strong> (<code>schema.TARGET_SECTORS</code>, not a CDFI Fund classification; the NOAA ranks no sectors): deep blue (high: healthcare, affordable housing, education), medium blue (medium: small business, mixed use, community facility, clean energy), light blue (low: other). The legend is built from the same tiers. Each bar shows the sector's percentage of total QEI.</p>
 <p><strong>Reference annotation:</strong> none. The chart carried a note reading <em>"Winners
 typically have ≥50% in high-priority sectors (healthcare, affordable housing,
 education)"</em> — <strong>removed from the chart itself in 1.5.1</strong>, not merely from this

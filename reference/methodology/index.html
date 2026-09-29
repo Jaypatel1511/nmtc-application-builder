@@ -1949,8 +1949,8 @@
 <td>Clarifications on scoring intent and eligibility criteria</td>
 </tr>
 <tr>
-<td>CDFI Fund NMTC Award Announcements, CY2020–CY2024</td>
-<td>Historical award statistics used in the benchmarks module</td>
+<td>CDFI Fund NMTC Award Announcements and Award Books, CY 2020 – CY 2024-2025</td>
+<td>Round-level statistics only (<code>NMTC_AWARD_ROUNDS</code>: applications, awards, allocation) shown on the Streamlit About page. The benchmark bands (<code>WINNER_PATTERN_THRESHOLDS</code>) use no award data — they are house constants</td>
 </tr>
 </tbody>
 </table>
@@ -1961,7 +1961,7 @@
 <ul>
 <li><strong>Not a win probability calculator.</strong> The CDFI Fund does not publish scores or application data for non-winning applicants. A true probability of selection cannot be computed from available data.</li>
 <li><strong>Not a substitute for Phase 2 narrative review.</strong> Phase 2 evaluates Management Capacity and Capitalization Strategy through qualitative reviewer judgment. This tool does not model those criteria.</li>
-<li><strong>Not authoritative.</strong> The CDFI Fund's actual scoring rubric is proprietary. This tool's sub-score weights are best-effort interpretations of the published guidance; the CDFI Fund does not publish exact point values for individual sub-criteria.</li>
+<li><strong>Not authoritative.</strong> The CDFI Fund's actual scoring rubric is proprietary. This tool's sub-criteria, weights and thresholds are its own interpretation of the published guidance (Special Targeting is this tool's own criterion, not the Fund's); the CDFI Fund does not publish exact point values for individual sub-criteria.</li>
 </ul>
 <hr />
 <h2 id="scoring-framework">Scoring framework<a class="headerlink" href="#scoring-framework" title="Permanent link">&para;</a></h2>
@@ -2429,7 +2429,7 @@ judgement, not the Fund's. See the basis note above.</p>
 <li><strong>Past reporting compliance deductions.</strong> Late or inaccurate prior-round reporting can result in score deductions. This tool assumes clean compliance history; it is flagged in <code>phase2_flags.prior_reporting_compliance_risk</code>.</li>
 <li><strong>Subjective reviewer judgment.</strong> Phase 1 reviewers exercise judgment on the quality of narrative explanations. Narrative quality, internal consistency, and clarity cannot be quantified from pipeline data alone.</li>
 <li><strong>Anomalous score resolution.</strong> When two reviewers disagree by more than a threshold, a third reviewer resolves the discrepancy. This process is not modeled.</li>
-<li><strong>Non-winner data.</strong> The CDFI Fund does not publish application-level data for non-winning applicants. Historical benchmarks in <code>HistoricalBenchmarks</code> are derived from winner-level data only.</li>
+<li><strong>Non-winner data.</strong> The CDFI Fund does not publish application-level data for non-winning applicants. The bands in <code>HistoricalBenchmarks</code> are this tool's own house constants — unsourced, not derived from winner-level data, and not measurements of past winners.</li>
 </ol>
 <hr />
 <h2 id="historical-program-statistics">Historical program statistics<a class="headerlink" href="#historical-program-statistics" title="Permanent link">&para;</a></h2>

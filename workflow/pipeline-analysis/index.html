@@ -1828,7 +1828,7 @@
 <a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="s2">"other"</span><span class="p">,</span>
 <a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="p">]</span>
 </code></pre></div>
-<p>CDFI Fund priority sectors are <code>healthcare</code>, <code>affordable_housing</code>, and <code>education</code>. Projects in these sectors score highest on the sector diversity dimension.</p>
+<p>This package's own <strong>house</strong> high-priority tier (<code>schema.TARGET_SECTORS</code>, not a CDFI Fund classification) is <code>healthcare</code>, <code>affordable_housing</code> and <code>education</code>; <code>high_priority_pct</code> is the share of QEI in that tier. It does not enter the sector diversity score, which is the normalized Shannon entropy of the sector shares and is blind to which sectors they are.</p>
 <hr />
 <h2 id="loading-from-csv">Loading from CSV<a class="headerlink" href="#loading-from-csv" title="Permanent link">&para;</a></h2>
 <p>The <code>Pipeline.from_csv()</code> class method reads a CSV file with columns matching <code>PipelineProject</code> field names. Required columns are the 12 required fields above. Optional columns are read when present and default to <code>None</code> when absent.</p>

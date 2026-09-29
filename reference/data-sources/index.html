@@ -1364,10 +1364,10 @@ not carry that wording. Fixed.</p>
 <h2 id="nmtc-program-nofa">NMTC Program NOFA<a class="headerlink" href="#nmtc-program-nofa" title="Permanent link">&para;</a></h2>
 <p><strong>Source:</strong> CDFI Fund Notice of Funds Availability (NOFA), published annually</p>
 <p><strong>What we use:</strong>
-- Scoring criteria weights for the five application categories (Business Strategy, Community Outcomes, Management Capacity, Capitalization, Prior Awards)
+- Not the scoring weights: those come from the Review Process, not the NOAA. It publishes two scored Phase 1 sections, Business Strategy and Community Outcomes (50 points each), plus Priority Points (10); Management Capacity and Capitalization Strategy are Phase 2 narrative review, which this tool does not score. The sub-criteria, weights and thresholds inside each section are this tool's own (see <a href="../methodology/">Methodology</a>)
 - Distress concentration requirements and bonus criteria (Native American areas, high-migration rural counties, Opportunity Zones)
 - Program rules: 39% credit rate, 7-year compliance period, minimum QEI thresholds</p>
-<p><strong>Note:</strong> The NOFA is revised each year. Scoring weights and specific criteria can change between rounds. The current library reflects the CY2024 NOFA structure. Always verify against the applicable NOFA for your specific application round.</p>
+<p><strong>Note:</strong> The NOFA is revised each year. Scoring weights and specific criteria can change between rounds. The current library encodes the CY 2024-2025 Allocation Application and Review Process, as a disclosed proxy for CY 2026. Always verify against the applicable NOFA for your specific application round.</p>
 <hr />
 <h2 id="integration-libraries-open-source-third-party">Integration libraries (open source, third party)<a class="headerlink" href="#integration-libraries-open-source-third-party" title="Permanent link">&para;</a></h2>
 <p>The library wraps four community-developed Python libraries:</p>
@@ -1432,7 +1432,7 @@ not carry that wording. Fixed.</p>
 <li>The CDFI Fund publishes new award announcement data (typically once per year)</li>
 <li>Annual report data is released with new impact statistics</li>
 </ol>
-<p>Users working on CY 2026 and later applications should verify that the winner patterns used for scoring reflect the most recent available data. (This line named "CY2025" until 1.5.5. The CDFI Fund has never run a round by that name: the most recent PUBLISHED round is CY 2024-2025, awarded 23 Dec 2025, and the upcoming one is CY 2026.) Check the <code>historical_awards.py</code> module header comment for the current data coverage date.</p>
+<p>Users working on CY 2026 and later applications should note that the optimizer and the benchmark bands use this tool's own assumed winner patterns, which are unsourced house constants — not measurements of past winners, and not a CDFI Fund publication; no data release updates them. (This line named "CY2025" until 1.5.5. The CDFI Fund has never run a round by that name: the most recent PUBLISHED round is CY 2024-2025, awarded 23 Dec 2025, and the upcoming one is CY 2026.) Check the <code>historical_awards.py</code> module header comment for the current data coverage date.</p>
 <p>To see the current round data programmatically:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">nmtcapp.data.historical_awards</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_historical_winners</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>

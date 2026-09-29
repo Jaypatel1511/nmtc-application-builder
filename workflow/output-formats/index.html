@@ -1412,7 +1412,7 @@ Review Process behind every item it emits.</p>
 - QEI totals at the bottom</p>
 <p><strong>Sheet: Distress Analysis</strong>
 - Breakdown by distress level (project count, QEI dollars, QEI percentage)
-- Comparison column showing winner benchmarks
+- No winner-benchmark column: the package's winner patterns are house constants, and no generated document carries them
 - Native area and HMR sub-totals</p>
 <p><strong>Sheet: Geographic Distribution</strong>
 - QEI by state (sorted descending)
@@ -1420,7 +1420,7 @@ Review Process behind every item it emits.</p>
 - HHI calculation</p>
 <p><strong>Sheet: Impact Projections</strong>
 - Total jobs created and retained
-- Jobs per million QEI vs. winner benchmarks
+- Jobs per million QEI (no winner comparison — see the Distress Analysis note above)
 - Affordable housing units</p>
 <p><strong>Sheet: Deal Economics</strong>
 - NMTC credit calculation (39% × QEI over 7 years)
@@ -1489,7 +1489,7 @@ where you want them:</p>
 <h3 id="why-auto-embedding-is-not-simply-switched-on">Why auto-embedding is not simply switched on<a class="headerlink" href="#why-auto-embedding-is-not-simply-switched-on" title="Permanent link">&para;</a></h3>
 <p>Not an oversight, and not a small feature — a deliberate hold, recorded here so
 it is not "fixed" by someone who finds this page and the code disagreeing.</p>
-<p><code>plot_winner_alignment</code> charts a pipeline against winner p25/p50/p75 values for
+<p><code>plot_winner_alignment</code> charts a pipeline against this tool's own house p25/p50/p75 values for
 three metrics. Those values are <strong>unsourced</strong>: every one of them is a <code>HOUSE</code>
 row in <code>tests/scoring_attribution.txt</code>, meaning no retrievable document
 supports it. <code>nmtcapp/data/historical_awards.py</code>'s own header states that the

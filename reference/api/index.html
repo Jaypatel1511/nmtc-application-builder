@@ -1973,12 +1973,12 @@
 <h3 id="score_win_probability"><code>score_win_probability</code><a class="headerlink" href="#score_win_probability" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">score_win_probability</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">WinProbabilityScore</span>
 </code></pre></div>
-<p>Score this application's alignment with historical NMTC winner patterns (CY2020–CY2024). Returns a composite 0–100 alignment score and per-dimension breakdown. <strong>Not a win probability</strong> — see the methodology disclosure in <code>WinProbabilityScore.methodology_disclosure</code>.</p>
+<p>Score this application against the CDFI Fund's published CY 2024-2025 Review Process structure (Business Strategy, Community Outcomes, Priority Points), with this tool's own sub-criteria, weights and thresholds — Special Targeting (5 of Community Outcomes' 50 points) is this tool's own criterion, not the Fund's. Returns a composite 0–100 alignment score and per-section breakdown. <strong>Not a win probability</strong> — see the methodology disclosure in <code>WinProbabilityScore.methodology_disclosure</code>.</p>
 <hr />
 <h3 id="benchmark"><code>benchmark</code><a class="headerlink" href="#benchmark" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">benchmark</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">BenchmarkComparison</span>
 </code></pre></div>
-<p>Compare this application against historical NMTC winner benchmarks. Returns a <code>BenchmarkComparison</code> with per-metric tier classifications and percentile positions.</p>
+<p>Place this application's pipeline metrics in this tool's own house benchmark bands — unsourced, and not measurements of past winners (see <code>benchmarks._METHODOLOGY</code>). Returns a <code>BenchmarkComparison</code> with per-metric tier classifications.</p>
 <hr />
 <h3 id="recommendations"><code>recommendations</code><a class="headerlink" href="#recommendations" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">recommendations</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">RecommendationSet</span>
@@ -1991,7 +1991,7 @@
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="n">max_iterations</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span>
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OptimizationResult</span>
 </code></pre></div>
-<p>Optimize the pipeline to maximize alignment with historical winner patterns. Uses greedy construction + swap-based local search. Always returns a result — infeasible constraints are reported in <code>OptimizationResult.infeasibility_reason</code>.</p>
+<p>Optimize the pipeline to maximize alignment with this tool's own assumed winner patterns, which are unsourced house constants — not measurements of past winners, and not a CDFI Fund publication. Uses greedy construction + swap-based local search. Always returns a result — infeasible constraints are reported in <code>OptimizationResult.infeasibility_reason</code>.</p>
 <p><strong>Parameters:</strong>
 - <code>constraints</code> — <code>OptimizationConstraints</code> instance. If <code>None</code>, runs unconstrained (all projects eligible, no budget cap).
 - <code>max_iterations</code> — Maximum local-search swap iterations. Default: 500.</p>
