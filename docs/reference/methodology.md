@@ -13,7 +13,7 @@ This tool's scoring framework is derived from the following primary sources:
 | [CY 2024-2025 NMTC Allocation Application Review Process](https://www.cdfifund.gov/system/files/2025-12/CY_2024_25_NMTC_Program_Review_Process.pdf) | Primary source for scored sections, sub-criteria, gating thresholds |
 | [CY 2024-2025 NMTC Allocation Application (NOAA)](https://www.cdfifund.gov/programs-training/programs/new-markets-tax-credit) | Application structure and narrative requirements |
 | [CY 2024-2025 NMTC Application FAQ](https://www.cdfifund.gov/programs-training/programs/new-markets-tax-credit) | Clarifications on scoring intent and eligibility criteria |
-| CDFI Fund NMTC Award Announcements, CY2020–CY2024 | Historical award statistics used in the benchmarks module |
+| CDFI Fund NMTC Award Announcements and Award Books, CY 2020 – CY 2024-2025 | Round-level statistics only (`NMTC_AWARD_ROUNDS`: applications, awards, allocation) shown on the Streamlit About page. The benchmark bands (`WINNER_PATTERN_THRESHOLDS`) use no award data — they are house constants |
 
 ---
 

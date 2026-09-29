@@ -28,7 +28,7 @@ paths = app.generate("./drafts/")
 
 ## The Problem
 
-CDE teams preparing NMTC allocation applications work blind. They spend weeks manually assembling pipeline data in Excel, draft narrative sections without a structured read of their own distress concentration or geographic diversity, and submit applications with no objective measure of competitiveness. The CDFI Fund receives 280–340 applications per round with a ~35% acceptance rate — yet most CDEs have no systematic way to benchmark their position before the deadline.
+CDE teams preparing NMTC allocation applications work blind. They spend weeks manually assembling pipeline data in Excel, draft narrative sections without a structured read of their own distress concentration or geographic diversity, and submit applications with no objective measure of competitiveness. Allocation rounds are competitive (the round-by-round record this package carries, `NMTC_AWARD_ROUNDS`, is on the Streamlit About page) — yet most CDEs have no systematic way to benchmark their position before the deadline.
 
 ## The Solution
 

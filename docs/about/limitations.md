@@ -21,9 +21,9 @@ The CDFI Fund uses a multi-criterion scoring rubric that includes qualitative as
 
 The round-level statistics embedded in the library (`NMTC_AWARD_ROUNDS` in `historical_awards.py`) come from CDFI Fund award announcements. Its winner pattern figures (the `WINNER_*` dicts) are this tool's own assumed winner patterns, which are unsourced house constants — not measurements of past winners, and not a CDFI Fund publication. This creates two limitations:
 
-1. **CY2024 data is partially estimated.** At the time of the library's release, CY2024 award announcements were pending. The `CY2024` entry in `NMTC_AWARD_ROUNDS` uses estimated application counts and acceptance rates based on prior round trends. When final CY2024 data is published, the library will be updated.
+1. **Round-level data has a vintage.** `NMTC_AWARD_ROUNDS` runs CY 2020 through CY 2024-2025. The `CY2024-2025` row carries the CDFI Fund's own Award Book figures for that double round (awarded 23 Dec 2025); there is no `CY2024` row. CY 2026 figures can only be added once that round is awarded.
 
-2. **NOFA criteria change.** The CDFI Fund revises scoring criteria between rounds. A criteria change that shifts relative weights — for example, increasing the weight on geographic diversity or adding new bonus categories — would require recalibration of the dimensional weights in `WinProbabilityModel`. The current library reflects the CY2024 NOFA structure.
+2. **NOFA criteria change.** The CDFI Fund revises scoring criteria between rounds. A criteria change that shifts relative weights — for example, increasing the weight on geographic diversity or adding new bonus categories — would require recalibration of the dimensional weights in `WinProbabilityModel`. The current library encodes the CY 2024-2025 Allocation Application and Review Process, as a disclosed proxy for CY 2026 (see the round-provenance note on every page and in every generated document).
 
 Practitioners should always verify that the most recent NOFA aligns with the scoring assumptions the library uses.
 

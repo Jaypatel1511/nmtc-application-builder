@@ -89,11 +89,11 @@ not carry that wording. Fixed.
 **Source:** CDFI Fund Notice of Funds Availability (NOFA), published annually
 
 **What we use:**
-- Scoring criteria weights for the five application categories (Business Strategy, Community Outcomes, Management Capacity, Capitalization, Prior Awards)
+- Not the scoring weights: those come from the Review Process, not the NOAA. It publishes two scored Phase 1 sections, Business Strategy and Community Outcomes (50 points each), plus Priority Points (10); Management Capacity and Capitalization Strategy are Phase 2 narrative review, which this tool does not score. The sub-criteria, weights and thresholds inside each section are this tool's own (see [Methodology](methodology.md))
 - Distress concentration requirements and bonus criteria (Native American areas, high-migration rural counties, Opportunity Zones)
 - Program rules: 39% credit rate, 7-year compliance period, minimum QEI thresholds
 
-**Note:** The NOFA is revised each year. Scoring weights and specific criteria can change between rounds. The current library reflects the CY2024 NOFA structure. Always verify against the applicable NOFA for your specific application round.
+**Note:** The NOFA is revised each year. Scoring weights and specific criteria can change between rounds. The current library encodes the CY 2024-2025 Allocation Application and Review Process, as a disclosed proxy for CY 2026. Always verify against the applicable NOFA for your specific application round.
 
 ---
 
