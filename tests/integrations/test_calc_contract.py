@@ -238,7 +238,8 @@ def test_degenerate_arithmetic_inside_nmtc_calc_falls_back(caplog):
     pl.add(p)
     with caplog.at_level(logging.WARNING, logger=adapter_mod.__name__):
         result = adapter_mod.compute_pipeline_economics(pl)
-    assert "refused a deal's inputs (ZeroDivisionError" in caplog.text
+    assert "refused the inputs of project" in caplog.text
+    assert "(ZeroDivisionError" in caplog.text
     assert result == adapter_mod._compute_fallback([p])
 
 
@@ -252,5 +253,55 @@ def test_nmtc_calcs_own_input_refusal_falls_back_and_says_so(caplog):
         pl.add(p)
     with caplog.at_level(logging.WARNING, logger=adapter_mod.__name__):
         result = adapter_mod.compute_pipeline_economics(pl)
-    assert "refused a deal's inputs" in caplog.text
+    assert "refused the inputs of project" in caplog.text
     assert result == adapter_mod._compute_fallback(projects)
+
+
+def _rows_at(value, n):
+    projects = list(Pipeline.sample(n=n))
+    pl = Pipeline()
+    for p in projects:
+        p.total_project_cost = p.qei_request = p.qlici_amount = value
+        pl.add(p)
+    return pl
+
+
+def test_the_adapters_own_overflow_is_not_blamed_on_nmtc_calc(caplog):
+    """Fix round 2: every row at 1e308. Each deal is finite and nmtc-calc
+    structures it; the SUM overflows. That used to be logged as "nmtc-calc
+    refused a deal's inputs (OverflowError ...)" and then the fallback raised
+    the same OverflowError anyway. It is the adapter's arithmetic, and it says so."""
+    with caplog.at_level(logging.WARNING, logger=adapter_mod.__name__):
+        with pytest.raises(adapter_mod.PipelineTotalsOverflow, match="not nmtc-calc"):
+            adapter_mod.compute_pipeline_economics(_rows_at(1e308, 2))
+    assert "refused" not in caplog.text, caplog.text
+
+
+def test_a_single_huge_but_representable_row_takes_the_library_path(monkeypatch):
+    """1e308 in ONE row sums to a finite total: no overflow, no fallback."""
+    monkeypatch.setattr(adapter_mod, "_compute_fallback",
+                        lambda _p: pytest.fail("fell back on a representable row"))
+    result = adapter_mod.compute_pipeline_economics(_rows_at(1e308, 1))
+    assert result["project_count"] == 1
+
+
+def test_the_fallback_path_names_the_overflow_too(monkeypatch):
+    """With nmtc-calc absent, the same sum raises the same named error."""
+    monkeypatch.setitem(sys.modules, "nmtccalc", None)
+    with pytest.raises(adapter_mod.PipelineTotalsOverflow):
+        adapter_mod.compute_pipeline_economics(_rows_at(1e308, 2))
+
+
+def test_only_nmtc_calcs_calls_sit_inside_the_fallback_handler():
+    """AST: the ``except (ValueError, ArithmeticError)`` in _compute_via_library
+    wraps exactly the NMTCDeal(...) construction and the structure() call --
+    no summing, no rounding, no ``totals`` (fix round 2)."""
+    handlers = [n for n in ast.walk(_adapter_function()) if isinstance(n, ast.Try)]
+    assert len(handlers) == 1, "expected one try block in _compute_via_library"
+    body = handlers[0].body
+    calls = sorted(
+        (c.func.id if isinstance(c.func, ast.Name) else c.func.attr)
+        for stmt in body for c in ast.walk(stmt) if isinstance(c, ast.Call))
+    assert calls == ["NMTCDeal", "structure"], calls
+    names = {n.id for stmt in body for n in ast.walk(stmt) if isinstance(n, ast.Name)}
+    assert "totals" not in names and "round" not in names, names

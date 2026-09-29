@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import math
 from typing import TYPE_CHECKING
 
 from nmtcapp.data.schema import NMTC_PROGRAM_CONSTRAINTS
@@ -81,14 +82,54 @@ def compute_pipeline_economics(pipeline: "Pipeline") -> dict:
             "nmtc-calc is not installed (%s). Using manual computation fallback.", exc
         )
         return _compute_fallback(projects)
+    #
+    # THE INPUT-REFUSED HANDLER WRAPS nmtc-calc's CALLS ONLY (fix round 2).
+    # It used to wrap the whole of ``_compute_via_library``, so the adapter's
+    # OWN summing and rounding sat inside it: with every row at 1e308 the
+    # totals overflow to inf, ``round(inf)`` raises OverflowError, the log
+    # blamed nmtc-calc ("nmtc-calc refused a deal's inputs (OverflowError")
+    # -- and the fallback then overflowed on the same sum and raised anyway.
+    # Now only ``NMTCDeal(...)`` and ``structure()`` for one project are
+    # inside it (``_Refused`` carries the cause out), and totals that cannot
+    # be represented raise ``PipelineTotalsOverflow`` from either path,
+    # naming the adapter's own arithmetic.
     try:
         return _compute_via_library(projects, NMTCDeal, nmtc_transaction)
-    except (ValueError, ArithmeticError) as exc:
+    except _Refused as refused:
+        exc = refused.cause
         logger.warning(
-            "nmtc-calc refused a deal's inputs (%s: %s). Using manual computation "
-            "fallback.", type(exc).__name__, exc
+            "nmtc-calc refused the inputs of project %r (%s: %s). Using manual "
+            "computation fallback.", refused.project_name, type(exc).__name__, exc
         )
         return _compute_fallback(projects)
+
+
+class _Refused(Exception):
+    """nmtc-calc's own ValueError/ArithmeticError for one project, carried out
+    of the loop so that nothing but ``NMTCDeal(...)`` and ``structure()`` is
+    ever inside the handler that falls back."""
+
+    def __init__(self, project_name, cause):
+        super().__init__(project_name, cause)
+        self.project_name = project_name
+        self.cause = cause
+
+
+class PipelineTotalsOverflow(OverflowError):
+    """The pipeline's summed figures exceed the float range. Raised by the
+    adapter's own arithmetic, from either path -- not an nmtc-calc refusal and
+    not a reason to fall back (the fallback sums the same numbers)."""
+
+
+def _checked_totals(totals: dict) -> dict:
+    bad = sorted(k for k, v in totals.items() if not math.isfinite(v))
+    if bad:
+        raise PipelineTotalsOverflow(
+            f"the pipeline's summed {', '.join(bad)} exceed the float range; "
+            "the per-project figures are finite but their total is not "
+            "representable. This is the adapter's own summation, not nmtc-calc."
+        )
+    return totals
 
 
 #: The leverage-loan / investor-equity multiple on ``TransactionResult``, by
@@ -136,17 +177,20 @@ def _compute_via_library(projects, NMTCDeal, nmtc_transaction) -> dict:
     }
 
     for p in projects:
-        deal = NMTCDeal(
-            project_name=p.project_name,
-            total_project_cost=p.total_project_cost,
-            nmtc_allocation=p.qei_request,
-            credit_price=credit_price,
-            leverage_loan_rate=0.055,
-            qlici_a_loan_rate=0.01,
-            qlici_b_loan_rate=0.055,
-            cde_fee_rate=cde_fee_rate,
-        )
-        result = nmtc_transaction.structure(deal)
+        try:
+            deal = NMTCDeal(
+                project_name=p.project_name,
+                total_project_cost=p.total_project_cost,
+                nmtc_allocation=p.qei_request,
+                credit_price=credit_price,
+                leverage_loan_rate=0.055,
+                qlici_a_loan_rate=0.01,
+                qlici_b_loan_rate=0.055,
+                cde_fee_rate=cde_fee_rate,
+            )
+            result = nmtc_transaction.structure(deal)
+        except (ValueError, ArithmeticError) as exc:
+            raise _Refused(p.project_name, exc) from exc
         totals["qei"] += result.qei
         totals["nmtcs"] += result.total_nmtcs
         totals["investor_equity"] += result.investor_equity
@@ -155,6 +199,7 @@ def _compute_via_library(projects, NMTCDeal, nmtc_transaction) -> dict:
         totals["leverage_ratio_sum"] += leverage_to_equity(result)
 
     n = len(projects)
+    _checked_totals(totals)
     return {
         "total_qei": round(totals["qei"]),
         "total_nmtcs": round(totals["nmtcs"]),
@@ -198,6 +243,9 @@ def _compute_fallback(projects) -> dict:
     total_investor_equity = total_nmtcs * credit_price
     total_leverage = max(0.0, total_qei - total_investor_equity)
     total_cde_fees = total_qei * cde_fee_rate
+    _checked_totals({"qei": total_qei, "nmtcs": total_nmtcs,
+                     "investor_equity": total_investor_equity,
+                     "leverage_loans": total_leverage, "cde_fees": total_cde_fees})
 
     return {
         "total_qei": round(total_qei),
