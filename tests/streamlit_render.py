@@ -101,7 +101,32 @@ def texts(at) -> list:
             columns = getattr(value, "columns", None)
             if columns is not None:
                 out.append((f"{kind}.columns", " | ".join(str(c) for c in columns)))
+    out.extend(("html", body) for body in html_bodies(at))
     return out
+
+
+def html_bodies(at) -> list:
+    """Bodies of every ``st.html`` element (fix round 2). AppTest has no
+    ``at.html`` accessor -- on streamlit 1.50 and 1.64 alike it reports the
+    element as an ``UnknownElement`` of type "html" whose proto carries the
+    body -- so it is read off the element tree. No page uses st.html today;
+    this is so the first one that does is scanned rather than invisible."""
+    bodies = []
+
+    def walk(node):
+        children = getattr(node, "children", None)
+        if not isinstance(children, dict):
+            return
+        for child in children.values():
+            if (type(child).__name__ == "UnknownElement"
+                    and getattr(child, "type", None) == "html"):
+                body = getattr(child.proto, "body", "")
+                if isinstance(body, str) and body.strip():
+                    bodies.append(body)
+            walk(child)
+
+    walk(at._tree)
+    return bodies
 
 
 def _click(at, label: str) -> None:

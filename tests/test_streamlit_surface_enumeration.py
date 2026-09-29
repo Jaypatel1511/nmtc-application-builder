@@ -85,10 +85,13 @@ _APP_DIR = _REPO_ROOT / "streamlit_app"
 #: Fix round 1 (P9/X5) added ``code`` (1_Pipeline_Analyzer renders the
 #: readiness-withdrawal disclosure with st.code), ``metric`` (its label and
 #: help are prose), ``dataframe``/``table`` (headers) and ``tabs`` (labels).
+#: Fix round 2 added ``html``: no page calls st.html today (grep and this
+#: walk both find none), so it adds no site; it is listed so the first call
+#: is counted, and tests/streamlit_render.html_bodies reads its body.
 ST_PROSE_CALLS = frozenset({
     "markdown", "write", "caption", "info", "warning", "error", "success",
     "title", "header", "subheader", "text", "toast", "expander",
-    "code", "metric", "dataframe", "table", "tabs",
+    "code", "metric", "dataframe", "table", "tabs", "html",
 })
 
 #: The same, on a layout container (``left.markdown``, ``c3.caption``). Kept
@@ -96,7 +99,7 @@ ST_PROSE_CALLS = frozenset({
 #: ``str.title()`` is not a render call.
 CONTAINER_PROSE_CALLS = frozenset({
     "markdown", "write", "caption", "info", "warning", "error", "success",
-    "code", "metric", "dataframe", "expander", "tabs",
+    "code", "metric", "dataframe", "expander", "tabs", "html",
 })
 
 #: ``streamlit_app/utils.py`` functions that render prose ON A PAGE'S BEHALF.
@@ -422,3 +425,22 @@ if __name__ == "__main__":  # pragma: no cover - a reporting aid
     # this file derives, so the next settle read is run from it rather than
     # from a list in a knowledge file.
     print(enumeration_table())
+
+
+def test_st_html_is_counted_and_its_body_is_read():
+    """Fix round 2: st.html is a prose kind on both sides of the gate. The
+    static walk counts the call, and the rendered scan reads the body that
+    AppTest otherwise reports only as an UnknownElement."""
+    from streamlit.testing.v1 import AppTest
+    from tests.streamlit_render import texts
+
+    assert "html" in ST_PROSE_CALLS and "html" in CONTAINER_PROSE_CALLS
+    at = AppTest.from_string(
+        'import streamlit as st\n'
+        'st.html("<p>the winner median is 82%</p>")\n'
+        'left, right = st.columns(2)\n'
+        'left.html("<p>second body</p>")\n'
+    ).run()
+    assert not at.exception
+    bodies = [t for k, t in texts(at) if k == "html"]
+    assert bodies == ["<p>the winner median is 82%</p>", "<p>second body</p>"], bodies
