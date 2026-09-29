@@ -108,9 +108,9 @@ def aggregate_impact(pipeline: "Pipeline") -> dict:
 #    _assess_vs_winners, and it holds whatever the number turns out to be.
 #
 # 2. PROVENANCE. IMPACT_BENCHMARKS (data/schema.py) carries a section comment,
-#    not a citation, and this package's own historical_awards.py says its
-#    winner-pattern figures are approximations because application-level
-#    microdata is not public.
+#    not a citation, and this package's own historical_awards.py rules its
+#    winner-pattern figures unsourced house constants (application-level
+#    microdata is not public, and the series they cited does not exist).
 #
 # _empty_impact_result() also returned "below_average" for a pipeline with zero
 # projects — a tier assigned where nothing was measured.

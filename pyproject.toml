@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nmtc-application-builder"
-version = "1.7.1"
+version = "1.7.2"
 description = "Flagship NMTC application intelligence platform — pipeline analysis, eligibility validation, readiness scoring, and visualization for CDEs"
 readme = "README.md"
 license = { text = "MIT" }
@@ -71,7 +71,25 @@ dependencies = [
     # field themselves. That is why the floor and the contract test ship
     # together: the floor makes the gate's answer binding rather than advisory.
     "nmtc-mapper>=0.5.0",
-    "nmtc-calc>=0.1.0",
+    # nmtc-calc: BOUNDED ON BOTH SIDES TO WHAT CI EXERCISES (1.7.2).
+    #
+    # ">=0.1.0" with no ceiling let nmtc-calc 0.3.0 (2026-09-28) resolve into
+    # every fresh install, 1.7.1 from PyPI included. 0.3.0 renamed
+    # TransactionResult.leverage_ratio to leverage_loan_to_equity_ratio, and a
+    # blanket `except Exception` in integrations/nmtc_calc_adapter turned the
+    # AttributeError into a silent manual fallback. Measured on the published
+    # 1.7.1: no figure moved (the fallback models the same identity) -- the
+    # harm was a stderr warning and a library path that had stopped running.
+    #
+    # FLOOR 0.2.1: the oldest version the ci.yml `nmtc-calc` leg runs the whole
+    # suite against. 0.1.0 and 0.2.0 were probed (the adapter's library path
+    # runs and equals the fallback on the 20-project sample) but no CI leg
+    # exercises them, and an untested floor is the open floor that broke
+    # nmtc-mapper 0.5.0 in the other direction.
+    # CEILING <0.4: nmtc-calc is 0.x and 0.3.0 broke this adapter on a minor.
+    # The next minor is admitted only after the contract test
+    # (tests/integrations/test_calc_contract.py) and the suite run against it.
+    "nmtc-calc>=0.2.1,<0.4",
     "cdfidata>=0.1.7",
     "impact-ledger>=0.2.0",
     # hmda-analyzer and cra-scraper were REMOVED in 1.2.0.

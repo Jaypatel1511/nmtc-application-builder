@@ -11,6 +11,10 @@ import streamlit as st
 from nmtcapp.data.historical_awards import NMTC_AWARD_ROUNDS, APPLICATION_VOLUME_TRENDS
 from nmtcapp.renderers._methodology import readiness_inline_qualifier
 from nmtcapp.renderers._round_provenance import round_provenance_paragraphs
+# 1.7.2 F2: "uses winner patterns only" read as if winner-level data fed
+# them. The bands are house constants; the clause says so, in the one
+# wording the package keeps for it.
+from nmtcapp.renderers._disclosure import ASSUMED_WINNER_PATTERNS_CLAUSE
 # THE COUNT IS INTERPOLATED, NOT TYPED (1.7.0, R1 addendum 2). This page said
 # "five of the fourteen" and "nothing for Non-Metropolitan Counties" from 1.4.0
 # — when PipelineProject.is_non_metro made both false on the generated
@@ -31,10 +35,11 @@ from nmtcapp.data.benchmark_thresholds import (
     TRACK_RECORD_TO_PROJECTION_MIN,
     TOTAL_APPLICANTS_CY2024_25, TOTAL_REQUEST_CY2024_25_B, TOTAL_AVAILABLE_CY2024_25_B,
 )
-from utils import apply_theme, md, metric_classification
+from utils import apply_theme, md, metric_classification, render_version_stamp
 
 apply_theme()
 st.title("📖 About & Methodology")
+render_version_stamp()  # 1.7.2 F1: which release is serving
 st.markdown(
     "Documentation for NMTC Application Builder — source documents, scoring framework, "
     "gating logic, and known limitations."
@@ -64,7 +69,8 @@ against the CDFI Fund's **published** CY 2024-2025 Review Process criteria.
 - A substitute for Phase 2 narrative review (Management Capacity and Capitalization
   Strategy are evaluated through qualitative reviewer judgment)
 - An authoritative replication of the CDFI Fund's proprietary scoring rubric
-  (sub-score weights within sections are best-effort interpretations)
+  (sub-criteria, weights and thresholds within sections are this tool's own
+  interpretations; Special Targeting is this tool's own criterion)
 """
 )
 
@@ -392,8 +398,8 @@ interpretations.
 
 ### 3. Non-winner data is not available
 The CDFI Fund publishes only winner-level data. Application data for non-winning
-applicants is not publicly disclosed. The `HistoricalBenchmarks` module uses
-winner patterns only.
+applicants is not publicly disclosed. The `HistoricalBenchmarks` module's bands
+are {ASSUMED_WINNER_PATTERNS_CLAUSE}.
 
 ### 4. Past reporting compliance not modeled
 Prior-round reporting issues can result in score deductions. This tool assumes

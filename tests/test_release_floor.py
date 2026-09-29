@@ -336,8 +336,45 @@ MARKER_EXPR = "not wheel"
 #: MAX_SDIST_SKIPS//2 plus up to nine of rounding slack, so at 79 it sits
 #: between 39 and 48 and this tree happens to land on 40. The next round that
 #: adds two tests will breach it. The answer then is to re-measure the
-#: ceiling, not to widen max_band_width, which is the 40 -> 20 -> 24 -> 28 ->
+#: ceiling, not to widen max_band_width (max_ceiling_share since 1.7.2), which is the 40 -> 20 -> 24 -> 28 ->
 #: 40 history that bound exists to stop.
+#:
+#: 1.7.2 (F1-F4): RE-MEASURED AT 79, UNCHANGED, AND THE BAND WIDTH IS THE
+#: PROBLEM THE PARAGRAPH ABOVE PREDICTED. The round adds three test modules
+#: and 39 tests; NONE skips in the sdist -- the enumeration reads
+#: streamlit_app/, which the job copies out; the two rendered-page modules
+#: drive the copied-out pages through AppTest against the installed package;
+#: the winner-pattern gate scans docs/ only in a checkout (the mkdocs.yml
+#: marker test_fund_attribution_source uses) and asserts, rather than skips,
+#: what it can reach. Measured from a real sdist build of this tree, the
+#: job's exact invocation on 3.12, `import nmtcapp` resolving under
+#: site-packages at 1.7.2, from a directory holding only tests/,
+#: streamlit_app/, README.md and pyproject.toml out of the tarball:
+#:
+#:     collected under -m "not wheel" 1,999   (2,000 collected, 1 deselected)
+#:     skipped in the sdist             -79
+#:     EXECUTED                       1,920
+#:     half                             960
+#:     rounded down                     960
+#:
+#: Band [960, 999], width 39. BUT THE WIDTH IS NOT A PROPERTY OF THE SUITE;
+#: it is 39 + ((collected - 79) // 2) % 10 + (0 if collected is odd else 1)
+#: at this ceiling, so test_max_sdist_skips_is_bounded_from_ABOVE_as_well was
+#: green at only three collected counts in every twenty -- 1,999, 2,000 and
+#: 2,001 -- and re-measuring could not help: the ceiling is its measurement.
+#: The same release's nmtc-calc contract test took the suite to 2,007 and
+#: reddened it. RESOLVED IN 1.7.2 BY CORRECTING WHAT THAT GATE MEASURES (see
+#: its body): it asserts MAX_SDIST_SKIPS <= 2 * max_ceiling_share (80) --
+#: independent of the collected count, red at 81 and 400 -- and leaves the
+#: band's total width (up to 49) to the rule release.yml states. At 79 the
+#: ceiling has ONE skip of headroom. Re-measured after the nmtc-calc fix:
+#: 2,007 collected under -m "not wheel", 79 skipped, 1,928 executed, FLOOR
+#: unchanged at 960. Re-measured again after fix round 1 (36 more tests):
+#: 2,043 collected, 79 skipped, 1,964 executed, half 982, FLOOR 980, band
+#: [980, 1021]. Re-measured after fix round 2 (44 more tests): 2,087
+#: collected, 79 skipped, 2,008 executed, half 1,004, FLOOR 1000, band
+#: [1000, 1043]. Re-measured after fix round 3 (24 more): 2,111 collected,
+#: 79 skipped, 2,032 executed, half 1,016, FLOOR 1010, band [1010, 1055].
 MAX_SDIST_SKIPS = 79
 
 _FLOOR_RE = re.compile(r"^\s*FLOOR=(\d+)\s*$", re.MULTILINE)
@@ -455,24 +492,56 @@ def test_max_sdist_skips_is_bounded_from_ABOVE_as_well(collected_count):
     [590, 617], twenty-seven wide; at 400 it is [410, 617], two hundred and
     seven wide, and every stale floor of the last five releases fits inside it.
 
-    So the upper bound is a bound on the BAND, which is the thing the ceiling
-    actually affects, measured from the tree rather than remembered.
+    So the upper bound is on the CEILING's contribution to the band:
+    ``MAX_SDIST_SKIPS <= 2 * max_ceiling_share`` (80). It is not a bound on
+    the band's total width, which can reach 49 -- see the note in the body.
     """
     lower = _floor_to_ten((collected_count - MAX_SDIST_SKIPS) // 2)
     upper = collected_count // 2
-    width = upper - lower
 
-    #: The widest FLOOR band this package will accept. Measured at 27 when
-    #: derived (1,234 collected, ceiling 40); 40 is that measurement with one
-    #: rounding step of headroom, and it is stated as a number here so that
-    #: widening it is an edit somebody has to defend rather than a side effect
-    #: of raising the ceiling.
-    max_band_width = 40
+    # 1.7.2: THIS IS A BOUND ON THE CEILING, AND IT IS WRITTEN AS ONE.
+    #
+    # Through 1.7.1 it asserted the whole band width, upper - lower <= 40.
+    # That width is the ceiling's share (MAX_SDIST_SKIPS / 2, give or take one
+    # for the collected count's parity) PLUS 0-9 of floor-to-ten rounding set
+    # by the collected count's last digit. At the ceiling it was calibrated
+    # for (40, width 27) the rounding fit in the headroom. At the measured
+    # ceiling of 79 the share alone is 39-40, so the gate was green at only 3
+    # collected counts in every 20 whatever MAX_SDIST_SKIPS was -- 1,998 red,
+    # 1,999-2,001 green, 2,007 red -- and re-measuring could not help, because
+    # the ceiling IS its measurement. The only other ways back to green were a
+    # wider maximum or adding tests until the count hit a window; both refused.
+    #
+    # WHAT IT NOW SAYS, PLAINLY: MAX_SDIST_SKIPS <= 2 * max_ceiling_share,
+    # i.e. <= 80. The first cut of this fix bounded
+    # upper - (collected - MAX_SDIST_SKIPS) // 2 instead, which is the same
+    # bound up to parity -- and at 81 that verdict still flipped with the
+    # collected count's parity (40 at odd counts, 41 at even). The explicit
+    # form does not: 80 passes and 81 fails at every count.
+    #
+    # WHAT IT DOES NOT BOUND: the band's total width. The accepted band is the
+    # ceiling's share plus up to 9 of rounding, so it can reach 49 wide
+    # (share 40 + rounding 9). The rounding sits in the band the freshness
+    # gate above uses -- that is the rule release.yml states -- and is not
+    # charged to the ceiling.
+    #
+    # HEADROOM: at the measured 79 skips the ceiling has ONE skip to spare.
+    # The next change that adds an sdist-only skip reddens this, and the answer
+    # then is to ask why the tarball stopped answering its own questions, not
+    # to raise max_ceiling_share.
+    #
+    #: Half the widest skip ceiling this package accepts -- the ceiling's
+    #: share of the FLOOR band. When first derived (1,234 collected, ceiling
+    #: 40) that share was 20 -- upper 617 less (1,234 - 40) // 2 = 597 -- in a
+    #: band 27 wide [590, 617]; 40 is stated as a number so that raising it is
+    #: an edit somebody has to defend.
+    max_ceiling_share = 40
+    share = upper - (collected_count - MAX_SDIST_SKIPS) // 2
 
-    assert width <= max_band_width, (
-        f"MAX_SDIST_SKIPS = {MAX_SDIST_SKIPS} opens the FLOOR band to "
-        f"[{lower}, {upper}] -- {width} wide, against a stated maximum of "
-        f"{max_band_width}.\n\n"
+    assert MAX_SDIST_SKIPS <= 2 * max_ceiling_share, (
+        f"MAX_SDIST_SKIPS = {MAX_SDIST_SKIPS}, above 2 * max_ceiling_share = "
+        f"{2 * max_ceiling_share}. Its share of the FLOOR band [{lower}, "
+        f"{upper}] is {share}.\n\n"
         "MAX_SDIST_SKIPS only ever widens this band downward, so a large value "
         "cannot make anything stricter; it can only stop "
         "test_release_floor_is_derived_from_the_current_suite from failing on "
@@ -553,7 +622,21 @@ def test_max_sdist_skips_is_bounded_from_ABOVE_as_well(collected_count):
 #: package, and the second builds the partial-unverified analysis from a
 #: fixture the suite already ships. Verified by running them in the unpacked
 #: tarball, 20 passed and 0 skipped, rather than inferred.
-CLAIMED_NEW_TEST_MODULES = 43
+#:
+#: 43 -> 46 at 1.7.2 (the 1.7.1 app settle read, F1-F4):
+#: tests/test_streamlit_surface_enumeration.py (F4),
+#: tests/test_winner_pattern_claims.py (F2) and
+#: tests/test_streamlit_page_provenance.py (F1, F3). tests/streamlit_render.py
+#: is a shared helper the last two import, not a test module, and is not
+#: counted. NONE of the three skips in the sdist job -- measured there, not
+#: reasoned: 79 skipped before and after, module for module.
+#:
+#: 46 -> 47 in the same release: tests/integrations/test_calc_contract.py,
+#: the nmtc-calc contract gate (0.3.0 renamed a field the adapter read, and a
+#: blanket except hid it). It does not skip in the sdist either: it needs
+#: only the installed nmtc-calc and pyproject.toml, which the job copies out,
+#: and its ci.yml half is conditional on a checkout rather than a skip.
+CLAIMED_NEW_TEST_MODULES = 47
 
 
 def test_the_module_count_in_this_comment_matches_the_tree():

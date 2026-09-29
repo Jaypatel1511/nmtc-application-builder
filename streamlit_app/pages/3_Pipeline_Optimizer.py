@@ -11,8 +11,11 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from nmtcapp.optimizer.constraints import OptimizationConstraints
+from nmtcapp.renderers._disclosure import ASSUMED_WINNER_PATTERNS
+from nmtcapp.renderers._round_provenance import round_provenance_paragraphs
 
 from utils import (
+    render_version_stamp,
     VALID_SECTORS,
     fmt_millions,
     fmt_pct,
@@ -20,6 +23,7 @@ from utils import (
     apply_theme,
     md,
     metric_classification,
+    render_methodology_disclosure,
 )
 from chart_style import (
     apply_matplotlib_theme, style_plotly_fig, PLOTLY_CONFIG,
@@ -34,16 +38,31 @@ apply_matplotlib_theme()
 # ---------------------------------------------------------------------------
 apply_theme()
 st.title("⚙️ Pipeline Optimizer")
+render_version_stamp()  # 1.7.2 F1: which release is serving
 st.markdown(
     "Automatically select the highest-scoring project subset from your pipeline given "
     "QEI budget, geographic diversity, and sector constraints. Uses a **greedy construction "
     "+ swap-based local search** algorithm — no LP/MIP solver required."
 )
 
+# WAS "maximizes composite alignment with historical NMTC winner patterns"
+# (1.7.2 F2) -- on the one page that carried no Methodology Disclosure at all
+# to contradict it. The objectives (optimizer/objectives.py) read the WINNER_*
+# dicts in data/historical_awards.py, which are unsourced house constants; the
+# subtitle now says so through the shared noun phrase, and the disclosure
+# Home renders is rendered here too (F3).
 st.info(
-    "The optimizer maximizes composite alignment with historical NMTC winner patterns. "
-    "Alignment score ≠ win probability — see the Win Alignment Scorer for framing guidance."
+    f"The optimizer maximizes composite alignment with {ASSUMED_WINNER_PATTERNS} "
+    "— see the Methodology Disclosure below. Alignment score ≠ win probability."
 )
+render_methodology_disclosure()
+
+# WHICH ROUND (1.7.2 F3). Pages 1, 2 and 4 have carried the round-provenance
+# note since 1.5.4; this page -- a scoring and selection surface -- carried no
+# round context at all: no NOAA, no deadline, no proxy disclosure. READ, NOT
+# RETYPED, exactly as page 2 renders it. It sits above the st.stop() below, so
+# a CDE who has not yet run the optimizer reads it too.
+st.info(md(round_provenance_paragraphs()[0]))
 
 st.markdown("---")
 

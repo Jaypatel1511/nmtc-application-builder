@@ -107,7 +107,7 @@ The Excel workbook contains multiple sheets, each formatted with headers, data v
 
 **Sheet: Distress Analysis**
 - Breakdown by distress level (project count, QEI dollars, QEI percentage)
-- Comparison column showing winner benchmarks
+- No winner-benchmark column: the package's winner patterns are house constants, and no generated document carries them
 - Native area and HMR sub-totals
 
 **Sheet: Geographic Distribution**
@@ -117,7 +117,7 @@ The Excel workbook contains multiple sheets, each formatted with headers, data v
 
 **Sheet: Impact Projections**
 - Total jobs created and retained
-- Jobs per million QEI vs. winner benchmarks
+- Jobs per million QEI (no winner comparison — see the Distress Analysis note above)
 - Affordable housing units
 
 **Sheet: Deal Economics**
@@ -212,7 +212,7 @@ pip install "nmtc-application-builder[viz]"
 Not an oversight, and not a small feature — a deliberate hold, recorded here so
 it is not "fixed" by someone who finds this page and the code disagreeing.
 
-`plot_winner_alignment` charts a pipeline against winner p25/p50/p75 values for
+`plot_winner_alignment` charts a pipeline against this tool's own house p25/p50/p75 values for
 three metrics. Those values are **unsourced**: every one of them is a `HOUSE`
 row in `tests/scoring_attribution.txt`, meaning no retrievable document
 supports it. `nmtcapp/data/historical_awards.py`'s own header states that the

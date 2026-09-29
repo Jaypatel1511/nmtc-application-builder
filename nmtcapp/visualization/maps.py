@@ -74,6 +74,14 @@ _DISTRESS_COLORS = {
 }
 
 
+
+#: THE TITLE SAID "Pipeline Sector Mix vs. Winner Patterns" (1.7.2 F2), at two
+#: sites -- the same shape B3 removed from plot_winner_alignment's suptitle
+#: ("Application vs. Historical Winner Patterns"), one function over. The
+#: reference marks are WINNER_SECTOR_PATTERNS, a house constant, and the title
+#: is the largest type on a figure that leaves the repository.
+_SECTOR_MIX_TITLE = "Pipeline Sector Mix vs. This Tool's Assumed Winner Patterns"
+
 def _require_matplotlib() -> None:
     if not _MATPLOTLIB_AVAILABLE:
         raise ImportError(
@@ -376,7 +384,7 @@ def plot_sector_distribution(application: "Application", output_path: str) -> st
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.text(0.5, 0.5, "No sector data available", ha="center", va="center",
                 transform=ax.transAxes, fontsize=12)
-        ax.set_title("Pipeline Sector Mix vs. Winner Patterns", fontsize=13, fontweight="bold")
+        ax.set_title(_SECTOR_MIX_TITLE, fontsize=13, fontweight="bold")
         plt.tight_layout()
         fig.savefig(output_path, dpi=300, bbox_inches="tight", facecolor="white")
         plt.close(fig)
@@ -460,8 +468,9 @@ def plot_sector_distribution(application: "Application", output_path: str) -> st
     # PAGE without opening the module -- documenting the annotation accurately
     # instead of removing it.
     #
-    # NOT REPLACED WITH A DISCLOSED VERSION. The sector TIERING is sourced (the
-    # Fund names its priority areas) and the bars already carry it; what share
+    # NOT REPLACED WITH A DISCLOSED VERSION. The sector TIERING is this
+    # package's own house classification (schema.TARGET_SECTORS; this comment
+    # called it sourced until 1.7.2 fix round 3) and the bars carry it; what share
     # of QEI belongs in each tier is the part with no referent, so there is no
     # disclosed form of this sentence to draw. The chart says what the pipeline
     # holds and stops there.
@@ -490,7 +499,7 @@ def plot_sector_distribution(application: "Application", output_path: str) -> st
     )
 
     ax.set_title(
-        "Pipeline Sector Mix vs. Winner Patterns",
+        _SECTOR_MIX_TITLE,
         fontsize=13, fontweight="bold", color="#222222", pad=12,
     )
 

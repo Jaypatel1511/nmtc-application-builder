@@ -127,7 +127,7 @@ VALID_SECTORS = [
 ]
 ```
 
-CDFI Fund priority sectors are `healthcare`, `affordable_housing`, and `education`. Projects in these sectors score highest on the sector diversity dimension.
+This package's own **house** high-priority tier (`schema.TARGET_SECTORS`, not a CDFI Fund classification) is `healthcare`, `affordable_housing` and `education`; `high_priority_pct` is the share of QEI in that tier. It does not enter the sector diversity score, which is the normalized Shannon entropy of the sector shares and is blind to which sectors they are.
 
 ---
 

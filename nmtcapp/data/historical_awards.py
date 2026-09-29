@@ -12,11 +12,15 @@ All figures are derived from public CDFI Fund disclosures:
       cumulative FY2003-FY2023. There is no FY2018-FY2023 span and no published
       jobs-per-QEI figure in any denominator.
 
-      FOUR "Source: CDFI Fund Annual Reports" comments below (on
+      FOUR "Source: CDFI Fund Annual Reports" comments stood below (on
       WINNER_DISTRESS_PATTERNS, WINNER_GEOGRAPHIC_PATTERNS,
-      WINNER_SECTOR_PATTERNS and WINNER_IMPACT_BENCHMARKS) cite the same
-      non-existent series, one of them naming a table inside it. Every value
-      under them is unsourced.
+      WINNER_SECTOR_PATTERNS and WINNER_IMPACT_BENCHMARKS), citing the same
+      non-existent series, one of them naming a table inside it, and three
+      of them asserting measurements of winners ("Winners consistently exceed this
+      floor", "Multi-state CDEs are strongly favored", "rarely awarded",
+      "winners rarely exceed 35%"). 1.7.2 struck them and their field
+      comments; each dict now carries an ASSUMED header. Every value under
+      them is unsourced.
 
       NOT SHIP-BLOCKING FOR 1.2.0, and the reason is narrow: none of these
       constants reaches a rendered application. Verified by generating all four
@@ -31,9 +35,12 @@ All figures are derived from public CDFI Fund disclosures:
 
 NOTE ON DATA QUALITY: Application-level microdata for non-winners is NOT publicly
 available. Winner-level data is sourced from CDFI Fund press releases and award
-announcements. All statistics about "typical winner" patterns are inferred from
-these public disclosures and should be treated as approximations, not precise
-empirical measures.
+announcements. The "typical winner" patterns below (WINNER_* dicts) were NOT
+inferred from those disclosures: 1.2.0's primary-source pass above found their
+cited series does not exist, and tests/scoring_attribution.txt rules every key
+HOUSE -- unsourced house constants, not measurements of past winners
+(renderers/_disclosure.ASSUMED_WINNER_PATTERNS_CLAUSE). This paragraph said they
+were "inferred from these public disclosures" until 1.7.2 F2.
 """
 from __future__ import annotations
 
@@ -137,13 +144,14 @@ NMTC_AWARD_ROUNDS: dict = {
 }
 
 # ---------------------------------------------------------------------------
-# Award size tier distribution
-# Source: Inferred from CDFI Fund award announcements; CDEs tend to cluster
-# around $25M, $35M, $45M, $55M, $65M (round numbers in applications).
+# Award size tiers -- a HOUSE PARTITION, constructed, not measured.
+# Five shares on a 0.05 grid summing to exactly 1.000 (tests/
+# scoring_attribution.txt). This header said "Inferred from CDFI Fund award
+# announcements" until 1.7.2; no announcement publishes a size distribution.
 # ---------------------------------------------------------------------------
 
 AWARD_SIZE_TIERS: dict = {
-    # (lower, upper): approximate share of awards in this tier
+    # (lower, upper): assumed share of awards in this tier (house)
     "under_25MM":   {"range": (0,          25_000_000),  "pct_of_awards": 0.10},
     "25_to_35MM":   {"range": (25_000_000, 35_000_000),  "pct_of_awards": 0.20},
     "35_to_50MM":   {"range": (35_000_000, 50_000_000),  "pct_of_awards": 0.35},
@@ -152,19 +160,20 @@ AWARD_SIZE_TIERS: dict = {
 }
 
 # ---------------------------------------------------------------------------
-# Distress concentration patterns in winning applications
-# Source: CDFI Fund Annual Reports; NOFA scoring criteria emphasize ≥75% in
-# distressed tracts. Winners consistently exceed this floor.
+# Distress concentration -- ASSUMED winner pattern: a house constant, not a
+# measurement of winning applications (see this module's docstring; 1.7.2 F2)
+# Its former source line cited a publication that does not exist (see this
+# module's docstring) and asserted a measurement of winners; struck in 1.7.2.
 # ---------------------------------------------------------------------------
 
 WINNER_DISTRESS_PATTERNS: dict = {
-    # Mean % of QEI in deep + severely distressed tracts across winners (2020-2023)
+    # Assumed mean % of QEI in deep + severely distressed tracts (house)
     "mean_pct_deep_or_severe": 0.81,
     "p25_pct_deep_or_severe":  0.72,
     "p50_pct_deep_or_severe":  0.82,
     "p75_pct_deep_or_severe":  0.91,
     "p90_pct_deep_or_severe":  0.95,
-    "min_pct_deep_or_severe":  0.50,   # floor — below this rarely awarded
+    "min_pct_deep_or_severe":  0.50,   # house floor
     # Native area bonus
     "mean_pct_native_area":    0.08,
     # Projects in eligible (LIC) tracts
@@ -172,9 +181,10 @@ WINNER_DISTRESS_PATTERNS: dict = {
 }
 
 # ---------------------------------------------------------------------------
-# Geographic diversity patterns in winning applications
-# Source: CDFI Fund Annual Reports; geographic reach is an explicit scoring
-# criterion. Multi-state CDEs are strongly favored.
+# Geographic diversity -- ASSUMED winner pattern: a house constant, not a
+# measurement of winning applications (see this module's docstring; 1.7.2 F2)
+# Its former source line cited a publication that does not exist (see this
+# module's docstring) and asserted a measurement of winners; struck in 1.7.2.
 # ---------------------------------------------------------------------------
 
 WINNER_GEOGRAPHIC_PATTERNS: dict = {
@@ -182,7 +192,7 @@ WINNER_GEOGRAPHIC_PATTERNS: dict = {
     "p25_states":         4.0,
     "p50_states":         7.0,
     "p75_states":         10.0,
-    "min_states":         2,    # rarely awarded with < 2 states
+    "min_states":         2,    # house floor
     "mean_projects":      14.5,
     "p50_projects":       13.0,
     "mean_hhi":           620,  # Herfindahl-Hirschman Index — lower = more diverse
@@ -190,12 +200,17 @@ WINNER_GEOGRAPHIC_PATTERNS: dict = {
 }
 
 # ---------------------------------------------------------------------------
-# Sector distribution patterns in winning applications
-# Source: CDFI Fund Annual Reports (Table: NMTC Investments by Business Type)
+# Sector distribution -- ASSUMED winner pattern: a house constant, not a
+# measurement of winning applications (see this module's docstring; 1.7.2 F2)
+# Its former source line cited a table inside a publication that does not
+# exist (see this module's docstring); it asserted nothing about winners
+# itself. The former header and two field comments did, stating the shares
+# and the 35% cap as measurements of selected applications. All struck in
+# 1.7.2 (header wording corrected, fix round 2).
 # ---------------------------------------------------------------------------
 
 WINNER_SECTOR_PATTERNS: dict = {
-    # Mean sector share of QEI across winning applications
+    # Assumed mean sector share of QEI (house constant, unsourced)
     "healthcare":          0.22,
     "affordable_housing":  0.18,
     "small_business":      0.17,
@@ -206,16 +221,22 @@ WINNER_SECTOR_PATTERNS: dict = {
     "other":               0.04,
     # Diversity metrics
     "mean_sectors_represented":  4.8,
-    "max_single_sector_pct":     0.35,  # winners rarely exceed 35% in one sector
+    "max_single_sector_pct":     0.35,  # house ceiling on one sector's share
 }
 
 # ---------------------------------------------------------------------------
-# Impact intensity patterns (jobs, units, outcomes per $1MM QEI)
-# Source: CDFI Fund Annual Reports, NMTC Impact Table (FY2018-FY2023)
+# Impact intensity (jobs, units, cost per $1MM QEI) -- ASSUMED winner
+# pattern: a house constant, not a measurement of winning applications (see
+# this module's docstring; 1.7.2)
+# Its former source line cited a table and an FY2018-FY2023 span inside a
+# publication that does not exist (see this module's docstring). Neither it
+# nor the former header mentioned winners: the WINNER_ name is what presents
+# these figures as a winner population. Struck in 1.7.2 (header wording
+# corrected, fix round 2).
 # ---------------------------------------------------------------------------
 
 WINNER_IMPACT_BENCHMARKS: dict = {
-    # Full-time equivalent jobs created per $1MM QEI
+    # Assumed full-time equivalent jobs created per $1MM QEI (house)
     "mean_jobs_per_mm_qei":    12.0,
     "p25_jobs_per_mm_qei":      6.0,
     "p50_jobs_per_mm_qei":     10.0,
@@ -281,7 +302,7 @@ def get_historical_winners() -> pd.DataFrame:
 
 
 def get_winner_distress_distribution() -> dict:
-    """Return distress concentration statistics across historical winning applications.
+    """Return this tool's assumed winner distress pattern (house constants, unsourced).
 
     Example::
 
@@ -292,7 +313,7 @@ def get_winner_distress_distribution() -> dict:
 
 
 def get_winner_sector_distribution() -> dict:
-    """Return sector allocation patterns in winning applications.
+    """Return this tool's assumed winner sector pattern (house constants, unsourced).
 
     Example::
 
@@ -303,7 +324,7 @@ def get_winner_sector_distribution() -> dict:
 
 
 def get_winner_geographic_patterns() -> dict:
-    """Return geographic diversity statistics across historical winning applications.
+    """Return this tool's assumed winner geographic pattern (house constants, unsourced).
 
     Example::
 
@@ -314,7 +335,7 @@ def get_winner_geographic_patterns() -> dict:
 
 
 def get_award_size_percentiles() -> dict:
-    """Return award amount tiers and their frequency across historical winners.
+    """Return this tool's house partition of award sizes (unsourced; not a measured frequency).
 
     Example::
 

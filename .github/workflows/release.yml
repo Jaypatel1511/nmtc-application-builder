@@ -1441,7 +1441,45 @@ jobs:
           # tests/test_release_floor.py permits, not inside it. It goes red at
           # 1,962 collected. The answer then is to re-measure the ceiling, not
           # to widen that maximum.
-          FLOOR=940
+          #
+          # RE-DERIVED AT 1.7.2 (the app settle read, F1-F4), and the gate
+          # said so first again: the round's 39 tests took the suite to 1,999
+          # collected and test_release_floor went red on FLOOR=940 before
+          # this file was opened. From a REAL SDIST BUILD of the branch, this
+          # job's exact invocation, on 3.12 (`import nmtcapp` under
+          # site-packages, reporting 1.7.2), ONLY tests/, streamlit_app/,
+          # README.md and pyproject.toml copied out of the tarball:
+          #
+          #     collected under -m "not wheel" 1,999   (2,000 less 1 deselected)
+          #     skipped in the sdist             -79
+          #     EXECUTED                       1,920
+          #     half                             960
+          #     rounded down                     960
+          #
+          # The ceiling does not move: none of the three new modules skips
+          # here. The band was [960, 999], width 39.
+          #
+          # RE-MEASURED AFTER THE SAME RELEASE'S NMTC-CALC FIX, and FLOOR does
+          # not move: 2,007 collected under -m "not wheel", 79 skipped, 1,928
+          # executed, half 964, rounded down 960. The ceiling gate in
+          # tests/test_release_floor.py now asserts MAX_SDIST_SKIPS <= 80
+          # (2 * max_ceiling_share) rather than the band's total width, which
+          # cycled with the last digit of the test count; see the 1.7.2 note
+          # on MAX_SDIST_SKIPS there. At 79 the ceiling has one skip spare.
+          #
+          # RE-MEASURED AGAIN AFTER 1.7.2's FIX ROUND 1, which adds 36 tests:
+          # a real sdist build of that tree, this job's exact invocation, on
+          # 3.12 -- 2,043 collected under -m "not wheel", 79 skipped, 1,964
+          # executed, half 982, rounded down 980. Band [980, 1021].
+          #
+          # RE-MEASURED AFTER 1.7.2's FIX ROUND 2, which adds 44 tests: 2,087
+          # collected under -m "not wheel", 79 skipped, 2,008 executed, half
+          # 1,004, rounded down 1000. Band [1000, 1043].
+          #
+          # RE-MEASURED AFTER FIX ROUND 3, which adds 24 tests: 2,111
+          # collected, 79 skipped, 2,032 executed, half 1,016, rounded down
+          # 1010. Band [1010, 1055].
+          FLOOR=1010
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()

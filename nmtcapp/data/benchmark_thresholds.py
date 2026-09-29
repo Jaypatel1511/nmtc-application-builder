@@ -52,10 +52,13 @@ SECTION A — CY 2024-2025 scoring thresholds, MIXED PROVENANCE
   1.2.3: the series went 1.2.1 -> 1.3.0, so the deferral pointed at a date
   that could not arrive, and has now outlived three releases.)
 
-SECTION B — Legacy winner-pattern thresholds (CY2020–2024)
+SECTION B — this tool's own ASSUMED legacy winner-pattern thresholds
   Used by HistoricalBenchmarks (benchmarks.py) for the 9-metric tier comparison.
-  Kept for backward compatibility. These are inferred from award announcements,
-  not published by the CDFI Fund.
+  Kept for backward compatibility. Unsourced house constants, not published by
+  the CDFI Fund and not measurements of past winners (benchmarks._METHODOLOGY;
+  every key ruled HOUSE in tests/scoring_attribution.txt). This paragraph said
+  "inferred from award announcements" and the header named "(CY2020–2024)"
+  until 1.7.2 F2 -- a provenance the registry had already denied.
 """
 from __future__ import annotations
 
@@ -369,8 +372,9 @@ UNRELATED_ENTITIES_MAX = 5
 
 
 # ===========================================================================
-# SECTION B — Legacy Winner-Pattern Thresholds (CY2020–2024)
-# Used by HistoricalBenchmarks (benchmarks.py). Inferred from award data.
+# SECTION B — Legacy Winner-Pattern Thresholds: this tool's ASSUMED bands
+# Used by HistoricalBenchmarks (benchmarks.py). House constants, unsourced --
+# not inferred from award data (1.7.2 F2; see the module docstring).
 # ===========================================================================
 
 WINNER_PATTERN_THRESHOLDS: dict = {

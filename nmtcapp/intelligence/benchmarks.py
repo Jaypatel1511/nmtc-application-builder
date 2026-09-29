@@ -360,7 +360,7 @@ class HistoricalBenchmarks:
                 f"no band is defined for metric {metric!r} in "
                 "WINNER_PATTERN_THRESHOLDS. Add one there, with an entry in "
                 "tests/scoring_attribution.txt saying where it came from — "
-                "this used to fabricate bands from the winner mean instead."
+                "this used to fabricate bands from a WINNER_* mean instead."
             )
         t_strong = float(thresholds["strong"])
         t_competitive = float(thresholds["competitive"])

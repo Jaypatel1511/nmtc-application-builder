@@ -1,7 +1,11 @@
 """Objective functions for the NMTC pipeline optimizer.
 
 All objectives return a float in [0, 1] where 1.0 is perfect alignment
-with historical NMTC winner patterns.
+with this tool's own assumed winner patterns -- the WINNER_* dicts in
+``nmtcapp/data/historical_awards.py``, which are unsourced house constants,
+not measurements of past winners (``renderers/_disclosure.
+ASSUMED_WINNER_PATTERNS_CLAUSE``; every key ruled HOUSE in
+``tests/scoring_attribution.txt``).
 """
 from __future__ import annotations
 
@@ -45,9 +49,10 @@ def score_distress_alignment(
     projects: List["PipelineProject"],
     requested_allocation: float,
 ) -> float:
-    """Score distress concentration alignment vs. historical winners.
+    """Score distress concentration alignment vs. this tool's assumed winner patterns.
 
-    Returns 0.0–1.0 where 1.0 = above winner p75 deep/severe distress.
+    Returns 0.0–1.0 where 1.0 = above the house p75 of deep/severe distress
+    (``WINNER_DISTRESS_PATTERNS``, an assumed house constant).
 
     Example::
 
@@ -73,9 +78,10 @@ def score_distress_alignment(
 
 
 def score_geographic_alignment(projects: List["PipelineProject"]) -> float:
-    """Score geographic diversity alignment vs. historical winners.
+    """Score geographic diversity alignment vs. this tool's assumed winner patterns.
 
-    Returns 0.0–1.0 where 1.0 = above winner p75 state count + low HHI.
+    Returns 0.0–1.0 where 1.0 = above the house p75 state count + low HHI
+    (``WINNER_GEOGRAPHIC_PATTERNS``, assumed house constants).
 
     Example::
 
@@ -107,7 +113,7 @@ def score_impact_alignment(
     projects: List["PipelineProject"],
     requested_allocation: float,
 ) -> float:
-    """Score impact intensity (jobs/MM QEI) alignment vs. historical winners.
+    """Score impact intensity (jobs/MM QEI) alignment vs. this tool's assumed winner patterns.
 
     Returns 0.0–1.0 where 1.0 = at/above winner top decile.
 
@@ -132,7 +138,7 @@ def score_impact_alignment(
 
 
 def score_sector_alignment(projects: List["PipelineProject"]) -> float:
-    """Score sector diversity alignment vs. historical winners.
+    """Score sector diversity alignment vs. this tool's assumed winner patterns.
 
     Returns 0.0–1.0 where 1.0 = winner-typical sector mix with no over-concentration.
 
@@ -230,7 +236,8 @@ def composite_alignment_score(
             one component basis.
 
     Returns:
-        Float in [0, 1] where 1.0 is perfect historical winner alignment.
+        Float in [0, 1] where 1.0 is perfect alignment with this tool's own
+        assumed (house) winner patterns.
         When the eligibility basis is excluded, the eligibility components
         (see ``ELIGIBILITY_COMPONENTS``) are dropped and the remaining
         weights renormalized — the result is a PARTIAL score; callers should

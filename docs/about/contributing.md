@@ -67,7 +67,7 @@ Tests are organized to mirror the source tree:
 ```
 tests/
   core/             # Application, CDEProfile, Pipeline, PipelineProject
-  data/             # Historical awards, schema constants
+  data/             # Round-level award statistics, house constants, schema
   intelligence/     # Distress, geographic, sector, impact, win probability, recommendations
   optimizer/        # PipelineOptimizer, OptimizationConstraints
   renderers/        # Word, Excel, PDF, Markdown builders
@@ -126,12 +126,12 @@ When reporting a bug, please include:
 
 ## Contributing data updates
 
-When the CDFI Fund publishes new award announcement data or annual reports, the `historical_awards.py` constants should be updated. If you have access to new data:
+When the CDFI Fund announces a new round's awards, the round-level constants in `historical_awards.py` should be updated. If you have the announcement or Award Book:
 
 1. Update the relevant constants in `nmtcapp/data/historical_awards.py`
 2. Add the new round entry to `NMTC_AWARD_ROUNDS` with a source comment
 3. Update `APPLICATION_VOLUME_TRENDS` lists
-4. Update `WINNER_DISTRESS_PATTERNS`, `WINNER_GEOGRAPHIC_PATTERNS`, `WINNER_IMPACT_BENCHMARKS`, or `WINNER_SECTOR_PATTERNS` if new annual report data changes the aggregate statistics
+4. **Do not "update" `WINNER_DISTRESS_PATTERNS`, `WINNER_GEOGRAPHIC_PATTERNS`, `WINNER_IMPACT_BENCHMARKS` or `WINNER_SECTOR_PATTERNS` from a new report.** They are this tool's own assumed winner patterns — unsourced house constants, not aggregate statistics of any published data — and `tests/scoring_attribution.txt` rules every key HOUSE. No CDFI Fund release carries them. Changing one is a methodology change under that file's standing ruling, *source it or delete it*: give the key a CITED row naming a retrievable document, or remove it
 5. Update the module docstring to reflect the new data coverage period
 6. Run the full test suite — some tests assert on specific constant values and may need updating
 7. Submit a pull request with the data source URL in the commit message

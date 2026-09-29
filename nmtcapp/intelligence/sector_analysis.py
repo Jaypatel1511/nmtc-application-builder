@@ -27,7 +27,8 @@ def analyze_sector_mix(pipeline: "Pipeline") -> dict:
     - ``sector_breakdown`` – per-sector {count, qei_dollars, pct, priority}
     - ``dominant_sector`` – sector with highest QEI share
     - ``sector_diversity_score`` – 0–100 score (100 = perfectly even spread)
-    - ``high_priority_pct`` – fraction of QEI in CDFI Fund priority sectors
+    - ``high_priority_pct`` – fraction of QEI in this package's own house
+      high-priority tier (``schema.TARGET_SECTORS``; not a CDFI Fund list)
     - ``sectors_represented`` – count of distinct sectors
 
     Example::

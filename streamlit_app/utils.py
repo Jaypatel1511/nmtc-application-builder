@@ -27,6 +27,15 @@ from nmtcapp.core.application_round import (  # noqa: F401  (round_label re-expo
     round_label,
 )
 from nmtcapp.renderers._cell_format import NOT_SUPPLIED_INPUT
+from nmtcapp.renderers._disclosure import (
+    ASSUMED_WINNER_PATTERNS,
+    ASSUMED_WINNER_PATTERNS_CLAUSE,
+)
+from nmtcapp.renderers._document_properties import generator_stamp
+from nmtcapp.data.benchmark_thresholds import (
+    COMMUNITY_OUTCOMES_MAX,
+    HOUSE_SPECIAL_TARGETING_MAX,
+)
 from nmtcapp.renderers._round_provenance import UPCOMING_ROUND
 
 #: The round the FICTIONAL sample CDE is filing into.
@@ -173,8 +182,8 @@ def _supplied_round(cde_extra: dict | None) -> str | None:
 #: cannot request more than the entire country's round, so a cell above this
 #: is not an ambitious request; it is a unit error. ``AWARD_SIZE_TIERS``
 #: deliberately leaves its top tier unbounded ("over_65MM" -> inf) and is
-#: therefore no help here: it describes what winners got, not what the cell
-#: can mean.
+#: therefore no help here: it is a house partition of award sizes
+#: (tests/scoring_attribution.txt rules it HOUSE), not what the cell can mean.
 _MAX_ALLOCATION_MILLIONS = 5_000
 
 #: What ``Application`` is given when an upload states no allocation.
@@ -917,15 +926,106 @@ def apply_theme() -> None:
     )
 
 
+def version_stamp() -> str:
+    """``"Running nmtc-application-builder vX.Y.Z"`` -- read at CALL time.
+
+    THE APP CARRIED NO VERSION ON ANY PAGE (1.7.2 F1). R6 stamped the workbook
+    because the 1.6.5 and 1.7.0 P0s were both diagnosed by reading a version
+    stamp; the deployed app is the surface a user is most likely to be looking
+    at, and through 1.7.1 the only thing that told a reader which release it
+    was serving was the Home banner's test count -- which moves only when the
+    suite does. This is R6's mechanism, not a second one:
+    ``_document_properties.generator_stamp()`` reads ``nmtcapp.__version__``
+    when called, so a monkeypatched version and the page agree.
+
+    WHAT IT CAN AND CANNOT TELL YOU. ``__version__`` comes from the INSTALLED
+    DISTRIBUTION'S metadata (``nmtcapp/__init__.py``), which on Streamlit
+    Cloud is the release ``requirements.txt`` pins -- the thing this stamp
+    exists to diagnose. It does not say which copy of the source is serving;
+    only ``nmtcapp.__file__`` can (the 1.3.1 deployment-drift finding).
+    """
+    return f"Running {generator_stamp()}"
+
+
+def render_version_stamp() -> None:
+    """Render the version stamp. Every page calls this (F1)."""
+    st.caption(version_stamp())
+
+
+#: WHAT THE WIN ALIGNMENT SCORER'S SCORE APPLIES (1.7.2 fix round 1, P11). The
+#: first cut said "with this tool's own sub-score weights", which understates
+#: the house content: Special Targeting (HOUSE_SPECIAL_TARGETING_MAX = 5 of
+#: Community Outcomes' 50) is a criterion in none of the primary documents,
+#: and several sub-scores use HOUSE_ thresholds (data/benchmark_thresholds).
+REVIEW_PROCESS_SCORE_BASIS = (
+    "the CDFI Fund's published CY 2024-2025 Review Process structure "
+    "(Business Strategy, Community Outcomes, Priority Points) with this "
+    "tool's own sub-criteria, weights and thresholds"
+)
+
+#: THE HOME PAGE'S METHODOLOGY DISCLOSURE, NOW READ BY EVERY PAGE THAT CARRIES
+#: IT (1.7.2 F2/F3). It lived inline in app.py, so the Pipeline Optimizer --
+#: the page whose objective IS alignment with the house winner constants --
+#: carried no disclosure at all. Built from
+#: ``_disclosure.ASSUMED_WINNER_PATTERNS_CLAUSE`` so the provenance words are
+#: one string package-wide; the rendered bytes are the ones Home rendered
+#: through 1.7.1, bold included.
+#:
+#: SCOPED IN FIX ROUND 1 (P6). It opened "Alignment scores measure similarity
+#: to this tool's own assumed winner patterns" -- true of the optimizer's
+#: score and the benchmark bands, false of the Win Alignment Scorer's, which
+#: page 2 also calls an alignment score. The lead-in now names what uses the
+#: patterns, as the README already did; the clause is unchanged.
+METHODOLOGY_DISCLOSURE = (
+    "⚠️ **Methodology Disclosure:** The optimizer's alignment score and the "
+    "benchmark bands measure similarity to "
+    + ASSUMED_WINNER_PATTERNS_CLAUSE.replace(
+        ASSUMED_WINNER_PATTERNS, f"**{ASSUMED_WINNER_PATTERNS}**", 1)
+    + ". The Win Alignment Scorer's score applies "
+    + REVIEW_PROCESS_SCORE_BASIS
+    + ". None of the three is a win probability. The CDFI Fund does not "
+    "publish non-winner application data, so a true probability of selection "
+    "cannot be computed, and it publishes no distribution of applicant "
+    "characteristics, so no percentile of applicants can be computed either. "
+    "Scores are intended to guide pipeline improvement, not predict award "
+    "outcomes."
+)
+
+
+def render_methodology_disclosure() -> None:
+    """Render the Methodology Disclosure (Home, Pipeline Optimizer)."""
+    st.info(METHODOLOGY_DISCLOSURE)
+
+
 def render_methodology_warning() -> None:
-    """Display the mandatory win-alignment methodology disclosure."""
+    """Display the Win Alignment Scorer's own methodology notice.
+
+    THIS SAID THE SCORE "MEASURES HOW CLOSELY THIS APPLICATION MATCHES PATTERNS
+    OBSERVED IN HISTORICAL NMTC AWARD WINNERS (CY2020–CY2024)" (1.7.2 F2). That
+    was false twice. The patterns were never observed -- they are house
+    constants, per ``_disclosure.ASSUMED_WINNER_PATTERNS_CLAUSE`` -- and the
+    score on this page does not read them at all:
+    ``intelligence/win_probability`` scores the CY 2024-2025 Review Process
+    structure, and its own ``_METHODOLOGY`` says so. The house winner bands DO
+    reach this page, through the recommendations panel
+    (``HistoricalBenchmarks``), so the notice names them there, with their
+    provenance, rather than attaching them to the score.
+    """
     st.warning(
-        "**Methodology Notice:** The alignment score measures how closely this "
-        "application matches patterns observed in historical NMTC award winners "
-        "(CY2020–CY2024). It is **not** a win probability. The CDFI Fund does not "
-        "publish non-winner application data, so a true probability of selection "
-        "cannot be computed. A high alignment score improves competitiveness but "
-        "does **not** guarantee an award."
+        f"**Methodology Notice:** The score on this page applies "
+        f"{REVIEW_PROCESS_SCORE_BASIS}. One of those sub-criteria, Special "
+        f"Targeting ({HOUSE_SPECIAL_TARGETING_MAX} of Community Outcomes' "
+        f"{COMMUNITY_OUTCOMES_MAX} points), is this tool's own criterion, not "
+        "the Fund's. It is **not** a win probability. The CDFI Fund "
+        "does not publish non-winner application data, so a true probability "
+        "of selection cannot be computed. A high alignment score improves "
+        "competitiveness but does **not** guarantee an award. Some "
+        # WAS "The recommendations below and the Pipeline Optimizer compare"
+        # (fix round 2, item 4). RecommendationEngine reads
+        # WINNER_PATTERN_THRESHOLDS for the eligibility recommendation only;
+        # the other recommendations compare nothing with the house patterns.
+        "recommendations below, and the Pipeline Optimizer, compare a pipeline "
+        f"with {ASSUMED_WINNER_PATTERNS_CLAUSE}."
     )
 
 

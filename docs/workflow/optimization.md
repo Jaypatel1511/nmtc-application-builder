@@ -3,7 +3,7 @@
 The pipeline optimizer selects a subset of your pipeline that maximizes the composite alignment score subject to constraints you define — QEI budget, project count, minimum state count, required sectors, and more. It is designed to answer the question: "Given these 25 projects, which 12–15 should I put in the application to score as well as possible?"
 
 !!! warning "Important framing"
-    The optimizer maximizes alignment with historical winner patterns. It does not maximize the probability of winning an award (which cannot be computed from public data alone) and does not guarantee that the selected subset will receive funding. See [Win Alignment Scoring](win-alignment.md) for the full methodology disclosure.
+    The optimizer maximizes alignment with this tool's own assumed winner patterns, which are unsourced house constants — not measurements of past winners, and not a CDFI Fund publication. It does not maximize the probability of winning an award (which cannot be computed from public data alone) and does not guarantee that the selected subset will receive funding. See [Win Alignment Scoring](win-alignment.md) for the full methodology disclosure.
 
 ---
 

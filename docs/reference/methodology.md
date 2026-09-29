@@ -13,7 +13,7 @@ This tool's scoring framework is derived from the following primary sources:
 | [CY 2024-2025 NMTC Allocation Application Review Process](https://www.cdfifund.gov/system/files/2025-12/CY_2024_25_NMTC_Program_Review_Process.pdf) | Primary source for scored sections, sub-criteria, gating thresholds |
 | [CY 2024-2025 NMTC Allocation Application (NOAA)](https://www.cdfifund.gov/programs-training/programs/new-markets-tax-credit) | Application structure and narrative requirements |
 | [CY 2024-2025 NMTC Application FAQ](https://www.cdfifund.gov/programs-training/programs/new-markets-tax-credit) | Clarifications on scoring intent and eligibility criteria |
-| CDFI Fund NMTC Award Announcements, CY2020–CY2024 | Historical award statistics used in the benchmarks module |
+| CDFI Fund NMTC Award Announcements and Award Books, CY 2020 – CY 2024-2025 | Round-level statistics only (`NMTC_AWARD_ROUNDS`: applications, awards, allocation) shown on the Streamlit About page. The benchmark bands (`WINNER_PATTERN_THRESHOLDS`) use no award data — they are house constants |
 
 ---
 
@@ -25,7 +25,7 @@ A self-assessment tool for CDEs to evaluate how well their pipeline and organiza
 
 - **Not a win probability calculator.** The CDFI Fund does not publish scores or application data for non-winning applicants. A true probability of selection cannot be computed from available data.
 - **Not a substitute for Phase 2 narrative review.** Phase 2 evaluates Management Capacity and Capitalization Strategy through qualitative reviewer judgment. This tool does not model those criteria.
-- **Not authoritative.** The CDFI Fund's actual scoring rubric is proprietary. This tool's sub-score weights are best-effort interpretations of the published guidance; the CDFI Fund does not publish exact point values for individual sub-criteria.
+- **Not authoritative.** The CDFI Fund's actual scoring rubric is proprietary. This tool's sub-criteria, weights and thresholds are its own interpretation of the published guidance (Special Targeting is this tool's own criterion, not the Fund's); the CDFI Fund does not publish exact point values for individual sub-criteria.
 
 ---
 
@@ -454,7 +454,7 @@ An application can have a high readiness score but a low alignment score (eligib
 2. **Past reporting compliance deductions.** Late or inaccurate prior-round reporting can result in score deductions. This tool assumes clean compliance history; it is flagged in `phase2_flags.prior_reporting_compliance_risk`.
 3. **Subjective reviewer judgment.** Phase 1 reviewers exercise judgment on the quality of narrative explanations. Narrative quality, internal consistency, and clarity cannot be quantified from pipeline data alone.
 4. **Anomalous score resolution.** When two reviewers disagree by more than a threshold, a third reviewer resolves the discrepancy. This process is not modeled.
-5. **Non-winner data.** The CDFI Fund does not publish application-level data for non-winning applicants. Historical benchmarks in `HistoricalBenchmarks` are derived from winner-level data only.
+5. **Non-winner data.** The CDFI Fund does not publish application-level data for non-winning applicants. The bands in `HistoricalBenchmarks` are this tool's own house constants — unsourced, not derived from winner-level data, and not measurements of past winners.
 
 ---
 

@@ -59,6 +59,51 @@ jobs:
     - name: Run tests
       run: pytest -m "not wheel" -v
 
+  # THE NMTC-CALC FLOOR, EXERCISED (1.7.2). The `test` matrix above installs
+  # ".[dev]", which resolves the NEWEST nmtc-calc the bound in pyproject.toml
+  # admits (0.3.0 today). This leg pins the FLOOR, so both ends of the
+  # declared range run the whole suite on every pull request.
+  #
+  # WHY IT EXISTS. nmtc-calc 0.3.0 renamed TransactionResult.leverage_ratio,
+  # and a blanket `except Exception` in integrations/nmtc_calc_adapter hid
+  # the break as a silent manual fallback on every fresh install of 1.7.1.
+  # The adapter now reads either name and fails loudly on anything else, and
+  # tests/integrations/test_calc_contract.py checks the installed API. A
+  # bound is only as honest as the versions something actually runs, so the
+  # floor gets its own run rather than a comment claiming it was tested.
+  #
+  # One interpreter, not the matrix: the question is the nmtc-calc version,
+  # and the matrix already covers the interpreters. Keep NMTC_CALC_FLOOR
+  # equal to the floor in pyproject.toml -- test_calc_contract asserts it.
+  nmtc-calc-floor:
+    # Runner pinned, not `ubuntu-latest`: actions/python-versions ships NO Python
+    # 3.9 build for ubuntu-26.04, and the `ubuntu-latest` label moves to Ubuntu 26
+    # on 2026-10-19. Remove this pin once this repo's Python floor rises above 3.9
+    # and every version in every matrix here has an ubuntu-26.04 build.
+    runs-on: ubuntu-24.04
+    env:
+      NMTC_CALC_FLOOR: "0.2.1"
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        # Full history for the same gate the `test` job needs it for
+        # (test_the_changelogs_rendered_baseline_delta_matches_the_tree).
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+      with:
+        python-version: "3.12"
+
+    - name: Install dependencies with nmtc-calc at the declared floor
+      run: |
+        python -m pip install --upgrade pip
+        pip install ".[dev]" "nmtc-calc==${NMTC_CALC_FLOOR}"
+        python -c "from importlib.metadata import version; v = version('nmtc-calc'); print('nmtc-calc', v); assert v == '${NMTC_CALC_FLOOR}', v"
+
+    - name: Run tests
+      run: pytest -m "not wheel" -v
+
   # THE MERGE-TO-PUBLISH WINDOW, MADE IMPOSSIBLE TO MISS (1.6.1 T2).
   #
   # THE FAILURE THIS EXISTS FOR. Streamlit Community Cloud deploys the app's

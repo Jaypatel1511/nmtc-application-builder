@@ -5,12 +5,487 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## Unreleased, no version assigned — `docs-deploy.yml` honours a real deploy only from `main` or a release tag
+## [1.7.2] — 2026-09-29
 
-*Unbracketed for the same reason as the section below; the version is the
-release manager's call.*
+**PATCH. THE 1.7.1 APP SETTLE READ, EXECUTED: F1–F4.** No threshold,
+weight, band, gate, grade or score moves; no methodology changes; no federal
+claim is added. **No generated document moves** — `tests/rendered_baseline/`
+is byte-identical to `0f0d4c2`, because none of the claims this release
+strikes ever reached a generated document. `tests/cli_baseline/` moves by
+four lines, all one completeness warning (fix round 1, P12). What moves is
+the deployed Streamlit app, the README, the docs site, the example notebook,
+one chart title, one CLI warning and the package's docstrings.
 
-### Fixed — a hand-run from any branch could publish that branch's docs
+Two items stop a surface overclaiming the provenance of a house heuristic
+(F2 — the one the settle read ranked first — and F3's disclosure half), one
+restores the diagnostic that found two P0s (F1), one gives the Pipeline
+Optimizer the round context every other page carries (F3), and one fixes the
+instrument the next settle read will be run from (F4). **This release also
+ships the two changes merged to `main` since 1.7.1 without a version** — the
+`docs-deploy.yml` ref guard (PR #43) and the `test_noaa_table_1` date-set
+fix (PR #42) — recorded at the end of this entry as they were written.
+
+**And it repairs a dependency break that reached 1.7.1 on PyPI.** nmtc-calc
+0.3.0, published 2026-09-28, renamed a field this package's economics adapter
+read; a blanket `except Exception` turned the break into a silent fallback on
+every fresh install. Measured on the published 1.7.1, **no figure moved** —
+see *nmtc-calc 0.3.0* below for the diffs — and the adapter now runs its
+library path on nmtc-calc 0.2.x and 0.3.x and fails loudly on anything else.
+
+### F4 — the app's surface list is derived from the directory
+
+`02_current_state` recorded "five prose entry points across four pages". The
+app has **five pages**, and one of the five "entry points" was a line inside
+`md()`'s docstring. The recorded instrument,
+`grep -rn "q25_basis_note\|round_provenance_paragraphs"`, enumerates two
+function names, so it could not see Home or the Pipeline Optimizer — the two
+pages the settle read found defects on.
+
+`tests/test_streamlit_surface_enumeration.py` replaces it. Pages are counted
+from `streamlit_app/` (`app.py` plus every `pages/*.py`), each must be
+classified in `PAGE_REGISTRY` and every entry must be a file on disk; the
+`st.navigation` list must name exactly those files; every prose render site of
+a known shape (`st.markdown`/`write`/`caption`/`info`/`warning`/`error`/
+`success`/`title`/`header`/`subheader`/`text`/`toast`/`expander`/`code`/
+`metric`/`dataframe`/`table`/`tabs`, the same on `st.sidebar` and on layout
+containers including subscripted ones, every `help=` tooltip, and the `utils`
+helpers that render on a page's behalf — fix round 1 added `code` onwards)
+is found by AST walk with its per-page count pinned as a review trigger; and
+calls to the provenance functions are counted per page from the AST. A
+docstring can never be a site, asserted against the `utils.py` line the old
+table counted. **Red-proved:** an added `pages/5_Mutant.py` fails the
+both-directions and navigation tests; an added caption on page 3 fails its
+count. `python tests/test_streamlit_surface_enumeration.py` prints the table.
+
+After this release the round-provenance / Q25 render sites are **six**:
+`app.py`, `1_Pipeline_Analyzer.py` (×2), `2_Win_Alignment_Scorer.py`,
+`3_Pipeline_Optimizer.py`, `4_About_and_Methodology.py`.
+
+### F2 — no surface claims the house winner constants were measured from past winners
+
+The Home page's Methodology Disclosure has said since 1.2.x that the winner
+patterns are *"this tool's own assumed winner patterns, which are unsourced
+house constants — not measurements of past winners, and not a CDFI Fund
+publication."* Two surfaces on the same app said the opposite, unqualified —
+Home's "Getting started" and the Pipeline Optimizer's subtitle, on the one
+page with no disclosure. **A repo-wide sweep found the same claim on
+twenty-odd more surfaces**, including one the settle read did not list: the
+**Win Alignment Scorer's own Methodology Notice**, *"The alignment score
+measures how closely this application matches patterns observed in historical
+NMTC award winners (CY2020–CY2024)"* — false twice, because the patterns were
+never observed **and the score on that page does not read them**
+(`intelligence/win_probability` scores the CY 2024-2025 Review Process
+structure; its own `_METHODOLOGY` says so).
+
+**The fix is R11's.** The clause moves into `renderers/_disclosure` as
+`ASSUMED_WINNER_PATTERNS` / `ASSUMED_WINNER_PATTERNS_CLAUSE`, verbatim from
+Home; surfaces interpolate it; the Home
+disclosure becomes `utils.METHODOLOGY_DISCLOSURE`, rendered on Home and on the
+Pipeline Optimizer from one string.
+
+**What changed, by surface.** Struck and replaced:
+
+* **App.** Home "Getting started" step 2 (now: *"score your application
+  against the CY 2024-2025 Review Process structure. It is not a win
+  probability"*) and step 3; Home's Win Alignment Scorer card (*"patterns in
+  historical NMTC winners across five dimensions"* — the five were the
+  OPTIMIZER's objectives; the card now says what page 2's own header says);
+  page 2's Methodology Notice (now states what the score applies and where the
+  house winner patterns do appear — the recommendations and the optimizer —
+  with the clause); page 3's subtitle, plus the shared disclosure; page 4
+  Known Limitations 3 (*"uses winner patterns only"*); the optimizer's
+  `methodology_note`, rendered in page 3's expander and by `summary()`.
+* **Package.** The sector-mix chart title at two sites (*"vs. Winner
+  Patterns"* → *"vs. This Tool's Assumed Winner Patterns"* — B3's precedent,
+  one function over); docstrings in `optimizer/objectives` (6),
+  `optimizer/pipeline_optimizer` (2), `core/application` (2),
+  `intelligence/pattern_analysis` (3), `data/historical_awards` (4, plus the
+  data-quality note that still said *"inferred from these public
+  disclosures"*); comments in `historical_awards`, `benchmark_thresholds`
+  Section B (*"Inferred from award data"*), `schema`, `impact_aggregator`
+  and `streamlit_app/utils`.
+* **README** (8), **`streamlit_app/README.md`**, **docs** (`limitations`,
+  `why`, `api`, `data-sources`, `methodology`, `optimization`,
+  `output-formats`), and **the example notebook**'s two sections. Among them:
+  the README's *"scoring your pipeline against five years of CDFI Fund award
+  data"*, `api.md`'s *"per-metric tier classifications and percentile
+  positions"* (the bands are explicitly not percentiles), and
+  `output-formats.md`'s two workbook columns *"showing winner benchmarks"*,
+  which do not exist.
+
+Where a twin described the Win Alignment Scorer, the replacement is that
+page's own description — **not** the clause, which would have swapped one
+false provenance for another.
+
+**`tests/test_winner_pattern_claims.py` — a spelling registry, not a
+detector.** (1) FORBIDDEN spellings — *historical … winners*, *observed in …
+winners*, *trained on … winner data*, *typical winner*, *what winners do*,
+*winning applications*, *compared to past winners*, and after fix round 1
+(P8/X4) *award data*, *measured from … award recipients*, *award-winning*,
+*successful … applicants*, possessive *winners'*,
+*past/prior/previous/recent/historical* near *winn\**, and *winners* after
+*vs./against/compared*; and after fix round 2 *winner p75/median/mean*,
+winners as the subject of a measurement verb (*Winners consistently exceed*,
+*Award winners concentrate*), *across winners*, *winning CDEs*, awardees /
+allocatees / award and allocation recipients **only in a claim context**
+(a statistic of them, a comparison with them, a possessive, or
+*past/recent/prior-round* on the plural), the award books or Public Data
+Release as a band's calibration source, and *top-ranked / selected CDEs from
+prior rounds*; and after fix round 3 a statistic word within 3 tokens of an
+allocatee / awardee / recipient noun (*Prior Allocatees averaged*, *top
+quartile of allocatees*, *historical allocatee data*), a selected population
+with a statistic verb (*Winning pipelines average*, *awarded CDEs exceed*),
+and derivations from *actual NMTC awards*, *award data* and *award books* —
+over every page rendered cold and after its action, the committed
+rendered and CLI baselines, the installed package, `streamlit_app/`, README
+and `pyproject.toml` as whole files, and in a checkout `docs/`, `examples/`,
+`scripts/`, `mkdocs.yml`, `CONTRIBUTING.md`, `CITATION.cff`. Rendered text
+gets no exemption; a source line that QUOTES withdrawn wording to record it
+is a listed RECORD with its reason, excusing exactly one line, never dead.
+(2) AGREEMENT — a winner pattern/benchmark/figure/distribution must carry a
+qualifier within 6 tokens, in the same clause (fix round 1; the first cut
+accepted one anywhere in the sentence). A negation excuses a rule-1 match
+only when it directly governs it — before the match or its determiner, or
+before a denial head that takes it as object (*not measurements of past
+winners*); fix round 1's 4-token window excused *It is no secret that past
+winners averaged 80%* (fix round 2). (3) The clause's
+true half is pinned. (4) The clause is verbatim on every page that is not
+classified otherwise (page 1 is, with its reason), in the README and in three
+docs pages, and no `.py` retypes it. **Red-proved on ten mutations**, among
+them Home's step 2 and page 3's subtitle restored, page 2's 1.7.1 notice
+restored, the clause softened, the clause retyped and a dead record.
+
+`tests/fund_attribution_allowlist.txt`: the About page's Known Limitations
+key is re-derived (ruling unchanged — the new sentence denies a Fund
+attribution rather than adding one), and the NARRATIVE entry that accepted
+`pattern_analysis`'s *"aggregates data from CDFI Fund award announcements"*
+is removed, because that sentence is struck.
+
+### F1 — every page says which release is serving
+
+`utils.render_version_stamp()` renders *"Running nmtc-application-builder
+vX.Y.Z"* under every page's title, read from `nmtcapp.__version__` at call
+time through R6's own `_document_properties.generator_stamp()`. Through 1.7.1
+the only thing that identified the deployed release was the Home banner's
+test count. `tests/test_streamlit_page_provenance.py` asserts the stamp on
+every page (parametrized from the directory), cold and after the page's
+action, against the installed distribution's version, and once with the
+version monkeypatched. **Red-proved:** the stamp removed from page 4; page 3's
+stamp typed as a literal.
+
+### F3 — the Pipeline Optimizer renders the round-provenance note
+
+Page 3 renders `round_provenance_paragraphs()[0]` via `st.info(md(...))`,
+above its `st.stop()`; Home does too, because its sample-CDE box names a
+round. The same module asserts the note on the COLD render of every page;
+an exemption needs a written reason and there are none. **Red-proved:** the
+call removed (the 1.7.1 state); the call moved below `st.stop()`.
+
+### nmtc-calc 0.3.0 — the adapter's library path had stopped running on every fresh install
+
+**What broke.** `pyproject.toml` declared `nmtc-calc>=0.1.0`, so every fresh
+install — **including `nmtc-application-builder==1.7.1` from PyPI** — resolved
+nmtc-calc 0.3.0 from its release on 2026-09-28. 0.3.0 renamed
+`TransactionResult.leverage_ratio` to `leverage_loan_to_equity_ratio`.
+`integrations/nmtc_calc_adapter` read the old name inside a blanket `except
+Exception`, so the `AttributeError` became a manual fallback with one log
+line: *"nmtc-calc computation failed ('TransactionResult' object has no
+attribute 'leverage_ratio'). Using manual computation fallback."*
+`tests/test_cli_baseline` was red on untouched `main` for this reason alone.
+
+**The harm, measured on the published 1.7.1** — two fresh venvs,
+`nmtc-application-builder[output]==1.7.1` with nmtc-calc 0.2.1 and with 0.3.0:
+
+* The four generated formats, extracted as text (markdown, `.docx`
+  paragraphs and cells, `.xlsx` cells, PDF text): **no difference.**
+* `nmtcapp analyze --demo` stdout: **no difference.** Its stderr gains the
+  fallback line.
+* `compute_pipeline_economics` on the 20-, 5- and 1-project samples: **every
+  key identical** (20 projects: total QEI $122,500,000, NMTCs $47,775,000,
+  investor equity $39,653,250, leverage loans $82,846,750, CDE fees
+  $3,062,500, leverage/equity 2.089 under both). The fallback models the same
+  identity; that is why nothing moved, and nothing checked it.
+* Rounding, stressed: 400 random pipelines with odd-cent QEIs, library path
+  (0.2.1) against the fallback: 1 differed, by **$1** in `total_qei`.
+* Streamlit: the warning goes to the server log. No rendered element on any
+  of the five pages carries it (279 elements scanned under 0.3.0).
+
+**The fix.**
+
+* The ratio is read through `leverage_to_equity()`, which accepts
+  `LEVERAGE_TO_EQUITY_FIELDS` — `leverage_loan_to_equity_ratio` (≥ 0.3.0),
+  `leverage_ratio` (0.2.x) — and raises, naming the installed version, when
+  neither exists. Verified from both sources: `structure()` computes
+  `deal.leverage_loan / deal.investor_equity` (0.2.1 `transaction.py:85`,
+  0.3.0 `:127`), and 0.3.0's own note says *"(0.2.1 called it
+  leverage_ratio.)"*. `qei`, `total_nmtcs` (39% of QEI; 0.3.0 derives it as
+  `statute.TOTAL_CREDIT_RATE`, the seven §45D percentages summed, 0.39),
+  `investor_equity` (credits × price), `leverage_loan` (QEI − equity) and
+  `cde_fee` (QEI × rate) are unchanged in name and definition.
+* The `NMTCDeal` keywords the adapter passes are all still fields in 0.3.0
+  (it passes no `compliance_years`, which 0.3.0 dropped). The house constants
+  clear 0.3.0's new contract: every rate in [0, 1), and `cde_fee_rate` 0.025
+  against the negative-tranche bound 0.39 × 0.83 = 0.3237.
+* The blanket handler is split. `ModuleNotFoundError` for `nmtccalc` itself
+  falls back (nmtc-calc not installed); a missing submodule or name inside it
+  propagates (fix round 1, X7). `ValueError` falls back — nmtc-calc's
+  documented input refusal (`NegativeTrancheError` and `UnbalancedStackError`
+  subclass it); a row with QEI above total project cost is refused by every
+  nmtc-calc version and accepted by `PipelineProject`. `ArithmeticError`
+  falls back too — a row of 5e-324 underflows equity to 0 and `structure()`
+  divides by it; 1.7.1 fell back there, the first cut of 1.7.2 crashed
+  (fix round 1, X6). Both fall back only from `NMTCDeal(...)` and
+  `structure()` for one project; the adapter's own summing and rounding are
+  outside the handler, and totals too large for a float raise
+  `PipelineTotalsOverflow` from either path (fix round 2). **Everything else
+  propagates.**
+* Bound: **`nmtc-calc>=0.2.1,<0.4`**. The floor is the version CI now runs
+  the whole suite against; 0.1.0 and 0.2.0 were probed (the library path runs
+  and equals the fallback on the 20-project sample) but are not admitted,
+  because nothing exercises them. The ceiling is because 0.3.0 broke this
+  adapter on a minor.
+* `ci.yml` gains an `nmtc-calc-floor` job: Python 3.12, `".[dev]"` plus
+  `nmtc-calc==0.2.1`, the version asserted, the whole suite. The `test`
+  matrix resolves the newest version the bound admits.
+* `tests/integrations/test_calc_contract.py`, against whichever nmtc-calc is
+  installed: inside the bound, and `ci.yml`'s floor pin equals it; every
+  `result.<field>` read and `NMTCDeal` keyword, derived from the adapter by
+  AST walk, exists; the fields mean what the adapter assumes; the house
+  constants clear the input contract; **the library path is taken** (the
+  fallback is made to raise) and equals the fallback; an API mismatch raises;
+  an import failure and an input refusal each fall back with a warning.
+  **Red-proved:** 1.7.1's `result.leverage_ratio` read (3 red); with the
+  blanket `except` as well (3 red); the blanket `except` alone (1 red);
+  `cde_fee_rate` 0.33 (4 red); the `ci.yml` floor pin at 0.2.0 (1 red).
+
+### Fix round 1 — two fresh hostile lanes (surfaces and prose; execution and release) returned FIX FIRST
+
+* **X1, X2 — the new Streamlit tests.** `test_the_home_and_optimizer_disclosures_are_one_string`
+  failed on Python 3.9, where the resolver picks streamlit 1.50 and `st.info`
+  keeps a leading emoji in its text; both forms are now accepted and nothing
+  else. It also failed when selected alone (`import utils` before the helper
+  that sets `sys.path`); every one of the 51 test ids in the new modules was
+  then run one at a time. **Measured on a real Python 3.9.23.**
+* **X3 — the ceiling gate** now says what it bounds (see *Census*).
+* **X6, X7 — nmtc-calc and degenerate rows.** See *nmtc-calc 0.3.0*.
+  `PipelineProject` also refuses NaN and inf by name (`nan <= 0` is False, so
+  NaN passed every sign check), and `_required_int` no longer raises a bare
+  `OverflowError` on `"inf"`.
+* **P1 — "280–340 applications per round with a ~35% acceptance rate"**
+  (README, the PyPI page; `why.md`). `NMTC_AWARD_ROUNDS` records 196–341
+  applications and 29.3%–65.7% acceptance, and 1.5.0 F5 deleted the 30–35%
+  forecast. The figures are dropped, not retyped.
+* **P2 — the example notebook's summary** compared benchmarks "vs.
+  CY2020-2024 winners" and gave Top Tier a "High probability of Phase 2
+  advancement". Both corrected; Top Tier is labelled this tool's own.
+* **P3 — `contributing.md`** told contributors to update the `WINNER_*`
+  dicts from annual reports. It now states the house ruling: source it or
+  delete it.
+* **P4 — the methodology source table** credited award announcements to the
+  benchmarks module, which reads only house bands; `why.md` cited annual
+  reports. Corrected.
+* **P5 — "CY2024 data is partially estimated … the CY2024 NOFA structure"**
+  (`limitations.md` ×2, `data-sources.md`). There is no `CY2024` key; the
+  `CY2024-2025` row carries the Award Book's figures.
+* **P6 — Home's disclosure** now names what uses the house patterns: *"The
+  optimizer's alignment score and the benchmark bands measure similarity
+  to …"*, then what the Win Alignment Scorer applies. The clause is
+  unchanged; Home's rendered disclosure changes by design.
+* **P7 — `historical_awards.py`'s own comments** asserted measurements
+  ("Winners consistently exceed this floor", "rarely awarded", "winners
+  rarely exceed 35%"). Struck; `WINNER_IMPACT_BENCHMARKS` and
+  `AWARD_SIZE_TIERS` get house headers; 39 `scoring_attribution.txt` reasons
+  that quoted the old headers are re-derived, rulings unchanged.
+* **P8, X4 — the F2 gate** is widened and its qualifier and negation must
+  bind (see *F2*). Eleven evasions the lanes wrote, plus one more, are
+  parametrized cases; those twelve pass the pre-fix gate and fail this one.
+  That is a statement about those twelve, not about evasions in general:
+  fix round 2's probes passed this gate (see *Fix round 2*).
+* **P9, X5 — the enumeration and the rendered scan** now count `st.code`,
+  metrics, dataframes/tables, tabs, subscripted containers and `help=`
+  tooltips: **46** newly counted sites, each read — page 1 +30, page 2 +3,
+  page 3 +12, page 4 +1, Home 0, none removed (the old and new enumerators
+  run over the same pages: 0 sites dropped, 46 added). This entry and
+  `c06ab76`'s commit message said 54; the per-page figures there were right
+  and the sum was not.
+* **P10, X9 — the call-time stamp test** runs on every page.
+* **P11 — "with this tool's own sub-score weights"** understated the house
+  content: Special Targeting (5 of Community Outcomes' 50) is a criterion in
+  none of the primary documents, and **four** sub-scores use `HOUSE_`
+  thresholds — product flexibility, track record alignment, special
+  targeting and unrelated entities (an AST walk of
+  `win_probability._score_*`). This entry and `aee8f1d`'s commit message
+  said five.
+  Now *"this tool's own sub-criteria, weights and thresholds"* on page 2, the
+  Home card, the disclosure, README, `api.md`, `limitations.md`,
+  `docs/index.md`, `methodology.md` and About; page 2 names Special
+  Targeting as this tool's own criterion.
+* **P12 — "a 1.2–1.5× pipeline is typical"** (the completeness check, the
+  CLI) is now labelled this tool's own house band of 0.9–1.5×; the CLI
+  baseline moves four lines, all this warning. `data-sources.md` said the
+  NOAA supplies "scoring criteria weights for the five application
+  categories (… Management Capacity, Capitalization, Prior Awards)"; the
+  repo's own sources say the weights are the Review Process's two scored
+  sections plus Priority Points, with Management Capacity and Capitalization
+  Strategy in Phase 2. Corrected.
+* **X10 — `CITATION.cff`.** 1.7.0 and 1.7.1 set `date-released` and the
+  CHANGELOG heading to the build date in the build's version commit, then
+  re-dated both in a separate release-day commit before the merge
+  (`9fb68ae`, `5685289`). This build had dated only the CHANGELOG; both now
+  read 2026-09-29, and the runbook's dating step re-dates both.
+
+### Fix round 2 — lane X returned SHIP; lane P returned SHIP pending cheap corrections
+
+* **Figures in this entry that did not reproduce**, each re-derived by
+  running it: the four new modules' test count (see *Census*), the sub-scores
+  using `HOUSE_` thresholds (four, not five: see *P11*), and the newly
+  counted enumeration sites (46, not 54: see *P9, X5*). The commit messages
+  that carry the old figures (`aee8f1d`, `c06ab76`) are left as written;
+  this entry is the correction.
+* **The F2 gate, both directions.** It flagged true sentences — *"Enter the
+  CDE's past NMTC awards in the track record table"*, *"List your most
+  recent award and its QEI amount"*, *"Section E lists the CDE's recent
+  awards"*, *"The CDFI Fund publishes award recipients each round"* — and
+  passed 19 of the 21 new claim spellings the lanes sent, including two
+  that slipped through its negation window (*"It is no secret that past
+  winners averaged 80%"*, *"Scores are never far from successful NMTC
+  applicants"*). Bare *award(s)* is dropped from the past-winners rule;
+  awardees, allocatees and recipients fire only in a claim context; a
+  negation must directly govern the match; the new spellings are listed
+  under *F2*. Now 0 of the 21 pass and 0 of the 4 are flagged. EVASIONS
+  12 → 33 and NOT_CLAIMS 8 → 19 carry every probe listed in the fix-round-2
+  instructions this build received; the lanes' own reports were not
+  available to it, so that is not "every probe the lanes wrote", and fix
+  round 3's audit then found fifteen phrasings this gate passed (see *Fix
+  round 3*). The wider rules
+  found three real claims in docstrings and an error string (*"Winner median
+  distress"*, *"above winner p75"* twice, *"from the winner mean"*), now
+  fixed, and 29 lines that quote withdrawn wording or deny the claim with a
+  negation that does not sit on the phrase, now RECORDS with reasons; 4
+  records went dead and are removed (57 in all). **It is still a spelling
+  registry. A phrasing nobody has written down yet will pass it, as every
+  one of this round's probes did before this round.**
+* **The scoped disclosure lead-in is pinned** in the Home and page-3
+  renders. Restoring *"Alignment scores measure similarity to"* in
+  `utils.METHODOLOGY_DISCLOSURE` turns the new test red while the one-string
+  test stays green, which was the gap.
+* **Page 2's notice** now says *"Some recommendations below, and the Pipeline
+  Optimizer, compare …"*: `RecommendationEngine` reads
+  `WINNER_PATTERN_THRESHOLDS` only for the eligibility recommendation.
+* **The adapter's fallback handler wraps nmtc-calc's calls only.** With every
+  row at 1e308 the totals overflow; the log used to blame nmtc-calc
+  (*"nmtc-calc refused a deal's inputs (OverflowError …)"*) and the fallback
+  then raised the same `OverflowError`. Now `PipelineTotalsOverflow` names
+  the adapter's arithmetic, from either path; an AST test pins the handler's
+  body to `NMTCDeal` and `structure`.
+* **Nits.** `historical_awards.py`'s sector and impact headers now say what
+  the struck lines actually asserted (the sector source line did not claim a
+  winner measurement, its header and field comments did; the impact lines
+  never mentioned winners). *"Neither is a win probability"* followed three
+  things: now *"None of the three"* (disclosure, README). The below-90%
+  completeness warning names its cut point as this tool's own house cut
+  point. `test_release_floor`'s comment on `max_ceiling_share` said "27 of a
+  40 band"; the ceiling's share at 1,234 collected was 20, in a band 27
+  wide. `st.html` is not used anywhere; it is now a counted prose kind, and
+  the rendered scan reads its body off AppTest's element tree (AppTest has
+  no `html` accessor on streamlit 1.50 or 1.64).
+
+### Fix round 3 — both lanes returned SHIP; four small items
+
+* **Every `except` clause in the nmtc-calc adapter is pinned.** An AST test
+  asserts, per function, exactly what each clause catches:
+  `{ModuleNotFoundError}` and `{_Refused}` in `compute_pipeline_economics`,
+  `{ValueError, ArithmeticError}` in `_compute_via_library`, `{Exception}`
+  in `_nmtc_calc_version` (a metadata lookup for an error message). The
+  audit added `TypeError` to the refusal tuple and the contract module
+  stayed green — 1.7.1's silent-fallback class. That mutation now fails two
+  tests (the table, and a behavioural twin in which a `TypeError` from
+  `structure()` must propagate); narrowing the tuple and widening the
+  `_Refused` clause each fail two as well.
+* **F2 gate: allocatee statistics and selected populations.** Fifteen
+  phrasings the audit wrote passed the round-2 gate; all fifteen now fail
+  and are must-fail cases (EVASIONS 33 → 48). Seven true sentences near the
+  new rules are must-pass cases (NOT_CLAIMS 19 → 26): the NOAA's *[prior
+  Allocatees]* deadline label, *a program-level goal across all
+  Allocatees*, *the Fund does publish Allocatee-level deployment data*,
+  *Per-Allocatee distributions ARE published*, *the selected projects must
+  span*, a denial, and *the prior Allocatee's track record*. The
+  Review Process's *16.90% of awardees* is a RECORD again (58). Known
+  limits, in the gate's docstring: the allocatee window is 3 tokens (*Allocatees
+  across the five rounds from 2019 to 2023 averaged 80%* passes — checked);
+  *data / distribution / population* count only after a past or CY
+  qualifier; a negation in the gap breaks the link. No probe had to be left
+  out.
+* **The sector-mix tiers are this package's own.** `visualizations.md` said
+  the bars are *"color-coded by CDFI Fund priority tier"* and listed medium
+  as small business and mixed use; the tiers are `schema.TARGET_SECTORS`,
+  and medium also holds community facility and clean energy. Relabelled
+  house, membership corrected. The sweep found four more Fund attributions
+  of the same tiers, all corrected: `pipeline-analysis.md` (which also said
+  the high tier *"score[s] highest on the sector diversity dimension"* —
+  false: that score is the normalized Shannon entropy of the shares and never
+  reads a tier), `sector_analysis`'s `high_priority_pct` docstring,
+  `schema.py`'s *"CDFI Fund priority areas (current NOFA guidance)"* header,
+  and a `maps.py` comment calling the tiering sourced. The tiers colour the
+  chart and feed `high_priority_pct`, which is displayed and scored nowhere.
+
+### Census and verification
+
+* Published test counts re-derived: 1,961 → 2,112 in `README.md`,
+  `CONTRIBUTING.md`, `streamlit_app/app.py` and this entry
+  (`pytest tests/ --collect-only -q`). Four new test modules, collected at
+  each stage: 47 at the build (`4bca7a3`), 74 after fix round 1 (+27), 118
+  after fix round 2 (+44), 142 after fix round 3 (+24). Fix round 1's version of this line said "83
+  tests, 36 of them from fix round 1": the four modules collected 74, and
+  36 was the whole suite's round-1 delta (2,008 → 2,044), not theirs.
+* **The README badge read `tests-1881 passing`** — hardcoded, and stale by
+  two releases; the 1.7.1 settle read's note that it agreed at 1,961 was
+  wrong about the badge. It now reads `tests-2112`, **still hand-typed and
+  still unchecked by any gate.**
+* New test modules since v1.4.0: 43 → 47.
+* `release.yml`'s `FLOOR` 940 → **1010**, from a real sdist build of the
+  final tree, the job's exact invocation: 2,111 collected under
+  `-m "not wheel"`, 79 skipped, 2,032 executed, half 1,016.
+  `MAX_SDIST_SKIPS` re-measured at **79, unchanged** — none of the new tests
+  skips there. Band [1010, 1055]. (Fix round 1 had it at 980, band
+  [980, 1021], from 2,043 collected; fix round 2 at 1000, band [1000, 1043],
+  from 2,087.)
+* **`test_max_sdist_skips_is_bounded_from_ABOVE_as_well` now asserts
+  `MAX_SDIST_SKIPS <= 2 * max_ceiling_share`, i.e. ≤ 80** (renamed from
+  `max_band_width`; the value 40 is unchanged). It used to compare the whole
+  band width — the ceiling's share plus 0–9 of floor-to-ten rounding set by
+  the collected count's last digit — against 40, and at the measured ceiling
+  of 79 the share alone is 39–40. So it was green at three collected counts
+  in every twenty whatever the ceiling (1,998 red, 1,999–2,001 green, 2,007
+  red), and the only ways back to green were a wider maximum or adding tests
+  until the count landed in a window. Both were refused. **What it does not
+  bound: the band's total width, which can now reach 49** (share 40 +
+  rounding 9). **At 79 skips the ceiling has one skip of headroom.** The
+  first cut of this fix bounded the share formula, under which 81 still
+  flipped with the count's parity; the explicit form passes at 80 and fails
+  at 81 and 400 at every count — red-proved. The freshness gate and
+  release.yml's rule are unchanged. Ruled by the planning chat: kept.
+* The rendered-string sweep is unchanged in shape, and 293 constants are
+  swept (289 at 1.7.1: `_disclosure.ASSUMED_WINNER_PATTERNS`,
+  `_disclosure.ASSUMED_WINNER_PATTERNS_CLAUSE`, `maps._SECTOR_MIX_TITLE` and
+  `nmtc_calc_adapter.LEVERAGE_TO_EQUITY_FIELDS`); the three historical
+  sentences follow, as that gate requires.
+* The Review Process corpus count is restated to 135 / 130 (118 / 113 at
+  1.7.1): seventeen added across seventeen lines, every one naming the Review
+  Process to say what the Win Alignment Scorer's score applies or where its
+  weights come from — README (4), `app.py` (3), `utils.py` (2),
+  `_disclosure.py`, `streamlit_app/README.md`, `limitations.md`, `api.md`,
+  and in fix round 1 `data-sources.md` (2), `limitations.md` and `why.md`.
+  None cites it for a bar.
+* The 1.7.1 entry's baseline-delta claim is pinned from `HEAD` to `ced93de`,
+  the v1.7.1 merge commit, the way 1.7.0's was; re-derived at the pin,
+  242/278, unchanged.
+
+### Also released — `docs-deploy.yml` honours a real deploy only from `main` or a release tag
+
+*Merged to `main` after 1.7.1 as PR #43, unversioned; released here. Recorded as written.*
+
+#### Fixed — a hand-run from any branch could publish that branch's docs
 
 **`workflow_dispatch` with `deploy: true` from any branch pushed that
 branch's site to `gh-pages`.** The real deploy step was gated on the input
@@ -36,18 +511,11 @@ semantics it relies on (a called workflow inheriting the caller's
 `github.ref` and `github.event_name`) are documented behaviour, not measured
 here.
 
----
+### Also released — the `test_noaa_table_1` date-set trap
 
-## Unreleased, no version assigned — the `test_noaa_table_1` date-set trap
+*Merged to `main` after 1.7.1 as PR #42, unversioned; released here. Recorded as written. The same PR also pinned every workflow's `runs-on` from `ubuntu-latest` to `ubuntu-24.04` (`54e0809`) ahead of the 2026-10-19 image flip, because `actions/python-versions` ships no Python 3.9 for Ubuntu 26; that commit carried no CHANGELOG line and is recorded here.*
 
-*Unbracketed on purpose. `tests/test_small_claims` forbids an open
-`## [Unreleased]` heading outright ("a release cut with an open Unreleased
-section publishes an entry nobody has decided the contents of"), and the
-project's convention for work with no version yet is an unbracketed prose
-heading — the shape `_RELEASE_HEADING` documents and skips. Assigning this a
-version number is the release manager's call, not this branch's.*
-
-### Fixed — a gate that was armed to accuse the renderer of a defect it does not have
+#### Fixed — a gate that was armed to accuse the renderer of a defect it does not have
 
 **`tests/test_noaa_table_1` would have gone red, with a false diagnostic, on
 the next routine bump of `LAST_VERIFIED`.** No shipped output changes; this is
@@ -108,6 +576,22 @@ three invariant-allowlist entries, regenerated in the same commit as the bump
 No test was added or removed: 1,960 passed / 1 skipped, 1,961 collected,
 before and after.
 
+### Found outside the scope, reported, not fixed
+
+* ~~**nmtc-calc 0.3.0 breaks this package's economics adapter on any fresh
+  install.**~~ — **FIXED ABOVE, in this same release** (*nmtc-calc 0.3.0*).
+  Found while building F1–F4: `tests/test_cli_baseline` was red on untouched
+  `main` (`0f0d4c2`) for this reason alone.
+* ~~`docs/about/limitations.md`'s "CY2024 data is partially estimated"~~ —
+  **FIXED in fix round 1 (P5).**
+* ~~Home's Methodology Disclosure opening "Alignment scores measure
+  similarity to this tool's own assumed winner patterns"~~ — **FIXED in fix
+  round 1 (P6).**
+* The XLSX upload path fills a blank numeric cell with 0 before the row is
+  built, so a blank QEI cell is refused with *"qei_request must be > 0"* —
+  refused, but naming the wrong cause. The CSV path says *"left blank"*.
+  Not changed here.
+
 ---
 
 ## [1.7.1] — 2026-09-20
@@ -138,7 +622,7 @@ CHANGELOG was not a test-count claim site, and the parallel implementation
 shipped a false count straight through that hole (R10).
 
 > **242 insertions, 278 deletions** in `tests/rendered_baseline/`, measured
-> `a29c983`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+> `a29c983`..`ced93de`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
 
 | Class | Lines | +/− | Surface |
 |---|---|---|---|
@@ -468,8 +952,8 @@ surfaces in the Executive Summary.
 
 ### Census and verification
 
-* The rendered-string sweep is unchanged in shape, and 289 constants are swept
-  (282 at 1.7.0: `PIPELINE_COLUMN_COUNT` and the five `pdf_builder` layout
+* The rendered-string sweep is unchanged in shape, and 293 constants are swept
+  (restated at 1.7.2 for its four; 289 as this entry shipped; 282 at 1.7.0: `PIPELINE_COLUMN_COUNT` and the five `pdf_builder` layout
   constants; R11's `_disclosure.LOWER_BOUND_CLAUSE` is the 289th and needs no
   pin — it renders only on the partial-unverified branch, which the sweep's
   fixture does not take, and the sweep says so on every run rather than a
@@ -3324,8 +3808,8 @@ One filled scaffold, the same file both sides, `9a2d584` vs this tree:
 > `git diff --numstat 9a2d584 fc34af5 -- tests/rendered_baseline/` gives 53
 > insertions and 68 deletions, unchanged.*
 
-The rendered-string sweep is unchanged in shape, and 289 constants are swept
-(279 as this entry shipped, restated at 1.7.0 for the R1 constants and again at 1.7.1 — first for
+The rendered-string sweep is unchanged in shape, and 293 constants are swept
+(279 as this entry shipped, restated at 1.7.0 for the R1 constants, again at 1.7.1 and at 1.7.2 — at 1.7.1 first for
 `PIPELINE_COLUMN_COUNT` and the five `pdf_builder` layout constants, then for R11's
 `_disclosure.LOWER_BOUND_CLAUSE`; 237 at 1.5.7; this release adds
 `upload_handler.CDE_PROFILE_COLUMNS_FOR_REQUIRED_FIELD`, waived, for 238 as
@@ -7897,7 +8381,7 @@ and the value-only projection that hid B-3's number formats.
 > source for what the Applicant is asked to COMMIT TO, because the thing the
 > Applicant fills in is the Application.**
 
-**118 mentions across 113 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
+**135 mentions across 130 lines** of `nmtcapp/`, `streamlit_app/`, `docs/` and
 `README.md`. *(75 across 71 when 1.3.0 shipped; 77 across 73 at 1.5.0, which
 added one in `renderers/_round_provenance`'s re-check list. 1.5.1's first round
 added ten more across ten lines — the T1 withdrawal string and its two
@@ -7914,7 +8398,7 @@ dashed line is restored to the published Highly Qualified gate it was always
 drawing; and the geographic deduction notice, which names the Review Process as
 the place a CDE should look instead. None of the twenty-three cites the Review
 Process for a substantive claim: every one either names it to DENY a bar or
-points a reader at it as the document with the published referent. **The 1.6.5 docs-surface round adds two more across two lines** — `quickstart.md`'s Step 4, which was still publishing the scoring vocabulary retired in 1.1.1: its admonition now names the Review Process as what the score measures against, and the captured sample output carries the engine's own methodology note. The assessment paragraph, which states the section minimums, is ELIDED from that sample rather than adjudicated — the six rulings for that bar were made against the primary source, and the round that pasted the sample had not opened it. **1.7.0 (R1) is net +4 mentions across +3 lines**: three removed with `NON_METRO_MAX_COMMITMENT_FACTOR` and the old re-check item 6, seven added across six lines — the deletion note at that constant's former site, `_question_22`'s and `_question_25`'s provenance paragraphs naming which thresholds are still the Review Process's, the comment above `RECHECK_ITEMS` and the rewritten item 6 itself. Every one names the Review Process to say which round's it is or that CY 2026's has not been found, none for a bar.)* **13 cite the Review Process for a substantive claim** — a
+points a reader at it as the document with the published referent. **The 1.6.5 docs-surface round adds two more across two lines** — `quickstart.md`'s Step 4, which was still publishing the scoring vocabulary retired in 1.1.1: its admonition now names the Review Process as what the score measures against, and the captured sample output carries the engine's own methodology note. The assessment paragraph, which states the section minimums, is ELIDED from that sample rather than adjudicated — the six rulings for that bar were made against the primary source, and the round that pasted the sample had not opened it. **1.7.0 (R1) is net +4 mentions across +3 lines**: three removed with `NON_METRO_MAX_COMMITMENT_FACTOR` and the old re-check item 6, seven added across six lines — the deletion note at that constant's former site, `_question_22`'s and `_question_25`'s provenance paragraphs naming which thresholds are still the Review Process's, the comment above `RECHECK_ITEMS` and the rewritten item 6 itself. Every one names the Review Process to say which round's it is or that CY 2026's has not been found, none for a bar. **1.7.2 (F2) adds thirteen across thirteen lines**, every one naming the Review Process as what the Win Alignment Scorer's score applies, where a struck sentence had said it measured winner patterns, **and its fix round 1 four more across four lines** (`data-sources.md` ×2, `limitations.md`, `why.md`), saying where the scoring weights or the sources come from; none for a bar.)* **13 cite the Review Process for a substantive claim** — a
 percentage, a commitment, or a list of areas. Of those 13:
 
 > **Corrected in 1.3.0 B1.** This paragraph shipped as *"72 mentions across 68
@@ -9002,9 +9486,9 @@ goes stale silently.
 
 Widening `DATA_MODULES` to every module that renders was measured first and
 rejected: 97 constants would each have needed a row, most saying "this is a
-colour". The rendered-string sweep demands **19**, and 289 constants are swept
+colour". The rendered-string sweep demands **19**, and 293 constants are swept
 where 49 were (238 as this release shipped; restated at 1.6.2, at 1.6.4,
-in the 1.6.4 fix round, at 1.7.0 and twice at 1.7.1 — the count is gate-asserted against the current tree, see those
+in the 1.6.4 fix round, at 1.7.0, twice at 1.7.1 and at 1.7.2 — the count is gate-asserted against the current tree, see those
 entries). *(208 at 1.4.0; 1.5.0's `renderers/_round_provenance` adds the
 round label, its status, the re-check list and the pinned-document facts; 1.5.2
 adds `readiness_score._COMPONENT_BASIS`, the withdrawal note's per-component

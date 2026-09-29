@@ -1,6 +1,14 @@
 """NMTC Application Builder — Streamlit demo entry point."""
 import streamlit as st
-from utils import SAMPLE_APPLICATION_ROUND, apply_theme, md, round_label
+from nmtcapp.renderers._round_provenance import round_provenance_paragraphs
+from utils import (
+    SAMPLE_APPLICATION_ROUND,
+    apply_theme,
+    md,
+    render_methodology_disclosure,
+    render_version_stamp,
+    round_label,
+)
 
 st.set_page_config(
     page_title="NMTC Application Builder",
@@ -73,6 +81,9 @@ def home():
         """,
         unsafe_allow_html=True,
     )
+    # WHICH RELEASE IS SERVING (1.7.2 F1). Through 1.7.1 the test count in the
+    # banner below was doing this job by accident. Read at call time.
+    render_version_stamp()
 
     st.markdown(
         '<div class="stats-bar">'
@@ -83,7 +94,7 @@ def home():
         # it is unsourced. A provenance claim on the landing page is still a
         # provenance claim.
         "📊 CDFI Fund NMTC eligibility data, 2016–2020 ACS &nbsp;|&nbsp; "
-        "✅ 1,961 tests &nbsp;|&nbsp; "
+        "✅ 2,112 tests &nbsp;|&nbsp; "
         "🔓 MIT License"
         "</div>",
         unsafe_allow_html=True,
@@ -96,9 +107,19 @@ def home():
         (col1, "📋", "Pipeline Analyzer",
          "Upload your CSV or use sample data to run a full pipeline intelligence report — "
          "distress concentration, geographic diversity, sector mix, and impact projections."),
+        # WAS "Score your application's alignment with patterns in historical
+        # NMTC winners across five dimensions: distress, geographic, impact,
+        # sector, and pipeline quality" (1.7.2 F2). Wrong three ways: the
+        # patterns are house constants, not history; the Win Alignment Scorer
+        # does not read them (it scores the Review Process structure --
+        # intelligence/win_probability._METHODOLOGY); and those five
+        # dimensions are the OPTIMIZER's objectives, not this page's sections.
+        # This now says what page 2's own header says.
         (col2, "🎯", "Win Alignment Scorer",
-         "Score your application's alignment with patterns in historical NMTC winners across "
-         "five dimensions: distress, geographic, impact, sector, and pipeline quality."),
+         "Score your application against the CDFI Fund's published CY 2024-2025 "
+         "Review Process structure — Business Strategy, Community Outcomes and "
+         "Priority Points — with this tool's own sub-criteria, weights and "
+         "thresholds."),
         (col3, "⚙️", "Pipeline Optimizer",
          "Automatically select the highest-scoring project subset given your QEI budget, "
          "state diversity, and sector constraints using greedy + local-search optimization."),
@@ -128,9 +149,10 @@ def home():
             1. **Pipeline Analyzer** — start here. Load sample data or upload your own
                pipeline CSV to see a full analysis report.
             2. **Win Alignment Scorer** — after analyzing, score your application against
-               historical winner patterns.
+               the CY 2024-2025 Review Process structure. It is not a win probability.
             3. **Pipeline Optimizer** — set budget and diversity constraints, then let the
-               optimizer select the highest-scoring project subset.
+               optimizer select the subset that best matches this tool's own assumed
+               winner patterns (see the Methodology Disclosure below).
             4. **About & Methodology** — review data sources, limitations, and historical
                round statistics before drawing conclusions.
 
@@ -158,21 +180,18 @@ def home():
         ))
 
     st.markdown("---")
-    st.info(
-        # "observed in historical NMTC award winners" asserted an empirical
-        # provenance the package's own source denies — see
-        # nmtcapp/data/historical_awards.py. The patterns were not observed;
-        # they are this tool's own assumptions.
-        "⚠️ **Methodology Disclosure:** Alignment scores measure similarity to "
-        "**this tool's own assumed winner patterns**, which are unsourced house "
-        "constants — not measurements of past winners, and not a CDFI Fund "
-        "publication. They are **not** win probabilities. The CDFI Fund does not "
-        "publish non-winner application data, so a true probability of selection "
-        "cannot be computed, and it publishes no distribution of applicant "
-        "characteristics, so no percentile of applicants can be computed either. "
-        "Scores are intended to guide pipeline improvement, not predict award "
-        "outcomes."
-    )
+    # WHICH ROUND (1.7.2 F3). The sample CDE box above names a round, so this
+    # page carries the round-provenance note too, read from the one authority
+    # every other page and format reads rather than paraphrased here.
+    st.info(md(round_provenance_paragraphs()[0]))
+    # "observed in historical NMTC award winners" asserted an empirical
+    # provenance the package's own source denies — see
+    # nmtcapp/data/historical_awards.py. The patterns were not observed;
+    # they are this tool's own assumptions. The text now lives in
+    # utils.METHODOLOGY_DISCLOSURE (built from
+    # _disclosure.ASSUMED_WINNER_PATTERNS_CLAUSE) so the Pipeline Optimizer
+    # renders the same words (1.7.2 F2/F3).
+    render_methodology_disclosure()
 
 
 # ---------------------------------------------------------------------------

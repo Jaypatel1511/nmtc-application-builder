@@ -33,7 +33,10 @@ def test_completeness_warns_on_undersized_pipeline(sample_cde):
     app = Application(cde=sample_cde, requested_allocation=total_qei * 3)
     app.add_pipeline(small_pipeline)
     result = check_completeness(app)
-    assert any("less than 90%" in w for w in result.warnings)
+    under = [w for w in result.warnings if "less than 90%" in w]
+    assert under
+    # The cut point and the advice are house, and say so (fix round 2).
+    assert all("this tool's own house cut point" in w for w in under), under
 
 
 def test_completeness_warns_on_oversized_pipeline(sample_cde, sample_pipeline):

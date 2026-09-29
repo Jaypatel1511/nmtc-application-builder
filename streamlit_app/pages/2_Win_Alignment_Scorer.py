@@ -16,6 +16,7 @@ from nmtcapp.data.benchmark_thresholds import (
 )
 
 from utils import (
+    render_version_stamp,
     md,
     fmt_pct,
     get_or_create_app,
@@ -37,6 +38,7 @@ apply_matplotlib_theme()
 # ---------------------------------------------------------------------------
 apply_theme()
 st.title("🎯 Win Alignment Scorer")
+render_version_stamp()  # 1.7.2 F1: which release is serving
 st.markdown(
     "Score this application against the CDFI Fund's published CY 2024-2025 Review Process "
     "criteria — Business Strategy (50 pts) + Community Outcomes (50 pts) + Priority Points (10 pts)."

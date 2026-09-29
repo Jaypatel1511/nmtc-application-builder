@@ -136,7 +136,11 @@ TARGET_DISTRESS_THRESHOLDS = {
 MIN_GEOGRAPHIC_DIVERSITY: int = 3
 
 # ---------------------------------------------------------------------------
-# Sector targets — CDFI Fund priority areas (current NOFA guidance)
+# Sector targets — THIS PACKAGE'S OWN HOUSE TIERS. The header said "CDFI Fund
+# priority areas (current NOFA guidance)" until 1.7.2 fix round 3; the NOAA
+# ranks no sectors into high/medium/low, and no source is recorded for this
+# classification. It drives the sector-mix chart's colours and legend and
+# sector_analysis.high_priority_pct, and nothing that is scored.
 # ---------------------------------------------------------------------------
 TARGET_SECTORS = {
     "healthcare":         {"description": "FQHCs, hospitals, behavioral health", "priority": "high"},
@@ -217,7 +221,7 @@ READINESS_SCORING_WEIGHTS = {
     "eligibility_quality":   0.25,  # % of pipeline in LIC tracts
     "distress_concentration": 0.25,  # % of QEI in deep/severe distress
     "geographic_diversity":  0.15,  # states and MSA breadth
-    "impact_metrics":        0.20,  # jobs/units vs historical benchmarks
+    "impact_metrics":        0.20,  # jobs/units vs this tool's house benchmarks
     "validation_pass_rate":  0.10,  # % of validation checks passing
     "completeness":          0.05,  # required fields populated
 }

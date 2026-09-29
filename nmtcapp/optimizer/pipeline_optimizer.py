@@ -1,8 +1,9 @@
 """
 NMTC pipeline optimizer using greedy construction + swap-based local search.
 
-The objective is to maximize composite alignment with historical winner patterns
-subject to the constraints defined in :class:`~nmtcapp.optimizer.constraints.OptimizationConstraints`.
+The objective is to maximize composite alignment with this tool's own assumed
+winner patterns -- unsourced house constants, not measurements of past winners
+(``renderers/_disclosure.ASSUMED_WINNER_PATTERNS_CLAUSE``) -- subject to the constraints defined in :class:`~nmtcapp.optimizer.constraints.OptimizationConstraints`.
 
 Implementation notes:
 - No LP/MIP solver dependency; uses pure-Python greedy + local search.
@@ -18,7 +19,10 @@ import logging
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, TYPE_CHECKING
 
-from nmtcapp.renderers._disclosure import wrap_disclosure
+from nmtcapp.renderers._disclosure import (
+    ASSUMED_WINNER_PATTERNS_CLAUSE,
+    wrap_disclosure,
+)
 
 from nmtcapp.optimizer.candidate_pool import CandidatePool
 from nmtcapp.optimizer.constraints import OptimizationConstraints
@@ -43,10 +47,15 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# "Objective: maximize composite alignment score with historical NMTC winner
+# patterns (CY2020–CY2024)" until 1.7.2 F2. Rendered on the Pipeline
+# Optimizer's methodology expander and in OptimizationResult.summary(). The
+# patterns are the WINNER_* house constants; the clause is interpolated, not
+# retyped, so this note and the app's disclosure cannot drift apart.
 _METHODOLOGY = (
     "Pipeline optimized using greedy construction (projects ranked by individual "
     "alignment contribution) followed by swap-based local search. Objective: maximize "
-    "composite alignment score with historical NMTC winner patterns (CY2020–CY2024). "
+    f"composite alignment score with {ASSUMED_WINNER_PATTERNS_CLAUSE}. "
     "Subject to QEI budget, project count, state diversity, and sector constraints. "
     "Alignment score ≠ win probability — see WinProbabilityModel for framing guidance."
 )
@@ -124,7 +133,7 @@ class OptimizationResult:
 
 
 class PipelineOptimizer:
-    """Optimize a NMTC pipeline subset to maximize alignment with historical winners.
+    """Optimize a NMTC pipeline subset to maximize alignment with this tool's assumed winner patterns.
 
     Uses greedy construction followed by swap-based local search. Pure-Python
     implementation; no LP/MIP solver required.

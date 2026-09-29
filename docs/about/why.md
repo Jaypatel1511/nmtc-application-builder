@@ -6,7 +6,7 @@ Preparing an NMTC allocation application is a discipline that rewards pattern re
 
 > **Three examples used to stand here and have been removed** (1.5.1). They asserted that healthcare + education combinations "score well on sector diversity", that "a pipeline with only 4 states will be penalized relative to competitors with 8–10", and that a jobs-per-million-QEI figure below 6 "is a meaningful flag for impact reviewers". None of the three is sourced, and all three are claims about how the CDFI Fund scores. The middle one is the sharpest: **the CY 2024-2025 Review Process scores no state count at all**, and the Allocation Application asks for a service area, not a minimum number of states. The same claim, in its executable form, is the geographic recommendation this release withdrew — see `MIN_GEOGRAPHIC_DIVERSITY` in `schema.py`. Leaving the prose version standing would have withdrawn the advice and kept the assertion behind it.
 
-First-time applicants and smaller CDEs typically do not have access to this tacit knowledge. They spend months preparing applications, pay for expensive consulting engagements, and often submit without a clear picture of how competitive their pipeline actually is against the 280–340 other applications the CDFI Fund receives in a typical round.
+First-time applicants and smaller CDEs typically do not have access to this tacit knowledge. They spend months preparing applications, pay for expensive consulting engagements, and often submit without a structured read of their own pipeline before they file.
 
 Even experienced practitioners often work without systematic benchmarking. Pipeline decisions — which projects to include, how to size the request, which markets to expand into — are made based on relationship availability and organizational capacity rather than alignment with the scoring criteria that determine outcomes.
 
@@ -14,9 +14,10 @@ Even experienced practitioners often work without systematic benchmarking. Pipel
 
 NMTC Application Builder is a programmatic intelligence layer on top of publicly available CDFI Fund data. It does three things that were previously either unavailable or required manual effort:
 
-**1. Automates the benchmark lookup.** Instead of manually reading CDFI Fund
-annual reports and award announcements, the library embeds a set of reference
-bands as Python constants and applies them to your pipeline automatically.
+**1. Automates the reference-band comparison.** The library embeds a set of
+reference bands as Python constants — this tool's own house constants, not
+figures read out of any CDFI Fund report — and applies them to your pipeline
+automatically.
 Distress concentration, geographic diversity, sector mix and impact intensity
 are all compared the moment you call `analyze()`.
 
@@ -52,10 +53,10 @@ consistently, and with the basis of every band stated beside it.
 
 **CDFI consultants and advisors** — the library provides a structured diagnostic framework that can be used across multiple CDE clients, reducing duplicated analysis effort and providing quantified recommendations to clients.
 
-**Community development researchers** — the library surfaces historical winner pattern statistics and provides a structured API for pipeline-level analysis. Researchers studying NMTC program dynamics or capital deployment patterns may find the data layer useful.
+**Community development researchers** — the library surfaces the round-level CDFI Fund award statistics (applications, awards and allocation per round) and provides a structured API for pipeline-level analysis. Its winner pattern figures are this tool's own assumed winner patterns — unsourced house constants, not measurements of past winners — so they are not research data. Researchers studying NMTC program dynamics or capital deployment patterns may find the data layer useful.
 
 ## Origins and motivation
 
 NMTC Application Builder grew from repeated observation that the most consequential application decisions — which projects to include, how to structure geographic coverage, when the pipeline is strong enough to submit — were being made with limited systematic data. The program allocates $5 billion per year to community development projects in distressed census tracts. The quality of the applications that compete for that capital determines which communities get served.
 
-The library is open source because the underlying data (CDFI Fund award announcements and annual reports) is public, and because the methodology should be transparent and auditable. An algorithm that influences which communities receive capital investment should not be a black box.
+The library is open source because the underlying public sources (the CDFI Fund's NOAA, Allocation Application, Review Process and award announcements) are public, because its own house constants should be visible as house constants, and because the methodology should be transparent and auditable. An algorithm that influences which communities receive capital investment should not be a black box.
