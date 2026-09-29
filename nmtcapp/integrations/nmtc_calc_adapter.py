@@ -43,15 +43,75 @@ def compute_pipeline_economics(pipeline: "Pipeline") -> dict:
     if not projects:
         return _empty_economics()
 
+    # THE BLANKET ``except Exception`` IS GONE (1.7.2). nmtc-calc 0.3.0
+    # renamed ``TransactionResult.leverage_ratio``; the AttributeError landed
+    # in a handler that caught everything, and every install that resolved
+    # 0.3.0 -- including 1.7.1 from PyPI -- silently took the fallback below,
+    # with nothing but a log line on stderr to say so. An API break is not a
+    # data condition. Two narrow fallbacks remain, each for a reason:
+    #
+    #   ImportError  nmtc-calc is not importable at all (a broken or partial
+    #                environment). The fallback models the same identity, so
+    #                the analysis still runs, and the log says why.
+    #   ValueError   nmtc-calc REFUSED a deal's inputs -- its documented
+    #                contract (NMTCDeal.__post_init__; NegativeTrancheError
+    #                and UnbalancedStackError subclass ValueError). A pipeline
+    #                row with QEI above total project cost is refused by
+    #                every nmtc-calc version and accepted by PipelineProject,
+    #                so this is a real input path, not version skew.
+    #
+    # Everything else -- AttributeError, TypeError, a changed signature --
+    # propagates, with the installed nmtc-calc version named.
     try:
         from nmtccalc import NMTCDeal
         import nmtccalc.models.transaction as nmtc_transaction
-        return _compute_via_library(projects, NMTCDeal, nmtc_transaction)
-    except Exception as exc:
+    except ImportError as exc:
         logger.warning(
-            "nmtc-calc computation failed (%s). Using manual computation fallback.", exc
+            "nmtc-calc is not importable (%s). Using manual computation fallback.", exc
         )
         return _compute_fallback(projects)
+    try:
+        return _compute_via_library(projects, NMTCDeal, nmtc_transaction)
+    except ValueError as exc:
+        logger.warning(
+            "nmtc-calc refused a deal's inputs (%s). Using manual computation "
+            "fallback.", exc
+        )
+        return _compute_fallback(projects)
+
+
+#: The leverage-loan / investor-equity multiple on ``TransactionResult``, by
+#: the name each nmtc-calc line uses. Same definition in both --
+#: ``deal.leverage_loan / deal.investor_equity`` in ``structure()``
+#: (0.2.1 models/transaction.py:85; 0.3.0 models/transaction.py:127) -- and
+#: 0.3.0's own LEVERAGE_RATIO_NOTE says "(0.2.1 called it leverage_ratio.)".
+LEVERAGE_TO_EQUITY_FIELDS = (
+    "leverage_loan_to_equity_ratio",   # nmtc-calc >= 0.3.0
+    "leverage_ratio",                  # nmtc-calc 0.2.x
+)
+
+
+def _nmtc_calc_version() -> str:
+    try:
+        from importlib.metadata import version
+        return version("nmtc-calc")
+    except Exception:  # pragma: no cover - metadata absent
+        return "unknown"
+
+
+def leverage_to_equity(result) -> float:
+    """The leverage/equity multiple off a ``TransactionResult``, any supported
+    nmtc-calc. Raises -- never falls back -- when neither name is present,
+    because that is an nmtc-calc API this package has not been checked
+    against."""
+    for name in LEVERAGE_TO_EQUITY_FIELDS:
+        if hasattr(result, name):
+            return getattr(result, name)
+    raise AttributeError(
+        f"nmtc-calc {_nmtc_calc_version()}'s TransactionResult carries none of "
+        f"{LEVERAGE_TO_EQUITY_FIELDS}. This package has not been checked "
+        "against that nmtc-calc API; see the dependency bound in pyproject.toml."
+    )
 
 
 def _compute_via_library(projects, NMTCDeal, nmtc_transaction) -> dict:
@@ -81,7 +141,7 @@ def _compute_via_library(projects, NMTCDeal, nmtc_transaction) -> dict:
         totals["investor_equity"] += result.investor_equity
         totals["leverage_loans"] += result.leverage_loan
         totals["cde_fees"] += result.cde_fee
-        totals["leverage_ratio_sum"] += result.leverage_ratio
+        totals["leverage_ratio_sum"] += leverage_to_equity(result)
 
     n = len(projects)
     return {
