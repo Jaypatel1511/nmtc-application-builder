@@ -36,7 +36,8 @@ def analyze_winning_patterns() -> dict:
 
         from nmtcapp.intelligence.pattern_analysis import analyze_winning_patterns
         patterns = analyze_winning_patterns()
-        print(f"Winner median distress: {patterns['distress']['p50_pct_deep_or_severe']:.0%}")
+        # p50_pct_deep_or_severe is a house constant (an assumed winner pattern)
+        print(f"House p50 distress: {patterns['distress']['p50_pct_deep_or_severe']:.0%}")
     """
     return {
         "distress": {

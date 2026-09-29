@@ -51,7 +51,8 @@ def score_distress_alignment(
 ) -> float:
     """Score distress concentration alignment vs. this tool's assumed winner patterns.
 
-    Returns 0.0–1.0 where 1.0 = above winner p75 deep/severe distress.
+    Returns 0.0–1.0 where 1.0 = above the house p75 of deep/severe distress
+    (``WINNER_DISTRESS_PATTERNS``, an assumed house constant).
 
     Example::
 
@@ -79,7 +80,8 @@ def score_distress_alignment(
 def score_geographic_alignment(projects: List["PipelineProject"]) -> float:
     """Score geographic diversity alignment vs. this tool's assumed winner patterns.
 
-    Returns 0.0–1.0 where 1.0 = above winner p75 state count + low HHI.
+    Returns 0.0–1.0 where 1.0 = above the house p75 state count + low HHI
+    (``WINNER_GEOGRAPHIC_PATTERNS``, assumed house constants).
 
     Example::
 

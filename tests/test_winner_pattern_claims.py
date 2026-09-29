@@ -37,8 +37,25 @@ with recent winners" -- and its qualifier and negation rules accepted a
 matching word ANYWHERE in the sentence or clause. Fix round 1 (P8/X4) widened
 the spellings to cover every one of those (each is asserted below), bound a
 negation to the 4 tokens before the match and a qualifier to 6 tokens either
-side of the noun in the same clause. A new spelling will still pass. What
-this gate buys is that every spelling ever found stays found.
+side of the noun in the same clause.
+
+Fix round 2 found the gate wrong in BOTH directions. It flagged true
+sentences ("Enter the CDE's past NMTC awards in the track record table", "The
+CDFI Fund publishes award recipients each round") and passed new claims:
+"It is no secret that past winners averaged 80%" slipped through the
+negation window, and "the winner median", "Winners consistently exceed",
+"Winning CDEs typically", "prior-round allocatees", "calibrated on the award
+books" and "top-ranked CDEs from prior rounds" matched no spelling at all.
+Bare "award(s)" is gone from the past-winners rule; awardees, allocatees and
+award/allocation recipients fire only in a claim context; a negation now
+excuses a match only when it DIRECTLY governs it (``_GOVERNED``); and every
+probe either lane sent is in EVASIONS or NOT_CLAIMS.
+
+A NEW PHRASING WILL STILL PASS. This round's own probes are the proof: none
+of the spellings above existed until a hostile reader wrote a sentence the
+previous registry did not know. What this gate buys is that every spelling
+ever found stays found, and that the true sentences it once flagged stay
+unflagged. It does not claim that every evasion is caught.
 
 R11 (1.7.1) moved ``LOWER_BOUND_CLAUSE`` into ``renderers/_disclosure``, read
 it on every surface, forbade the contradicting sentence document-wide, pinned
@@ -121,6 +138,29 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 _W = r"\w+(?:[–-]\w+)*"          # one word token; hyphens only inside a word
 _GAP = rf"(?:{_W}\W+)"            # a token and what follows it
 
+#: The nouns of a PAST-WINNER POPULATION. Plural only for allocatees and
+#: recipients: "any prior Allocatee that requires action by the CDFI Fund" is
+#: the NOAA's term of art for one entity, not a population.
+_NON = r"(?<!non-)(?<!non )(?<!non)"
+_POP = (rf"(?:{_NON}winners|awardees|allocatees|(?:award|allocation)\W+recipients|"
+        r"selected\W+cdes|top[- ]ranked\W+cdes)")
+#: The words that make a population noun a STATISTICAL claim about it.
+_STAT = (r"(?:patterns?|profiles?|statistics|distributions?|averages?|data|"
+         r"medians?|means?|percentiles?|benchmarks?|figures?|norms?|shares?|"
+         r"concentrations?|mix)")
+#: Verbs whose subject, when it is a winner population, makes the sentence a
+#: measurement claim: "Winners consistently exceed ...", "Award winners
+#: concentrate ...", "Winning CDEs typically deploy ...". An adverb may sit
+#: between (fix round 2).
+_ADVERB = (r"(?:consistently|typically|usually|generally|often|tend\w*\W+to|"
+           r"rarely|always|mostly|overwhelmingly|historically|on\W+average|all|also)")
+_CLAIM_VERB = (r"(?:exceed|average|concentrat|score|cluster|show|outperform|"
+               r"deploy|serve|target|favou?r|draw|place|put|hold|reach|carry|"
+               r"invest|allocate|commit|finance|fund|request|receive|report|"
+               r"achieve|have|had|are|were|look|resembl|mirror|sit|fall|land|"
+               r"rang|spread|span|focus|prioriti[sz]|emphasi[sz]|clear|meet|"
+               r"beat|top|lead|dominat)\w*")
+
 FORBIDDEN = {
     "historical-winners": re.compile(rf"historical\W+{_GAP}{{0,3}}?winn\w*", re.I),
     "observed-in-winners": re.compile(rf"observed\W+in\W+{_GAP}{{0,6}}?winn\w*", re.I),
@@ -135,38 +175,125 @@ FORBIDDEN = {
     "award-data": re.compile(
         rf"(?:years?\W+of|cdfi\W+fund|historical|past|winner)\W+{_GAP}{{0,2}}?"
         r"award\W+data\b", re.I),
-    "typical-winner": re.compile(r"typical\W+winn\w*", re.I),
+    "typical-winner": re.compile(
+        r"typical\W+(?:winn\w*|awardees?|allocatees?|recipients?)", re.I),
     "what-winners-did": re.compile(
         rf"\bwhat\W+{_GAP}{{0,2}}?(?:winners|awardees|allocatees|recipients|"
         r"award[- ]winning)\b", re.I),
     "winning-applications": re.compile(r"winning\W+applications?\b", re.I),
+    # fix round 2: "Winning CDEs typically ...".
+    "winning-entities": re.compile(
+        rf"{_NON}\bwinning\W+(?:cdes?|applicants?|entities|organi[sz]ations|allocatees|"
+        r"community\W+development\W+entities)\b", re.I),
     "award-winning": re.compile(r"\baward[- ]winning\b", re.I),
-    "awardees": re.compile(r"\b(?:awardees?|award\W+recipients?)\b", re.I),
-    "allocatees-as-a-population": re.compile(
-        rf"(?:patterns?|profiles?|statistics|distributions?|averages?|data|"
-        rf"medians?|percentiles?)\W+(?:of|from|across|among|for)\W+{_GAP}{{0,3}}?"
-        r"allocatees\b|\ballocatees['’]", re.I),
+    # fix round 2: awardees, allocatees and award/allocation recipients are
+    # flagged ONLY in a claim context -- a statistic of them, a comparison
+    # with them, a population "across"/"among" them, a possessive, or a
+    # past/prior/recent qualifier on the plural. "The CDFI Fund publishes
+    # award recipients each round" is a true statement and passes; the bare
+    # ``award recipients`` alternative that flagged it is gone.
+    "population-statistic": re.compile(
+        rf"\b{_STAT}\W+(?:of|from|across|among|for)\W+{_GAP}{{0,3}}?{_POP}\b"
+        # "across"/"among" for WINNERS only: "realized deployment across
+        # Allocatees" and "a program-level goal across all Allocatees" are true
+        # statements about what the Fund publishes and requires.
+        rf"|\b(?:across|among|of\W+all)\W+{_GAP}{{0,2}}?{_NON}winners\b"
+        rf"|\b(?:mirror\w*|resembl\w*|match\w*|track\w*|reflect\w*|like|"
+        rf"compar\w*|vs\b\.?|versus|against|relative\W+to|drawn\W+from|"
+        rf"derived\W+from|based\W+on|calibrated\W+(?:on|to|against))\W+"
+        rf"{_GAP}{{0,3}}?(?:awardees|allocatees|(?:award|allocation)\W+recipients|"
+        rf"selected\W+cdes|top[- ]ranked\W+cdes)\b"
+        r"|\b(?:awardees|allocatees|recipients)['’]", re.I),
     "successful-applicants": re.compile(
         rf"\bsuccessful\W+{_GAP}{{0,2}}?applicants?\b", re.I),
     "possessive-winners": re.compile(r"\bwinners['’]", re.I),
+    # fix round 2: the bare ``award(s)`` alternative is DROPPED -- "Enter the
+    # CDE's past NMTC awards in the track record table", "List your most
+    # recent award", "Section E lists the CDE's recent awards" are the CDE's
+    # own history. Winners always; awardees/allocatees/recipients as a
+    # plural population, including "prior-round allocatees".
     "past-winners": re.compile(
-        rf"\b(?:past|prior|previous|recent|historical)\W+{_GAP}{{0,3}}?winn\w*"
-        rf"|\b(?:past|recent|historical)\W+{_GAP}{{0,3}}?award(?:s|ees?|ed)?\b", re.I),
+        rf"\b(?:past|prior|previous|recent|historical|earlier)\W+{_GAP}{{0,3}}?winn\w*"
+        # Bare "prior" is NOT here for allocatees: "[prior Allocatees]" is the
+        # NOAA's own audience label on Table 1 deadlines, rendered verbatim.
+        # "prior-round allocatees" is.
+        rf"|\b(?:past|previous|recent|historical|earlier|prior[- ]rounds?)\W+"
+        rf"{_GAP}{{0,3}}?(?:awardees|allocatees|(?:award|allocation)\W+recipients)\b"
+        rf"|\bprior\W+{_GAP}{{0,3}}?(?:awardees|(?:award|allocation)\W+recipients)\b",
+        re.I),
     "versus-winners": re.compile(
         rf"(?:\bvs\b\.?|versus|against|compar\w*|relative\W+to|favou?rably\W+with)"
         rf"\W+{_GAP}{{0,3}}?winners?\b(?![- ](?:patterns?|benchmarks?|"
         r"distributions?|figures?|statistics|profiles?|bands?|heuristics?|"
         r"thresholds?))", re.I),
+    # fix round 2: a statistic OF a winner population, spelled as a noun
+    # phrase: "the winner p75", "the winner median", "winner mean".
+    "winner-statistic": re.compile(
+        r"(?<!non-)\bwinners?[- ](?:p\d\d|median|mean|average|percentile|"
+        r"quartile|decile)s?\b", re.I),
+    # fix round 2: a winner population as the SUBJECT of a measurement verb.
+    "winners-as-subject": re.compile(
+        rf"{_NON}\b(?:award\W+)?winners\W+(?:{_ADVERB}\W+)?{_CLAIM_VERB}\b", re.I),
+    # fix round 2: the Fund's award books or its Public Data Release named as
+    # the CALIBRATION SOURCE of a band or threshold. Naming the release as
+    # the Fund's real series (historical_awards.py) is not this.
+    # "avg_award ... computed from the Award Book" is a round-level table
+    # statistic, not a band, and passes: a derivation verb counts only with a
+    # band-like noun before it; "calibrated" is band-like by itself.
+    "calibration-source": re.compile(
+        rf"(?:calibrat\w*|benchmarked)\W+(?:on|from|against|using|with|to|by)\W+"
+        rf"{_GAP}{{0,3}}?(?:award\W+books?|public\W+data\W+release)\b"
+        rf"|\b(?:bands?|thresholds?|benchmarks?|cut\W+points?|medians?|"
+        rf"percentiles?|patterns?)\W+{_GAP}{{0,2}}?(?:derived|drawn|taken|measured|"
+        rf"built|based|sourced|computed|set|fitted|estimated)\W+(?:on|from|"
+        rf"against|using|with|to|by)\W+{_GAP}{{0,3}}?(?:award\W+books?|public\W+"
+        rf"data\W+release)\b"
+        rf"|\b(?:bands?|thresholds?|benchmarks?|cut\W+points?|medians?|"
+        rf"percentiles?)\W+(?:from|per|using|off)\W+{_GAP}{{0,3}}?(?:award\W+"
+        r"books?|public\W+data\W+release)\b", re.I),
+    # fix round 2: "top-ranked / selected CDEs from prior rounds".
+    "prior-round-cdes": re.compile(
+        rf"\b(?:top[- ]ranked|selected|successful|funded|awarded|winning|"
+        rf"high[- ]scoring)\W+(?:cdes?|applicants?|applications?|entities)\W+"
+        rf"(?:from|in|of)\W+{_GAP}{{0,2}}?(?:prior|past|previous|recent|earlier)"
+        r"\W+rounds?\b"
+        r"|\btop[- ]ranked\W+(?:cdes?|applicants?|applications?)\b", re.I),
 }
 
-#: A match is a DENIAL, not a claim, when a negation sits at most
-#: ``_NEGATION_WINDOW`` tokens before it in the same clause: "not a
-#: measurement of winning applications", "not a percentile of past winners",
-#: "use no award data". The window is what keeps this from being gamed --
-#: the first cut accepted a "not" ANYWHERE earlier in the clause (fix round 1,
-#: P8/X4). A newline is not a clause break: a comment wraps a clause.
-_NEGATION = re.compile(r"\b(?:not|no|never|nor|none|neither)\b", re.I)
-_NEGATION_WINDOW = 4
+#: A match is a DENIAL, not a claim, only when a negation DIRECTLY GOVERNS it
+#: (fix round 2): "not"/"no"/"never" immediately before the match or its
+#: determiner ("not past winners", "no winner data"), or before a denial
+#: head that takes the match as its object ("not measurements of past
+#: winners", "not a percentile of past winners", "No corpus of winning
+#: applications", "not derived from past winners"). Fix round 1 accepted a
+#: negation ANYWHERE in the 4 tokens before the match, so "It is no secret
+#: that past winners averaged 80%" and "Scores are never far from successful
+#: NMTC applicants" were excused -- "no" governs "secret", "never" governs
+#: "far". The head list is the list of nouns and participles whose negation
+#: denies the measurement; a new one is a gate edit, reviewed like any other.
+_DET = r"(?:a|an|the|any|its|their|this|these|those|such)"
+_DENIAL_HEAD = (
+    r"(?:measurements?|measures?|percentiles?|samples?|corpus|corpora|records?|"
+    r"data|figures?|averages?|medians?|statistics?|surveys?|counts?|"
+    r"distributions?|populations?|lists?|set|dataset|study|studies|"
+    r"derived|drawn|taken|inferred|measured|computed|sourced|calibrated|"
+    r"sampled|based|estimated|fitted)")
+#: The negation, optionally with the one verb it negates when that verb's
+#: object IS the match -- "does not publish application-level data for
+#: winners", "holds no sector distribution for past Allocatees", "has never
+#: been compared to a winner-population".
+_NEG = (r"\b(?:not|no|never|nor)\b(?:\W+(?:publish|hold|carr|contain|use|load|"
+        r"ha[sv]e?|compute|include|ship|embed|read|been|be)\w*)?")
+#: Modifiers allowed between the negation and what it governs: hyphenated
+#: compounds and a closed list of attributive words. NOT an arbitrary token:
+#: "no secret that past winners" must not reach "past winners" through
+#: "secret that".
+_MOD = (r"(?:(?:\w+(?:-\w+)+|sector|project|pipeline|application|applicant|"
+        r"public|published|measured|such|other|real|actual|any|either)\W+)")
+_GOVERNED = re.compile(
+    rf"{_NEG}\W+(?:{_DET}\W+)?{_MOD}{{0,2}}"
+    rf"(?:{_DENIAL_HEAD}\W+(?:of|from|on|across|among|about|by|for|in|to|with)\W+"
+    rf"(?:{_DET}\W+)?{_MOD}{{0,2}}){{0,2}}$", re.I)
 _CLAUSE_BREAK = re.compile(r"[;:.!?—–()\[\]]")
 #: Every rule is deniable except the ones whose words cannot be a denial:
 #: "historical ... winners", "observed in ... winners", "trained on".
@@ -242,12 +369,6 @@ RECORDS = (
      "the 1.5.1 note quoting the passage it withdrew"),
     # -- added with the widened spellings (fix round 1, P8/X4). Quotes of
     #    withdrawn wording, and uses of the words that are not the claim.
-    ("nmtcapp/data/benchmark_thresholds.py", '"90%" strings in the Review Process are 16.90% of awardees',
-     "a Review Process statistic about actual awardees, quoted to rule out a threshold -- a federal figure, not a winner pattern"),
-    ("nmtcapp/data/schema.py", "collection 1559-0027 — the Awardee/Allocatee Annual Report",
-     "the name of an OMB information collection filed TO the Fund, cited to say it is not published"),
-    ("nmtcapp/data/schema.py", 'NOT a source, and removed in 1.2.0: "Historical NMTC allocation award analysis',
-     "the module docstring quoting a source title 1.2.0 removed"),
     ("nmtcapp/renderers/_question_22.py", 'a benchmark row scored against a "winner',
      "the docstring recording the benchmark row 1.4.0 deleted"),
     ("streamlit_app/pages/1_Pipeline_Analyzer.py", "The CDFI Fund publishes winner-level award data",
@@ -266,6 +387,66 @@ RECORDS = (
      "the correction note quoting the paragraph it replaced"),
     ("docs/reference/data-sources.md", '*"to infer winner distributions"*',
      "the 1.5.1 correction quoting the claim it withdrew"),
+    # -- added with fix round 2's spellings (winner p25/median/mean, winners
+    #    as the subject of a measurement verb, past Allocatees). Each is a
+    #    quote of withdrawn wording or a denial whose negation does not sit
+    #    directly on the phrase; each was read in context before listing.
+    ('nmtcapp/data/historical_awards.py', 'of them asserting measurements of winners ("Winners consistently exceed this',
+     'the module docstring quoting the struck distress source line, as struck'),
+    ('nmtcapp/data/historical_awards.py', '"winners rarely exceed 35%"). 1.7.2 struck them',
+     'the module docstring quoting the struck sector field comment, as struck'),
+    ('nmtcapp/intelligence/benchmarks.py', '#   3. THE WINNER MEAN IS A COMPLEMENT TOO.',
+     'a maintainer comment naming the house constant rural_pct_mean by its old label while showing it is not a measurement'),
+    ('nmtcapp/visualization/maps.py', '# RELABELLED (B3). These read "Winner P25 / Winner P50 (Median) /',
+     "B3's record of the bar labels it removed"),
+    ('nmtcapp/visualization/maps.py', '# Winner P75" until this change. All nine values are HOUSE constants;',
+     "the second line of B3's record of the bar labels it removed"),
+    ('nmtcapp/visualization/maps.py', '#     "Winners typically have >=50% in high-priority sectors',
+     'the comment quoting the chart annotation it deleted'),
+    ('streamlit_app/pages/1_Pipeline_Analyzer.py', '#: median states" and "Winner mean HHI" with nothing on the screen saying whose',
+     'the caption comment quoting the two geographic labels B3 removed'),
+    ('streamlit_app/pages/1_Pipeline_Analyzer.py', '# labelled "Winner p25 / Winner median / Winner p75", with a green/red',
+     'the comment recording the delta labels 1.4.0 removed'),
+    ('streamlit_app/pages/1_Pipeline_Analyzer.py', '# median states: **7**", "Winner mean HHI: **620**" and "Winner rural',
+     "1.4.0 R5's record of the three hand-typed literals it removed"),
+    ('streamlit_app/pages/1_Pipeline_Analyzer.py', '# scored. Until this change these lines read "Winner median states: 7"',
+     "B3's record of the label wording it deleted"),
+    ('streamlit_app/pages/1_Pipeline_Analyzer.py', '# and "Winner mean HHI: 620". Both numbers are HOUSE constants of',
+     "the second line of B3's record of the deleted label wording"),
+    ('streamlit_app/pages/1_Pipeline_Analyzer.py', '# values under the labels "Winner p25 / Winner median / Winner p75 /',
+     'the comment quoting the chart labels it replaced'),
+    ('streamlit_app/pages/1_Pipeline_Analyzer.py', '# Winner top 10%" — a claim about a POPULATION OF PAST ALLOCATEES,',
+     'the same comment naming the replaced labels as a population claim with no population behind it'),
+    ('streamlit_app/pages/1_Pipeline_Analyzer.py', '# NUMBERS. Re-deriving what a winner percentile actually is would be',
+     'a maintainer comment saying a real winner percentile would need a source the package lacks'),
+    ('docs/about/why.md', 'distress concentration is 72%, which is at the winner p25. Raising it to 82%',
+     'the 1.5.1 correction note quoting the example it withdrew'),
+    ('docs/about/why.md', '(winner median) is estimated to add 8–15 alignment score points.',
+     'the second line of the 1.5.1 quote of the withdrawn example'),
+    ('docs/quickstart.md', 'winners" and could recommend "lifting project count to winner median" or',
+     'the 1.5.1 note quoting the passage it withdrew (second line)'),
+    ('docs/workflow/optimization.md', 'They read `# winner median is 13`, `# above winner p25 of 4 states` and',
+     'the 1.5.1 warning quoting the constraint comments it corrected'),
+    ('docs/workflow/optimization.md', '`# above the winner p25 floor`. **No such medians or percentiles exist.**',
+     "the same warning's third quote, followed by its denial"),
+    ('docs/workflow/recommendations.md', 'winner distribution", advice to "reach at least the winner p25 of 4 states,',
+     'the warning quoting the advice of an engine that does not exist'),
+    ('docs/workflow/recommendations.md', '1. **It was a winner-population claim.** `p25`, `winner median`, "gaps that',
+     'the correction note naming the withdrawn claim as a claim'),
+    ('docs/workflow/recommendations.md', 'in this tool has ever been compared to a population of past Allocatees.',
+     "a denial ('no score in this tool has ever been compared') whose negation governs the subject, not the phrase"),
+    ('docs/workflow/recommendations.md', 'category the engine cannot emit, a "winner median of 82%" it does not hold, and',
+     'the note describing the fabricated block it replaced'),
+    ('docs/workflow/recommendations.md', '> The goal is to reach at least the winner p25 of 4 states, ideally 7+ states.',
+     "the blockquote of the withdrawn paragraph, introduced as 'The paragraph that stood here read'"),
+    ('docs/workflow/visualizations.md', 'to a population of past Allocatees this package has never held. The line it',
+     "a denial whose negation ('has never held') follows the phrase"),
+    ('docs/workflow/visualizations.md', 'The bar labels said `Winner P25 / Winner P50 (Median) / Winner P75` on the',
+     'the page recording the bar labels an earlier round relabelled'),
+    ('docs/workflow/visualizations.md', 'winner percentiles afterwards. **All nine values are `HOUSE` constants**',
+     'the same record: the page kept the old name after the relabel, and says the values are house'),
+    ('docs/workflow/visualizations.md', '**Reference annotation:** none. The chart carried a note reading *"Winners',
+     'the page quoting the chart annotation that was deleted'),
 )
 
 #: Surfaces that must carry the clause VERBATIM (RULE 4). EVERY PAGE, counted
@@ -368,9 +549,10 @@ def _line_at(text: str, offset: int):
 
 
 def _denied(text: str, match) -> bool:
-    clause = _CLAUSE_BREAK.split(text[:match.start()])[-1]
-    tokens = re.findall(r"\w+(?:['’-]\w+)*", clause)[-_NEGATION_WINDOW:]
-    return any(_NEGATION.fullmatch(t) for t in tokens)
+    """True only when a negation directly governs the match (see _GOVERNED).
+    Reads the 80 characters before it, within the clause."""
+    clause = _CLAUSE_BREAK.split(text[max(0, match.start() - 80):match.start()])[-1]
+    return bool(_GOVERNED.search(clause))
 
 
 def forbidden_hits(text: str) -> list:
@@ -596,6 +778,34 @@ EVASIONS = (
     "The 9-metric comparison vs. CY2020-2024 winners.",
     "Your pipeline compares favourably with recent winners.",
     "Winner patterns show multi-state CDEs win; this tool's own view differs.",
+    # -- fix round 2: the probes both hostile lanes sent back, as given in the
+    #    coordinator's fix-round-2 list. Negations that do not govern:
+    "It is no secret that past winners averaged 80%",
+    "Scores are never far from successful NMTC applicants",
+    # allocatee(s), and allocation recipients, in a claim context:
+    "Bands track allocatees' profiles.",
+    "Thresholds sit at the medians of CY2022 allocatees.",
+    "Typical allocatees deploy in five states.",
+    "Benchmarks mirror allocation recipients.",
+    "Figures are drawn from recent allocation recipients.",
+    "Bands match prior-round allocatees.",
+    # a statistic of winners, spelled as a noun phrase:
+    "The winner p75 is 18 jobs per $1MM.",
+    "Compare your pipeline with the winner median.",
+    "The winner mean is 7.2 states.",
+    # winners as the subject of a measurement verb:
+    "Winners consistently exceed this floor.",
+    "Across winners (2020-2023), deep distress averaged 80%.",
+    "Winning CDEs typically deploy in five states.",
+    "Award winners concentrate in healthcare.",
+    # the award books / Public Data Release as the calibration source:
+    "The bands are calibrated on the award books.",
+    "Thresholds are derived from the Public Data Release.",
+    "Bands from the Public Data Release set the competitive line.",
+    # top-ranked / selected CDEs from prior rounds:
+    "Top-ranked CDEs from prior rounds deploy in seven states.",
+    "Selected CDEs from prior rounds averaged 80% deep distress.",
+    "Top-ranked CDEs average 7.2 states.",
 )
 
 #: And what must NOT be caught: denials within the window, the CDE's own
@@ -609,6 +819,22 @@ NOT_CLAIMS = (
     "the three prior NMTC award rounds of the CDE",
     "Formats prior award data into the track record table.",
     "any prior Allocatee that requires action by the CDFI Fund",
+    # -- fix round 2: the CDE's own track record, and true statements about
+    #    what the Fund publishes. Each was flagged by the round-1 gate.
+    "Enter the CDE's past NMTC awards in the track record table",
+    "List your most recent award and its QEI amount",
+    "Section E lists the CDE's recent awards",
+    "The CDFI Fund publishes award recipients each round",
+    # the NOAA's own audience label, rendered verbatim on Table 1 deadlines
+    "Report QEIs and certify QLICIs deadline [prior Allocatees]",
+    # denials the negation directly governs
+    "This package holds no sector distribution for past Allocatees.",
+    "The CDFI Fund does not publish application-level data for winners.",
+    "a score that has never been compared to a winner population",
+    "not percentiles of any measured population of past Allocatees",
+    # a round-level table statistic, not a band calibration
+    "avg_award is computed from the Award Book's own figures",
+    "Application-level data for non-winners remains unpublished.",
 )
 
 
@@ -629,6 +855,18 @@ def test_a_negation_outside_its_window_does_not_excuse_a_claim():
     """The first cut excused any 'not' earlier in the clause."""
     assert forbidden_hits(
         "Scores are not probabilities and they are tuned on what past winners did")
+
+
+@pytest.mark.parametrize("phrase", (
+    "It is no secret that past winners averaged 80%",
+    "Scores are never far from successful NMTC applicants",
+    "There is no doubt that winners consistently exceed this floor.",
+    "Not surprisingly, the winner median is 82%.",
+))
+def test_a_negation_that_governs_something_else_does_not_excuse_a_claim(phrase):
+    """Fix round 2: a negation excuses a match only when it DIRECTLY governs
+    it. Round 1's 4-token window excused the first two of these."""
+    assert forbidden_hits(phrase), f"the gate excuses {phrase!r}"
 
 
 def test_the_clause_keeps_its_true_half():
