@@ -32,6 +32,10 @@ from nmtcapp.renderers._disclosure import (
     ASSUMED_WINNER_PATTERNS_CLAUSE,
 )
 from nmtcapp.renderers._document_properties import generator_stamp
+from nmtcapp.data.benchmark_thresholds import (
+    COMMUNITY_OUTCOMES_MAX,
+    HOUSE_SPECIAL_TARGETING_MAX,
+)
 from nmtcapp.renderers._round_provenance import UPCOMING_ROUND
 
 #: The round the FICTIONAL sample CDE is filing into.
@@ -948,6 +952,17 @@ def render_version_stamp() -> None:
     st.caption(version_stamp())
 
 
+#: WHAT THE WIN ALIGNMENT SCORER'S SCORE APPLIES (1.7.2 fix round 1, P11). The
+#: first cut said "with this tool's own sub-score weights", which understates
+#: the house content: Special Targeting (HOUSE_SPECIAL_TARGETING_MAX = 5 of
+#: Community Outcomes' 50) is a criterion in none of the primary documents,
+#: and several sub-scores use HOUSE_ thresholds (data/benchmark_thresholds).
+REVIEW_PROCESS_SCORE_BASIS = (
+    "the CDFI Fund's published CY 2024-2025 Review Process structure "
+    "(Business Strategy, Community Outcomes, Priority Points) with this "
+    "tool's own sub-criteria, weights and thresholds"
+)
+
 #: THE HOME PAGE'S METHODOLOGY DISCLOSURE, NOW READ BY EVERY PAGE THAT CARRIES
 #: IT (1.7.2 F2/F3). It lived inline in app.py, so the Pipeline Optimizer --
 #: the page whose objective IS alignment with the house winner constants --
@@ -955,11 +970,20 @@ def render_version_stamp() -> None:
 #: ``_disclosure.ASSUMED_WINNER_PATTERNS_CLAUSE`` so the provenance words are
 #: one string package-wide; the rendered bytes are the ones Home rendered
 #: through 1.7.1, bold included.
+#:
+#: SCOPED IN FIX ROUND 1 (P6). It opened "Alignment scores measure similarity
+#: to this tool's own assumed winner patterns" -- true of the optimizer's
+#: score and the benchmark bands, false of the Win Alignment Scorer's, which
+#: page 2 also calls an alignment score. The lead-in now names what uses the
+#: patterns, as the README already did; the clause is unchanged.
 METHODOLOGY_DISCLOSURE = (
-    "⚠️ **Methodology Disclosure:** Alignment scores measure similarity to "
+    "⚠️ **Methodology Disclosure:** The optimizer's alignment score and the "
+    "benchmark bands measure similarity to "
     + ASSUMED_WINNER_PATTERNS_CLAUSE.replace(
         ASSUMED_WINNER_PATTERNS, f"**{ASSUMED_WINNER_PATTERNS}**", 1)
-    + ". They are **not** win probabilities. The CDFI Fund does not "
+    + ". The Win Alignment Scorer's score applies "
+    + REVIEW_PROCESS_SCORE_BASIS
+    + ". Neither is a win probability. The CDFI Fund does not "
     "publish non-winner application data, so a true probability of selection "
     "cannot be computed, and it publishes no distribution of applicant "
     "characteristics, so no percentile of applicants can be computed either. "
@@ -988,10 +1012,11 @@ def render_methodology_warning() -> None:
     provenance, rather than attaching them to the score.
     """
     st.warning(
-        "**Methodology Notice:** The score on this page applies the CDFI "
-        "Fund's published CY 2024-2025 Review Process structure (Business "
-        "Strategy, Community Outcomes, Priority Points) with this tool's own "
-        "sub-score weights. It is **not** a win probability. The CDFI Fund "
+        f"**Methodology Notice:** The score on this page applies "
+        f"{REVIEW_PROCESS_SCORE_BASIS}. One of those sub-criteria, Special "
+        f"Targeting ({HOUSE_SPECIAL_TARGETING_MAX} of Community Outcomes' "
+        f"{COMMUNITY_OUTCOMES_MAX} points), is this tool's own criterion, not "
+        "the Fund's. It is **not** a win probability. The CDFI Fund "
         "does not publish non-winner application data, so a true probability "
         "of selection cannot be computed. A high alignment score improves "
         "competitiveness but does **not** guarantee an award. Where this tool "

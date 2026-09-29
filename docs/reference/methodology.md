@@ -25,7 +25,7 @@ A self-assessment tool for CDEs to evaluate how well their pipeline and organiza
 
 - **Not a win probability calculator.** The CDFI Fund does not publish scores or application data for non-winning applicants. A true probability of selection cannot be computed from available data.
 - **Not a substitute for Phase 2 narrative review.** Phase 2 evaluates Management Capacity and Capitalization Strategy through qualitative reviewer judgment. This tool does not model those criteria.
-- **Not authoritative.** The CDFI Fund's actual scoring rubric is proprietary. This tool's sub-score weights are best-effort interpretations of the published guidance; the CDFI Fund does not publish exact point values for individual sub-criteria.
+- **Not authoritative.** The CDFI Fund's actual scoring rubric is proprietary. This tool's sub-criteria, weights and thresholds are its own interpretation of the published guidance (Special Targeting is this tool's own criterion, not the Fund's); the CDFI Fund does not publish exact point values for individual sub-criteria.
 
 ---
 

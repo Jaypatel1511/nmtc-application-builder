@@ -6,7 +6,7 @@ This page documents the known limitations of NMTC Application Builder honestly. 
 
 ## Alignment score is not win probability
 
-This cannot be overstated. The composite score returned by `score_win_probability()` applies the CDFI Fund's published CY 2024-2025 Review Process structure with this tool's own sub-score weights — it is not the probability of receiving an NMTC allocation.
+This cannot be overstated. The composite score returned by `score_win_probability()` applies the CDFI Fund's published CY 2024-2025 Review Process structure with this tool's own sub-criteria, weights and thresholds (Special Targeting, 5 of Community Outcomes' 50 points, is this tool's own criterion, not the Fund's) — it is not the probability of receiving an NMTC allocation.
 
 The distinction matters practically:
 - A score of 80/100 does not mean "80% chance of winning." It means the application scores well against that structure in most sections.

@@ -69,7 +69,8 @@ against the CDFI Fund's **published** CY 2024-2025 Review Process criteria.
 - A substitute for Phase 2 narrative review (Management Capacity and Capitalization
   Strategy are evaluated through qualitative reviewer judgment)
 - An authoritative replication of the CDFI Fund's proprietary scoring rubric
-  (sub-score weights within sections are best-effort interpretations)
+  (sub-criteria, weights and thresholds within sections are this tool's own
+  interpretations; Special Targeting is this tool's own criterion)
 """
 )
 

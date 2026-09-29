@@ -71,7 +71,7 @@ Run comprehensive analysis and return an `ApplicationAnalysis`. Orchestrates eli
 score_win_probability() -> WinProbabilityScore
 ```
 
-Score this application against the CDFI Fund's published CY 2024-2025 Review Process structure (Business Strategy, Community Outcomes, Priority Points), with this tool's own sub-score weights. Returns a composite 0–100 alignment score and per-section breakdown. **Not a win probability** — see the methodology disclosure in `WinProbabilityScore.methodology_disclosure`.
+Score this application against the CDFI Fund's published CY 2024-2025 Review Process structure (Business Strategy, Community Outcomes, Priority Points), with this tool's own sub-criteria, weights and thresholds — Special Targeting (5 of Community Outcomes' 50 points) is this tool's own criterion, not the Fund's. Returns a composite 0–100 alignment score and per-section breakdown. **Not a win probability** — see the methodology disclosure in `WinProbabilityScore.methodology_disclosure`.
 
 ---
 

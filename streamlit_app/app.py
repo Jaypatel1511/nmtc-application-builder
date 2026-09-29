@@ -118,7 +118,8 @@ def home():
         (col2, "🎯", "Win Alignment Scorer",
          "Score your application against the CDFI Fund's published CY 2024-2025 "
          "Review Process structure — Business Strategy, Community Outcomes and "
-         "Priority Points — with this tool's own sub-score weights."),
+         "Priority Points — with this tool's own sub-criteria, weights and "
+         "thresholds."),
         (col3, "⚙️", "Pipeline Optimizer",
          "Automatically select the highest-scoring project subset given your QEI budget, "
          "state diversity, and sector constraints using greedy + local-search optimization."),
