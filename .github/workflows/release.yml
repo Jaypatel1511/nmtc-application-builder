@@ -1461,11 +1461,11 @@ jobs:
           #
           # RE-MEASURED AFTER THE SAME RELEASE'S NMTC-CALC FIX, and FLOOR does
           # not move: 2,007 collected under -m "not wheel", 79 skipped, 1,928
-          # executed, half 964, rounded down 960. Band [960, 1003]. The width
-          # gate in tests/test_release_floor.py now bounds the ceiling's share
-          # of the band (rounding excluded); see the 1.7.2 note on
-          # MAX_SDIST_SKIPS there for why the old width cycled with the last
-          # digit of the test count.
+          # executed, half 964, rounded down 960. The ceiling gate in
+          # tests/test_release_floor.py now asserts MAX_SDIST_SKIPS <= 80
+          # (2 * max_ceiling_share) rather than the band's total width, which
+          # cycled with the last digit of the test count; see the 1.7.2 note
+          # on MAX_SDIST_SKIPS there. At 79 the ceiling has one skip spare.
           FLOOR=960
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET

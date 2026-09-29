@@ -240,18 +240,21 @@ attribute 'leverage_ratio'). Using manual computation fallback."*
   exact invocation: 2,007 collected under `-m "not wheel"`, 79 skipped, 1,928
   executed, half 964. `MAX_SDIST_SKIPS` re-measured at **79, unchanged** —
   none of the new modules skips there. Band [960, 1003].
-* **`test_max_sdist_skips_is_bounded_from_ABOVE_as_well` now bounds the
-  ceiling's share of that band, rounding excluded.** It compared the whole
-  width — the ceiling's share plus 0–9 of floor-to-ten rounding set by the
-  collected count's last digit — against 40, and at the measured ceiling of
-  79 the share alone is 39–40. So it was green at three collected counts in
-  every twenty whatever the ceiling (1,998 red, 1,999–2,001 green, 2,007
+* **`test_max_sdist_skips_is_bounded_from_ABOVE_as_well` now asserts
+  `MAX_SDIST_SKIPS <= 2 * max_ceiling_share`, i.e. ≤ 80** (renamed from
+  `max_band_width`; the value 40 is unchanged). It used to compare the whole
+  band width — the ceiling's share plus 0–9 of floor-to-ten rounding set by
+  the collected count's last digit — against 40, and at the measured ceiling
+  of 79 the share alone is 39–40. So it was green at three collected counts
+  in every twenty whatever the ceiling (1,998 red, 1,999–2,001 green, 2,007
   red), and the only ways back to green were a wider maximum or adding tests
-  until the count landed in a window. Both were refused. `max_band_width`
-  stays 40; the ceiling's share is 39–40 at every count for 79, and the gate
-  is still red at 82 (41) and 400 (200) — red-proved. The freshness gate and
-  release.yml's rule are unchanged. **This is the decision the 1.7.1 audit
-  carried; it is its own commit so it can be rejected.**
+  until the count landed in a window. Both were refused. **What it does not
+  bound: the band's total width, which can now reach 49** (share 40 +
+  rounding 9). **At 79 skips the ceiling has one skip of headroom.** The
+  first cut of this fix bounded the share formula, under which 81 still
+  flipped with the count's parity; the explicit form passes at 80 and fails
+  at 81 and 400 at every count — red-proved. The freshness gate and
+  release.yml's rule are unchanged. Ruled by the planning chat: kept.
 * The rendered-string sweep is unchanged in shape, and 293 constants are
   swept (289 at 1.7.1: `_disclosure.ASSUMED_WINNER_PATTERNS`,
   `_disclosure.ASSUMED_WINNER_PATTERNS_CLAUSE`, `maps._SECTOR_MIX_TITLE` and
