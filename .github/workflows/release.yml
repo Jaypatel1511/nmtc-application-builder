@@ -1466,7 +1466,12 @@ jobs:
           # (2 * max_ceiling_share) rather than the band's total width, which
           # cycled with the last digit of the test count; see the 1.7.2 note
           # on MAX_SDIST_SKIPS there. At 79 the ceiling has one skip spare.
-          FLOOR=960
+          #
+          # RE-MEASURED AGAIN AFTER 1.7.2's FIX ROUND 1, which adds 36 tests:
+          # a real sdist build of that tree, this job's exact invocation, on
+          # 3.12 -- 2,043 collected under -m "not wheel", 79 skipped, 1,964
+          # executed, half 982, rounded down 980. Band [980, 1021].
+          FLOOR=980
           EXECUTED="$(python - "${RUNNER_TEMP}/sdist-junit.xml" <<'PY'
           import sys, xml.etree.ElementTree as ET
           root = ET.parse(sys.argv[1]).getroot()

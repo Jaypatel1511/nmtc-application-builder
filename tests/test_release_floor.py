@@ -367,9 +367,11 @@ MARKER_EXPR = "not wheel"
 #: its body): it asserts MAX_SDIST_SKIPS <= 2 * max_ceiling_share (80) --
 #: independent of the collected count, red at 81 and 400 -- and leaves the
 #: band's total width (up to 49) to the rule release.yml states. At 79 the
-#: ceiling has ONE skip of headroom. Re-measured on the final tree: 2,007 collected under -m "not
-#: wheel", 79 skipped, 1,928 executed, half 964, FLOOR unchanged at 960, band
-#: [960, 1003].
+#: ceiling has ONE skip of headroom. Re-measured after the nmtc-calc fix:
+#: 2,007 collected under -m "not wheel", 79 skipped, 1,928 executed, FLOOR
+#: unchanged at 960. Re-measured again after fix round 1 (36 more tests):
+#: 2,043 collected, 79 skipped, 1,964 executed, half 982, FLOOR 980, band
+#: [980, 1021].
 MAX_SDIST_SKIPS = 79
 
 _FLOOR_RE = re.compile(r"^\s*FLOOR=(\d+)\s*$", re.MULTILINE)
