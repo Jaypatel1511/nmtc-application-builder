@@ -35,10 +35,11 @@ from nmtcapp.data.benchmark_thresholds import (
     TRACK_RECORD_TO_PROJECTION_MIN,
     TOTAL_APPLICANTS_CY2024_25, TOTAL_REQUEST_CY2024_25_B, TOTAL_AVAILABLE_CY2024_25_B,
 )
-from utils import apply_theme, md, metric_classification
+from utils import apply_theme, md, metric_classification, render_version_stamp
 
 apply_theme()
 st.title("📖 About & Methodology")
+render_version_stamp()  # 1.7.2 F1: which release is serving
 st.markdown(
     "Documentation for NMTC Application Builder — source documents, scoring framework, "
     "gating logic, and known limitations."

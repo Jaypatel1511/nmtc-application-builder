@@ -5,6 +5,7 @@ from utils import (
     apply_theme,
     md,
     render_methodology_disclosure,
+    render_version_stamp,
     round_label,
 )
 
@@ -79,6 +80,9 @@ def home():
         """,
         unsafe_allow_html=True,
     )
+    # WHICH RELEASE IS SERVING (1.7.2 F1). Through 1.7.1 the test count in the
+    # banner below was doing this job by accident. Read at call time.
+    render_version_stamp()
 
     st.markdown(
         '<div class="stats-bar">'

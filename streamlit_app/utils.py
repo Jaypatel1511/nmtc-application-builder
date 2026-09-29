@@ -31,6 +31,7 @@ from nmtcapp.renderers._disclosure import (
     ASSUMED_WINNER_PATTERNS,
     ASSUMED_WINNER_PATTERNS_CLAUSE,
 )
+from nmtcapp.renderers._document_properties import generator_stamp
 from nmtcapp.renderers._round_provenance import UPCOMING_ROUND
 
 #: The round the FICTIONAL sample CDE is filing into.
@@ -919,6 +920,32 @@ def apply_theme() -> None:
         """,
         unsafe_allow_html=True,
     )
+
+
+def version_stamp() -> str:
+    """``"Running nmtc-application-builder vX.Y.Z"`` -- read at CALL time.
+
+    THE APP CARRIED NO VERSION ON ANY PAGE (1.7.2 F1). R6 stamped the workbook
+    because the 1.6.5 and 1.7.0 P0s were both diagnosed by reading a version
+    stamp; the deployed app is the surface a user is most likely to be looking
+    at, and through 1.7.1 the only thing that told a reader which release it
+    was serving was the Home banner's test count -- which moves only when the
+    suite does. This is R6's mechanism, not a second one:
+    ``_document_properties.generator_stamp()`` reads ``nmtcapp.__version__``
+    when called, so a monkeypatched version and the page agree.
+
+    WHAT IT CAN AND CANNOT TELL YOU. ``__version__`` comes from the INSTALLED
+    DISTRIBUTION'S metadata (``nmtcapp/__init__.py``), which on Streamlit
+    Cloud is the release ``requirements.txt`` pins -- the thing this stamp
+    exists to diagnose. It does not say which copy of the source is serving;
+    only ``nmtcapp.__file__`` can (the 1.3.1 deployment-drift finding).
+    """
+    return f"Running {generator_stamp()}"
+
+
+def render_version_stamp() -> None:
+    """Render the version stamp. Every page calls this (F1)."""
+    st.caption(version_stamp())
 
 
 #: THE HOME PAGE'S METHODOLOGY DISCLOSURE, NOW READ BY EVERY PAGE THAT CARRIES

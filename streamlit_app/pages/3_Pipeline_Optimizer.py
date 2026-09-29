@@ -14,6 +14,7 @@ from nmtcapp.optimizer.constraints import OptimizationConstraints
 from nmtcapp.renderers._disclosure import ASSUMED_WINNER_PATTERNS
 
 from utils import (
+    render_version_stamp,
     VALID_SECTORS,
     fmt_millions,
     fmt_pct,
@@ -36,6 +37,7 @@ apply_matplotlib_theme()
 # ---------------------------------------------------------------------------
 apply_theme()
 st.title("⚙️ Pipeline Optimizer")
+render_version_stamp()  # 1.7.2 F1: which release is serving
 st.markdown(
     "Automatically select the highest-scoring project subset from your pipeline given "
     "QEI budget, geographic diversity, and sector constraints. Uses a **greedy construction "
@@ -53,6 +55,7 @@ st.info(
     "— see the Methodology Disclosure below. Alignment score ≠ win probability."
 )
 render_methodology_disclosure()
+
 
 st.markdown("---")
 

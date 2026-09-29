@@ -44,6 +44,7 @@ from nmtcapp.renderers._question_22 import (
 )
 from readiness_chart import build_readiness_breakdown_figure
 from utils import (
+    render_version_stamp,
     md,
     round_label,
     fmt_millions,
@@ -87,6 +88,7 @@ _GEO_REFERENCE_METHODOLOGY = (
 # ---------------------------------------------------------------------------
 apply_theme()
 st.title("📋 Pipeline Analyzer")
+render_version_stamp()  # 1.7.2 F1: which release is serving
 st.markdown(
     "Run a comprehensive intelligence analysis on your NMTC project pipeline — "
     "distress concentration, geographic diversity, sector mix, and impact projections."

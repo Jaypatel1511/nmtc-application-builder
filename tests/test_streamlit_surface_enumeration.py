@@ -95,6 +95,7 @@ CONTAINER_PROSE_CALLS = frozenset({
 PROSE_HELPERS = frozenset({
     "render_methodology_warning",
     "render_methodology_disclosure",
+    "render_version_stamp",
     "metric_classification",
 })
 
@@ -121,14 +122,14 @@ PROVENANCE_FUNCTIONS = frozenset({"round_provenance_paragraphs", "q25_basis_note
 PAGE_REGISTRY = {
     "app.py": {
         "nav_title": "Home",
-        "prose_sites": 9,
+        "prose_sites": 10,
         "provenance_calls": 0,
         "what": "landing page: feature cards, getting-started steps, the "
                 "sample CDE, and the Methodology Disclosure",
     },
     "pages/1_Pipeline_Analyzer.py": {
         "nav_title": "Pipeline Analyzer",
-        "prose_sites": 65,
+        "prose_sites": 66,
         "provenance_calls": 2,
         "what": "load or upload a pipeline, run the analysis, read the "
                 "distress / geography / sector / impact report and the "
@@ -136,21 +137,21 @@ PAGE_REGISTRY = {
     },
     "pages/2_Win_Alignment_Scorer.py": {
         "nav_title": "Win Alignment Scorer",
-        "prose_sites": 38,
+        "prose_sites": 39,
         "provenance_calls": 1,
         "what": "score the application against the CY 2024-2025 Review "
                 "Process structure",
     },
     "pages/3_Pipeline_Optimizer.py": {
         "nav_title": "Pipeline Optimizer",
-        "prose_sites": 24,
+        "prose_sites": 25,
         "provenance_calls": 0,
         "what": "select the highest-scoring project subset under QEI, state "
                 "and sector constraints",
     },
     "pages/4_About_and_Methodology.py": {
         "nav_title": "About and Methodology",
-        "prose_sites": 24,
+        "prose_sites": 25,
         "provenance_calls": 1,
         "what": "data sources, scoring methodology, limitations, round "
                 "provenance",
