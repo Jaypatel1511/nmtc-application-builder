@@ -89,6 +89,11 @@ from nmtcapp.renderers._disclosure import (
     ASSUMED_WINNER_PATTERNS,
     ASSUMED_WINNER_PATTERNS_CLAUSE,
 )
+# Imported at MODULE level for its side effect: it puts the repo root and
+# streamlit_app/ on sys.path. A test that does `import utils` before this has
+# run fails when selected on its own (fix round 1, X2) -- in a full run some
+# other module had already imported it, which is how that stayed hidden.
+import tests.streamlit_render  # noqa: E402,F401
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -517,16 +522,20 @@ def test_the_home_and_optimizer_disclosures_are_one_string():
     import utils  # streamlit_app/, on sys.path via tests.streamlit_render
     from tests.streamlit_render import rendered_pages, texts
 
-    # st.info lifts a leading emoji into its icon slot, so AppTest reports
-    # the body without the "⚠️ ". Compare bodies, and require the emoji to be
-    # the only difference.
+    # WHETHER THE LEADING "⚠️ " SURVIVES DEPENDS ON THE STREAMLIT VERSION
+    # (fix round 1, X1). The resolver picks streamlit 1.64 on 3.10+, where
+    # st.info lifts a leading emoji into its icon slot and AppTest reports the
+    # body without it; on 3.9 it picks 1.50, which keeps it in the text. Both
+    # forms are accepted -- and NOTHING ELSE: the emoji is the only permitted
+    # difference, and the body must be byte-identical to the constant.
     expected = utils.METHODOLOGY_DISCLOSURE
     assert expected.startswith("⚠️ ")
-    body = expected[len("⚠️ "):]
+    accepted = {expected, expected[len("⚠️ "):]}
     for rel in ("app.py", "pages/3_Pipeline_Optimizer.py"):
         infos = [t for k, t in texts(rendered_pages()[rel]["cold"]) if k == "info"]
-        assert body in infos, (
-            f"{rel} does not render utils.METHODOLOGY_DISCLOSURE as an st.info")
+        assert accepted & set(infos), (
+            f"{rel} does not render utils.METHODOLOGY_DISCLOSURE as an st.info "
+            f"(with or without its leading emoji). Infos rendered: {infos}")
 
 
 def test_the_copies_that_cannot_interpolate_state_it_verbatim():

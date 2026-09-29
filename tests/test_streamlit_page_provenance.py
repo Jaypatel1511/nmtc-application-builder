@@ -92,24 +92,26 @@ def test_every_page_stamps_the_installed_version(relpath):
         )
 
 
-def test_the_stamp_is_read_at_call_time_not_import_time(monkeypatch):
+@pytest.mark.parametrize("relpath", PAGES)
+def test_the_stamp_is_read_at_call_time_not_import_time(relpath, monkeypatch):
     """A typed or import-time-cached stamp cannot follow a patched version.
 
-    Renders page 3 FRESH (not from the shared cache) with ``__version__``
+    Renders EVERY page fresh (not from the shared cache) with ``__version__``
     patched, the way the rendered-baseline gate proves the workbook stamp is
-    version-independent.
+    version-independent. Per page, because the per-page test above passes on
+    a page that types the right literal (fix round 1, P10/X9).
     """
     import nmtcapp
     from streamlit.testing.v1 import AppTest
     from tests.streamlit_render import _APP_DIR
 
     monkeypatch.setattr(nmtcapp, "__version__", "9.9.9-callt")
-    at = AppTest.from_file(str(_APP_DIR / "pages/3_Pipeline_Optimizer.py"),
-                           default_timeout=300)
+    at = AppTest.from_file(str(_APP_DIR / relpath), default_timeout=300)
     at.run()
-    assert not at.exception, f"page 3 raised: {at.exception}"
+    assert not at.exception, f"{relpath} raised: {at.exception}"
     assert "Running nmtc-application-builder v9.9.9-callt" in _captions(at), (
-        f"the stamp did not follow a patched nmtcapp.__version__: {_captions(at)}")
+        f"{relpath}: the stamp did not follow a patched nmtcapp.__version__: "
+        f"{_captions(at)}")
 
 
 # ---------------------------------------------------------------------------
