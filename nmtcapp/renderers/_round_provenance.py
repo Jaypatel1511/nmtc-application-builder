@@ -647,7 +647,7 @@ def next_hard_deadline(today=None):
 #: could have complained before 2026-10-16 -- ten days after the Application
 #: Registration deadline the note exists to protect. See the cadence note
 #: below and the 1.6.5 CHANGELOG entry for what was and was not done about it.
-LAST_VERIFIED = "2026-09-17"
+LAST_VERIFIED = "2026-10-08"
 
 #: How long a verification stays good for, in days. A CADENCE, NOT A
 #: DEADLINE (1.6.4 fix round, R2): the question the expiry asks is "has a
