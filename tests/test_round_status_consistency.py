@@ -811,7 +811,7 @@ ROUND_STATUS_CLAIMS = {
     # rendered_baseline/markdown.txt
     # rendered_baseline/pdf.txt
     # rendered_baseline/word.txt
-    'An organization that does neither CANNOT APPLY IN CY 2026.':
+    'An organization that did neither CANNOT APPLY IN CY 2026.':
         (),
 
     # nmtcapp/renderers/_round_provenance.py
@@ -956,7 +956,7 @@ ROUND_STATUS_CLAIMS = {
         (('APPLICATION', True),),
 
     # rendered_baseline/excel.txt / markdown.txt / pdf.txt / word.txt
-    'Provenance: the CY 2026 NOAA is Federal Register document 2026-18883, filed September 14, 2026 and published September 15, 2026; the CY 2026 Application Materials were confirmed published on September 17, 2026.':
+    'Provenance: the CY 2026 NOAA is Federal Register document 2026-18883, filed September 14, 2026 and published September 15, 2026; the CY 2026 Application Materials were confirmed published on October 8, 2026.':
         (('NOAA', True), ('APPLICATION', True)),
 
     # nmtcapp/renderers/_round_provenance.py
@@ -1064,7 +1064,11 @@ ROUND_STATUS_CLAIMS = {
         (),
 
     # rendered_baseline/excel.txt / markdown.txt / pdf.txt / word.txt
-    'THE CY 2026 DEADLINES STILL AHEAD, COMPUTED FROM TABLE 1 OF THE NOAA AGAINST THE EASTERN DATE THIS DOCUMENT WAS GENERATED, September 17, 2026: 10 of the 10 deadlines in Table 1 are still ahead — Community Development Entity (CDE) Certification Application deadline — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Request to modify CDE certification service area — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Subsidiary CDE Certification Application for meeting Qualified Equity Investment (QEI) issuance thresholds — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS) [prior Allocatees]; CY 2026 Allocation Application Registration — 5:00 p.m. ET on October 6, 2026 (Electronically via AMIS); Amendment request to add Subsidiary CDEs to Allocation Agreements for meeting QEI issuance thresholds — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Amendment request to remove a Controlling Entity from Allocation Agreement(s) — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Last day to contact CDFI Fund staff — 5:00 p.m. ET on November 6, 2026 (Electronically via AMIS); CY 2026 Allocation Application deadline (including required Attachments) — 5:00 p.m. ET on November 10, 2026 (Electronically via AMIS); QEI Issuance and Qualified Low Income Community Investments (QLICIs) requirements deadline — 11:59 p.m. ET on January 7, 2027 (Not Applicable) [prior Allocatees]; Report QEIs and certify QLICIs deadline — 11:59 p.m. ET on January 14, 2027 (Electronically via AMIS) [prior Allocatees].':
+    'THE CY 2026 DEADLINES STILL AHEAD, COMPUTED FROM TABLE 1 OF THE NOAA AGAINST THE EASTERN DATE THIS DOCUMENT WAS GENERATED, October 8, 2026: 6 of the 10 deadlines in Table 1 are still ahead — Amendment request to add Subsidiary CDEs to Allocation Agreements for meeting QEI issuance thresholds — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Amendment request to remove a Controlling Entity from Allocation Agreement(s) — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Last day to contact CDFI Fund staff — 5:00 p.m. ET on November 6, 2026 (Electronically via AMIS); CY 2026 Allocation Application deadline (including required Attachments) — 5:00 p.m. ET on November 10, 2026 (Electronically via AMIS); QEI Issuance and Qualified Low Income Community Investments (QLICIs) requirements deadline — 11:59 p.m. ET on January 7, 2027 (Not Applicable) [prior Allocatees]; Report QEIs and certify QLICIs deadline — 11:59 p.m. ET on January 14, 2027 (Electronically via AMIS) [prior Allocatees].':
+        (),
+
+    # rendered_baseline/excel.txt / rendered_baseline/markdown.txt / rendered_baseline/pdf.txt / rendered_baseline/word.txt
+    'Already passed: Community Development Entity (CDE) Certification Application deadline — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Request to modify CDE certification service area — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Subsidiary CDE Certification Application for meeting Qualified Equity Investment (QEI) issuance thresholds — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS) [prior Allocatees]; CY 2026 Allocation Application Registration — 5:00 p.m. ET on October 6, 2026 (Electronically via AMIS).':
         (),
 
     # --- R1 (2026-09-18): CY 2026 Question 25(b) fifth area type; CY 2026 page citations; RECHECK_ITEMS item 6 ---
@@ -1110,7 +1114,7 @@ ROUND_STATUS_CLAIMS = {
     # the other three surfaces render, which is the key below.
 
     # rendered_baseline/excel.txt / rendered_baseline/markdown.txt / rendered_baseline/word.txt
-    "But it is a PROXY for the CY 2026 instrument, not that instrument, and that instrument is AVAILABLE NOW: every round-specific figure in this document must be re-verified against the CY 2026 Application Materials, which the CDFI Fund publishes at https://www.cdfifund.gov/programs-training/programs/new-markets-tax-credit/apply-step — specifically: the allocation authority and the number of awards available; the CDE certification deadline for eligibility; Question 25's QLICI-denominated commitment levels, its area-type lists and its ladder; Question 22's QLICI-denominated Non-Metropolitan minimum and maximum; Question 15's product-flexibility ladder; the scoring thresholds — as of September 17, 2026 this tool had not found a published CY 2026 Review Process, and the thresholds this document applies are the CY 2024-2025 Review Process's.":
+    "But it is a PROXY for the CY 2026 instrument, not that instrument, and that instrument is AVAILABLE NOW: every round-specific figure in this document must be re-verified against the CY 2026 Application Materials, which the CDFI Fund publishes at https://www.cdfifund.gov/programs-training/programs/new-markets-tax-credit/apply-step — specifically: the allocation authority and the number of awards available; the CDE certification deadline for eligibility; Question 25's QLICI-denominated commitment levels, its area-type lists and its ladder; Question 22's QLICI-denominated Non-Metropolitan minimum and maximum; Question 15's product-flexibility ladder; the scoring thresholds — as of October 8, 2026 this tool had not found a published CY 2026 Review Process, and the thresholds this document applies are the CY 2024-2025 Review Process's.":
         (('APPLICATION', True),),
 
     # nmtcapp/renderers/_question_25.py [#]
@@ -1174,8 +1178,8 @@ ROUND_STATUS_CLAIMS = {
         (),
 
     # rendered_baseline/pdf.txt
-    'Provenance: the CY 2026 NOAA is Federal Register document 2026-18883, filed September 14, 2026 and':
-        (),
+    'Provenance: the CY 2026 NOAA is Federal Register document 2026-18883, filed September 14, 2026 and published September':
+        (('NOAA', True),),
 
     # nmtcapp/data/benchmark_thresholds.py [#]
     "Q25(b)(i)'s TOP RUNG, not a bar: the ladder is 0/5/10/15/20 over _question_25.Q25B_AREA_TYPES (five in CY 2026), and 20 opens a 20-100% field.":
@@ -1258,7 +1262,7 @@ ROUND_STATUS_CLAIMS = {
         (),
 
     # rendered_baseline/pdf.txt
-    'published September 15, 2026; the CY 2026 Application Materials were confirmed published on September 17, 2026.':
+    '15, 2026; the CY 2026 Application Materials were confirmed published on October 8, 2026.':
         (('APPLICATION', True),),
 
     # nmtcapp/renderers/_round_provenance.py [#]
@@ -1468,8 +1472,12 @@ NON_CLAIM_REASONS = {
         "The TRUE branch of _application_publication_clauses, paragraph 4's provenance clause. Its rendered form is registered above as an APPLICATION-published claim; the template's polarity is bound by the conditional, proven by the mutation test.",
 
     # rendered_baseline/excel.txt / markdown.txt / pdf.txt / word.txt
-    'THE CY 2026 DEADLINES STILL AHEAD, COMPUTED FROM TABLE 1 OF THE NOAA AGAINST THE EASTERN DATE THIS DOCUMENT WAS GENERATED, September 17, 2026: 10 of the 10 deadlines in Table 1 are still ahead — Community Development Entity (CDE) Certification Application deadline — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Request to modify CDE certification service area — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Subsidiary CDE Certification Application for meeting Qualified Equity Investment (QEI) issuance thresholds — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS) [prior Allocatees]; CY 2026 Allocation Application Registration — 5:00 p.m. ET on October 6, 2026 (Electronically via AMIS); Amendment request to add Subsidiary CDEs to Allocation Agreements for meeting QEI issuance thresholds — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Amendment request to remove a Controlling Entity from Allocation Agreement(s) — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Last day to contact CDFI Fund staff — 5:00 p.m. ET on November 6, 2026 (Electronically via AMIS); CY 2026 Allocation Application deadline (including required Attachments) — 5:00 p.m. ET on November 10, 2026 (Electronically via AMIS); QEI Issuance and Qualified Low Income Community Investments (QLICIs) requirements deadline — 11:59 p.m. ET on January 7, 2027 (Not Applicable) [prior Allocatees]; Report QEIs and certify QLICIs deadline — 11:59 p.m. ET on January 14, 2027 (Electronically via AMIS) [prior Allocatees].':
+    'THE CY 2026 DEADLINES STILL AHEAD, COMPUTED FROM TABLE 1 OF THE NOAA AGAINST THE EASTERN DATE THIS DOCUMENT WAS GENERATED, October 8, 2026: 6 of the 10 deadlines in Table 1 are still ahead — Amendment request to add Subsidiary CDEs to Allocation Agreements for meeting QEI issuance thresholds — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Amendment request to remove a Controlling Entity from Allocation Agreement(s) — 11:59 p.m. ET on November 3, 2026 (Electronically via AMIS) [prior Allocatees]; Last day to contact CDFI Fund staff — 5:00 p.m. ET on November 6, 2026 (Electronically via AMIS); CY 2026 Allocation Application deadline (including required Attachments) — 5:00 p.m. ET on November 10, 2026 (Electronically via AMIS); QEI Issuance and Qualified Low Income Community Investments (QLICIs) requirements deadline — 11:59 p.m. ET on January 7, 2027 (Not Applicable) [prior Allocatees]; Report QEIs and certify QLICIs deadline — 11:59 p.m. ET on January 14, 2027 (Electronically via AMIS) [prior Allocatees].':
         "The rendered Table 1 list. 'Issuance' is the instrument's own row title, 'QEI Issuance and ... requirements deadline'; the sentence states which deadlines are ahead of the generation date and asserts nothing about whether the NOAA or the Application has published.",
+
+    # rendered_baseline/excel.txt / rendered_baseline/markdown.txt / rendered_baseline/pdf.txt / rendered_baseline/word.txt
+    'Already passed: Community Development Entity (CDE) Certification Application deadline — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Request to modify CDE certification service area — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS); Subsidiary CDE Certification Application for meeting Qualified Equity Investment (QEI) issuance thresholds — 11:59 p.m. ET on September 22, 2026 (Electronically via AMIS) [prior Allocatees]; CY 2026 Allocation Application Registration — 5:00 p.m. ET on October 6, 2026 (Electronically via AMIS).':
+        "The rendered Table 1 'Already passed' list, computed against the generation date. Its one status-vocabulary word, 'issuance', is inside the instrument's own row title 'Subsidiary CDE Certification Application for meeting Qualified Equity Investment (QEI) issuance thresholds', and 'Application' occurs only in row titles ('Community Development Entity (CDE) Certification Application deadline', 'CY 2026 Allocation Application Registration'); the sentence states which Table 1 deadlines are behind the generation date and asserts nothing about whether the NOAA or the Application has published.",
 
     # --- R1 (2026-09-18) ---
 

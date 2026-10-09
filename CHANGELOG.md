@@ -5,6 +5,64 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.7.3] — 2026-10-08
+
+**PATCH. THE `LAST_VERIFIED` CADENCE RE-CHECK, RECORDED.** No threshold,
+weight, band, gate, grade or score moves; no methodology changes; no Table 1
+date, allocation figure or URL moves.
+
+### The re-check
+
+* A human re-checked the CDFI Fund on **2026-10-08 (ET)**: the Step 2: Apply
+  page still links the CY 2026 Allocation Application, and every material on it
+  is dated September 15 or 17, 2026; the news feed carries nothing about the
+  NMTC round newer than `news/741` (its only newer items are three September 30
+  Paperwork Reduction Act comment notices, none about the NMTC round); a
+  Federal Register search for "New Markets Tax Credit" published on or after
+  2026-09-15 returns only NOAA 2026-18883, with no correction; the Step 3:
+  Award Announcement page's newest Review Process is CY 2024-2025's (December
+  23, 2025), so no CY 2026 Review Process has been published. The program page
+  now gives the CY 2026 announcement date as "Fall 2027" while the Step 2:
+  Apply timeline still says "Summer 2027"; this package renders no award
+  timing, so no user-facing sentence depends on it. Nothing this package states
+  moved, so this is a date, not content.
+* `LAST_VERIFIED` 2026-09-17 → 2026-10-08. `RECHECK_AFTER` follows it by
+  `RECHECK_CADENCE_DAYS` = 30. `UPCOMING_APPLICATION_RETRIEVED_DATE` stays
+  2026-09-17: the re-check is not a re-retrieval.
+* What a user sees move, in all four formats: paragraph 1's RECHECK_ITEMS item
+  6 ("as of October 8, 2026 this tool had not found a published CY 2026 Review
+  Process") and paragraph 4's provenance clause ("confirmed published on
+  October 8, 2026"). Deadline status was already computed from the real Eastern
+  date and does not move.
+
+### Fixtures
+
+* The fixtures render the note as of `LAST_VERIFIED`, so the frozen date now
+  crosses 22 September and 6 October: paragraph 2 reads "has CLOSED",
+  paragraph 3 "the Subsidiary CDE certification date has passed", and
+  paragraph 4 "6 of the 10" with an "Already passed:" list. Baselines
+  regenerated with `python -m tests.regen_rendered_baseline`, not hand-edited:
+
+> **37 insertions, 37 deletions** in `tests/rendered_baseline/`, measured
+> `cd61870`..`HEAD`, in `excel.txt`, `markdown.txt`, `pdf.txt` and `word.txt`.
+
+* `tests/invariant_allowlist.txt`: six masked-line fields re-pointed at the
+  re-dated lines, categories kept; the seven justifications that state the
+  fixture date ("rendered here as of LAST_VERIFIED = …") re-dated.
+* `tests/test_round_status_consistency.py`: six registry keys re-keyed to the
+  re-dated segments, five with their claims kept; the sixth, the PDF wrap
+  fragment that now ends "…and published September", reclassified from `()` to
+  `(('NOAA', True),)` because it now says the NOAA published (one more
+  parametrized claim test); the new "Already passed:" segment classified `()`
+  with a written reason.
+
+### Census and verification
+
+* Published test counts re-derived: 2,112 → 2,113 in `README.md`,
+  `CONTRIBUTING.md`, `streamlit_app/app.py` and this entry
+  (`pytest tests/ --collect-only -q`). The README badge moves with them; it is
+  still hand-typed and unchecked by any gate.
+
 ## [1.7.2] — 2026-09-29
 
 **PATCH. THE 1.7.1 APP SETTLE READ, EXECUTED: F1–F4.** No threshold,
